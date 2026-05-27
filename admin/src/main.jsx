@@ -8,7 +8,7 @@ import { BrowserRouter } from "react-router-dom";
 import { Toaster } from "react-hot-toast";
 
 import "./styles/global.css";
-import "./styles/dashboard.css";
+import "./styles/Dashboard.css";
 import "./styles/produtos.css";
 import "./styles/pedidos.css";
 import "./styles/modal.css";
