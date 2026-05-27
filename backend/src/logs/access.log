@@ -1819,3 +1819,7 @@
 {"level":"info","message":{"ip":"::1","method":"GET","url":"/uploads/1779411546506-488325655.jpeg"},"timestamp":"2026-05-27T15:07:02.117Z"}
 {"level":"info","message":{"ip":"::1","method":"GET","url":"/uploads/1779843841572-231526951.webp"},"timestamp":"2026-05-27T15:07:38.155Z"}
 {"level":"info","message":{"ip":"::1","method":"GET","url":"/uploads/1779403208648-34929947.jpeg"},"timestamp":"2026-05-27T15:07:38.156Z"}
+{"level":"info","message":{"ip":"::ffff:192.168.0.100","method":"GET","url":"/"},"timestamp":"2026-05-27T16:58:40.205Z"}
+{"level":"info","message":{"ip":"::ffff:192.168.0.100","method":"GET","url":"/loginMsg.js"},"timestamp":"2026-05-27T16:58:46.237Z"}
+{"level":"info","message":{"ip":"::ffff:192.168.0.100","method":"GET","url":"/cgi/get.cgi?cmd=home_login"},"timestamp":"2026-05-27T16:58:46.256Z"}
+{"level":"info","message":{"ip":"::ffff:192.168.0.100","method":"POST","url":"/boaform/admin/formLogin"},"timestamp":"2026-05-27T16:58:46.372Z"}
