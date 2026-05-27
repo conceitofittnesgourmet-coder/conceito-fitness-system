@@ -32,7 +32,7 @@ import PrivateRoute from "./components/PrivateRoute";
 
 import AdminLayout from "./layouts/AdminLayout";
 
-import DashboardCharts from "./components/Dashboardcharts";
+import DashboardCharts from "./components/charts/DashboardCharts";
 
 import Cozinha
 from "./pages/Cozinha";
