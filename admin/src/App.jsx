@@ -34,10 +34,10 @@ import AdminLayout from "./layouts/AdminLayout";
 
 import DashboardCharts from "./components/Dashboardcharts";
 
-import cozinha
+import Cozinha
 from "./pages/Cozinha";
 
-import tracking
+import Tracking
 from "./pages/Tracking";
 
 import Analytics
