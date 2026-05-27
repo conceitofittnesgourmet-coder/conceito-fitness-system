@@ -1,0 +1,23 @@
+.header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    padding: 20px 60px;
+    background: rgba(0,0,0,0.7);
+}
+
+.logo {
+    width: 160px;
+}
+
+nav a {
+    margin: 0 15px;
+    color: #ccc;
+    text-decoration: none;
+}
+
+.cart {
+    border: 2px solid #00ff88;
+    padding: 10px 20px;
+    border-radius: 20px;
+}

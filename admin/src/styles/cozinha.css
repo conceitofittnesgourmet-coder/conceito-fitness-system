@@ -1,0 +1,253 @@
+.cozinha{
+
+  min-height:100vh;
+
+  background:#0f172a;
+
+  padding:30px;
+
+}
+
+
+
+
+
+.cozinha-header{
+
+  margin-bottom:30px;
+
+}
+
+
+
+
+
+.cozinha-header h1{
+
+  color:white;
+
+  font-size:48px;
+
+}
+
+
+
+
+
+.cozinha-grid{
+
+  display:grid;
+
+  grid-template-columns:
+    repeat(auto-fit,minmax(420px,1fr));
+
+  gap:24px;
+
+}
+
+
+
+
+
+.cozinha-card{
+
+  border-radius:24px;
+
+  padding:24px;
+
+  color:white;
+
+  display:flex;
+
+  flex-direction:column;
+
+  gap:20px;
+
+  min-height:320px;
+
+  box-shadow:
+    0 10px 30px rgba(0,0,0,0.3);
+
+}
+
+
+
+
+
+.cozinha-card.pendente{
+
+  background:#f59e0b;
+
+}
+
+
+
+
+
+.cozinha-card.producao{
+
+  background:#3b82f6;
+
+}
+
+
+
+
+
+.cozinha-top{
+
+  display:flex;
+
+  justify-content:space-between;
+
+  align-items:center;
+
+}
+
+
+
+
+
+.cozinha-top h2{
+
+  font-size:34px;
+
+}
+
+
+
+
+
+.cozinha-produtos{
+
+  flex:1;
+
+  display:flex;
+
+  flex-direction:column;
+
+  gap:14px;
+
+  font-size:24px;
+
+}
+
+
+
+
+
+.cozinha-footer{
+
+  display:grid;
+
+  grid-template-columns:
+    repeat(2,1fr);
+
+  gap:14px;
+
+}
+
+
+
+
+
+.btn-fire,
+.btn-ready{
+
+  border:none;
+
+  padding:20px;
+
+  border-radius:16px;
+
+  font-size:18px;
+
+  font-weight:700;
+
+  color:white;
+
+  cursor:pointer;
+
+}
+
+
+
+
+
+.btn-fire{
+
+  background:#111827;
+
+}
+
+
+
+
+
+.btn-ready{
+
+  background:#22c55e;
+
+}
+
+.tempo{
+
+  font-size:32px;
+
+  font-weight:900;
+
+}
+
+
+
+
+
+.cozinha-card.atrasado{
+
+  animation:
+    pulseCard 1s infinite;
+
+  border:
+    4px solid #ef4444;
+
+}
+
+
+
+
+
+@keyframes pulseCard{
+
+  0%{
+
+    transform:scale(1);
+
+  }
+
+  50%{
+
+    transform:scale(1.02);
+
+  }
+
+  100%{
+
+    transform:scale(1);
+
+  }
+
+}
+
+.qr-image{
+
+  width:90px;
+
+  height:90px;
+
+  border-radius:12px;
+
+  background:white;
+
+  padding:6px;
+
+}

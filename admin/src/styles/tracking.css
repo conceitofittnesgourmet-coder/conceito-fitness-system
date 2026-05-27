@@ -1,0 +1,86 @@
+.tracking{
+
+  min-height:100vh;
+
+  background:#0f172a;
+
+  display:flex;
+
+  justify-content:center;
+
+  align-items:center;
+
+  padding:30px;
+
+}
+
+
+
+
+
+.tracking-card{
+
+  width:100%;
+
+  max-width:700px;
+
+  background:
+    rgba(17,24,39,0.9);
+
+  border-radius:30px;
+
+  padding:40px;
+
+  color:white;
+
+  text-align:center;
+
+}
+
+
+
+
+
+.tracking-status{
+
+  margin-top:40px;
+
+  display:flex;
+
+  flex-direction:column;
+
+  gap:20px;
+
+}
+
+
+
+
+
+.step{
+
+  padding:20px;
+
+  border-radius:16px;
+
+  background:#1f2937;
+
+  opacity:0.4;
+
+  transition:0.3s;
+
+}
+
+
+
+
+
+.step.active{
+
+  background:#22c55e;
+
+  opacity:1;
+
+  transform:scale(1.03);
+
+}

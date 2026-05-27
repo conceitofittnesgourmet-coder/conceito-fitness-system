@@ -1,0 +1,111 @@
+.orders-grid{
+  display:grid;
+  grid-template-columns:
+    repeat(auto-fit,minmax(420px,1fr));
+  gap:24px;
+  margin-top:30px;
+}
+
+.pedido-card{
+  background:
+    linear-gradient(
+      145deg,
+      #111827,
+      #0f172a
+    );
+  border-radius:24px;
+  padding:24px;
+  border:
+    1px solid rgba(255,255,255,0.05);
+  display:flex;
+  flex-direction:column;
+  gap:20px;
+  box-shadow:
+    0 10px 30px rgba(0,0,0,0.3);
+}
+
+.pedido-header{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+}
+
+.pedido-header h2{
+  color:white;
+  font-size:24px;
+}
+
+.pedido-info{
+  display:flex;
+  flex-direction:column;
+  gap:10px;
+  color:#d1d5db;
+}
+
+.pedido-produtos{
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+}
+
+.produto-pedido{
+  background:#1f2937;
+  border-radius:16px;
+  padding:14px 16px;
+  display:flex;
+  justify-content:space-between;
+  color:white;
+}
+
+.status{
+  padding:10px 18px;
+  border-radius:999px;
+  font-size:14px;
+  font-weight:700;
+  text-transform:capitalize;
+}
+
+.status.pendente{
+  background:#facc15;
+  color:black;
+}
+
+.status.producao{
+  background:#3b82f6;
+}
+
+.status.pronto{
+  background:#22c55e;
+}
+
+.status.entregue{
+  background:#6b7280;
+}
+
+.pedido-actions{
+  display:grid;
+  grid-template-columns:
+    repeat(3,1fr);
+  gap:12px;
+}
+
+.btn-producao{
+  background:#3b82f6;
+}
+
+.btn-pronto{
+  background:#22c55e;
+}
+
+.btn-entregue{
+  background:#6b7280;
+}
+
+.btn-producao,
+.btn-pronto,
+.btn-entregue{
+  color:white;
+  padding:14px;
+  border-radius:14px;
+  font-weight:700;
+}

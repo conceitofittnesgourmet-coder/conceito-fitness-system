@@ -1,0 +1,241 @@
+/* ========================================
+   DASHBOARD ADMIN
+======================================== */
+
+.dashboard {
+
+    display: flex;
+
+    flex-direction: column;
+
+    gap: 30px;
+
+}
+
+
+/* ========================================
+   TOPO
+======================================== */
+
+.topbar {
+
+    display: flex;
+
+    justify-content: space-between;
+
+    align-items: center;
+
+    margin-bottom: 20px;
+
+}
+
+.topbar h1 {
+
+    font-size: 42px;
+
+    font-weight: 800;
+
+    color: white;
+
+}
+
+.topbar p {
+
+    color: #9ca3af;
+
+    margin-top: 8px;
+
+    font-size: 16px;
+
+}
+
+
+/* ========================================
+   BOTÃO
+======================================== */
+
+.novo-produto-btn {
+
+    background: linear-gradient(
+        135deg,
+        #00ff88,
+        #00cc66
+    );
+
+    border: none;
+
+    padding: 16px 28px;
+
+    border-radius: 18px;
+
+    color: black;
+
+    font-weight: 700;
+
+    cursor: pointer;
+
+    transition: 0.3s;
+
+    box-shadow:
+        0 0 20px rgba(0,255,136,0.2);
+
+}
+
+.novo-produto-btn:hover {
+
+    transform: translateY(-3px);
+
+    box-shadow:
+        0 0 30px rgba(0,255,136,0.4);
+
+}
+
+
+/* ========================================
+   CARDS
+======================================== */
+
+.stats {
+
+    display: grid;
+
+    grid-template-columns:
+        repeat(auto-fit, minmax(220px, 1fr));
+
+    gap: 25px;
+
+}
+
+.stat-card {
+
+    background: linear-gradient(
+        145deg,
+        #151515,
+        #101010
+    );
+
+    border-radius: 24px;
+
+    padding: 28px;
+
+    border: 1px solid #1f1f1f;
+
+    position: relative;
+
+    overflow: hidden;
+
+    transition: 0.3s;
+
+}
+
+.stat-card::before {
+
+    content: "";
+
+    position: absolute;
+
+    inset: 0;
+
+    background:
+        linear-gradient(
+            135deg,
+            rgba(0,255,136,0.05),
+            transparent
+        );
+
+}
+
+.stat-card:hover {
+
+    transform: translateY(-5px);
+
+    border-color: #00ff88;
+
+}
+
+.stat-card h3 {
+
+    color: #d1d5db;
+
+    font-size: 18px;
+
+    margin-bottom: 20px;
+
+}
+
+.stat-card span {
+
+    color: #00ff88;
+
+    font-size: 42px;
+
+    font-weight: 800;
+
+}
+
+
+/* ========================================
+   SEÇÕES
+======================================== */
+
+.form-section,
+.lista-produtos,
+.box-categorias {
+
+    background: #121212;
+
+    border-radius: 30px;
+
+    padding: 35px;
+
+    border: 1px solid #1f1f1f;
+
+    box-shadow:
+        0 0 30px rgba(0,0,0,0.3);
+
+}
+
+.form-section h2,
+.lista-produtos h2,
+.box-categorias h2 {
+
+    font-size: 34px;
+
+    margin-bottom: 10px;
+
+    color: white;
+
+}
+
+.form-section p,
+.lista-produtos p,
+.box-categorias p {
+
+    color: #9ca3af;
+
+}
+
+
+/* ========================================
+   RESPONSIVO
+======================================== */
+
+@media(max-width: 900px){
+
+    .topbar {
+
+        flex-direction: column;
+
+        align-items: flex-start;
+
+        gap: 20px;
+
+    }
+
+    .stats {
+
+        grid-template-columns: 1fr;
+
+    }
+
+}

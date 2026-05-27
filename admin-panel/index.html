@@ -1,0 +1,503 @@
+<!DOCTYPE html>
+<html lang="pt-br">
+
+<head>
+
+    <meta charset="UTF-8">
+
+    <meta
+        name="viewport"
+        content="width=device-width, initial-scale=1.0"
+    >
+
+    <title>
+        Painel Admin • Conceito Fitness Gourmet
+    </title>
+
+    <!-- CSS -->
+    <link rel="stylesheet" href="./css/theme.css">
+    <link rel="stylesheet" href="./css/components.css">
+    <link rel="stylesheet" href="./css/animations.css">
+    <link rel="stylesheet" href="./css/responsive.css">
+
+    <link rel="stylesheet" href="./css/style.css">
+    <link rel="stylesheet" href="./css/dashboard.css">
+    <link rel="stylesheet" href="./css/produtos.css">
+
+    <!-- GOOGLE FONTS -->
+    <link
+        rel="preconnect"
+        href="https://fonts.googleapis.com"
+    >
+
+    <link
+        rel="preconnect"
+        href="https://fonts.gstatic.com"
+        crossorigin
+    >
+
+    <link
+        href="https://fonts.googleapis.com/css2?family=Inter:wght@300;400;500;600;700;800;900&display=swap"
+        rel="stylesheet"
+    >
+
+    <!-- ICONS -->
+    <link
+        rel="stylesheet"
+        href="https://cdnjs.cloudflare.com/ajax/libs/font-awesome/6.5.1/css/all.min.css"
+    >
+
+</head>
+
+<body>
+
+    <!-- ========================================
+        SIDEBAR
+    ========================================= -->
+
+    <aside class="sidebar">
+
+        <div class="logo">
+
+            <h1>
+                CONCEITO ADMIN
+            </h1>
+
+            <span>
+                Painel de Gestão
+            </span>
+
+        </div>
+
+        <nav class="menu-admin">
+
+            <button class="menu-btn active">
+                <i class="fa-solid fa-chart-line"></i>
+                Dashboard
+            </button>
+
+            <button class="menu-btn">
+                <i class="fa-solid fa-box"></i>
+                Produtos
+            </button>
+
+            <button class="menu-btn">
+                <i class="fa-solid fa-layer-group"></i>
+                Categorias
+            </button>
+
+            <button class="menu-btn">
+                <i class="fa-solid fa-bag-shopping"></i>
+                Pedidos
+            </button>
+
+            <button class="menu-btn">
+                <i class="fa-solid fa-chart-pie"></i>
+                Financeiro
+            </button>
+
+            <button class="menu-btn">
+                <i class="fa-solid fa-gear"></i>
+                Configurações
+            </button>
+
+        </nav>
+
+        <!-- FOOTER SIDEBAR -->
+
+        <div class="sidebar-footer">
+
+            <div class="status-online">
+
+                <span class="dot"></span>
+
+                Sistema Online
+
+            </div>
+
+        </div>
+
+    </aside>
+
+
+    <!-- ========================================
+        MAIN
+    ========================================= -->
+
+    <main class="main-content">
+
+
+        <!-- ========================================
+            TOPBAR
+        ========================================= -->
+
+        <header class="topbar">
+
+            <div class="topbar-textos">
+
+                <h1>
+                    Painel Administrativo
+                </h1>
+
+                <p>
+                    Gerencie produtos, categorias, pedidos e estoque
+                </p>
+
+            </div>
+
+            <div class="topbar-acoes">
+
+                <button class="novo-produto-btn">
+
+                    <i class="fa-solid fa-plus"></i>
+
+                    Novo Produto
+
+                </button>
+
+            </div>
+
+        </header>
+
+
+        <!-- ========================================
+            CARDS DASHBOARD
+        ========================================= -->
+
+        <section class="stats">
+
+            <div class="stat-card">
+
+                <div class="stat-icon">
+                    <i class="fa-solid fa-box"></i>
+                </div>
+
+                <div>
+
+                    <h3>
+                        Produtos
+                    </h3>
+
+                    <span id="total-produtos">
+                        0
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            <div class="stat-card">
+
+                <div class="stat-icon">
+                    <i class="fa-solid fa-layer-group"></i>
+                </div>
+
+                <div>
+
+                    <h3>
+                        Categorias
+                    </h3>
+
+                    <span id="total-categorias">
+                        0
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            <div class="stat-card">
+
+                <div class="stat-icon">
+                    <i class="fa-solid fa-cart-shopping"></i>
+                </div>
+
+                <div>
+
+                    <h3>
+                        Pedidos Hoje
+                    </h3>
+
+                    <span id="pedidos-hoje">
+                        0
+                    </span>
+
+                </div>
+
+            </div>
+
+
+            <div class="stat-card destaque">
+
+                <div class="stat-icon">
+                    <i class="fa-solid fa-sack-dollar"></i>
+                </div>
+
+                <div>
+
+                    <h3>
+                        Faturamento
+                    </h3>
+
+                    <span id="faturamento-total">
+                        R$ 0,00
+                    </span>
+
+                </div>
+
+            </div>
+
+        </section>
+
+
+        <!-- ========================================
+            CATEGORIAS
+        ========================================= -->
+
+        <section class="form-section">
+
+            <div class="box-categorias">
+
+                <div class="section-header">
+
+                    <div>
+
+                        <h2>
+                            Categorias
+                        </h2>
+
+                        <p>
+                            Organize os produtos do catálogo
+                        </p>
+
+                    </div>
+
+                </div>
+
+                <div class="nova-categoria">
+
+                    <input
+                        type="text"
+                        id="nova-categoria-input"
+                        placeholder="Digite o nome da categoria"
+                    >
+
+                    <button onclick="criarCategoria()">
+
+                        <i class="fa-solid fa-plus"></i>
+
+                        Criar Categoria
+
+                    </button>
+
+                </div>
+
+                <div id="lista-categorias">
+
+                </div>
+
+            </div>
+
+
+            <!-- ========================================
+                FORM PRODUTO
+            ========================================= -->
+
+            <div class="box-produto">
+
+                <div class="section-header">
+
+                    <div>
+
+                        <h2>
+                            Cadastrar Produto
+                        </h2>
+
+                        <p>
+                            Adicione novos produtos ao catálogo
+                        </p>
+
+                    </div>
+
+                </div>
+
+
+                <form id="form-produto">
+
+                    <div class="grid-form">
+
+                        <input
+                            type="text"
+                            id="nome"
+                            placeholder="Nome do produto"
+                            required
+                        >
+
+                        <input
+                            type="number"
+                            id="preco"
+                            placeholder="Preço"
+                            step="0.01"
+                            required
+                        >
+
+                        <input
+                            type="number"
+                            id="precoPromocional"
+                            placeholder="Preço promocional"
+                            step="0.01"
+                        >
+
+                        <input
+                            type="number"
+                            id="estoque"
+                            placeholder="Estoque"
+                        >
+
+
+                        <!-- CATEGORIA -->
+
+                        <select id="categoria">
+
+                            <option value="">
+                                Selecione categoria
+                            </option>
+
+                        </select>
+
+
+                        <!-- IMAGEM -->
+
+                        <div class="upload-area">
+
+                            <input
+                                type="file"
+                                id="imagem"
+                                accept="image/*"
+                            >
+
+                        </div>
+
+                    </div>
+
+
+                    <!-- PREVIEW -->
+
+                    <div class="preview-container">
+
+                        <img
+                            id="preview-imagem"
+                            src=""
+                            alt="Preview"
+                        >
+
+                    </div>
+
+
+                    <!-- DESCRIÇÃO -->
+
+                    <textarea
+                        id="descricao"
+                        placeholder="Descrição do produto"
+                    ></textarea>
+
+
+                    <!-- CHECKS -->
+
+                    <div class="checks">
+
+                        <label class="check-item">
+
+                            <input
+                                type="checkbox"
+                                id="destaque"
+                            >
+
+                            Produto destaque
+
+                        </label>
+
+                        <label class="check-item">
+
+                            <input
+                                type="checkbox"
+                                id="ativo"
+                                checked
+                            >
+
+                            Produto ativo
+
+                        </label>
+
+                    </div>
+
+
+                    <!-- BOTÃO -->
+
+                    <button
+                        type="submit"
+                        class="btn-salvar"
+                    >
+
+                        <i class="fa-solid fa-floppy-disk"></i>
+
+                        Salvar Produto
+
+                    </button>
+
+                </form>
+
+            </div>
+
+        </section>
+
+
+        <!-- ========================================
+            PRODUTOS
+        ========================================= -->
+
+        <section class="lista-produtos">
+
+            <div class="header-lista">
+
+                <div>
+
+                    <h2>
+                        Produtos cadastrados
+                    </h2>
+
+                    <p>
+                        Gerencie os produtos ativos do catálogo
+                    </p>
+
+                </div>
+
+            </div>
+
+            <div
+                id="lista-produtos"
+                class="produtos-grid"
+            >
+
+            </div>
+
+        </section>
+
+    </main>
+
+
+    <!-- ========================================
+        SCRIPTS
+    ========================================= -->
+
+    <script src="./js/api.js"></script>
+
+    <script src="./js/admin.js"></script>
+
+    <script src="./js/dashboard.js"></script>
+
+</body>
+
+</html>

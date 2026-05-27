@@ -1,0 +1,181 @@
+.dashboard{
+  display:flex;
+  min-height:100vh;
+}
+
+.sidebar{
+  width:260px;
+  background:
+    linear-gradient(
+      180deg,
+      #111827,
+      #0f172a
+    );
+  padding:30px 20px;
+  border-right:
+    1px solid rgba(255,255,255,0.05);
+  position:sticky;
+  top:0;
+  height:100vh;
+}
+
+.logo h2{
+  color:#22c55e;
+  font-size:30px;
+}
+
+.logo span{
+  opacity:0.7;
+  font-size:12px;
+}
+
+.menu{
+  margin-top:50px;
+  display:flex;
+  flex-direction:column;
+  gap:12px;
+}
+
+.menu button{
+  background:transparent;
+  color:white;
+  padding:14px;
+  border-radius:14px;
+  text-align:left;
+  font-size:15px;
+}
+
+.menu button:hover{
+  background:#1f2937;
+}
+
+.menu .active{
+  background:#22c55e;
+  color:black;
+  font-weight:700;
+}
+
+.content{
+  flex:1;
+  padding:30px;
+}
+
+.topbar{
+  display:flex;
+  justify-content:space-between;
+  align-items:center;
+  margin-bottom:40px;
+  background:
+    rgba(17,24,39,0.7);
+  backdrop-filter:blur(14px);
+  border:
+    1px solid rgba(255,255,255,0.05);
+  padding:20px;
+  border-radius:24px;
+}
+
+.topbar h1{
+  font-size:42px;
+}
+
+.topbar p{
+  opacity:0.7;
+  margin-top:8px;
+}
+
+.status{
+  background:#111827;
+  padding:12px 18px;
+  border-radius:14px;
+  display:flex;
+  align-items:center;
+  gap:10px;
+}
+
+.online{
+  width:10px;
+  height:10px;
+  border-radius:50%;
+  background:#22c55e;
+}
+
+.cards{
+  display:grid;
+  grid-template-columns:
+    repeat(4,1fr);
+  gap:20px;
+}
+
+.card{
+  background:
+    rgba(17,24,39,0.8);
+  backdrop-filter:blur(14px);
+  padding:25px;
+  border-radius:24px;
+  border:
+    1px solid rgba(255,255,255,0.05);
+  box-shadow:
+    0 10px 30px rgba(0,0,0,0.3);
+}
+
+.card h3{
+  opacity:0.7;
+  margin-bottom:15px;
+}
+
+.card strong{
+  font-size:34px;
+  display:block;
+  margin-bottom:10px;
+}
+
+/* ==========================================
+CHARTS
+========================================== */
+
+.charts-grid{
+
+  display:grid;
+
+  grid-template-columns:
+    repeat(2,1fr);
+
+  gap:24px;
+
+  margin-top:30px;
+
+}
+
+
+
+
+
+.chart-card{
+
+  background:
+    rgba(17,24,39,0.8);
+
+  backdrop-filter:
+    blur(14px);
+
+  border:
+    1px solid rgba(255,255,255,0.05);
+
+  border-radius:24px;
+
+  padding:24px;
+
+  box-shadow:
+    0 10px 30px rgba(0,0,0,0.3);
+
+}
+
+
+
+
+
+.chart-card h2{
+
+  margin-bottom:20px;
+
+}

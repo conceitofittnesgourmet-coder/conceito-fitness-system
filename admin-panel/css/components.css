@@ -1,0 +1,175 @@
+/* =========================================
+   BOTÕES
+========================================= */
+
+.btn {
+
+    border: none;
+
+    cursor: pointer;
+
+    transition: var(--transition);
+
+}
+
+.btn-primary {
+
+    background:
+        linear-gradient(
+            135deg,
+            var(--primary),
+            var(--primary-dark)
+        );
+
+    color: black;
+
+    font-weight: 700;
+
+    padding: 16px 24px;
+
+    border-radius: var(--radius-md);
+
+    box-shadow: var(--shadow-primary);
+
+}
+
+.btn-primary:hover {
+
+    transform: translateY(-3px);
+
+    filter: brightness(1.05);
+
+}
+
+.btn-danger {
+
+    background: var(--danger);
+
+    color: white;
+
+}
+
+
+/* =========================================
+   CARDS
+========================================= */
+
+.card {
+
+    background: var(--bg-card);
+
+    border-radius: var(--radius-lg);
+
+    border: 1px solid var(--border);
+
+    box-shadow: var(--shadow-md);
+
+}
+
+
+/* =========================================
+   INPUTS
+========================================= */
+
+.input,
+textarea,
+select {
+
+    width: 100%;
+
+    background: #1a1a1a;
+
+    border: 1px solid var(--border);
+
+    color: white;
+
+    padding: 16px;
+
+    border-radius: var(--radius-md);
+
+    outline: none;
+
+    transition: var(--transition);
+
+}
+
+.input:focus,
+textarea:focus,
+select:focus {
+
+    border-color: var(--primary);
+
+    box-shadow:
+        0 0 0 4px rgba(0,255,136,0.1);
+
+}
+
+
+/* =========================================
+   GRID
+========================================= */
+
+.grid {
+
+    display: grid;
+
+    gap: 20px;
+
+}
+
+.grid-2 {
+
+    grid-template-columns: repeat(2, 1fr);
+
+}
+
+.grid-3 {
+
+    grid-template-columns: repeat(3, 1fr);
+
+}
+
+.grid-4 {
+
+    grid-template-columns: repeat(4, 1fr);
+
+}
+
+
+/* =========================================
+   BADGES
+========================================= */
+
+.badge {
+
+    display: inline-flex;
+
+    align-items: center;
+
+    justify-content: center;
+
+    padding: 6px 12px;
+
+    border-radius: 999px;
+
+    font-size: 12px;
+
+    font-weight: bold;
+
+}
+
+.badge-success {
+
+    background: rgba(0,255,136,0.1);
+
+    color: var(--primary);
+
+}
+
+.badge-danger {
+
+    background: rgba(255,77,77,0.1);
+
+    color: var(--danger);
+
+}

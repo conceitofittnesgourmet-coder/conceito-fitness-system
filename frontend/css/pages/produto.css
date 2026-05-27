@@ -1,0 +1,273 @@
+.produtos {
+    padding: 40px;
+    background: #0b0b0b;
+}
+
+.produtos-header {
+    display: flex;
+    justify-content: space-between;
+    align-items: center;
+    margin-bottom: 30px;
+}
+
+.produtos-header h2 {
+    font-size: 28px;
+    font-weight: 800;
+}
+
+#produtos-container {
+
+  display: grid;
+
+  grid-template-columns: repeat(auto-fit, minmax(220px, 1fr));
+
+  gap: 20px;
+
+}
+
+/* =========================
+   NOVO SISTEMA DE CARDS
+========================= */
+.produto-card {
+
+  background: #1b1b1b;
+
+  border-radius: 16px;
+
+  padding: 15px;
+
+  color: white;
+
+}
+
+.produto-card img {
+
+  width: 100%;
+
+  height: 180px;
+
+  object-fit: cover;
+
+  border-radius: 12px;
+
+}
+
+.produto-card h3 {
+
+  margin-top: 10px;
+
+}
+
+.preco {
+
+  color: #00ff88;
+
+  font-size: 22px;
+
+  font-weight: bold;
+
+}
+
+.produto-card button {
+
+  width: 100%;
+
+  margin-top: 10px;
+
+  border: none;
+
+  background: #00ff88;
+
+  padding: 12px;
+
+  border-radius: 10px;
+
+  cursor: pointer;
+
+}
+
+/* =========================
+   SISTEMA LEGADO DE FILTROS
+   (MANTIDO PARA COMPATIBILIDADE)
+========================= */
+.filtros button {
+    background: transparent;
+    border: 1px solid #333;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 20px;
+    margin-left: 10px;
+    cursor: pointer;
+}
+
+.filtros .ativo {
+    background: #00ff88;
+    color: black;
+    border: none;
+}
+
+.produtos-layout {
+    display: flex;
+    gap: 30px;
+}
+
+.produtos-grid {
+    display: grid;
+    grid-template-columns: repeat(3, 1fr);
+    gap: 25px;
+    flex: 1;
+}
+
+.produto {
+    background: #141414;
+    border-radius: 16px;
+    overflow: hidden;
+    padding: 15px;
+    transition: 0.3s;
+}
+
+.produto:hover {
+    transform: translateY(-5px);
+}
+
+.produto img {
+    width: 100%;
+    height: 200px;
+    object-fit: cover;
+    border-radius: 12px;
+}
+
+.produto h3 {
+    margin-top: 10px;
+    font-size: 18px;
+}
+
+.produto p {
+    color: #00ff88;
+    font-weight: bold;
+}
+
+.produto button {
+    width: 100%;
+    background: linear-gradient(45deg, #00ff88, #00cc66);
+    border: none;
+    padding: 12px;
+    border-radius: 25px;
+    margin-top: 10px;
+    cursor: pointer;
+}
+
+/* SIDEBAR */
+.sidebar {
+    width: 250px;
+    background: #141414;
+    border-radius: 16px;
+    padding: 20px;
+}
+
+.sidebar .info p {
+    margin-bottom: 10px;
+}
+
+.btn-secundario {
+    width: 100%;
+    background: #2a2a2a;
+    color: white;
+    border: none;
+    padding: 12px;
+    border-radius: 20px;
+    margin-top: 20px;
+}
+
+.btn-principal {
+    width: 100%;
+    background: linear-gradient(45deg, #00ff88, #00cc66);
+    border: none;
+    padding: 14px;
+    border-radius: 20px;
+    margin-top: 10px;
+    font-weight: bold;
+}
+
+/* =========================
+   NOVO SISTEMA DINÂMICO
+   DE CATEGORIAS
+========================= */
+#categorias {
+    display: flex;
+    gap: 12px;
+    flex-wrap: wrap;
+    margin-top: 20px;
+    margin-bottom: 30px;
+}
+
+.categoria-filtro {
+    background: transparent;
+    border: 2px solid #4d4d4d;
+    color: white;
+    padding: 10px 22px;
+    border-radius: 30px;
+    cursor: pointer;
+    transition: 0.3s;
+    font-weight: 600;
+}
+
+.categoria-filtro:hover {
+    background: #00ff66;
+    color: black;
+    border-color: #00ff66;
+}
+
+.categoria-filtro.active {
+    background: #00ff66;
+    color: black;
+    border-color: #00ff66;
+}
+
+.btn-adicionar{
+    background: #00ff66;
+    color: #000;
+    border: none;
+    padding: 12px 20px;
+    border-radius: 12px;
+    cursor: pointer;
+    font-weight: bold;
+    width: 100%;
+    margin-top: 10px;
+    transition: 0.3s;
+}
+
+.btn-adicionar:hover{
+    transform: scale(1.03);
+    opacity: 0.9;
+}
+
+.categorias{
+    display:flex;
+    gap:12px;
+    flex-wrap:wrap;
+    margin:20px 0;
+}
+
+.categoria-btn{
+    background: transparent;
+    border: 1px solid #444;
+    color: white;
+    padding: 8px 16px;
+    border-radius: 20px;
+    cursor: pointer;
+    transition: 0.3s;
+    width: auto;
+    margin: 0;
+    font-size: 14px;
+}
+
+.categoria-btn:hover{
+    background: #00ff88;
+    color: black;
+}
+
+.categoria-btn.ativo{
+    background: #00ff88;
+    color: black;
+}
