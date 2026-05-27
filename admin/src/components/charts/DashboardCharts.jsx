@@ -14,6 +14,7 @@ export default function DashboardCharts({ vendas = [], pedidos = [] }) {
     <div className="charts-grid">
       <div className="chart-card">
         <h2>Vendas da Semana</h2>
+
         <ResponsiveContainer width="100%" height={260}>
           <LineChart data={vendas}>
             <XAxis dataKey="dia" />
@@ -26,6 +27,7 @@ export default function DashboardCharts({ vendas = [], pedidos = [] }) {
 
       <div className="chart-card">
         <h2>Pedidos por Horário</h2>
+
         <ResponsiveContainer width="100%" height={260}>
           <BarChart data={pedidos}>
             <XAxis dataKey="hora" />
