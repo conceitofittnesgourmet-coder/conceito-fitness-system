@@ -12,7 +12,7 @@ const {
   criarProduto,
   atualizarProduto,
   deletarProduto,
-} = require("../controllers/produtoController");
+} = require("../controllers/produtocontroller");
 
 const uploadDir = path.join(__dirname, "../../uploads");
 
