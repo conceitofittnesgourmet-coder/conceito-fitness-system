@@ -5,7 +5,7 @@ const fs = require("fs");
 
 const router = express.Router();
 
-const authMiddleware = require("../middlewares/authMiddleware");
+const authMiddleware = require("../middlewares/authmiddleware");
 
 const {
   listarProdutos,
