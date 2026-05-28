@@ -11,7 +11,7 @@ const errorHandler = require("./middlewares/errorhandler");
 
 const authRoutes = require("./routes/authRoutes");
 const produtoRoutes = require("./routes/produtoRoutes");
-const pedidoRoutes = require("./routes/pedidoroutes");
+const pedidoRoutes = require("./routes/pedidoRoutes");
 const dashboardRoutes = require("./routes/dashboardroutes");
 const analyticsRoutes = require("./routes/analyticsroutes");
 const usuarioRoutes = require("./routes/usuarioRoutes");
