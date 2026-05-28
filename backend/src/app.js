@@ -10,7 +10,7 @@ const loggerMiddleware = require("./middlewares/loggermiddleware");
 const errorHandler = require("./middlewares/errorhandler");
 
 const authRoutes = require("./routes/authRoutes");
-const produtoRoutes = require("./routes/produtoroutes");
+const produtoRoutes = require("./routes/produtoRoutes");
 const pedidoRoutes = require("./routes/pedidoroutes");
 const dashboardRoutes = require("./routes/dashboardroutes");
 const analyticsRoutes = require("./routes/analyticsroutes");
