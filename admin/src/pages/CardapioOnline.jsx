@@ -83,7 +83,7 @@ function filtrarCategoria(cat) {
   }, []);
 
   function getImagemProduto(produto) {
-    const baseURL = api.defaults.baseURL || "http://localhost:5000/api";
+    const baseURL = api.defaults.baseURL || "https://conceito-fitness-system.onrender.com";
     const backendURL = baseURL.replace("/api", "");
 
     const imagem =

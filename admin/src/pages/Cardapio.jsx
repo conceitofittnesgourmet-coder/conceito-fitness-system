@@ -6,7 +6,7 @@ import { FaShoppingCart, FaSearch, FaPlus } from "react-icons/fa";
 import api from "../services/api";
 import useCarrinhoStore from "../store/useCarrinhoStore";
 
-const API_URL = "http://localhost:5000";
+const API_URL = "https://conceito-fitness-system.onrender.com";
 
 function getImagemUrl(imagem) {
   if (!imagem) {

@@ -56,7 +56,7 @@ console.log("PRIMEIRA IMAGEM:", response.data.produtos?.[0]);
   }, []);
 
   function getImagemProduto(produto) {
-  const baseURL = api.defaults.baseURL || "http://localhost:5000/api";
+  const baseURL = api.defaults.baseURL || "https://conceito-fitness-system.onrender.com";
   const backendURL = baseURL.replace("/api", "");
 
   const imagem =

@@ -21,7 +21,7 @@ import AdminLayout from "../layouts/AdminLayout";
 import socket from "../services/socket";
 import api from "../services/api";
 
-const API_URL = "http://localhost:5000";
+const API_URL = "https://conceito-fitness-system.onrender.com";
 
 function getImagemUrl(imagem) {
   if (!imagem) return null;
