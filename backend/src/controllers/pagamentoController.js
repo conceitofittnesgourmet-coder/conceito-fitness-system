@@ -6,7 +6,7 @@ const {
 
 } = require(
 
-  "../config/mercadoPago"
+  "../config/mercadopago"
 
 );
 
