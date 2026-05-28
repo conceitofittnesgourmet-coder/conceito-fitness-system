@@ -103,6 +103,10 @@ io.on(
 
 const PORT = process.env.PORT || 5000;
 
+server.on("error", (error) => {
+  console.error("🔥 ERRO NO SERVIDOR:", error);
+});
+
 server.listen(PORT, () => {
   console.log(`Servidor rodando na porta ${PORT}`);
 
