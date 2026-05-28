@@ -12,7 +12,7 @@ const authMiddleware =
 const {
   dashboard
 } = require(
-  "../controllers/dashboardController"
+  "../controllers/dashboardcontroller"
 );
 
 router.get(
