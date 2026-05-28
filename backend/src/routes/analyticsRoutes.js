@@ -10,7 +10,7 @@ const {
 
 } = require(
 
-  "../controllers/analyticsController"
+  "../controllers/analyticscontroller"
 
 );
 
