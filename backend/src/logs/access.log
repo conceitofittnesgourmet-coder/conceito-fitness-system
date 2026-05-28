@@ -1823,3 +1823,11 @@
 {"level":"info","message":{"ip":"::ffff:192.168.0.100","method":"GET","url":"/loginMsg.js"},"timestamp":"2026-05-27T16:58:46.237Z"}
 {"level":"info","message":{"ip":"::ffff:192.168.0.100","method":"GET","url":"/cgi/get.cgi?cmd=home_login"},"timestamp":"2026-05-27T16:58:46.256Z"}
 {"level":"info","message":{"ip":"::ffff:192.168.0.100","method":"POST","url":"/boaform/admin/formLogin"},"timestamp":"2026-05-27T16:58:46.372Z"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/produtos"},"timestamp":"2026-05-27T22:51:29.196Z"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/produtos"},"timestamp":"2026-05-27T22:51:29.359Z"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/uploads/1779411546506-488325655.jpeg"},"timestamp":"2026-05-27T22:51:29.447Z"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/uploads/1779403208648-34929947.jpeg"},"timestamp":"2026-05-27T22:51:29.464Z"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/uploads/1779843841572-231526951.webp"},"timestamp":"2026-05-27T22:51:29.472Z"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/uploads/1779401139477-88224651.jpeg"},"timestamp":"2026-05-27T22:51:29.476Z"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/pedidos"},"timestamp":"2026-05-27T22:51:30.903Z"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/pedidos"},"timestamp":"2026-05-27T22:51:30.978Z"}
