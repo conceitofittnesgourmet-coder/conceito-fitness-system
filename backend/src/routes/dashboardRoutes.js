@@ -6,7 +6,7 @@ const router =
 
 const authMiddleware =
   require(
-    "../middlewares/authMiddleware"
+    "../middlewares/authmiddleware"
   );
 
 const {
