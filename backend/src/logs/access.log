@@ -1831,3 +1831,5 @@
 {"level":"info","message":{"ip":"::1","method":"GET","url":"/uploads/1779401139477-88224651.jpeg"},"timestamp":"2026-05-27T22:51:29.476Z"}
 {"level":"info","message":{"ip":"::1","method":"GET","url":"/api/pedidos"},"timestamp":"2026-05-27T22:51:30.903Z"}
 {"level":"info","message":{"ip":"::1","method":"GET","url":"/api/pedidos"},"timestamp":"2026-05-27T22:51:30.978Z"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/"},"timestamp":"2026-05-28T01:01:40.289Z"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/favicon.ico"},"timestamp":"2026-05-28T01:01:40.436Z"}
