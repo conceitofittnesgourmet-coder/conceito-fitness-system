@@ -1,6 +1,6 @@
 const Produto = require("../models/produto");
 
-const Pedido = require("../models/Pedido");
+const Pedido = require("../models/pedido");
 
 let baixarEstoque = async () => {};
 
