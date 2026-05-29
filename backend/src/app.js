@@ -18,6 +18,7 @@ const usuarioRoutes = require("./routes/usuarioRoutes");
 const pagamentoRoutes = require("./routes/pagamentoRoutes");
 const webhookRoutes = require("./routes/webhookRoutes");
 const masterRoutes = require("./routes/masterRoutes");
+const empresaRoutes = require("./routes/empresaRoutes");
 
 const app = express();
 
@@ -92,7 +93,7 @@ app.use("/api/usuarios", usuarioRoutes);
 app.use("/api/pagamento", pagamentoRoutes);
 app.use("/api/webhook", webhookRoutes);
 app.use("/api/master", masterRoutes);
-
+app.use("/api/empresa", empresaRoutes);
 app.use(errorHandler);
 
 module.exports = app;
