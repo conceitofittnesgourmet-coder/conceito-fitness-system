@@ -1,5 +1,4 @@
 const Produto = require("../models/produto");
-
 const Pedido = require("../models/pedido");
 
 let baixarEstoque = async () => {};
@@ -87,41 +86,50 @@ exports.criarPedido = async (req, res) => {
       telefone: telefone || "",
       produtos,
       total: Number(total || 0),
-      senha: proximaSenha,
     };
 
     if (req.usuario?.empresa) {
       dadosPedido.empresa = req.usuario.empresa;
     }
 
-    const pedidoCriado = await Pedido.create(novoPedido);
+    const pedidoCriado = await Pedido.create(dadosPedido);
 
-const io = req.app.get("io");
+    const io = req.app.get("io");
 
-io.emit("novo_pedido", pedidoCriado);
+    if (io) {
+      io.emit("novo_pedido", pedidoCriado);
+    }
 
-for (const item of pedido.produtos || []) {
-  if (!item.produtoId) continue;
+    for (const item of pedidoCriado.produtos || []) {
+      if (!item.produtoId) continue;
 
-  try {
-    await Produto.findByIdAndUpdate(item.produtoId, {
-      $inc: {
-        estoque: -Number(item.quantidade || 1),
-      },
-    });
-  } catch (estoqueError) {
-    console.log("ERRO AO BAIXAR ESTOQUE:", estoqueError.message);
-  }
-}
+      try {
+        await Produto.findByIdAndUpdate(item.produtoId, {
+          $inc: {
+            estoque: -Number(item.quantidade || 1),
+          },
+        });
+      } catch (estoqueError) {
+        console.log("ERRO AO BAIXAR ESTOQUE:", estoqueError.message);
+      }
+    }
 
-if (global.io) {
-  global.io.emit("novo-pedido", pedido);
-  global.io.emit("produto-atualizado");
-}
+    if (typeof baixarEstoque === "function") {
+      try {
+        await baixarEstoque(pedidoCriado);
+      } catch (baixarEstoqueError) {
+        console.log("ERRO ESTOQUE IA:", baixarEstoqueError.message);
+      }
+    }
+
+    if (global.io) {
+      global.io.emit("novo-pedido", pedidoCriado);
+      global.io.emit("produto-atualizado");
+    }
 
     return res.status(201).json({
       success: true,
-      pedido,
+      pedido: pedidoCriado,
     });
   } catch (error) {
     console.log("ERRO CRIAR PEDIDO:", error);
