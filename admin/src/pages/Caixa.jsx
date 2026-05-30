@@ -4,7 +4,6 @@ import api from "../services/api";
 import socket from "../services/socket";
 
 import {
-  FaCashRegister,
   FaLockOpen,
   FaLock,
   FaMoneyBillWave,
@@ -19,77 +18,160 @@ import {
 
 function Caixa() {
   const [pedidos, setPedidos] = useState([]);
-  const [caixaAberto, setCaixaAberto] = useState(
-    localStorage.getItem("caixaAberto") === "true"
-  );
-  const [saldoInicial, setSaldoInicial] = useState(
-    Number(localStorage.getItem("saldoInicial") || 300)
-  );
+  const [caixa, setCaixa] = useState(null);
+  const [resumoApi, setResumoApi] = useState(null);
+  const [saldoInicial, setSaldoInicial] = useState(300);
+  const [valorSangria, setValorSangria] = useState("");
+  const [motivoSangria, setMotivoSangria] = useState("");
+  const [valorSuprimento, setValorSuprimento] = useState("");
+  const [motivoSuprimento, setMotivoSuprimento] = useState("");
+  const [carregando, setCarregando] = useState(true);
 
-  async function carregarPedidos() {
+  const caixaAberto = caixa?.status === "aberto";
+
+  async function carregarCaixa() {
     try {
-      const response = await api.get("/pedidos");
+      setCarregando(true);
+
+      const response = await api.get("/caixa/resumo");
+
+      setCaixa(response.data.caixa || null);
       setPedidos(response.data.pedidos || []);
+      setResumoApi(response.data.resumo || null);
+
+      if (response.data.caixa?.saldoInicial !== undefined) {
+        setSaldoInicial(Number(response.data.caixa.saldoInicial || 0));
+      }
+
+      localStorage.setItem(
+        "caixaAberto",
+        response.data.caixa?.status === "aberto" ? "true" : "false"
+      );
     } catch (error) {
       console.log("Erro ao carregar caixa:", error);
+    } finally {
+      setCarregando(false);
     }
   }
 
   useEffect(() => {
-    carregarPedidos();
+    carregarCaixa();
 
-    socket.on("novo-pedido", carregarPedidos);
-    socket.on("pedido-atualizado", carregarPedidos);
+    socket.on("novo-pedido", carregarCaixa);
+    socket.on("novo_pedido", carregarCaixa);
+    socket.on("pedido-atualizado", carregarCaixa);
 
     return () => {
-      socket.off("novo-pedido", carregarPedidos);
-      socket.off("pedido-atualizado", carregarPedidos);
+      socket.off("novo-pedido", carregarCaixa);
+      socket.off("novo_pedido", carregarCaixa);
+      socket.off("pedido-atualizado", carregarCaixa);
     };
   }, []);
 
   const resumo = useMemo(() => {
-    const vendas = pedidos.filter(
-      (p) => p.origem === "PDV" || p.tipo === "balcao" || p.tipo === "retirada" || p.tipo === "delivery"
-    );
-
-    const total = vendas.reduce((acc, p) => acc + Number(p.total || 0), 0);
-
-    const pix = vendas.filter((p) => p.pagamento === "PIX").reduce((a, p) => a + Number(p.total || 0), 0);
-    const credito = vendas.filter((p) => p.pagamento === "CREDITO").reduce((a, p) => a + Number(p.total || 0), 0);
-    const debito = vendas.filter((p) => p.pagamento === "DEBITO").reduce((a, p) => a + Number(p.total || 0), 0);
-    const dinheiro = vendas.filter((p) => p.pagamento === "DINHEIRO").reduce((a, p) => a + Number(p.total || 0), 0);
-
-    const ticketMedio = vendas.length ? total / vendas.length : 0;
-    const maiorVenda = vendas.length
-      ? Math.max(...vendas.map((p) => Number(p.total || 0)))
-      : 0;
+    const vendas = pedidos || [];
 
     return {
       vendas,
-      total,
-      pix,
-      credito,
-      debito,
-      dinheiro,
-      ticketMedio,
-      maiorVenda,
-      saldoAtual: saldoInicial + total,
+      total: Number(resumoApi?.total || 0),
+      pix: Number(resumoApi?.pix || 0),
+      credito: Number(resumoApi?.credito || 0),
+      debito: Number(resumoApi?.debito || 0),
+      dinheiro: Number(resumoApi?.dinheiro || 0),
+      ticketMedio: Number(resumoApi?.ticketMedio || 0),
+      maiorVenda: Number(resumoApi?.maiorVenda || 0),
+      totalSangrias: Number(resumoApi?.totalSangrias || 0),
+      totalSuprimentos: Number(resumoApi?.totalSuprimentos || 0),
+      saldoAtual: Number(resumoApi?.saldoAtual || 0),
+      quantidadePedidos: Number(resumoApi?.quantidadePedidos || vendas.length),
     };
-  }, [pedidos, saldoInicial]);
+  }, [pedidos, resumoApi]);
 
-  function abrirCaixa() {
-    localStorage.setItem("caixaAberto", "true");
-    localStorage.setItem("saldoInicial", String(saldoInicial));
-    setCaixaAberto(true);
+  async function abrirCaixa() {
+    try {
+      const response = await api.post("/caixa/abrir", {
+        saldoInicial: Number(saldoInicial || 0),
+        operador: "Administrador",
+      });
+
+      setCaixa(response.data.caixa);
+      localStorage.setItem("caixaAberto", "true");
+      await carregarCaixa();
+
+      alert("Caixa aberto com sucesso!");
+    } catch (error) {
+      console.log("Erro ao abrir caixa:", error);
+      alert(error.response?.data?.message || "Erro ao abrir caixa.");
+    }
   }
 
-  function fecharCaixa() {
-    localStorage.setItem("caixaAberto", "false");
-    setCaixaAberto(false);
+  async function fecharCaixa() {
+    const confirmar = window.confirm("Deseja realmente fechar o caixa?");
+
+    if (!confirmar) return;
+
+    try {
+      const response = await api.post("/caixa/fechar");
+
+      setCaixa(response.data.caixa);
+      localStorage.setItem("caixaAberto", "false");
+      await carregarCaixa();
+
+      alert("Caixa fechado com sucesso!");
+    } catch (error) {
+      console.log("Erro ao fechar caixa:", error);
+      alert(error.response?.data?.message || "Erro ao fechar caixa.");
+    }
+  }
+
+  async function registrarSangria() {
+    if (!valorSangria || Number(valorSangria) <= 0) {
+      alert("Informe um valor válido para a sangria.");
+      return;
+    }
+
+    try {
+      await api.post("/caixa/sangria", {
+        valor: Number(valorSangria),
+        motivo: motivoSangria || "Sangria",
+      });
+
+      setValorSangria("");
+      setMotivoSangria("");
+      await carregarCaixa();
+
+      alert("Sangria registrada com sucesso!");
+    } catch (error) {
+      console.log("Erro ao registrar sangria:", error);
+      alert(error.response?.data?.message || "Erro ao registrar sangria.");
+    }
+  }
+
+  async function registrarSuprimento() {
+    if (!valorSuprimento || Number(valorSuprimento) <= 0) {
+      alert("Informe um valor válido para o suprimento.");
+      return;
+    }
+
+    try {
+      await api.post("/caixa/suprimento", {
+        valor: Number(valorSuprimento),
+        motivo: motivoSuprimento || "Suprimento",
+      });
+
+      setValorSuprimento("");
+      setMotivoSuprimento("");
+      await carregarCaixa();
+
+      alert("Suprimento registrado com sucesso!");
+    } catch (error) {
+      console.log("Erro ao registrar suprimento:", error);
+      alert(error.response?.data?.message || "Erro ao registrar suprimento.");
+    }
   }
 
   return (
-    <AdminLayout title="Caixa" subtitle="Controle e gestão do caixa diário">
+    <AdminLayout title="Caixa" subtitle="Controle profissional do caixa diário">
       <div className="caixa-pro-page">
         <section className="caixa-pro-top">
           <div className="caixa-pro-title">
@@ -97,16 +179,20 @@ function Caixa() {
 
             <div>
               <h1>Caixa</h1>
-              <p>Controle e gestão do caixa diário</p>
+              <p>
+                {carregando
+                  ? "Carregando informações..."
+                  : "Controle de abertura, vendas, sangrias e fechamento"}
+              </p>
             </div>
           </div>
 
           <div className="caixa-top-actions">
-            <button>Hoje, 22 de Maio de 2026</button>
+            <button>{new Date().toLocaleDateString("pt-BR")}</button>
 
             <button className="caixa-bell">
               <FaBell />
-              <span>3</span>
+              <span>{resumo.quantidadePedidos}</span>
             </button>
           </div>
         </section>
@@ -118,12 +204,16 @@ function Caixa() {
 
           <div>
             <span>{caixaAberto ? "CAIXA ABERTO" : "CAIXA FECHADO"}</span>
-            <p>{caixaAberto ? "Desde 08:15 por Administrador" : "Abra o caixa para iniciar as vendas"}</p>
+            <p>
+              {caixaAberto
+                ? `Aberto por ${caixa?.operador || "Administrador"}`
+                : "Abra o caixa para iniciar as vendas"}
+            </p>
           </div>
 
           <div className="caixa-hero-metric">
             <small>Saldo Inicial</small>
-            <strong>R$ {saldoInicial.toFixed(2)}</strong>
+            <strong>R$ {Number(saldoInicial || 0).toFixed(2)}</strong>
           </div>
 
           <div className="caixa-hero-metric">
@@ -161,8 +251,8 @@ function Caixa() {
           <div className="caixa-pro-kpi green">
             <FaMoneyBillWave />
             <span>Total de Vendas</span>
-            <strong>{resumo.vendas.length}</strong>
-            <p>Pedidos realizados</p>
+            <strong>{resumo.quantidadePedidos}</strong>
+            <p>Pedidos registrados</p>
           </div>
 
           <div className="caixa-pro-kpi blue">
@@ -181,9 +271,9 @@ function Caixa() {
 
           <div className="caixa-pro-kpi yellow">
             <FaClock />
-            <span>Tempo Médio</span>
-            <strong>28 min</strong>
-            <p>Por pedido</p>
+            <span>Status</span>
+            <strong>{caixaAberto ? "Aberto" : "Fechado"}</strong>
+            <p>Situação atual</p>
           </div>
         </section>
 
@@ -225,17 +315,29 @@ function Caixa() {
                 </thead>
 
                 <tbody>
-                  {resumo.vendas.slice(0, 6).map((pedido) => (
+                  {resumo.vendas.slice(0, 8).map((pedido) => (
                     <tr key={pedido._id}>
                       <td>#{pedido._id?.slice(-5)}</td>
                       <td>{pedido.cliente || "Cliente Balcão"}</td>
                       <td>{pedido.mesa || pedido.tipo || "Balcão"}</td>
                       <td>{pedido.pagamento || "PIX"}</td>
                       <td>R$ {Number(pedido.total || 0).toFixed(2)}</td>
-                      <td><span className="pago-badge">Pago</span></td>
-                      <td><button className="eye-btn"><FaEye /></button></td>
+                      <td>
+                        <span className="pago-badge">{pedido.status || "Pago"}</span>
+                      </td>
+                      <td>
+                        <button className="eye-btn">
+                          <FaEye />
+                        </button>
+                      </td>
                     </tr>
                   ))}
+
+                  {resumo.vendas.length === 0 && (
+                    <tr>
+                      <td colSpan="7">Nenhum pedido registrado neste caixa.</td>
+                    </tr>
+                  )}
                 </tbody>
               </table>
             </div>
@@ -246,14 +348,32 @@ function Caixa() {
               <h2>Resumo de Pagamentos</h2>
 
               <div className="donut-caixa">
-                <span>Total<br />R$ {resumo.total.toFixed(2)}</span>
+                <span>
+                  Total
+                  <br />
+                  R$ {resumo.total.toFixed(2)}
+                </span>
               </div>
 
               <div className="pagamento-resumo">
-                <p><FaQrcode /> PIX <strong>R$ {resumo.pix.toFixed(2)}</strong></p>
-                <p><FaCreditCard /> Cartão Crédito <strong>R$ {resumo.credito.toFixed(2)}</strong></p>
-                <p><FaCreditCard /> Cartão Débito <strong>R$ {resumo.debito.toFixed(2)}</strong></p>
-                <p><FaWallet /> Dinheiro <strong>R$ {resumo.dinheiro.toFixed(2)}</strong></p>
+                <p>
+                  <FaQrcode /> PIX <strong>R$ {resumo.pix.toFixed(2)}</strong>
+                </p>
+
+                <p>
+                  <FaCreditCard /> Cartão Crédito{" "}
+                  <strong>R$ {resumo.credito.toFixed(2)}</strong>
+                </p>
+
+                <p>
+                  <FaCreditCard /> Cartão Débito{" "}
+                  <strong>R$ {resumo.debito.toFixed(2)}</strong>
+                </p>
+
+                <p>
+                  <FaWallet /> Dinheiro{" "}
+                  <strong>R$ {resumo.dinheiro.toFixed(2)}</strong>
+                </p>
               </div>
             </div>
 
@@ -262,7 +382,7 @@ function Caixa() {
 
               <div className="caixa-detail-line">
                 <span>Saldo Inicial</span>
-                <strong>R$ {saldoInicial.toFixed(2)}</strong>
+                <strong>R$ {Number(saldoInicial || 0).toFixed(2)}</strong>
               </div>
 
               <div className="caixa-detail-line">
@@ -270,9 +390,14 @@ function Caixa() {
                 <strong>R$ {resumo.total.toFixed(2)}</strong>
               </div>
 
+              <div className="caixa-detail-line">
+                <span>(+) Suprimentos</span>
+                <strong>R$ {resumo.totalSuprimentos.toFixed(2)}</strong>
+              </div>
+
               <div className="caixa-detail-line red">
                 <span>(-) Sangrias</span>
-                <strong>R$ 0,00</strong>
+                <strong>R$ {resumo.totalSangrias.toFixed(2)}</strong>
               </div>
 
               <div className="caixa-detail-line total">
@@ -283,12 +408,59 @@ function Caixa() {
 
             <div className="caixa-pro-card">
               <div className="caixa-card-header">
-                <h2>Sangrias / Retiradas</h2>
-                <button>Nova Sangria</button>
+                <h2>Sangria</h2>
               </div>
 
+              <input
+                type="number"
+                placeholder="Valor da sangria"
+                value={valorSangria}
+                onChange={(e) => setValorSangria(e.target.value)}
+                style={{ width: "100%", marginBottom: 8, padding: 10 }}
+              />
+
+              <input
+                placeholder="Motivo"
+                value={motivoSangria}
+                onChange={(e) => setMotivoSangria(e.target.value)}
+                style={{ width: "100%", marginBottom: 8, padding: 10 }}
+              />
+
+              <button onClick={registrarSangria}>Registrar Sangria</button>
+
               <div className="empty-sangria">
-                Nenhuma sangria registrada.
+                {caixa?.sangrias?.length
+                  ? `${caixa.sangrias.length} sangria(s) registrada(s).`
+                  : "Nenhuma sangria registrada."}
+              </div>
+            </div>
+
+            <div className="caixa-pro-card">
+              <div className="caixa-card-header">
+                <h2>Suprimento</h2>
+              </div>
+
+              <input
+                type="number"
+                placeholder="Valor do suprimento"
+                value={valorSuprimento}
+                onChange={(e) => setValorSuprimento(e.target.value)}
+                style={{ width: "100%", marginBottom: 8, padding: 10 }}
+              />
+
+              <input
+                placeholder="Motivo"
+                value={motivoSuprimento}
+                onChange={(e) => setMotivoSuprimento(e.target.value)}
+                style={{ width: "100%", marginBottom: 8, padding: 10 }}
+              />
+
+              <button onClick={registrarSuprimento}>Registrar Suprimento</button>
+
+              <div className="empty-sangria">
+                {caixa?.suprimentos?.length
+                  ? `${caixa.suprimentos.length} suprimento(s) registrado(s).`
+                  : "Nenhum suprimento registrado."}
               </div>
             </div>
 
@@ -296,10 +468,19 @@ function Caixa() {
               <h2>Atividades do Caixa</h2>
 
               <div className="caixa-atividades">
-                <p><span></span> Caixa aberto por Administrador</p>
-                <p><span></span> Pedido finalizado</p>
-                <p><span></span> Venda registrada no PDV</p>
-                <p><span></span> Pagamento sincronizado</p>
+                <p>
+                  <span></span>{" "}
+                  {caixaAberto ? "Caixa aberto" : "Caixa fechado"}
+                </p>
+                <p>
+                  <span></span> Pedidos sincronizados
+                </p>
+                <p>
+                  <span></span> Vendas integradas ao PDV
+                </p>
+                <p>
+                  <span></span> Pagamentos calculados automaticamente
+                </p>
               </div>
             </div>
           </aside>
