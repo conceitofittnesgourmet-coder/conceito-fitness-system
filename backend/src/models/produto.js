@@ -37,6 +37,34 @@ const produtoSchema = new mongoose.Schema(
       default: 0,
     },
 
+    estoqueMinimo: {
+      type: Number,
+      default: 5,
+    },
+
+    movimentacoes: [
+  {
+    tipo: {
+      type: String,
+      enum: [
+        "entrada",
+        "saida",
+        "ajuste",
+        "venda",
+      ],
+    },
+
+    quantidade: Number,
+
+    motivo: String,
+
+    data: {
+      type: Date,
+      default: Date.now,
+    },
+  },
+],
+
     tempoPreparo: {
       type: Number,
       default: 0

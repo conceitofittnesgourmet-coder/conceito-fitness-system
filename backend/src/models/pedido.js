@@ -41,20 +41,25 @@ const pedidoSchema =
 
 
       produtos: [
+  {
+    produtoId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Produto",
+    },
 
-        {
+    senha: Number,
 
-          senha: Number,
+    nome: String,
 
-          nome: String,
+    quantidade: Number,
 
-          quantidade: Number,
+    preco: Number,
 
-          preco: Number
+    subtotal: Number,
 
-        }
-
-      ],
+    imagem: String,
+  }
+],
 
 
 

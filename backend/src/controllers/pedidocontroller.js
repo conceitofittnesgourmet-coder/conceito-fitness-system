@@ -104,11 +104,24 @@ exports.criarPedido = async (req, res) => {
       if (!item.produtoId) continue;
 
       try {
-        await Produto.findByIdAndUpdate(item.produtoId, {
-          $inc: {
-            estoque: -Number(item.quantidade || 1),
-          },
-        });
+        const produto = await Produto.findById(item.produtoId);
+
+if (produto) {
+  produto.estoque =
+    Math.max(
+      0,
+      Number(produto.estoque || 0) -
+      Number(item.quantidade || 1)
+    );
+
+  produto.movimentacoes.push({
+    tipo: "venda",
+    quantidade: Number(item.quantidade || 1),
+    motivo: `Pedido ${pedidoCriado._id}`
+  });
+
+  await produto.save();
+}
       } catch (estoqueError) {
         console.log("ERRO AO BAIXAR ESTOQUE:", estoqueError.message);
       }
