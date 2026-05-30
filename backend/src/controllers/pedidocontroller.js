@@ -127,14 +127,7 @@ if (produto) {
       }
     }
 
-    if (typeof baixarEstoque === "function") {
-      try {
-        await baixarEstoque(pedidoCriado);
-      } catch (baixarEstoqueError) {
-        console.log("ERRO ESTOQUE IA:", baixarEstoqueError.message);
-      }
-    }
-
+    
     if (global.io) {
       global.io.emit("novo-pedido", pedidoCriado);
       global.io.emit("produto-atualizado");
