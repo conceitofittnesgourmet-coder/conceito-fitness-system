@@ -75,6 +75,7 @@ import Caixa from "./pages/Caixa";
 
 import Cupom from "./pages/Cupom";
 
+import Configuracoes from "./pages/Configuracoes";
 
 
 
@@ -521,6 +522,17 @@ function App() {
       {/* CUPOM DE VENDAS */ }
 
       <Route path="/cupom/:id" element={<Cupom />} />
+
+      {/* CONFIGURAÇÕES */ }
+
+      <Route
+  path="/configuracoes"
+  element={
+    <PrivateRoute>
+      <Configuracoes />
+    </PrivateRoute>
+  }
+/>
 
 
       {/* FALLBACK */}

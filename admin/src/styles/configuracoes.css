@@ -1,0 +1,79 @@
+.config-page {
+  display: flex;
+  flex-direction: column;
+  gap: 22px;
+}
+
+.config-card {
+  background: #fff;
+  border-radius: 22px;
+  padding: 24px;
+  box-shadow: 0 12px 35px rgba(0, 0, 0, 0.06);
+}
+
+.config-card h2 {
+  margin-bottom: 18px;
+  font-size: 20px;
+  color: #2f2a25;
+}
+
+.config-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 18px;
+}
+
+.config-card label,
+.config-full {
+  display: flex;
+  flex-direction: column;
+  gap: 7px;
+  font-size: 13px;
+  font-weight: 600;
+  color: #5c5148;
+}
+
+.config-card input,
+.config-card textarea {
+  border: 1px solid #eadfd8;
+  border-radius: 14px;
+  padding: 13px 14px;
+  font-size: 14px;
+  outline: none;
+  background: #fffaf7;
+}
+
+.config-card textarea {
+  min-height: 90px;
+  resize: vertical;
+}
+
+.config-full {
+  margin-top: 18px;
+}
+
+.config-actions {
+  display: flex;
+  justify-content: flex-end;
+}
+
+.config-actions button {
+  border: none;
+  border-radius: 16px;
+  padding: 14px 28px;
+  background: #8f6b53;
+  color: #fff;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.config-actions button:disabled {
+  opacity: 0.6;
+  cursor: not-allowed;
+}
+
+@media (max-width: 800px) {
+  .config-grid {
+    grid-template-columns: 1fr;
+  }
+}
