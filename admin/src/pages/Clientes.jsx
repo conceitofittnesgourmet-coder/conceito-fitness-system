@@ -21,7 +21,7 @@ import {
 
 function Clientes() {
   const [pedidos, setPedidos] = useState([]);
-  const [clientesExtras, setClientesExtras] = useState([]);
+  const [clientesBanco, setClientesBanco] = useState([]);
   const [busca, setBusca] = useState("");
   const [clienteSelecionado, setClienteSelecionado] = useState(null);
 
@@ -42,13 +42,23 @@ function Clientes() {
     }
   }
 
+async function carregarClientes() {
+  try {
+    const response = await api.get("/clientes");
+
+    setClientesBanco(
+      response.data?.clientes || []
+    );
+  } catch (error) {
+    console.log("Erro ao carregar clientes:", error);
+  }
+}
+
   useEffect(() => {
     carregarPedidos();
+    carregarClientes();
 
-    const salvos = JSON.parse(localStorage.getItem("clientesExtras") || "[]");
-    setClientesExtras(salvos);
-
-    socket.on("novo-pedido", carregarPedidos);
+      socket.on("novo-pedido", carregarPedidos);
     socket.on("pedido-atualizado", carregarPedidos);
 
     return () => {
@@ -103,8 +113,7 @@ function Clientes() {
     }));
   }, [pedidos]);
 
-  const clientes = [...clientesPedidos, ...clientesExtras];
-
+  const clientes = [...clientesPedidos, ...clientesBanco];
   const clientesFiltrados = clientes.filter((cliente) => {
     const termo = busca.toLowerCase();
 
@@ -123,26 +132,46 @@ function Clientes() {
 
   const clienteAtivo = clienteSelecionado || clientesFiltrados[0];
 
-  function cadastrarCliente() {
-    if (!novoCliente.nome || !novoCliente.telefone) {
-      alert("Preencha nome e telefone");
+  async function excluirCliente(id) {
+  const confirmar = window.confirm(
+    "Deseja excluir este cliente?"
+  );
+
+  if (!confirmar) return;
+
+  try {
+    await api.delete(`/clientes/${id}`);
+
+    await carregarClientes();
+
+    alert("Cliente removido com sucesso!");
+  } catch (error) {
+    console.log(error);
+
+    alert("Erro ao excluir cliente.");
+  }
+}
+  
+  async function cadastrarCliente() {
+    
+  try {
+    if (
+      !novoCliente.nome ||
+      !novoCliente.telefone
+    ) {
+      alert(
+        "Preencha nome e telefone"
+      );
       return;
     }
 
-    const cliente = {
-      id: Date.now(),
-      ...novoCliente,
-      pedidos: 0,
-      gasto: 0,
-      ultimoPedido: new Date().toISOString(),
-      ativo: true,
-      origem: "manual",
-    };
-
-    const atualizados = [cliente, ...clientesExtras];
-
-    setClientesExtras(atualizados);
-    localStorage.setItem("clientesExtras", JSON.stringify(atualizados));
+    await api.post("/clientes", {
+      nome: novoCliente.nome,
+      email: novoCliente.email,
+      telefone: novoCliente.telefone,
+      cidade: novoCliente.cidade,
+      clube: novoCliente.clube,
+    });
 
     setNovoCliente({
       nome: "",
@@ -151,7 +180,21 @@ function Clientes() {
       cidade: "",
       clube: "Básico",
     });
+
+    await carregarClientes();
+
+    alert(
+      "Cliente cadastrado com sucesso!"
+    );
+  } catch (error) {
+    console.log(error);
+
+    alert(
+      error.response?.data?.message ||
+      "Erro ao cadastrar cliente"
+    );
   }
+}
 
   function formatarData(data) {
     if (!data) return "Sem pedido";
@@ -274,10 +317,13 @@ function Clientes() {
             <div className="clientes-lista">
               {clientesFiltrados.map((cliente) => (
                 <button
-                  key={cliente.id}
+                  key={cliente._id || cliente.id}
                   className={`cliente-row ${
-                    clienteAtivo?.id === cliente.id ? "active" : ""
-                  }`}
+  (clienteAtivo?._id || clienteAtivo?.id) ===
+  (cliente._id || cliente.id)
+    ? "active"
+    : ""
+}`}
                   onClick={() => setClienteSelecionado(cliente)}
                 >
                   <div className="cliente-avatar">
@@ -298,6 +344,7 @@ function Clientes() {
                     <strong>R$ {Number(cliente.gasto || 0).toFixed(2)}</strong>
                     <span>{cliente.clube}</span>
                   </div>
+
                 </button>
               ))}
             </div>
@@ -321,6 +368,25 @@ function Clientes() {
                     {clienteAtivo.clube}
                   </div>
                 </div>
+
+{clienteAtivo?._id && (
+  <button
+    onClick={() =>
+      excluirCliente(clienteAtivo._id)
+    }
+    style={{
+      marginLeft: "12px",
+      background: "#dc2626",
+      color: "#fff",
+      border: "none",
+      padding: "8px 14px",
+      borderRadius: "8px",
+      cursor: "pointer",
+    }}
+  >
+    Excluir Cliente
+  </button>
+)}
 
                 <div className="cliente-contato">
                   <p>
