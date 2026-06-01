@@ -1,5 +1,6 @@
 const Produto = require("../models/produto");
 const Pedido = require("../models/pedido");
+const Cliente = require("../models/cliente");
 
 
 // LISTAR
@@ -87,92 +88,112 @@ exports.criarPedido = async (req, res) => {
 
     const pedidoCriado = await Pedido.create(dadosPedido);
 
-    const io = req.app.get("io");
+const io = req.app.get("io");
 
-    if (io) {
-      io.emit("novo_pedido", pedidoCriado);
-    }
+if (io) {
+  io.emit("novo_pedido", pedidoCriado);
+}
 
-    for (const item of pedidoCriado.produtos || []) {
-      if (!item.produtoId) continue;
+// ===============================
+// FIDELIDADE / CLIENTE
+// ===============================
+if (telefone) {
+  const telefoneLimpo = String(telefone).trim();
 
-      try {
-        const produto = await Produto.findById(item.produtoId);
-
-if (produto) {
-  produto.estoque =
-    Math.max(
-      0,
-      Number(produto.estoque || 0) -
-      Number(item.quantidade || 1)
-    );
-
-  produto.movimentacoes.push({
-    tipo: "venda",
-    quantidade: Number(item.quantidade || 1),
-    motivo: `Pedido ${pedidoCriado._id}`
+  let clienteEncontrado = await Cliente.findOne({
+    telefone: telefoneLimpo,
   });
 
-  await produto.save();
-}
-      } catch (error) {
-        console.log(
-          `ERRO ATUALIZAR ESTOQUE PRODUTO ${item.produtoId}:`,  
-          error.message
-        );
-      }
-    }
+  const valorPedido = Number(total || 0);
+  const pontosGanhos = Math.floor(valorPedido);
+  const cashbackGanho = valorPedido * 0.03;
 
-    if (global.io) {
-      global.io.emit("novo-pedido", pedidoCriado);
-      global.io.emit("produto-atualizado");
-    }
-
-    return res.status(201).json({
-      success: true,
-      pedido: pedidoCriado,
+  if (!clienteEncontrado) {
+    await Cliente.create({
+      nome: cliente || "Cliente",
+      telefone: telefoneLimpo,
+      pedidos: 1,
+      gasto: valorPedido,
+      pontos: pontosGanhos,
+      cashback: cashbackGanho,
+      ultimoPedido: new Date(),
+      origem: "pedido",
     });
+  } else {
+    clienteEncontrado.pedidos =
+      Number(clienteEncontrado.pedidos || 0) + 1;
+
+    clienteEncontrado.gasto =
+      Number(clienteEncontrado.gasto || 0) + valorPedido;
+
+    clienteEncontrado.pontos =
+      Number(clienteEncontrado.pontos || 0) + pontosGanhos;
+
+    clienteEncontrado.cashback =
+      Number(clienteEncontrado.cashback || 0) + cashbackGanho;
+
+    clienteEncontrado.ultimoPedido = new Date();
+
+    const gastoTotal = Number(clienteEncontrado.gasto || 0);
+
+    clienteEncontrado.clube =
+      gastoTotal >= 2000
+        ? "Black"
+        : gastoTotal >= 1000
+        ? "Premium"
+        : gastoTotal >= 500
+        ? "Ouro"
+        : gastoTotal >= 250
+        ? "Prata"
+        : "Básico";
+
+    await clienteEncontrado.save();
+  }
+}
+
+// ===============================
+// BAIXA DE ESTOQUE
+// ===============================
+for (const item of pedidoCriado.produtos || []) {
+  if (!item.produtoId) continue;
+
+  try {
+    const produto = await Produto.findById(item.produtoId);
+
+    if (produto) {
+      produto.estoque = Math.max(
+        0,
+        Number(produto.estoque || 0) -
+          Number(item.quantidade || 1)
+      );
+
+      produto.movimentacoes.push({
+        tipo: "venda",
+        quantidade: Number(item.quantidade || 1),
+        motivo: `Pedido ${pedidoCriado._id}`,
+      });
+
+      await produto.save();
+    }
+  } catch (error) {
+    console.log(
+      `ERRO ATUALIZAR ESTOQUE PRODUTO ${item.produtoId}:`,
+      error.message
+    );
+  }
+}
+
+if (global.io) {
+  global.io.emit("novo-pedido", pedidoCriado);
+  global.io.emit("produto-atualizado");
+}
+
+return res.status(201).json({
+  success: true,
+  pedido: pedidoCriado,
+});
   } catch (error) {
     console.log("ERRO CRIAR PEDIDO:", error);
-
-    return res.status(500).json({
-      success: false,
-      message: error.message,
-    });
-  }
-};
-
-// ATUALIZAR STATUS
-exports.atualizarStatus = async (req, res) => {
-  try {
-    const pedido = await Pedido.findByIdAndUpdate(
-      req.params.id,
-      {
-        status: req.body.status,
-      },
-      {
-        new: true,
-        runValidators: true,
-      }
-    );
-
-    if (!pedido) {
-      return res.status(404).json({
-        success: false,
-        message: "Pedido não encontrado",
-      });
-    }
-
-    if (global.io) {
-      global.io.emit("pedido-atualizado", pedido);
-    }
-
-    return res.json({
-      success: true,
-      pedido,
-    });
-  } catch (error) {
-    console.log("ERRO ATUALIZAR STATUS:", error);
 
     return res.status(500).json({
       success: false,
