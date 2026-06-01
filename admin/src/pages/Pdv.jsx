@@ -95,11 +95,10 @@ console.log("PRIMEIRA IMAGEM:", response.data.produtos?.[0]);
 
   const produtoFormatado = {
     id,
-    produtoId: produto._id || produto.id,
+    produtoId: produto._id,
     nome: produto.nome,
-    preco: Number(produto.preco || 0),
-    imagem: getImagemProduto(produto),
-    quantidade: 1,
+    preco:produto.preco,
+    imagem:produto.quantidade,
   };
 
   if (existe) {

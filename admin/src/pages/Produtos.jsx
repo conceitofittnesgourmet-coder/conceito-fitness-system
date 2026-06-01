@@ -477,7 +477,9 @@ function Produtos() {
 
           <div className="produtos-grid-premium">
             {produtosFiltrados.map((produto) => {
-              const imagem = getImagemUrl(produto.imagens?.[0]);
+              const imagem = getImagemUrl(
+  produto.imagem || produto.imagens?.[0]
+);
 
               return (
                 <div className="produto-card-premium" key={produto._id}>
@@ -498,9 +500,18 @@ function Produtos() {
                   <div className="produto-body-premium">
                     <h3>{produto.nome}</h3>
                     <strong>R$ {Number(produto.preco || 0).toFixed(2)}</strong>
-                    <p>
-                      Estoque: <b>{produto.estoque}</b> unidades
-                    </p>
+                    <p
+  style={{
+    color:
+      Number(produto.estoque) <=
+      Number(produto.estoqueMinimo || 5)
+        ? "#dc2626"
+        : "#16a34a",
+    fontWeight: 700,
+  }}
+>
+  Estoque: {produto.estoque} unidades
+</p>
 
                     <div className="chips-premium">
                       {produto.tempoPreparo && (
