@@ -7,11 +7,27 @@ async function uploadImagens(files = []) {
   const imagens = [];
 
   for (const file of files) {
-    imagens.push({
-      url: `/uploads/${file.filename}`,
-      filename: file.filename,
-      path: file.path,
-    });
+    try {
+      const resultado = await cloudinary.uploader.upload(
+        file.path,
+        {
+          folder: "conceito-fitness/produtos",
+        }
+      );
+
+      imagens.push({
+        url: resultado.secure_url,
+        public_id: resultado.public_id,
+        filename: file.filename,
+      });
+
+      await fs.remove(file.path);
+    } catch (error) {
+      console.log(
+        "ERRO CLOUDINARY:",
+        error.message
+      );
+    }
   }
 
   return imagens;
