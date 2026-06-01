@@ -1,13 +1,6 @@
 const Produto = require("../models/produto");
 const Pedido = require("../models/pedido");
 
-let baixarEstoque = async () => {};
-
-try {
-  baixarEstoque = require("../utils/estoqueIA").baixarEstoque;
-} catch (error) {
-  console.log("Estoque IA não carregado.");
-}
 
 // LISTAR
 exports.listarPedidos = async (req, res) => {
@@ -122,12 +115,14 @@ if (produto) {
 
   await produto.save();
 }
-      } catch (estoqueError) {
-        console.log("ERRO AO BAIXAR ESTOQUE:", estoqueError.message);
+      } catch (error) {
+        console.log(
+          `ERRO ATUALIZAR ESTOQUE PRODUTO ${item.produtoId}:`,  
+          error.message
+        );
       }
     }
 
-    
     if (global.io) {
       global.io.emit("novo-pedido", pedidoCriado);
       global.io.emit("produto-atualizado");
