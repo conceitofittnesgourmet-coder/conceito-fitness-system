@@ -20,6 +20,7 @@ const webhookRoutes = require("./routes/webhookRoutes");
 const masterRoutes = require("./routes/masterRoutes");
 const empresaRoutes = require("./routes/empresaRoutes");
 const caixaRoutes = require("./routes/caixaRoutes");
+const clienteRoutes = require("./routes/clienteRoutes");
 
 const app = express();
 
@@ -96,6 +97,7 @@ app.use("/api/webhook", webhookRoutes);
 app.use("/api/master", masterRoutes);
 app.use("/api/empresa", empresaRoutes);
 app.use("/api/caixa", caixaRoutes);
+app.use("/api/clientes", clienteRoutes);
 app.use(errorHandler);
 
 module.exports = app;
