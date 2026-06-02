@@ -27,6 +27,8 @@ export default function Pdv() {
   const [cliente, setCliente] = useState("Cliente Balcão");
   const [telefone, setTelefone] = useState("");
   const [observacao, setObservacao] = useState("");
+  const [clientes, setClientes] = useState([]);
+  const [buscaCliente, setBuscaCliente] = useState("");
 
   async function carregarProdutos() {
     try {
@@ -41,19 +43,29 @@ console.log("PRIMEIRA IMAGEM:", response.data.produtos?.[0]);
     }
   }
 
-  useEffect(() => {
-    carregarProdutos();
+  async function carregarClientes() {
+  try {
+    const response = await api.get("/clientes");
+    setClientes(response.data.clientes || []);
+  } catch (error) {
+    console.log("Erro ao carregar clientes no PDV:", error);
+  }
+}
 
-    socket.on("produto-criado", carregarProdutos);
-    socket.on("produto-atualizado", carregarProdutos);
-    socket.on("produto-deletado", carregarProdutos);
+ useEffect(() => {
+  carregarProdutos();
+  carregarClientes();
 
-    return () => {
-      socket.off("produto-criado", carregarProdutos);
-      socket.off("produto-atualizado", carregarProdutos);
-      socket.off("produto-deletado", carregarProdutos);
-    };
-  }, []);
+  socket.on("produto-criado", carregarProdutos);
+  socket.on("produto-atualizado", carregarProdutos);
+  socket.on("produto-deletado", carregarProdutos);
+
+  return () => {
+    socket.off("produto-criado", carregarProdutos);
+    socket.off("produto-atualizado", carregarProdutos);
+    socket.off("produto-deletado", carregarProdutos);
+  };
+}, []);
 
   function getImagemProduto(produto) {
   const baseURL = api.defaults.baseURL || "https://conceito-fitness-system.onrender.com";
@@ -95,10 +107,11 @@ console.log("PRIMEIRA IMAGEM:", response.data.produtos?.[0]);
 
   const produtoFormatado = {
     id,
-    produtoId: produto._id,
+    produtoId: produto._id || produto.id,
     nome: produto.nome,
-    preco:produto.preco,
-    imagem:produto.quantidade,
+    preco: Number(produto.preco || 0),
+    imagem: getImagemProduto(produto),
+    quantidade: 1,
   };
 
   if (existe) {
@@ -421,6 +434,46 @@ window.open(`/cupom/${pedidoCriado._id}`, "_blank");
             </div>
 
             <div className="pdv-cliente-box">
+
+  <input
+  placeholder="Buscar cliente cadastrado"
+  value={buscaCliente}
+  onChange={(e) => setBuscaCliente(e.target.value)}
+/>
+
+{buscaCliente && (
+  <div style={{ background: "#fff", border: "1px solid #ddd", padding: 8 }}>
+    {clientes
+      .filter((c) =>
+        c.nome?.toLowerCase().includes(buscaCliente.toLowerCase()) ||
+        c.telefone?.includes(buscaCliente)
+      )
+      .slice(0, 5)
+      .map((c) => (
+        <button
+          key={c._id}
+          type="button"
+          onClick={() => {
+            setCliente(c.nome);
+            setTelefone(c.telefone);
+            setBuscaCliente("");
+          }}
+          style={{
+            display: "block",
+            width: "100%",
+            padding: 8,
+            textAlign: "left",
+            border: "none",
+            background: "#fff",
+            cursor: "pointer",
+          }}
+        >
+          {c.nome} - {c.telefone}
+        </button>
+      ))}
+  </div>
+)}
+
   <input
     placeholder="Nome do cliente"
     value={cliente}
