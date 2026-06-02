@@ -201,3 +201,42 @@ return res.status(201).json({
     });
   }
 };
+
+// ATUALIZAR STATUS
+exports.atualizarStatus = async (req, res) => {
+  try {
+    const pedido = await Pedido.findByIdAndUpdate(
+      req.params.id,
+      {
+        status: req.body.status,
+      },
+      {
+        new: true,
+        runValidators: true,
+      }
+    );
+
+    if (!pedido) {
+      return res.status(404).json({
+        success: false,
+        message: "Pedido não encontrado",
+      });
+    }
+
+    if (global.io) {
+      global.io.emit("pedido-atualizado", pedido);
+    }
+
+    return res.json({
+      success: true,
+      pedido,
+    });
+  } catch (error) {
+    console.log("ERRO ATUALIZAR STATUS:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
