@@ -36,8 +36,7 @@ export default function Pdv() {
       const response = await api.get("/produtos");
       setProdutos(response.data.produtos || []);
     } catch (error) {
-      console.log("PRODUTOS NO PDV:", response.data.produtos);
-console.log("PRIMEIRA IMAGEM:", response.data.produtos?.[0]);
+      console.log("Erro ao carregar produtos:", error);
     } finally {
       setLoadingProdutos(false);
     }
@@ -46,9 +45,12 @@ console.log("PRIMEIRA IMAGEM:", response.data.produtos?.[0]);
   async function carregarClientes() {
   try {
     const response = await api.get("/clientes");
+
+    console.log("CLIENTES CARREGADOS:", response.data);
+
     setClientes(response.data.clientes || []);
   } catch (error) {
-    console.log("Erro ao carregar clientes no PDV:", error);
+    console.log("Erro ao carregar clientes:", error);
   }
 }
 
@@ -104,6 +106,8 @@ console.log("PRIMEIRA IMAGEM:", response.data.produtos?.[0]);
   const id = produto._id || produto.id;
 
   const existe = cart.find((item) => item.id === id);
+
+  console.log("PRODUTO ADICIONADO:", produto);
 
   const produtoFormatado = {
     id,
