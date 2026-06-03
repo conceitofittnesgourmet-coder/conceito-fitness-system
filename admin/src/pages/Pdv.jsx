@@ -501,8 +501,10 @@ window.open(`/cupom/${pedidoCriado._id}`, "_blank");
               <div>
                 <span>Subtotal</span>
                 <strong>R$ {subtotalPedido.toFixed(2)}</strong>
-              </div>
-
+             </div> 
+            <strong>
+  R$ {cart.reduce((acc, item) => acc + Number(item.preco || 0) * Number(item.quantidade || 1), 0).toFixed(2)}
+</strong>
               <div>
                 <span>Taxa de entrega</span>
                 <strong>R$ {taxaEntregaPedido.toFixed(2)}</strong>
@@ -515,7 +517,12 @@ window.open(`/cupom/${pedidoCriado._id}`, "_blank");
 
               <div className="total-final">
                 <span>Total</span>
-                <strong>R$ {totalPedido.toFixed(2)}</strong>
+                <strong>
+  R$ {(
+    cart.reduce((acc, item) => acc + Number(item.preco || 0) * Number(item.quantidade || 1), 0) +
+    (mesa === "Delivery" && cart.length > 0 ? 6 : 0)
+  ).toFixed(2)}
+</strong>
               </div>
             </div>
 
