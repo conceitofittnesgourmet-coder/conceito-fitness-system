@@ -1,0 +1,38 @@
+ O volume na unidade C n∆o tem nome.
+ O N£mero de SÇrie do Volume Ç 0E06-24C8
+
+ Pasta de C:\Users\Windows\site-conceito\projeto\admin\src\pages
+
+29/05/2026  21:18    <DIR>          .
+29/05/2026  21:18    <DIR>          ..
+25/05/2026  11:19            10.872 Analise.jsx
+12/05/2026  21:31    <DIR>          analytics
+19/05/2026  11:51             3.059 Analytics.jsx
+12/05/2026  21:31    <DIR>          auth
+29/05/2026  22:15            16.258 Caixa.jsx
+28/05/2026  16:12             4.412 Cardapio.jsx
+28/05/2026  16:12            17.831 CardapioOnline.jsx
+21/05/2026  13:26             6.555 Carrinho.jsx
+01/06/2026  15:03            12.955 Clientes.jsx
+12/05/2026  21:31    <DIR>          configuracoes
+29/05/2026  21:18             7.124 configuracoes.jsx
+27/05/2026  11:31             4.173 Cozinha.jsx
+29/05/2026  21:28             3.893 Cupom.jsx
+12/05/2026  21:30    <DIR>          dashboard
+22/05/2026  15:32            11.918 Entregador.jsx
+19/05/2026  12:00             2.238 Estoque.jsx
+12/05/2026  21:31    <DIR>          financeiro
+25/05/2026  10:50             8.129 Financeiro.jsx
+13/05/2026  20:50             1.587 Login.jsx
+22/05/2026  15:13             4.736 Logistica.jsx
+22/05/2026  10:54            10.355 MasterDashboard.jsx
+19/05/2026  12:49             1.252 Pagamento.jsx
+02/06/2026  22:10            16.544 Pdv.jsx
+12/05/2026  21:30    <DIR>          pedidos
+22/05/2026  12:46            12.081 Pedidos.jsx
+12/05/2026  21:31    <DIR>          produtos
+01/06/2026  12:28            19.491 Produtos.jsx
+21/05/2026  14:15             6.628 Tracking.jsx
+12/05/2026  21:31    <DIR>          usuarios
+              21 arquivo(s)        182.091 bytes
+              10 pasta(s)   70.045.569.024 bytes dispon°veis
