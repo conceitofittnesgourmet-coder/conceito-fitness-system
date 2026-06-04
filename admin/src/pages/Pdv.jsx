@@ -46,8 +46,6 @@ export default function Pdv() {
   try {
     const response = await api.get("/clientes");
 
-    console.log("CLIENTES CARREGADOS:", response.data);
-
     setClientes(response.data.clientes || []);
   } catch (error) {
     console.log("Erro ao carregar clientes:", error);
@@ -106,8 +104,6 @@ export default function Pdv() {
   const id = produto._id || produto.id;
 
   const existe = cart.find((item) => item.id === id);
-
-  console.log("PRODUTO ADICIONADO:", produto);
 
   const produtoFormatado = {
     id,
@@ -207,8 +203,6 @@ taxaEntrega: taxaEntregaPedido,
 desconto: descontoPedido,
 total: totalPedido,
     };
-
-    console.log("ENVIANDO PEDIDO:", novoPedido);
 
     const response = await api.post("/pedidos", novoPedido);
 
