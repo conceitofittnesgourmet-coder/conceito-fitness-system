@@ -19,11 +19,7 @@ import "./styles/tracking.css";
 import "leaflet/dist/leaflet.css";
 import "./styles/entregador.css";
 
-if ("Notification" in window) {
 
-  Notification.requestPermission();
-
-}
 
 
 ReactDOM.createRoot(document.getElementById("root")).render(
