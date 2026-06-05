@@ -181,6 +181,80 @@ const [observacaoFechamento, setObservacaoFechamento] = useState("");
     }
   }
 
+  function imprimirFechamento() {
+  const conteudo = `
+CONCEITO FITNESS GOURMET
+
+DATA: ${new Date().toLocaleDateString("pt-BR")}
+
+OPERADOR:
+${caixa?.operador || "Administrador"}
+
+--------------------------------
+
+SALDO INICIAL:
+R$ ${Number(saldoInicial || 0).toFixed(2)}
+
+TOTAL VENDAS:
+R$ ${resumo.total.toFixed(2)}
+
+PIX:
+R$ ${resumo.pix.toFixed(2)}
+
+CRÉDITO:
+R$ ${resumo.credito.toFixed(2)}
+
+DÉBITO:
+R$ ${resumo.debito.toFixed(2)}
+
+DINHEIRO:
+R$ ${resumo.dinheiro.toFixed(2)}
+
+--------------------------------
+
+SUPRIMENTOS:
+R$ ${resumo.totalSuprimentos.toFixed(2)}
+
+SANGRIAS:
+R$ ${resumo.totalSangrias.toFixed(2)}
+
+--------------------------------
+
+SALDO ESPERADO:
+R$ ${resumo.saldoAtual.toFixed(2)}
+
+VALOR CONTADO:
+R$ ${Number(valorContado || 0).toFixed(2)}
+
+DIFERENÇA:
+R$ ${(
+  Number(valorContado || 0) -
+  Number(resumo.saldoAtual || 0)
+).toFixed(2)}
+
+--------------------------------
+
+OBSERVAÇÃO:
+${observacaoFechamento || "-"}
+
+`;
+
+  const janela = window.open("", "_blank");
+
+  janela.document.write(`
+    <pre style="
+      font-family: monospace;
+      font-size:16px;
+      padding:20px;
+    ">
+${conteudo}
+    </pre>
+  `);
+
+  janela.document.close();
+  janela.print();
+}
+
   return (
     <AdminLayout title="Caixa" subtitle="Controle profissional do caixa diário">
       <div className="caixa-pro-page">
@@ -237,7 +311,8 @@ const [observacaoFechamento, setObservacaoFechamento] = useState("");
             <strong>R$ {resumo.saldoAtual.toFixed(2)}</strong>
           </div>
 
-          <div style={{ marginBottom: 12 }}>
+  {caixaAberto && (
+  <div style={{ marginBottom: 12 }}>
   <input
     type="number"
     placeholder="Dinheiro contado no caixa"
@@ -254,7 +329,8 @@ const [observacaoFechamento, setObservacaoFechamento] = useState("");
       setObservacaoFechamento(e.target.value)
     }
   />
-</div>
+  </div>
+)}
 
 <div style={{ marginBottom: 8 }}>
   <strong>
@@ -287,10 +363,35 @@ const [observacaoFechamento, setObservacaoFechamento] = useState("");
 )}
 
           {caixaAberto ? (
-            <button className="caixa-fechar-btn" onClick={fecharCaixa}>
-              <FaLock />
-              Fechar Caixa
-            </button>
+            <div
+  style={{
+    display: "flex",
+    gap: "10px",
+    marginTop: "10px",
+  }}
+>
+  <button
+    className="caixa-fechar-btn"
+    onClick={fecharCaixa}
+  >
+    <FaLock />
+    Fechar Caixa
+  </button>
+
+  <button
+    style={{
+      background: "#0ea5e9",
+      color: "#fff",
+      border: "none",
+      padding: "10px 16px",
+      borderRadius: "10px",
+      cursor: "pointer",
+    }}
+    onClick={imprimirFechamento}
+  >
+    Imprimir Fechamento
+  </button>
+</div>
           ) : (
         
             <div className="caixa-abrir-inline">
@@ -455,10 +556,7 @@ const [observacaoFechamento, setObservacaoFechamento] = useState("");
                 <span>(+) Suprimentos</span>
                 <strong>R$ {resumo.totalSuprimentos.toFixed(2)}</strong>
               </div>
-              <div style={{ marginBottom: 8 }}>
-  
-</div>
-
+             
               <div className="caixa-detail-line red">
                 <span>(-) Sangrias</span>
                 <strong>R$ {resumo.totalSangrias.toFixed(2)}</strong>
