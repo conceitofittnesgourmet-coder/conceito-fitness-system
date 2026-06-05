@@ -29,6 +29,13 @@ export default function Pdv() {
   const [observacao, setObservacao] = useState("");
   const [clientes, setClientes] = useState([]);
   const [buscaCliente, setBuscaCliente] = useState("");
+  const [tipoPedido, setTipoPedido] = useState("balcao");
+  const [numeroMesa, setNumeroMesa] = useState("");
+  const [enderecoEntrega, setEnderecoEntrega] = useState("");
+  const [referenciaEntrega, setReferenciaEntrega] = useState("");
+  const [taxaEntregaManual, setTaxaEntregaManual] = useState("");
+  const [descontoManual, setDescontoManual] = useState("");
+  const [motivoDesconto, setMotivoDesconto] = useState("");
 
   async function carregarProdutos() {
     try {
@@ -146,9 +153,10 @@ export default function Pdv() {
 }, 0);
 
 const taxaEntregaPedido =
-  mesa === "Delivery" && cart.length > 0 ? 6 : 0;
+  Number(taxaEntregaManual || 0);
 
-const descontoPedido = 0;
+const descontoPedido =
+  Number(descontoManual || 0);
 
 const totalPedido =
   subtotalPedido + taxaEntregaPedido - descontoPedido;
@@ -172,16 +180,26 @@ if (!caixaAberto) {
 
       telefone,
 
-      mesa,
+      tipo: tipoPedido,
+
+mesa:
+  tipoPedido === "mesa"
+    ? numeroMesa
+    : "Balcão",
+
+enderecoEntrega,
+
+referenciaEntrega,
+
+taxaEntrega:
+  Number(taxaEntregaManual || 0),
+
+desconto:
+  Number(descontoManual || 0),
+
+motivoDesconto,
 
       observacao,
-
-      tipo:
-        mesa === "Delivery"
-          ? "delivery"
-          : mesa === "Retirada"
-          ? "retirada"
-          : "balcao",
 
       origem: "PDV",
 
@@ -221,6 +239,13 @@ window.open(`/cupom/${pedidoCriado._id}`, "_blank");
     setObservacao("");
 
     setMesa("Balcão");
+    setTaxaEntregaManual(0);
+    setDescontoManual(0);
+    setTipoPedido("balcao");
+    setNumeroMesa("");
+    setEnderecoEntrega("");
+    setReferenciaEntrega("");
+    setMotivoDesconto("");
 
   } catch (error) {
     console.log(error);
@@ -371,21 +396,41 @@ window.open(`/cupom/${pedidoCriado._id}`, "_blank");
             <div className="pdv-cart-top">
               <div>
                 <h2>Pedido Atual</h2>
-                <select value={mesa} onChange={(e) => setMesa(e.target.value)}>
-  <option>Balcão</option>
-  <option>Mesa 01</option>
-  <option>Mesa 02</option>
-  <option>Mesa 03</option>
-  <option>Mesa 04</option>
-  <option>Mesa 05</option>
-  <option>Mesa 06</option>
-  <option>Mesa 07</option>
-  <option>Mesa 08</option>
-  <option>Mesa 09</option>
-  <option>Mesa 10</option>
-  <option>Delivery</option>
-  <option>Retirada</option>
-</select>
+                <select
+
+  value={tipoPedido}
+  onChange={(e) => setTipoPedido(e.target.value)}
+>
+  <option value="balcao">Balcão</option>
+  <option value="mesa">Mesa</option>
+  <option value="delivery">Delivery</option>
+  <option value="retirada">Retirada</option>
+  </select>
+
+{tipoPedido === "mesa" && (
+  <input
+    placeholder="Número da mesa"
+    value={numeroMesa}
+    onChange={(e) => setNumeroMesa(e.target.value)}
+  />
+)}
+
+{tipoPedido === "delivery" && (
+  <>
+    <input
+      placeholder="Endereço de entrega"
+      value={enderecoEntrega}
+      onChange={(e) => setEnderecoEntrega(e.target.value)}
+    />
+
+    <input
+      placeholder="Ponto de referência"
+      value={referenciaEntrega}
+      onChange={(e) => setReferenciaEntrega(e.target.value)}
+    />
+  </>
+)}
+  
               </div>
 
               <button onClick={limparPedido}>
@@ -493,12 +538,46 @@ window.open(`/cupom/${pedidoCriado._id}`, "_blank");
 
              <div className="pdv-total-box">
               <div>
+
+<div>
+  <span>Taxa de entrega</span>
+
+  <input
+    type="number"
+    min="0"
+    value={taxaEntregaManual}
+    onChange={(e) =>
+      setTaxaEntregaManual(e.target.value)
+    }
+    placeholder="0,00"
+  />
+</div>
+
+<div>
+  <span>Desconto</span>
+  <textarea
+  placeholder="Motivo do desconto"
+  value={motivoDesconto}
+  onChange={(e) =>
+    setMotivoDesconto(e.target.value)
+  }
+/>
+
+  <input
+    type="number"
+    min="0"
+    value={descontoManual}
+    onChange={(e) =>
+      setDescontoManual(e.target.value)
+    }
+    placeholder="0,00"
+  />
+</div>
+
                 <span>Subtotal</span>
                 <strong>R$ {subtotalPedido.toFixed(2)}</strong>
              </div> 
-            <strong>
-  R$ {cart.reduce((acc, item) => acc + Number(item.preco || 0) * Number(item.quantidade || 1), 0).toFixed(2)}
-</strong>
+            
               <div>
                 <span>Taxa de entrega</span>
                 <strong>R$ {taxaEntregaPedido.toFixed(2)}</strong>
@@ -512,10 +591,7 @@ window.open(`/cupom/${pedidoCriado._id}`, "_blank");
               <div className="total-final">
                 <span>Total</span>
                 <strong>
-  R$ {(
-    cart.reduce((acc, item) => acc + Number(item.preco || 0) * Number(item.quantidade || 1), 0) +
-    (mesa === "Delivery" && cart.length > 0 ? 6 : 0)
-  ).toFixed(2)}
+  R$ {totalPedido.toFixed(2)}
 </strong>
               </div>
             </div>

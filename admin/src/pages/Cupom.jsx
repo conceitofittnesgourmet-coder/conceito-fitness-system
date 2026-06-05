@@ -137,6 +137,27 @@ export default function Cupom() {
 
         <hr />
 
+        <div className="cupom-item">
+  <span>Subtotal</span>
+  <strong>
+    R$ {Number(pedido.subtotal || 0).toFixed(2)}
+  </strong>
+</div>
+
+<div className="cupom-item">
+  <span>Taxa de entrega</span>
+  <strong>
+    R$ {Number(pedido.taxaEntrega || 0).toFixed(2)}
+  </strong>
+</div>
+
+<div className="cupom-item">
+  <span>Desconto</span>
+  <strong>
+    - R$ {Number(pedido.desconto || 0).toFixed(2)}
+  </strong>
+</div>
+
         <div className="cupom-total">
           <span>Total</span>
 
