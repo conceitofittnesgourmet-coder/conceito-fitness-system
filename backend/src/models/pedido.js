@@ -73,7 +73,55 @@ const pedidoSchema =
 
       },
 
+      subtotal: {
+  type: Number,
+  default: 0,
+},
 
+taxaEntrega: {
+  type: Number,
+  default: 0,
+},
+
+desconto: {
+  type: Number,
+  default: 0,
+},
+
+pagamento: {
+  type: String,
+  default: "PIX",
+},
+
+tipo: {
+  type: String,
+  default: "balcao",
+},
+
+mesa: {
+  type: String,
+  default: "",
+},
+
+enderecoEntrega: {
+  type: String,
+  default: "",
+},
+
+referenciaEntrega: {
+  type: String,
+  default: "",
+},
+
+motivoDesconto: {
+  type: String,
+  default: "",
+},
+
+observacao: {
+  type: String,
+  default: "",
+},
 
 
 
