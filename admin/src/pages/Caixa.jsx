@@ -27,7 +27,8 @@ function Caixa() {
   const [motivoSuprimento, setMotivoSuprimento] = useState("");
   const [carregando, setCarregando] = useState(true);
   const [valorContado, setValorContado] = useState("");
-const [observacaoFechamento, setObservacaoFechamento] = useState("");
+  const [observacaoFechamento, setObservacaoFechamento] = useState("");
+  const [historicoCaixas, setHistoricoCaixas] = useState([]);
 
   const caixaAberto = caixa?.status === "aberto";
 
@@ -40,6 +41,12 @@ const [observacaoFechamento, setObservacaoFechamento] = useState("");
       setCaixa(response.data.caixa || null);
       setPedidos(response.data.pedidos || []);
       setResumoApi(response.data.resumo || null);
+      const historicoResponse =
+  await api.get("/caixa/historico");
+
+setHistoricoCaixas(
+  historicoResponse.data.caixas || []
+);
 
       if (response.data.caixa?.saldoInicial !== undefined) {
         setSaldoInicial(Number(response.data.caixa.saldoInicial || 0));
@@ -645,6 +652,59 @@ ${conteudo}
                 </p>
               </div>
             </div>
+
+            <div className="caixa-pro-card">
+  <h2>Histórico de Caixas</h2>
+
+  <div
+  style={{
+    maxHeight: 300,
+    overflowY: "auto",
+  }}
+>
+  {historicoCaixas
+    .filter((cx) => cx.status === "fechado")
+    .map((cx) => (
+      <div
+        key={cx._id}
+        style={{
+          borderBottom: "1px solid #eee",
+          padding: "10px 0",
+        }}
+      >
+        <strong>
+          {new Date(cx.createdAt).toLocaleDateString("pt-BR")}
+        </strong>
+
+        <div
+          style={{
+            color:
+              cx.status === "fechado"
+                ? "#22c55e"
+                : "#f59e0b",
+            fontWeight: 600,
+          }}
+        >
+          Status: {cx.status}
+        </div>
+
+        <div>
+          Saldo Inicial:
+          {" "}
+          R$ {Number(cx.saldoInicial || 0).toFixed(2)}
+        </div>
+
+        <div>
+          Diferença:
+          {" "}
+          R$ {Number(
+            cx.diferencaFechamento || 0
+          ).toFixed(2)}
+        </div>
+      </div>
+    ))}
+</div>
+</div>   {/* fecha caixa-pro-card */}
           </aside>
         </section>
       </div>
