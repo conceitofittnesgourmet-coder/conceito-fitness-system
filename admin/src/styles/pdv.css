@@ -647,3 +647,38 @@
   border-color: #64748b;
   color: #64748b;
 }
+
+.pdv-ajustes-pedido {
+  display: flex;
+  flex-direction: column;
+  gap: 12px;
+  margin-top: 12px;
+  margin-bottom: 16px;
+}
+
+.pdv-ajuste-item {
+  display: flex;
+  flex-direction: column;
+  gap: 6px;
+}
+
+.pdv-ajuste-item label {
+  color: #ffffff;
+  font-size: 14px;
+  font-weight: 600;
+}
+
+.pdv-ajuste-item input,
+.pdv-ajuste-item textarea {
+  width: 100%;
+  border: 1px solid rgba(255,255,255,.15);
+  border-radius: 10px;
+  background: rgba(255,255,255,.05);
+  color: #fff;
+  padding: 10px;
+}
+
+.pdv-ajuste-item textarea {
+  min-height: 70px;
+  resize: vertical;
+}

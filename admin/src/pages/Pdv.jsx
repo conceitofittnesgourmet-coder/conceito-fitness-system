@@ -536,43 +536,52 @@ window.open(`/cupom/${pedidoCriado._id}`, "_blank");
   />
  </div>
 
+<div className="pdv-ajustes-pedido">
+
+  <div className="pdv-ajuste-item">
+    <label>Taxa de entrega</label>
+
+    <input
+      type="number"
+      min="0"
+      value={taxaEntregaManual}
+      onChange={(e) =>
+        setTaxaEntregaManual(e.target.value)
+      }
+      placeholder="0,00"
+    />
+  </div>
+
+  <div className="pdv-ajuste-item">
+    <label>Desconto</label>
+
+    <input
+      type="number"
+      min="0"
+      value={descontoManual}
+      onChange={(e) =>
+        setDescontoManual(e.target.value)
+      }
+      placeholder="0,00"
+    />
+  </div>
+
+  <div className="pdv-ajuste-item">
+    <label>Motivo do desconto</label>
+
+    <textarea
+      value={motivoDesconto}
+      onChange={(e) =>
+        setMotivoDesconto(e.target.value)
+      }
+      placeholder="Ex: Cliente VIP, cortesia, promoção..."
+    />
+  </div>
+
+</div>
+
              <div className="pdv-total-box">
               <div>
-
-<div>
-  <span>Taxa de entrega</span>
-
-  <input
-    type="number"
-    min="0"
-    value={taxaEntregaManual}
-    onChange={(e) =>
-      setTaxaEntregaManual(e.target.value)
-    }
-    placeholder="0,00"
-  />
-</div>
-
-<div>
-  <span>Desconto</span>
-  <textarea
-  placeholder="Motivo do desconto"
-  value={motivoDesconto}
-  onChange={(e) =>
-    setMotivoDesconto(e.target.value)
-  }
-/>
-
-  <input
-    type="number"
-    min="0"
-    value={descontoManual}
-    onChange={(e) =>
-      setDescontoManual(e.target.value)
-    }
-    placeholder="0,00"
-  />
-</div>
 
                 <span>Subtotal</span>
                 <strong>R$ {subtotalPedido.toFixed(2)}</strong>
