@@ -234,3 +234,23 @@ exports.resumoCaixa = async (req, res) => {
     });
   }
 };
+
+exports.historicoCaixas = async (req, res) => {
+  try {
+    const caixas = await Caixa.find()
+      .sort({ createdAt: -1 })
+      .limit(50);
+
+    return res.json({
+      success: true,
+      caixas,
+    });
+  } catch (error) {
+    console.log("ERRO HISTORICO CAIXAS:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};

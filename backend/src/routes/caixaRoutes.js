@@ -9,6 +9,7 @@ const {
   registrarSangria,
   registrarSuprimento,
   resumoCaixa,
+  historicoCaixas,
 } = require("../controllers/caixacontroller");
 
 router.get("/atual", caixaAtual);
