@@ -26,6 +26,8 @@ function Caixa() {
   const [valorSuprimento, setValorSuprimento] = useState("");
   const [motivoSuprimento, setMotivoSuprimento] = useState("");
   const [carregando, setCarregando] = useState(true);
+  const [valorContado, setValorContado] = useState("");
+const [observacaoFechamento, setObservacaoFechamento] = useState("");
 
   const caixaAberto = caixa?.status === "aberto";
 
@@ -111,7 +113,16 @@ function Caixa() {
     if (!confirmar) return;
 
     try {
-      const response = await api.post("/caixa/fechar");
+      const response = await api.post("/caixa/fechar", {
+  valorContado:
+    Number(valorContado || 0),
+
+  saldoEsperado:
+    Number(resumo.saldoAtual || 0),
+
+  observacao:
+    observacaoFechamento,
+});
 
       setCaixa(response.data.caixa);
       localStorage.setItem("caixaAberto", "false");
@@ -226,12 +237,32 @@ function Caixa() {
             <strong>R$ {resumo.saldoAtual.toFixed(2)}</strong>
           </div>
 
+          <div style={{ marginBottom: 12 }}>
+  <input
+    type="number"
+    placeholder="Dinheiro contado no caixa"
+    value={valorContado}
+    onChange={(e) =>
+      setValorContado(e.target.value)
+    }
+  />
+
+  <textarea
+    placeholder="Observação do fechamento"
+    value={observacaoFechamento}
+    onChange={(e) =>
+      setObservacaoFechamento(e.target.value)
+    }
+  />
+</div>
+
           {caixaAberto ? (
             <button className="caixa-fechar-btn" onClick={fecharCaixa}>
               <FaLock />
               Fechar Caixa
             </button>
           ) : (
+        
             <div className="caixa-abrir-inline">
               <input
                 type="number"
