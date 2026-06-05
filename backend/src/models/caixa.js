@@ -74,6 +74,21 @@ const caixaSchema = new mongoose.Schema(
       type: Date,
       default: null,
     },
+
+    valorContado: {
+  type: Number,
+  default: 0,
+},
+
+diferencaFechamento: {
+  type: Number,
+  default: 0,
+},
+
+observacaoFechamento: {
+  type: String,
+  default: "",
+},
   },
   {
     timestamps: true,

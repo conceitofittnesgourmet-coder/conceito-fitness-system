@@ -66,8 +66,22 @@ exports.fecharCaixa = async (req, res) => {
       });
     }
 
-    caixa.status = "fechado";
-    caixa.fechadoEm = new Date();
+    const valorContado =
+  Number(req.body.valorContado || 0);
+
+const saldoEsperado =
+  Number(req.body.saldoEsperado || 0);
+
+caixa.valorContado = valorContado;
+
+caixa.diferencaFechamento =
+  valorContado - saldoEsperado;
+
+caixa.observacaoFechamento =
+  req.body.observacao || "";
+
+caixa.status = "fechado";
+caixa.fechadoEm = new Date();
 
     await caixa.save();
 
