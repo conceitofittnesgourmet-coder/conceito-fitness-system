@@ -256,6 +256,13 @@ const [observacaoFechamento, setObservacaoFechamento] = useState("");
   />
 </div>
 
+<div style={{ marginBottom: 8 }}>
+  <strong>
+    Saldo esperado:
+    R$ {resumo.saldoAtual.toFixed(2)}
+  </strong>
+</div>
+
           {caixaAberto ? (
             <button className="caixa-fechar-btn" onClick={fecharCaixa}>
               <FaLock />
@@ -425,6 +432,12 @@ const [observacaoFechamento, setObservacaoFechamento] = useState("");
                 <span>(+) Suprimentos</span>
                 <strong>R$ {resumo.totalSuprimentos.toFixed(2)}</strong>
               </div>
+              <div style={{ marginBottom: 8 }}>
+  <strong>
+    Saldo esperado:
+    R$ {resumo.saldoAtual.toFixed(2)}
+  </strong>
+</div>
 
               <div className="caixa-detail-line red">
                 <span>(-) Sangrias</span>
