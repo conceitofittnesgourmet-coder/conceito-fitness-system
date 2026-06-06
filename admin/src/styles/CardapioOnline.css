@@ -767,3 +767,19 @@
     grid-template-columns: 1fr;
   }
 }
+
+.co-client-form select {
+  background: #111 !important;
+  color: #fff !important;
+  font-weight: 600;
+}
+
+.co-client-form select option {
+  background: #111;
+  color: #fff;
+}
+
+.co-client-form input::placeholder,
+.co-client-form textarea::placeholder {
+  color: #94a3b8;
+}

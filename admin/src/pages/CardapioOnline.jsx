@@ -31,11 +31,13 @@ function CardapioOnline() {
   const [categoria, setCategoria] = useState("Todos");
 
   const [cliente, setCliente] = useState({
-    nome: "",
-    telefone: "",
-    entrega: "",
-    observacao: "",
-  });
+  nome: "",
+  telefone: "",
+  entrega: "",
+  endereco: "",
+  referencia: "",
+  observacao: "",
+});
 
   const destaquesRef = useRef(null);
 const combosRef = useRef(null);
@@ -184,6 +186,14 @@ function filtrarCategoria(cat) {
       return;
     }
 
+    if (
+  cliente.entrega === "Delivery" &&
+  !cliente.endereco
+) {
+  alert("Informe o endereço de entrega.");
+  return;
+}
+
     const itens = carrinho
       .map(
         (item) =>
@@ -204,11 +214,12 @@ ${itens}
 👤 *Cliente:* ${cliente.nome}
 📱 *WhatsApp:* ${cliente.telefone}
 📍 *Entrega/Retirada:* ${cliente.entrega || "Não informado"}
+🏠 *Endereço:* ${cliente.endereco || "-"}
+📌 *Referência:* ${cliente.referencia || "-"}
 📝 *Observação:* ${cliente.observacao || "Nenhuma"}
 
 Aguardo confirmação.
 `;
-
     window.open(
       `https://wa.me/${WHATSAPP_LOJA}?text=${encodeURIComponent(mensagem)}`,
       "_blank"
@@ -542,16 +553,52 @@ Aguardo confirmação.
             />
 
             <label>Entrega ou Retirada</label>
-            <select
-              value={cliente.entrega}
-              onChange={(e) =>
-                setCliente({ ...cliente, entrega: e.target.value })
-              }
-            >
-              <option value="">Selecione</option>
-              <option value="Retirada no balcão">Retirada no balcão</option>
-              <option value="Delivery">Delivery</option>
-            </select>
+
+<select
+  value={cliente.entrega}
+  onChange={(e) =>
+    setCliente({
+      ...cliente,
+      entrega: e.target.value,
+      endereco: e.target.value === "Delivery" ? cliente.endereco : "",
+      referencia: e.target.value === "Delivery" ? cliente.referencia : "",
+    })
+  }
+>
+  <option value="">Selecione</option>
+  <option value="Retirada no balcão">Retirada no balcão</option>
+  <option value="Delivery">Delivery</option>
+</select>
+
+{cliente.entrega === "Delivery" && (
+  <>
+    <label>Endereço de entrega</label>
+
+    <input
+      placeholder="Rua, número e bairro"
+      value={cliente.endereco}
+      onChange={(e) =>
+        setCliente({
+          ...cliente,
+          endereco: e.target.value,
+        })
+      }
+    />
+
+    <label>Ponto de referência</label>
+
+    <input
+      placeholder="Ex.: próximo ao mercado..."
+      value={cliente.referencia}
+      onChange={(e) =>
+        setCliente({
+          ...cliente,
+          referencia: e.target.value,
+        })
+      }
+    />
+  </>
+)}
 
             <label>Observação (opcional)</label>
             <textarea
