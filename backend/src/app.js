@@ -32,7 +32,9 @@ app.use(
 
 const allowedOrigins = [
   "https://conceito-fitness-system-7c2o.vercel.app",
-  "http://localhost:5173"
+  "http://localhost:5173",
+  "https://conceitofitgourmet.com.br",
+  "https://www.conceitofitgourmet.com.br",
 ];
 
 app.use(cors({

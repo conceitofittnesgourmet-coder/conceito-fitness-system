@@ -45,7 +45,9 @@ const io = new Server(server, {
   cors: {
     origin: [
       "https://conceito-fitness-system-7c2o.vercel.app",
-      "http://localhost:5173"
+      "http://localhost:5173",
+      "https://conceitofitgourmet.com.br",
+      "https://www.conceitofitgourmet.com.br"
     ],
     methods: ["GET", "POST", "PUT", "DELETE"],
     credentials: true
