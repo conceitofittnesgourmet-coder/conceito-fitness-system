@@ -682,3 +682,26 @@
   min-height: 70px;
   resize: vertical;
 }
+
+.controle-quantidade {
+  display: flex;
+  align-items: center;
+  gap: 8px;
+  margin-top: 4px;
+}
+
+.controle-quantidade button {
+  width: 28px;
+  height: 28px;
+  border: none;
+  border-radius: 8px;
+  background: #22c55e;
+  color: white;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.controle-quantidade strong {
+  min-width: 24px;
+  text-align: center;
+}

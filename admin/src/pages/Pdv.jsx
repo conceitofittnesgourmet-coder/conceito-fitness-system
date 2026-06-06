@@ -36,6 +36,7 @@ export default function Pdv() {
   const [taxaEntregaManual, setTaxaEntregaManual] = useState("");
   const [descontoManual, setDescontoManual] = useState("");
   const [motivoDesconto, setMotivoDesconto] = useState("");
+  const [trocoPara, setTrocoPara] = useState("");
 
   async function carregarProdutos() {
     try {
@@ -140,6 +141,34 @@ export default function Pdv() {
   function removerProduto(id) {
     setCart(cart.filter((item) => item.id !== id));
   }
+ 
+function aumentarQuantidade(id) {
+  setCart(
+    cart.map((item) =>
+      item.id === id
+        ? {
+            ...item,
+            quantidade: Number(item.quantidade || 1) + 1,
+          }
+        : item
+    )
+  );
+}
+
+function diminuirQuantidade(id) {
+  setCart(
+    cart
+      .map((item) =>
+        item.id === id
+          ? {
+              ...item,
+              quantidade: Number(item.quantidade || 1) - 1,
+            }
+          : item
+      )
+      .filter((item) => item.quantidade > 0)
+  );
+}
 
   function limparPedido() {
     setCart([]);
@@ -160,6 +189,13 @@ const descontoPedido =
 
 const totalPedido =
   subtotalPedido + taxaEntregaPedido - descontoPedido;
+  const troco =
+  pagamento === "DINHEIRO"
+    ? Math.max(
+        0,
+        Number(trocoPara || 0) - totalPedido
+      )
+    : 0;
 
    async function finalizarPedido() {
   try {
@@ -199,6 +235,9 @@ desconto:
 
 motivoDesconto,
 
+trocoPara: Number(trocoPara || 0),
+troco: Number(troco || 0),
+
       observacao,
 
       origem: "PDV",
@@ -222,6 +261,7 @@ desconto: descontoPedido,
 total: totalPedido,
     };
 
+        
     const response = await api.post("/pedidos", novoPedido);
 
 const pedidoCriado = response.data.pedido || response.data;
@@ -246,6 +286,7 @@ window.open(`/cupom/${pedidoCriado._id}`, "_blank");
     setEnderecoEntrega("");
     setReferenciaEntrega("");
     setMotivoDesconto("");
+    setTrocoPara("");
 
   } catch (error) {
     console.log(error);
@@ -459,9 +500,26 @@ window.open(`/cupom/${pedidoCriado._id}`, "_blank");
 />
 
                   <div className="cart-product-name">
-                    <strong>{item.quantidade}x</strong>
-                    <span>{item.nome}</span>
-                  </div>
+  <span>{item.nome}</span>
+
+  <div className="controle-quantidade">
+    <button
+      type="button"
+      onClick={() => diminuirQuantidade(item.id)}
+    >
+      -
+    </button>
+
+    <strong>{item.quantidade}</strong>
+
+    <button
+      type="button"
+      onClick={() => aumentarQuantidade(item.id)}
+    >
+      +
+    </button>
+  </div>
+</div>
 
                   <small>
   R$ {Number(item.preco || 0).toFixed(2)}
@@ -608,6 +666,25 @@ window.open(`/cupom/${pedidoCriado._id}`, "_blank");
             <div className="pagamento-title">Forma de Pagamento</div>
 
             <div className="payment-grid">
+
+              {pagamento === "DINHEIRO" && (
+  <div className="pdv-ajuste-item">
+    <label>Troco para</label>
+
+    <input
+      type="number"
+      min="0"
+      value={trocoPara}
+      onChange={(e) => setTrocoPara(e.target.value)}
+      placeholder="Valor recebido"
+    />
+
+    <small>
+      Troco: R$ {troco.toFixed(2)}
+    </small>
+  </div>
+)}
+
               <button
                 className={pagamento === "PIX" ? "active" : ""}
                 onClick={() => setPagamento("PIX")}
