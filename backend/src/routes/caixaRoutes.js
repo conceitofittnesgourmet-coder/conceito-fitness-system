@@ -14,6 +14,7 @@ const {
 
 router.get("/atual", caixaAtual);
 router.get("/resumo", resumoCaixa);
+router.get("/historico", historicoCaixas);
 router.post("/abrir", abrirCaixa);
 router.post("/fechar", fecharCaixa);
 router.post("/sangria", registrarSangria);
