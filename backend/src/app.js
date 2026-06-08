@@ -21,6 +21,7 @@ const masterRoutes = require("./routes/masterRoutes");
 const empresaRoutes = require("./routes/empresaRoutes");
 const caixaRoutes = require("./routes/caixaRoutes");
 const clienteRoutes = require("./routes/clienteRoutes");
+const freteRoutes = require("./routes/freteRoutes");
 
 const app = express();
 
@@ -100,6 +101,7 @@ app.use("/api/master", masterRoutes);
 app.use("/api/empresa", empresaRoutes);
 app.use("/api/caixa", caixaRoutes);
 app.use("/api/clientes", clienteRoutes);
+app.use("/api/frete", freteRoutes);
 app.use(errorHandler);
 
 module.exports = app;
