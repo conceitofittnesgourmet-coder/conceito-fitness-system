@@ -678,26 +678,51 @@
 }
 
 @media (max-width: 680px) {
+
   .co-header {
-    height: auto;
-    padding: 18px;
-    flex-direction: column;
-    gap: 16px;
-    align-items: flex-start;
+    padding: 14px;
+    gap: 10px;
+  }
+
+  .co-logo strong {
+    font-size: 18px;
+  }
+
+  .co-logo-mark {
+    width: 42px;
+    height: 42px;
+    font-size: 22px;
+  }
+
+  .co-whatsapp-top {
+    width: 100%;
   }
 
   .co-hero {
-    padding: 36px 22px;
+    min-height: auto;
+    padding: 20px;
+  }
+
+  .co-hero h1 {
+    font-size: 22px;
+    margin-bottom: 10px;
+  }
+
+  .co-hero p {
+    font-size: 14px;
   }
 
   .co-hero-benefits {
-    flex-direction: column;
-    gap: 16px;
+    display: none;
+  }
+
+  .co-love-seal {
+    display: none;
   }
 
   .co-main,
   .co-footer {
-    width: calc(100% - 28px);
+    width: calc(100% - 20px);
   }
 
   .co-products-grid,
@@ -707,59 +732,17 @@
   }
 
   .co-category-grid {
-    grid-template-columns: repeat(2, 1fr);
+    display: flex;
+    overflow-x: auto;
+    gap: 10px;
+    padding-bottom: 8px;
   }
-}
 
-.co-nav button {
-  background: transparent;
-  border: 0;
-  color: white;
-  font-weight: 800;
-  padding: 12px 18px;
-  border-radius: 999px;
-  cursor: pointer;
-}
-
-.co-nav button.active,
-.co-nav button:hover {
-  color: #22c55e;
-  background: rgba(34, 197, 94, 0.12);
-}
-
-.co-duvidas {
-  width: min(1500px, calc(100% - 64px));
-  margin: 30px auto;
-  background: rgba(18, 18, 18, 0.94);
-  border: 1px solid rgba(255,255,255,.08);
-  border-radius: 22px;
-  padding: 28px;
-}
-
-.co-duvidas h2 {
-  font-size: 32px;
-  margin-bottom: 20px;
-}
-
-.co-duvidas-grid {
-  display: grid;
-  grid-template-columns: repeat(3, 1fr);
-  gap: 18px;
-}
-
-.co-duvidas-grid div {
-  background: rgba(255,255,255,.045);
-  border-radius: 18px;
-  padding: 18px;
-}
-
-.co-duvidas-grid strong {
-  color: #22c55e;
-}
-
-.co-duvidas-grid p {
-  color: #cbd5e1;
-  margin-top: 8px;
+  .co-category-grid button {
+    min-width: 110px;
+    min-height: 70px;
+    flex-shrink: 0;
+  }
 }
 
 @media (max-width: 800px) {
@@ -782,4 +765,90 @@
 .co-client-form input::placeholder,
 .co-client-form textarea::placeholder {
   color: #94a3b8;
+}
+
+.co-cart-float {
+  position: fixed;
+  bottom: 20px;
+  right: 20px;
+  z-index: 999;
+
+  border: 0;
+  border-radius: 999px;
+
+  background: #22c55e;
+  color: white;
+
+  padding: 14px 20px;
+
+  font-weight: 700;
+  font-size: 15px;
+
+  box-shadow: 0 10px 30px rgba(0,0,0,.35);
+}
+
+.co-calc-frete {
+  width: 100%;
+  border: 0;
+  border-radius: 12px;
+  background: linear-gradient(135deg, #14532d, #22c55e);
+  color: #fff;
+  padding: 13px 14px;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.co-frete-info {
+  border: 1px solid rgba(34, 197, 94, 0.35);
+  background: rgba(34, 197, 94, 0.09);
+  border-radius: 14px;
+  padding: 12px 14px;
+  display: grid;
+  gap: 4px;
+}
+
+.co-frete-info span {
+  color: #cbd5e1;
+}
+
+.co-frete-info strong {
+  color: #22c55e;
+}
+
+.co-total-box {
+  margin: 24px 0 18px;
+  padding-top: 18px;
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  display: grid;
+  gap: 10px;
+}
+
+.co-total-box div {
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.co-total-box span {
+  font-weight: 800;
+  color: #cbd5e1;
+}
+
+.co-total-box strong {
+  color: #22c55e;
+}
+
+.co-total-final {
+  border-top: 1px solid rgba(255, 255, 255, 0.1);
+  padding-top: 12px;
+  margin-top: 4px;
+}
+
+.co-total-final span {
+  color: #fff;
+  font-size: 20px;
+}
+
+.co-total-final strong {
+  font-size: 30px;
 }

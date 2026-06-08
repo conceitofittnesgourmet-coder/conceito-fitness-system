@@ -29,6 +29,9 @@ function CardapioOnline() {
   const [carrinho, setCarrinho] = useState([]);
   const [busca, setBusca] = useState("");
   const [categoria, setCategoria] = useState("Todos");
+  const [calculandoFrete, setCalculandoFrete] = useState(false);
+  const [frete, setFrete] = useState(0);
+  const [distanciaKm, setDistanciaKm] = useState(null);
 
   const [cliente, setCliente] = useState({
   nome: "",
@@ -170,10 +173,38 @@ function filtrarCategoria(cat) {
   const combos = produtosFiltrados.slice(3, 6);
   const novidades = produtosFiltrados.slice(0, 5);
 
-  const total = carrinho.reduce(
-    (acc, item) => acc + item.preco * item.quantidade,
-    0
-  );
+  const subtotal = carrinho.reduce(
+  (acc, item) => acc + item.preco * item.quantidade,
+  0
+);
+
+const total = subtotal + Number(frete || 0);
+
+async function calcularFreteEntrega() {
+  try {
+    if (!cliente.endereco) {
+      alert("Digite o endereço de entrega antes de calcular o frete.");
+      return;
+    }
+
+    setCalculandoFrete(true);
+
+    const response = await api.post("/frete/calcular", {
+      endereco: cliente.endereco,
+    });
+
+    setFrete(Number(response.data.frete || 0));
+    setDistanciaKm(Number(response.data.distanciaKm || 0));
+  } catch (error) {
+    console.log(error);
+    alert(
+      error.response?.data?.message ||
+        "Não foi possível calcular o frete. Confira o endereço."
+    );
+  } finally {
+    setCalculandoFrete(false);
+  }
+}
 
   function finalizarWhatsApp() {
     if (carrinho.length === 0) {
@@ -194,6 +225,16 @@ function filtrarCategoria(cat) {
   return;
 }
 
+if (
+  cliente.entrega === "Delivery" &&
+  distanciaKm === null
+) {
+  alert(
+    "Calcule o frete antes de finalizar o pedido."
+  );
+  return;
+}
+
     const itens = carrinho
       .map(
         (item) =>
@@ -209,7 +250,9 @@ Olá! Quero fazer um pedido pelo cardápio online da Conceito Fitness Gourmet.
 🛒 *Pedido:*
 ${itens}
 
-💰 *Total:* R$ ${total.toFixed(2)}
+💰 *Subtotal:* R$ ${subtotal.toFixed(2)}
+🚚 *Frete:* R$ ${Number(frete || 0).toFixed(2)}
+💵 *Total:* R$ ${total.toFixed(2)}
 
 👤 *Cliente:* ${cliente.nome}
 📱 *WhatsApp:* ${cliente.telefone}
@@ -556,14 +599,27 @@ Aguardo confirmação.
 
 <select
   value={cliente.entrega}
-  onChange={(e) =>
-    setCliente({
-      ...cliente,
-      entrega: e.target.value,
-      endereco: e.target.value === "Delivery" ? cliente.endereco : "",
-      referencia: e.target.value === "Delivery" ? cliente.referencia : "",
-    })
+  onChange={(e) => {
+  const tipo = e.target.value;
+
+  if (tipo !== "Delivery") {
+    setFrete(0);
+    setDistanciaKm(null);
   }
+
+  setCliente({
+    ...cliente,
+    entrega: tipo,
+    endereco:
+      tipo === "Delivery"
+        ? cliente.endereco
+        : "",
+    referencia:
+      tipo === "Delivery"
+        ? cliente.referencia
+        : "",
+  });
+}}
 >
   <option value="">Selecione</option>
   <option value="Retirada no balcão">Retirada no balcão</option>
@@ -591,8 +647,8 @@ Aguardo confirmação.
       placeholder="Ex.: próximo ao mercado..."
       value={cliente.referencia}
       onChange={(e) =>
-        setCliente({
-          ...cliente,
+  setCliente({
+    ...cliente,
           referencia: e.target.value,
         })
       }
@@ -600,20 +656,59 @@ Aguardo confirmação.
   </>
 )}
 
+{cliente.entrega === "Delivery" && (
+  <>
+    <button
+      type="button"
+      className="co-calc-frete"
+      onClick={calcularFreteEntrega}
+    >
+      {calculandoFrete ? "Calculando..." : "Calcular frete"}
+    </button>
+
+    {distanciaKm !== null && (
+      <div className="co-frete-info">
+        <span>Distância: {distanciaKm.toFixed(2)} km</span>
+        <strong>
+          Frete: R$ {Number(frete || 0).toFixed(2)}
+        </strong>
+      </div>
+    )}
+  </>
+)}
+    
+
             <label>Observação (opcional)</label>
             <textarea
-              placeholder="Alguma observação?"
-              value={cliente.observacao}
-              onChange={(e) =>
-                setCliente({ ...cliente, observacao: e.target.value })
-              }
-            />
-          </div>
+  placeholder="Alguma observação?"
+  value={cliente.observacao}
+  onChange={(e) =>
+    setCliente({
+      ...cliente,
+      observacao: e.target.value,
+    })
+  }
+/>
+            </div>
 
-          <div className="co-total">
-            <span>Total</span>
-            <strong>R$ {total.toFixed(2)}</strong>
-          </div>
+          <div className="co-total-box">
+  <div>
+    <span>Subtotal</span>
+    <strong>R$ {subtotal.toFixed(2)}</strong>
+  </div>
+
+  {cliente.entrega === "Delivery" && (
+    <div>
+      <span>Frete</span>
+      <strong>R$ {Number(frete || 0).toFixed(2)}</strong>
+    </div>
+  )}
+
+  <div className="co-total-final">
+    <span>Total</span>
+    <strong>R$ {total.toFixed(2)}</strong>
+  </div>
+</div>
 
           <button className="co-finish" onClick={finalizarWhatsApp}>
             <MessageCircle size={20} />
@@ -650,6 +745,21 @@ Aguardo confirmação.
     </div>
   </div>
 </section>
+
+{carrinho.length > 0 && (
+  <button
+    className="co-cart-float"
+    onClick={() =>
+      document
+        .querySelector(".co-cart")
+        ?.scrollIntoView({
+          behavior: "smooth",
+        })
+    }
+  >
+    🛒 {carrinho.length} item(s)
+  </button>
+)}
 
       <footer className="co-footer">
         <div>
