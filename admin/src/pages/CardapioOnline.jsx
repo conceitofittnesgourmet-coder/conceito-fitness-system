@@ -333,12 +333,12 @@ Aguardo confirmação.
     <div className="co-page">
       <header className="co-header">
         <div className="co-logo">
-          <div className="co-logo-mark">C</div>
-          <div>
-            <strong>CONCEITO</strong>
-            <span>FITNESS GOURMET</span>
-          </div>
-        </div>
+  <img
+    src="/logo-conceito.png"
+    alt="Conceito Fitness Gourmet"
+    className="co-logo-image"
+  />
+</div>
 
         <nav className="co-nav">
   <button onClick={() => irPara(destaquesRef)} className="active">
