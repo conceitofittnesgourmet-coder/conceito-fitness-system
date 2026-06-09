@@ -1841,3 +1841,13 @@
 {"level":"info","message":{"ip":"::1","method":"POST","url":"/api/frete/calcular"},"timestamp":"2026-06-07T00:46:35.512Z"}
 {"level":"info","message":{"ip":"::1","method":"POST","url":"/api/frete/calcular"},"timestamp":"2026-06-07T00:52:41.101Z"}
 {"level":"info","message":{"ip":"::1","method":"POST","url":"/api/frete/calcular"},"timestamp":"2026-06-07T01:16:38.224Z"}
+{"level":"info","message":{"ip":"::1","method":"POST","url":"/api/frete/calcular"},"timestamp":"2026-06-08T19:55:55.256Z"}
+{"level":"info","message":{"ip":"::1","method":"POST","url":"/api/frete/calcular"},"timestamp":"2026-06-08T20:23:04.023Z"}
+{"level":"info","message":{"ip":"::1","method":"POST","url":"/api/frete/calcular"},"timestamp":"2026-06-08T21:34:43.630Z"}
+{"level":"info","message":{"ip":"::1","method":"POST","url":"/api/frete/calcular"},"timestamp":"2026-06-08T21:34:59.831Z"}
+{"level":"info","message":{"ip":"::1","method":"POST","url":"/api/frete/calcular"},"timestamp":"2026-06-08T21:35:24.319Z"}
+{"level":"info","message":{"ip":"::1","method":"POST","url":"/api/frete/calcular"},"timestamp":"2026-06-08T21:50:12.932Z"}
+{"level":"info","message":{"ip":"::1","method":"POST","url":"/api/frete/calcular"},"timestamp":"2026-06-09T15:00:43.025Z"}
+{"level":"info","message":{"ip":"::1","method":"POST","url":"/api/frete/calcular"},"timestamp":"2026-06-09T15:33:01.058Z"}
+{"level":"info","message":{"ip":"::1","method":"POST","url":"/api/frete/calcular"},"timestamp":"2026-06-09T15:42:04.442Z"}
+{"level":"info","message":{"ip":"::1","method":"POST","url":"/api/frete/calcular"},"timestamp":"2026-06-09T15:43:35.582Z"}

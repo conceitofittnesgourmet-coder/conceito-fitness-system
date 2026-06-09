@@ -1,34 +1,33 @@
-const ORIGEM_LOJA_COORDENADAS = {
-  lat: -23.7646,
-  lon: -53.3203,
-};
+const ORIGEM_LAT = -23.750381;
+const ORIGEM_LON = -53.2719;
+
+function calcularValorFrete(distanciaKm) {
+  if (distanciaKm <= 5) return 10;
+
+  const kmAdicional = distanciaKm - 5;
+
+  return Number((10 + kmAdicional * 1.5).toFixed(2));
+}
 
 async function buscarCoordenadas(endereco) {
+  const enderecoCompleto = `${endereco}, Umuarama, Paraná, Brasil`;
+
   const url =
     "https://nominatim.openstreetmap.org/search?" +
     new URLSearchParams({
-      q: endereco,
+      q: enderecoCompleto,
       format: "json",
       limit: "1",
       countrycodes: "br",
     });
 
   const response = await fetch(url, {
-  headers: {
-    "User-Agent": "ConceitoFitnessGourmet/1.0",
-  },
-});
+    headers: {
+      "User-Agent": "ConceitoFitnessGourmet/1.0 contato@conceitofitgourmet.com.br",
+    },
+  });
 
-console.log("URL CONSULTADA:");
-console.log(url);
-
-console.log("STATUS:");
-console.log(response.status);
-
-const data = await response.json();
-
-console.log("RESPOSTA NOMINATIM:");
-console.log(JSON.stringify(data, null, 2));
+  const data = await response.json();
 
   if (!data || data.length === 0) {
     return null;
@@ -37,6 +36,26 @@ console.log(JSON.stringify(data, null, 2));
   return {
     lat: Number(data[0].lat),
     lon: Number(data[0].lon),
+    displayName: data[0].display_name,
+  };
+}
+
+async function calcularDistanciaRota(destinoLat, destinoLon) {
+  const url = `https://router.project-osrm.org/route/v1/driving/${ORIGEM_LON},${ORIGEM_LAT};${destinoLon},${destinoLat}?overview=false&alternatives=false&steps=false`;
+
+  const response = await fetch(url);
+  const data = await response.json();
+
+  console.log("OSRM RESPONSE:");
+  console.log(JSON.stringify(data, null, 2));
+
+  if (data.code !== "Ok" || !data.routes || data.routes.length === 0) {
+    return null;
+  }
+
+  return {
+    distanciaKm: data.routes[0].distance / 1000,
+    duracaoMin: data.routes[0].duration / 60,
   };
 }
 
@@ -51,50 +70,55 @@ exports.calcularFrete = async (req, res) => {
       });
     }
 
-    const origem = ORIGEM_LOJA_COORDENADAS;
+    const coordenadasDestino = await buscarCoordenadas(endereco);
 
-    const destino = await buscarCoordenadas(
-      `${endereco}, Umuarama, PR, Brasil`
+    console.log("DESTINO ENCONTRADO:");
+    console.log(coordenadasDestino);
+
+    if (!coordenadasDestino) {
+      return res.status(404).json({
+        success: false,
+        message:
+          "Não conseguimos localizar esse endereço. Tente informar rua, número, bairro e cidade.",
+      });
+    }
+
+    const rota = await calcularDistanciaRota(
+      coordenadasDestino.lat,
+      coordenadasDestino.lon
     );
 
-    if (!origem || !destino) {
+    if (!rota) {
       return res.status(404).json({
         success: false,
-        message: "Não conseguimos localizar esse endereço.",
+        message: "Não foi possível calcular a rota para esse endereço.",
       });
     }
 
-    const rotaUrl =
-      `https://router.project-osrm.org/route/v1/driving/` +
-      `${origem.lon},${origem.lat};${destino.lon},${destino.lat}` +
-      `?overview=false`;
-
-    const rotaResponse = await fetch(rotaUrl);
-    const rotaData = await rotaResponse.json();
-
-    if (!rotaData.routes || rotaData.routes.length === 0) {
-      return res.status(404).json({
-        success: false,
-        message: "Não foi possível calcular a rota.",
-      });
-    }
-
-    const distanciaKm = rotaData.routes[0].distance / 1000;
-
-    const kmAdicional = Math.max(0, Math.ceil(distanciaKm - 5));
-
-    const frete =
-      distanciaKm <= 5
-        ? 10
-        : 10 + kmAdicional * 1.5;
+    const distanciaKm = Number(rota.distanciaKm.toFixed(2));
+    const duracaoMin = Math.ceil(rota.duracaoMin);
+    const frete = Number(calcularValorFrete(distanciaKm).toFixed(2));
 
     return res.json({
       success: true,
-      distanciaKm: Number(distanciaKm.toFixed(2)),
-      frete: Number(frete.toFixed(2)),
+      distanciaKm,
+      distanciaTexto: `${distanciaKm} km`,
+      duracao: `${duracaoMin} min`,
+      frete,
+      origem: {
+        nome: "Shopping Palladium Umuarama",
+        lat: ORIGEM_LAT,
+        lon: ORIGEM_LON,
+      },
+      destino: {
+        enderecoInformado: endereco,
+        enderecoEncontrado: coordenadasDestino.displayName,
+        lat: coordenadasDestino.lat,
+        lon: coordenadasDestino.lon,
+      },
     });
   } catch (error) {
-    console.log("ERRO CALCULAR FRETE:", error);
+    console.log("ERRO CALCULAR FRETE OPENSTREETMAP:", error);
 
     return res.status(500).json({
       success: false,
