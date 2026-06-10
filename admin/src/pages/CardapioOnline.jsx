@@ -539,7 +539,9 @@ Aguardo confirmação.
             <div className="co-empty-cart">
               <ShoppingBag />
               <strong>Nenhum produto adicionado ainda.</strong>
-              <span>Adicione itens deliciosos ao seu pedido!</span>
+              <span>
+Seu carrinho está esperando por algo delicioso ☕
+</span>
             </div>
           ) : (
             <div className="co-cart-list">
