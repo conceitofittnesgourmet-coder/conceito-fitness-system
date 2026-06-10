@@ -35,7 +35,11 @@ async function uploadImagens(files = []) {
 
 // CRIAR PRODUTO
 const criarProduto = async (req, res) => {
-    console.log("BODY:", req.body);
+    console.log("================================");
+console.log("BODY PRODUTO:");
+console.log(req.body);
+console.log("CUSTO RECEBIDO:", req.body.custo);
+console.log("================================");
 console.log("FILES:", req.files);
   try {
     const {
@@ -59,12 +63,36 @@ console.log("FILES:", req.files);
 
     const imagens = await uploadImagens(req.files || []);
 
-    const produto = await Produto.create({
+    const precoVenda = Number(
+  String(preco).replace(",", ".")
+);
+
+const custoProduto = Number(
+  String(req.body.custo || 0).replace(",", ".")
+);
+
+const lucro = precoVenda - custoProduto;
+
+const margem =
+  precoVenda > 0
+    ? Number(
+        ((lucro / precoVenda) * 100).toFixed(2)
+      )
+    : 0;
+
+    console.log("BODY PRODUTO:");
+console.log(req.body);
+
+const produto = await Produto.create({
   ...req.body,
   nome,
   descricao: descricao || "",
   categoria: categoria || "Gourmet",
-  preco: Number(String(preco).replace(",", ".")),
+  preco: precoVenda,
+  custo: custoProduto,
+  lucro,
+  margem,
+  tipoProduto: req.body.tipoProduto || "producao",
   estoque: Number(estoque),
   tempoPreparo: Number(tempoPreparo || 0),
   restricoes: restricoes || "",
@@ -257,6 +285,35 @@ const atualizarProduto = async (req, res) => {
 } else {
   delete dadosAtualizados.estoque;
 }
+
+const precoAtual =
+  dadosAtualizados.preco ??
+  produto.preco ??
+  0;
+
+const custoAtual =
+  Number(
+    dadosAtualizados.custo ??
+    produto.custo ??
+    0
+  );
+
+dadosAtualizados.custo =
+  custoAtual;
+
+dadosAtualizados.lucro =
+  precoAtual - custoAtual;
+
+dadosAtualizados.margem =
+  precoAtual > 0
+    ? Number(
+        (
+          ((precoAtual - custoAtual) /
+            precoAtual) *
+          100
+        ).toFixed(2)
+      )
+    : 0;
 
     const produtoAtualizado = await Produto.findByIdAndUpdate(
       req.params.id,

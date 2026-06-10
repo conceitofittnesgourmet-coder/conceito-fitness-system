@@ -1,6 +1,10 @@
 const Produto = require("../models/produto");
 const Pedido = require("../models/pedido");
 const Cliente = require("../models/cliente");
+const ContaReceber = require("../models/contaReceber");
+const MovimentacaoFinanceira = require("../models/movimentacaoFinanceira");
+const FichaTecnica = require("../models/fichaTecnica");
+const MateriaPrima = require("../models/materiaPrima");
 
 
 // LISTAR
@@ -87,6 +91,45 @@ exports.criarPedido = async (req, res) => {
     }
 
     const pedidoCriado = await Pedido.create(dadosPedido);
+    
+    // ===============================
+// FINANCEIRO AUTOMÁTICO
+// ===============================
+try {
+  const formaPagamento = req.body.pagamento || "PIX";
+  const valorPedido = Number(total || 0);
+
+  const contaReceber = await ContaReceber.create({
+    descricao: `Pedido #${pedidoCriado._id.toString().slice(-6)}`,
+    cliente: cliente || "Cliente",
+    valor: valorPedido,
+    vencimento: new Date(),
+    dataRecebimento: new Date(),
+    status: "recebida",
+    formaRecebimento: formaPagamento,
+    pedido: pedidoCriado._id,
+    observacao: "Gerado automaticamente pelo pedido.",
+    empresa: dadosPedido.empresa,
+  });
+
+  await MovimentacaoFinanceira.create({
+    tipo: "entrada",
+    origem: "pedido",
+    descricao: `Venda: Pedido #${pedidoCriado._id.toString().slice(-6)}`,
+    categoria: "Vendas",
+    valor: valorPedido,
+    formaPagamento,
+    pedido: pedidoCriado._id,
+    contaReceber: contaReceber._id,
+    observacao: "Entrada automática gerada pelo pedido.",
+    empresa: dadosPedido.empresa,
+  });
+} catch (financeiroError) {
+  console.log(
+    "ERRO AO GERAR FINANCEIRO DO PEDIDO:",
+    financeiroError.message
+  );
+}
 
 const io = req.app.get("io");
 
@@ -175,6 +218,37 @@ for (const item of pedidoCriado.produtos || []) {
 
       await produto.save();
     }
+
+     // ==========================
+// BAIXA DE INSUMOS
+// ==========================
+
+const ficha = await FichaTecnica.findOne({
+  produto: produto._id,
+  ativa: true,
+}).populate("itens.materiaPrima");
+
+if (ficha) {
+  for (const ingrediente of ficha.itens) {
+
+    const materia = ingrediente.materiaPrima;
+
+    if (!materia) continue;
+
+    const consumo =
+      Number(ingrediente.quantidade || 0) *
+      Number(item.quantidade || 1);
+
+    await MateriaPrima.findByIdAndUpdate(
+      materia._id,
+      {
+        $inc: {
+          estoqueAtual: -consumo,
+        },
+      }
+    );
+  }
+}
   } catch (error) {
     console.log(
       `ERRO ATUALIZAR ESTOQUE PRODUTO ${item.produtoId}:`,

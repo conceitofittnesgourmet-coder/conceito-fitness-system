@@ -1,7 +1,6 @@
 import { useEffect, useMemo, useState } from "react";
-import api from "../services/api";
-import socket from "../services/socket";
 import AdminLayout from "../layouts/AdminLayout";
+import api from "../services/api";
 
 import {
   FaDollarSign,
@@ -9,199 +8,239 @@ import {
   FaClock,
   FaArrowDown,
   FaChartBar,
-  FaCalendarAlt,
-  FaDownload,
-  FaLightbulb,
+  FaPlus,
+  FaCheck,
+  FaTrash,
 } from "react-icons/fa";
 
 function Financeiro() {
-  const [pedidos, setPedidos] = useState([]);
+  const [dados, setDados] = useState(null);
+  const [loading, setLoading] = useState(true);
 
-  async function carregarDados() {
+  const [novaPagar, setNovaPagar] = useState({
+    descricao: "",
+    categoria: "",
+    fornecedor: "",
+    valor: "",
+    vencimento: "",
+  });
+
+  const [novaReceber, setNovaReceber] = useState({
+    descricao: "",
+    cliente: "",
+    valor: "",
+    vencimento: "",
+  });
+
+  async function carregarFinanceiro() {
     try {
-      const response = await api.get("/pedidos");
-      setPedidos(response.data.pedidos || []);
+      const response = await api.get("/financeiro");
+      setDados(response.data);
     } catch (error) {
-      console.log(error);
+      console.log("Erro financeiro:", error);
+      alert("Erro ao carregar financeiro.");
+    } finally {
+      setLoading(false);
     }
   }
 
   useEffect(() => {
-    carregarDados();
-
-    socket.on("novo-pedido", carregarDados);
-    socket.on("pedido-atualizado", carregarDados);
-
-    return () => {
-      socket.off("novo-pedido", carregarDados);
-      socket.off("pedido-atualizado", carregarDados);
-    };
+    carregarFinanceiro();
   }, []);
 
-  const financeiro = useMemo(() => {
-    const faturamento = pedidos.reduce(
-      (acc, p) => acc + Number(p.total || 0),
-      0
+  const resumo = dados?.resumo || {};
+  const contasPagar = dados?.contasPagar || [];
+  const contasReceber = dados?.contasReceber || [];
+  const movimentacoes = dados?.movimentacoes || [];
+
+  async function criarContaPagar() {
+    if (!novaPagar.descricao || !novaPagar.valor || !novaPagar.vencimento) {
+      alert("Preencha descrição, valor e vencimento.");
+      return;
+    }
+
+    await api.post("/financeiro/contas-pagar", novaPagar);
+
+    setNovaPagar({
+      descricao: "",
+      categoria: "",
+      fornecedor: "",
+      valor: "",
+      vencimento: "",
+    });
+
+    carregarFinanceiro();
+  }
+
+  async function criarContaReceber() {
+    if (!novaReceber.descricao || !novaReceber.valor || !novaReceber.vencimento) {
+      alert("Preencha descrição, valor e vencimento.");
+      return;
+    }
+
+    await api.post("/financeiro/contas-receber", novaReceber);
+
+    setNovaReceber({
+      descricao: "",
+      cliente: "",
+      valor: "",
+      vencimento: "",
+    });
+
+    carregarFinanceiro();
+  }
+
+  async function pagarConta(id) {
+    await api.put(`/financeiro/contas-pagar/${id}/pagar`, {
+      formaPagamento: "PIX",
+    });
+
+    carregarFinanceiro();
+  }
+
+  async function receberConta(id) {
+    await api.put(`/financeiro/contas-receber/${id}/receber`, {
+      formaRecebimento: "PIX",
+    });
+
+    carregarFinanceiro();
+  }
+
+  async function cancelarContaPagar(id) {
+    if (!window.confirm("Cancelar esta conta a pagar?")) return;
+
+    await api.delete(`/financeiro/contas-pagar/${id}`);
+    carregarFinanceiro();
+  }
+
+  async function cancelarContaReceber(id) {
+    if (!window.confirm("Cancelar esta conta a receber?")) return;
+
+    await api.delete(`/financeiro/contas-receber/${id}`);
+    carregarFinanceiro();
+  }
+
+  function formatarData(data) {
+    if (!data) return "-";
+    return new Date(data).toLocaleDateString("pt-BR");
+  }
+
+  function dinheiro(valor) {
+    return `R$ ${Number(valor || 0).toFixed(2)}`;
+  }
+
+  if (loading) {
+    return (
+      <AdminLayout title="Financeiro" subtitle="Carregando financeiro...">
+        <div className="card">Carregando...</div>
+      </AdminLayout>
     );
-
-    const recebidos = pedidos
-      .filter((p) => p.status === "entregue")
-      .reduce((acc, p) => acc + Number(p.total || 0), 0);
-
-    const pendente = faturamento - recebidos;
-    const despesas = faturamento * 0.18;
-    const lucro = faturamento - despesas;
-    const ticketMedio = pedidos.length ? faturamento / pedidos.length : 0;
-
-    return {
-      faturamento,
-      recebidos,
-      pendente,
-      despesas,
-      lucro,
-      ticketMedio,
-      totalPedidos: pedidos.length,
-    };
-  }, [pedidos]);
-
-  const ultimasMovimentacoes = pedidos.slice(0, 6);
+  }
 
   return (
-    <AdminLayout title="Financeiro" subtitle="Visão geral das finanças do seu negócio">
+    <AdminLayout title="Financeiro" subtitle="Controle financeiro real do ERP">
       <div className="financeiro-premium-page">
         <section className="financeiro-topbar">
           <div>
             <h1>Financeiro</h1>
-            <p>Controle receitas, despesas, pedidos e lucro em tempo real.</p>
-          </div>
-
-          <div className="financeiro-actions">
-            <button>
-              <FaCalendarAlt />
-              01/05/2026 - 31/05/2026
-            </button>
-
-            <button>
-              <FaDownload />
-              Exportar Relatório
-            </button>
-
-            <div className="financeiro-online">
-              <span></span>
-              <div>
-                <strong>Sistema Online</strong>
-                <small>Dados atualizados em tempo real</small>
-              </div>
-            </div>
+            <p>Contas a pagar, receber, fluxo de caixa e movimentações reais.</p>
           </div>
         </section>
 
         <section className="financeiro-kpis">
           <div className="financeiro-kpi green">
             <FaDollarSign />
-            <span>Faturamento Total</span>
-            <strong>R$ {financeiro.faturamento.toFixed(2)}</strong>
-            <p>+18% vs mês anterior</p>
-          </div>
-
-          <div className="financeiro-kpi blue">
-            <FaWallet />
-            <span>Recebido</span>
-            <strong>R$ {financeiro.recebidos.toFixed(2)}</strong>
-            <p>Pedidos entregues</p>
-          </div>
-
-          <div className="financeiro-kpi yellow">
-            <FaClock />
-            <span>Pendente</span>
-            <strong>R$ {financeiro.pendente.toFixed(2)}</strong>
-            <p>Aguardando conclusão</p>
+            <span>Entradas</span>
+            <strong>{dinheiro(resumo.entradas)}</strong>
+            <p>Receitas registradas</p>
           </div>
 
           <div className="financeiro-kpi purple">
             <FaArrowDown />
-            <span>Despesas</span>
-            <strong>R$ {financeiro.despesas.toFixed(2)}</strong>
-            <p>Estimativa operacional</p>
+            <span>Saídas</span>
+            <strong>{dinheiro(resumo.saidas)}</strong>
+            <p>Despesas pagas</p>
           </div>
 
-          <div className="financeiro-kpi green">
+          <div className="financeiro-kpi blue">
+            <FaWallet />
+            <span>Saldo</span>
+            <strong>{dinheiro(resumo.saldo)}</strong>
+            <p>Entradas - saídas</p>
+          </div>
+
+          <div className="financeiro-kpi yellow">
+            <FaClock />
+            <span>A Receber</span>
+            <strong>{dinheiro(resumo.totalReceberPendente)}</strong>
+            <p>Pendente</p>
+          </div>
+
+          <div className="financeiro-kpi red">
             <FaChartBar />
-            <span>Lucro Líquido</span>
-            <strong>R$ {financeiro.lucro.toFixed(2)}</strong>
-            <p>Resultado estimado</p>
+            <span>A Pagar</span>
+            <strong>{dinheiro(resumo.totalPagarPendente)}</strong>
+            <p>Pendente</p>
           </div>
         </section>
 
         <section className="financeiro-grid">
-          <div className="financeiro-card grande">
-            <div className="financeiro-card-header">
-              <h2>Faturamento dos Últimos 7 Dias</h2>
-              <span>Últimos 7 dias</span>
-            </div>
+          <div className="financeiro-card">
+            <h2><FaPlus /> Nova Conta a Pagar</h2>
 
-            <div className="grafico-linha-fake">
-              <div className="linha-ponto p1"></div>
-              <div className="linha-ponto p2"></div>
-              <div className="linha-ponto p3"></div>
-              <div className="linha-ponto p4"></div>
-              <div className="linha-ponto p5"></div>
-              <div className="linha-ponto p6"></div>
-              <div className="linha-ponto p7"></div>
-            </div>
+            <input placeholder="Descrição" value={novaPagar.descricao} onChange={(e) => setNovaPagar({ ...novaPagar, descricao: e.target.value })} />
+            <input placeholder="Categoria" value={novaPagar.categoria} onChange={(e) => setNovaPagar({ ...novaPagar, categoria: e.target.value })} />
+            <input placeholder="Fornecedor" value={novaPagar.fornecedor} onChange={(e) => setNovaPagar({ ...novaPagar, fornecedor: e.target.value })} />
+            <input type="number" placeholder="Valor" value={novaPagar.valor} onChange={(e) => setNovaPagar({ ...novaPagar, valor: e.target.value })} />
+            <input type="date" value={novaPagar.vencimento} onChange={(e) => setNovaPagar({ ...novaPagar, vencimento: e.target.value })} />
+
+            <button onClick={criarContaPagar}>Cadastrar Conta a Pagar</button>
           </div>
 
           <div className="financeiro-card">
-            <div className="financeiro-card-header">
-              <h2>Distribuição por Pagamento</h2>
-            </div>
+            <h2><FaPlus /> Nova Conta a Receber</h2>
 
-            <div className="donut-area">
-              <div className="donut-fake"></div>
+            <input placeholder="Descrição" value={novaReceber.descricao} onChange={(e) => setNovaReceber({ ...novaReceber, descricao: e.target.value })} />
+            <input placeholder="Cliente" value={novaReceber.cliente} onChange={(e) => setNovaReceber({ ...novaReceber, cliente: e.target.value })} />
+            <input type="number" placeholder="Valor" value={novaReceber.valor} onChange={(e) => setNovaReceber({ ...novaReceber, valor: e.target.value })} />
+            <input type="date" value={novaReceber.vencimento} onChange={(e) => setNovaReceber({ ...novaReceber, vencimento: e.target.value })} />
 
-              <div className="pagamentos-lista">
-                <p><span className="dot green"></span> Cartão Crédito <strong>40%</strong></p>
-                <p><span className="dot blue"></span> PIX <strong>30%</strong></p>
-                <p><span className="dot yellow"></span> Dinheiro <strong>20%</strong></p>
-                <p><span className="dot purple"></span> Débito <strong>10%</strong></p>
-              </div>
-            </div>
-
-            <div className="pagamento-total">
-              <span>Total</span>
-              <strong>R$ {financeiro.faturamento.toFixed(2)}</strong>
-            </div>
+            <button onClick={criarContaReceber}>Cadastrar Conta a Receber</button>
           </div>
 
-          <div className="financeiro-card movimentacoes">
-            <div className="financeiro-card-header">
-              <h2>Últimas Movimentações</h2>
-            </div>
+          <div className="financeiro-card movimentacoes grande">
+            <h2>Contas a Pagar</h2>
 
             <table>
               <thead>
                 <tr>
                   <th>Descrição</th>
-                  <th>Categoria</th>
-                  <th>Tipo</th>
                   <th>Valor</th>
+                  <th>Vencimento</th>
                   <th>Status</th>
+                  <th>Ações</th>
                 </tr>
               </thead>
 
               <tbody>
-                {ultimasMovimentacoes.map((pedido) => (
-                  <tr key={pedido._id}>
-                    <td>Pedido #{pedido._id?.slice(-6)}</td>
-                    <td>Vendas</td>
-                    <td>Receita</td>
-                    <td className="valor-positivo">
-                      R$ {Number(pedido.total || 0).toFixed(2)}
-                    </td>
+                {contasPagar.map((conta) => (
+                  <tr key={conta._id}>
+                    <td>{conta.descricao}</td>
+                    <td className="valor-negativo">{dinheiro(conta.valor)}</td>
+                    <td>{formatarData(conta.vencimento)}</td>
+                    <td>{conta.status}</td>
                     <td>
-                      <span className="status-recebido">
-                        {pedido.status === "entregue" ? "Recebido" : "Pendente"}
-                      </span>
+                      {conta.status !== "paga" && conta.status !== "cancelada" && (
+                        <button onClick={() => pagarConta(conta._id)}>
+                          <FaCheck /> Pagar
+                        </button>
+                      )}
+
+                      {conta.status !== "cancelada" && (
+                        <button onClick={() => cancelarContaPagar(conta._id)}>
+                          <FaTrash />
+                        </button>
+                      )}
                     </td>
                   </tr>
                 ))}
@@ -209,43 +248,76 @@ function Financeiro() {
             </table>
           </div>
 
-          <div className="financeiro-card resumo">
-            <h2>Resumo do Mês</h2>
+          <div className="financeiro-card movimentacoes grande">
+            <h2>Contas a Receber</h2>
 
-            <div className="resumo-linha">
-              <span>Faturamento Bruto</span>
-              <strong>R$ {financeiro.faturamento.toFixed(2)}</strong>
-            </div>
+            <table>
+              <thead>
+                <tr>
+                  <th>Descrição</th>
+                  <th>Cliente</th>
+                  <th>Valor</th>
+                  <th>Vencimento</th>
+                  <th>Status</th>
+                  <th>Ações</th>
+                </tr>
+              </thead>
 
-            <div className="resumo-linha red">
-              <span>(-) Despesas</span>
-              <strong>R$ {financeiro.despesas.toFixed(2)}</strong>
-            </div>
+              <tbody>
+                {contasReceber.map((conta) => (
+                  <tr key={conta._id}>
+                    <td>{conta.descricao}</td>
+                    <td>{conta.cliente || "-"}</td>
+                    <td className="valor-positivo">{dinheiro(conta.valor)}</td>
+                    <td>{formatarData(conta.vencimento)}</td>
+                    <td>{conta.status}</td>
+                    <td>
+                      {conta.status !== "recebida" && conta.status !== "cancelada" && (
+                        <button onClick={() => receberConta(conta._id)}>
+                          <FaCheck /> Receber
+                        </button>
+                      )}
 
-            <div className="resumo-linha green">
-              <span>(=) Lucro Líquido</span>
-              <strong>R$ {financeiro.lucro.toFixed(2)}</strong>
-            </div>
-
-            <hr />
-
-            <div className="resumo-linha">
-              <span>Ticket Médio</span>
-              <strong>R$ {financeiro.ticketMedio.toFixed(2)}</strong>
-            </div>
-
-            <div className="resumo-linha">
-              <span>Total de Pedidos</span>
-              <strong>{financeiro.totalPedidos}</strong>
-            </div>
+                      {conta.status !== "cancelada" && (
+                        <button onClick={() => cancelarContaReceber(conta._id)}>
+                          <FaTrash />
+                        </button>
+                      )}
+                    </td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
 
-          <div className="financeiro-card dica">
-            <FaLightbulb />
-            <div>
-              <h3>Dica Financeira</h3>
-              <p>Seu faturamento está sendo atualizado automaticamente com base nos pedidos.</p>
-            </div>
+          <div className="financeiro-card movimentacoes grande">
+            <h2>Fluxo de Caixa</h2>
+
+            <table>
+              <thead>
+                <tr>
+                  <th>Descrição</th>
+                  <th>Origem</th>
+                  <th>Tipo</th>
+                  <th>Valor</th>
+                  <th>Data</th>
+                </tr>
+              </thead>
+
+              <tbody>
+                {movimentacoes.map((mov) => (
+                  <tr key={mov._id}>
+                    <td>{mov.descricao}</td>
+                    <td>{mov.origem}</td>
+                    <td>{mov.tipo}</td>
+                    <td className={mov.tipo === "entrada" ? "valor-positivo" : "valor-negativo"}>
+                      {dinheiro(mov.valor)}
+                    </td>
+                    <td>{formatarData(mov.data)}</td>
+                  </tr>
+                ))}
+              </tbody>
+            </table>
           </div>
         </section>
       </div>

@@ -67,6 +67,8 @@ import Clientes from "./pages/Clientes";
 
 import Financeiro from "./pages/Financeiro";
 
+import Producao from "./pages/Producao";
+
 import Analise from "./pages/Analise";
 
 import Pdv from "./pages/Pdv";
@@ -415,7 +417,14 @@ function App() {
   }
 />
 
-
+<Route
+  path="/producao"
+  element={
+    <PrivateRoute>
+      <Producao />
+    </PrivateRoute>
+  }
+/>
 
 
 

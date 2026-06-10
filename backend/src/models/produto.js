@@ -32,6 +32,26 @@ const produtoSchema = new mongoose.Schema(
       required: true,
     },
 
+    custo: {
+  type: Number,
+  default: 0,
+},
+
+lucro: {
+  type: Number,
+  default: 0,
+},
+
+margem: {
+  type: Number,
+  default: 0,
+},
+
+tipoProduto: {
+  type: String,
+  default: "producao",
+},
+
     estoque: {
       type: Number,
       default: 0,
@@ -47,11 +67,12 @@ const produtoSchema = new mongoose.Schema(
     tipo: {
       type: String,
       enum: [
-        "entrada",
-        "saida",
-        "ajuste",
-        "venda",
-      ],
+  "entrada",
+  "saida",
+  "ajuste",
+  "venda",
+  "producao",
+],
     },
 
     quantidade: Number,

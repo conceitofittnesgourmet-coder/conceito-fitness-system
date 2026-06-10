@@ -50,6 +50,8 @@ function Produtos() {
   const [categoria, setCategoria] = useState("");
   const [descricao, setDescricao] = useState("");
   const [preco, setPreco] = useState("");
+  const [custo, setCusto] = useState("");
+  const [tipoProduto, setTipoProduto] = useState("producao");
   const [estoque, setEstoque] = useState("");
   const [tempoPreparo, setTempoPreparo] = useState("");
   const [restricoes, setRestricoes] = useState("");
@@ -68,6 +70,8 @@ function Produtos() {
   const [editCategoria, setEditCategoria] = useState("");
   const [editDescricao, setEditDescricao] = useState("");
   const [editPreco, setEditPreco] = useState("");
+  const [editCusto, setEditCusto] = useState("");
+  const [editTipoProduto, setEditTipoProduto] = useState("producao");
   const [editEstoque, setEditEstoque] = useState("");
   const [editTempoPreparo, setEditTempoPreparo] = useState("");
   const [editRestricoes, setEditRestricoes] = useState("");
@@ -118,11 +122,14 @@ function Produtos() {
       formData.append("categoria", categoria);
       formData.append("descricao", descricao);
       formData.append("preco", preco);
+      formData.append("custo", custo);
+      formData.append("tipoProduto", tipoProduto);
       formData.append("estoque", estoque);
       formData.append("tempoPreparo", tempoPreparo);
       formData.append("restricoes", restricoes);
       formData.append("peso", peso);
       formData.append("destaque", destaque);
+      
 
       imagens.forEach((img) => {
         formData.append("imagens", img);
@@ -166,6 +173,8 @@ function Produtos() {
     setEditCategoria(produto.categoria || "");
     setEditDescricao(produto.descricao || "");
     setEditPreco(produto.preco || "");
+    setEditCusto(produto.custo || "");
+    setEditTipoProduto(produto.tipoProduto || "producao");
     setEditEstoque(produto.estoque || "");
     setEditTempoPreparo(produto.tempoPreparo || "");
     setEditRestricoes(produto.restricoes || "");
@@ -186,6 +195,8 @@ function Produtos() {
       formData.append("categoria", editCategoria);
       formData.append("descricao", editDescricao);
       formData.append("preco", editPreco);
+      formData.append("custo", editCusto);
+      formData.append("tipoProduto", editTipoProduto);
       formData.append("estoque", editEstoque);
       formData.append("tempoPreparo", editTempoPreparo);
       formData.append("restricoes", editRestricoes);
@@ -325,7 +336,7 @@ function Produtos() {
               <div className="mini-grid">
                 <div className="field-premium">
                   <label>Preço *</label>
-                  <input
+                <input
   type="number"
   step="0.01"
   min="0"
@@ -337,6 +348,42 @@ function Produtos() {
   }
 />
                 </div>
+                <div className="field-premium">
+  <label>Custo Produção</label>
+
+  <input
+    type="number"
+    step="0.01"
+    min="0"
+    value={custo}
+    onChange={(e) =>
+      setCusto(e.target.value.replace(",", "."))
+    }
+  />
+</div>
+
+<div className="field-premium">
+  <label>Tipo Produto</label>
+
+  <select
+    value={tipoProduto}
+    onChange={(e) =>
+      setTipoProduto(e.target.value)
+    }
+  >
+    <option value="producao">
+      Produção Própria
+    </option>
+
+    <option value="revenda">
+      Revenda
+    </option>
+
+    <option value="insumo">
+      Insumo
+    </option>
+  </select>
+</div>
 
                 <div className="field-premium">
                   <label>Estoque *</label>
@@ -500,6 +547,27 @@ function Produtos() {
                   <div className="produto-body-premium">
                     <h3>{produto.nome}</h3>
                     <strong>R$ {Number(produto.preco || 0).toFixed(2)}</strong>
+
+                    <p>
+  Custo:
+  <strong>
+    R$ {Number(produto.custo || 0).toFixed(2)}
+  </strong>
+</p>
+
+<p style={{ color: "#22c55e" }}>
+  Lucro:
+  <strong>
+    R$ {Number(produto.lucro || 0).toFixed(2)}
+  </strong>
+</p>
+
+<p style={{ color: "#3b82f6" }}>
+  Margem:
+  <strong>
+    {Number(produto.margem || 0).toFixed(2)}%
+  </strong>
+</p>
                     <p
   style={{
     color:
@@ -567,6 +635,32 @@ function Produtos() {
               <input value={editCategoria} onChange={(e) => setEditCategoria(e.target.value)} />
               <textarea value={editDescricao} onChange={(e) => setEditDescricao(e.target.value)} />
               <input value={editPreco} onChange={(e) => setEditPreco(e.target.value)} />
+              <input
+  placeholder="Custo"
+  value={editCusto}
+  onChange={(e) =>
+    setEditCusto(e.target.value)
+  }
+/>
+
+<select
+  value={editTipoProduto}
+  onChange={(e) =>
+    setEditTipoProduto(e.target.value)
+  }
+>
+  <option value="producao">
+    Produção Própria
+  </option>
+
+  <option value="revenda">
+    Revenda
+  </option>
+
+  <option value="insumo">
+    Insumo
+  </option>
+</select>
               <input value={editEstoque} onChange={(e) => setEditEstoque(e.target.value)} />
               <input value={editTempoPreparo} onChange={(e) => setEditTempoPreparo(e.target.value)} />
               <input value={editRestricoes} onChange={(e) => setEditRestricoes(e.target.value)} />
