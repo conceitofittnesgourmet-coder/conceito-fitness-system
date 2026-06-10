@@ -1,5 +1,5 @@
-const MateriaPrima = require("../models/materiaPrima");
-const FichaTecnica = require("../models/fichaTecnica");
+const MateriaPrima = require("../models/materiaprima");
+const FichaTecnica = require("../models/fichatecnica");
 const Produto = require("../models/produto");
 
 // ===============================

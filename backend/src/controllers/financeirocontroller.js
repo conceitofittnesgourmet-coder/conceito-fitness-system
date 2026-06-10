@@ -1,6 +1,6 @@
-const ContaPagar = require("../models/contaPagar");
-const ContaReceber = require("../models/contaReceber");
-const MovimentacaoFinanceira = require("../models/movimentacaoFinanceira");
+const ContaPagar = require("../models/contapagar");
+const ContaReceber = require("../models/contareceber");
+const MovimentacaoFinanceira = require("../models/movimentacaofinanceira");
 
 function atualizarStatusVencimento(conta) {
   const hoje = new Date();

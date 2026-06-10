@@ -1,10 +1,10 @@
 const Produto = require("../models/produto");
 const Pedido = require("../models/pedido");
 const Cliente = require("../models/cliente");
-const ContaReceber = require("../models/contaReceber");
-const MovimentacaoFinanceira = require("../models/movimentacaoFinanceira");
-const FichaTecnica = require("../models/fichaTecnica");
-const MateriaPrima = require("../models/materiaPrima");
+const ContaReceber = require("../models/contareceber");
+const MovimentacaoFinanceira = require("../models/movimentacaofinanceira");
+const FichaTecnica = require("../models/fichatecnica");
+const MateriaPrima = require("../models/materiaprima");
 
 
 // LISTAR
