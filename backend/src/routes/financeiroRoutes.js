@@ -11,7 +11,7 @@ const {
   receberConta,
   deletarContaReceber,
   criarMovimentacao,
-} = require("../controllers/financeiroController");
+} = require("../controllers/financeirocontroller");
 
 // RESUMO
 router.get("/", resumoFinanceiro);

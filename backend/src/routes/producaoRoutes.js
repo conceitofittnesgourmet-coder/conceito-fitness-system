@@ -1,7 +1,7 @@
 const express = require("express");
 const router = express.Router();
 
-const producaoController = require("../controllers/producaoController");
+const producaoController = require("../controllers/producaocontroller");
 
 router.get("/materias-primas", producaoController.listarMateriasPrimas);
 router.post("/materias-primas", producaoController.criarMateriaPrima);
