@@ -12,6 +12,7 @@ import {
   FaTruck,
   FaSignOutAlt,
   FaStore,
+  FaIndustry,
 } from "react-icons/fa";
 
 function AdminLayout({
@@ -48,6 +49,11 @@ function AdminLayout({
     { label: "Entregador", path: "/entregador", icon: <FaTruck /> },
     { label: "Clientes", path: "/clientes", icon: <FaUsers /> },
     { label: "Financeiro", path: "/financeiro", icon: <FaWallet /> },
+    {
+  label: "Produção",
+  path: "/producao",
+  icon: <FaIndustry />
+},
     { label: "Caixa", path: "/caixa", icon: <FaWallet /> },
     { label: "Analytics", path: "/analytics", icon: <FaChartPie /> },
     ];
