@@ -311,3 +311,86 @@
     color: black !important;
   }
 }
+
+.relatorios-filtros-grid.novo-layout {
+  grid-template-columns: 1.3fr 1fr 1fr repeat(4, auto);
+}
+
+.relatorios-filtros-grid select {
+  height: 48px;
+  border-radius: 14px;
+  border: 1px solid rgba(148, 163, 184, 0.25);
+  background: rgba(255, 255, 255, 0.95);
+  padding: 0 14px;
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.relatorio-titulo-print {
+  display: none;
+}
+
+.relatorio-card-tabela td {
+  white-space: nowrap;
+}
+
+.relatorio-card-tabela td:nth-child(3),
+.relatorio-card-tabela td:nth-child(4),
+.relatorio-card-tabela td:nth-child(5) {
+  min-width: 110px;
+}
+
+@media (max-width: 1300px) {
+  .relatorios-filtros-grid.novo-layout {
+    grid-template-columns: repeat(2, 1fr);
+  }
+}
+
+@media print {
+  body {
+    background: white !important;
+  }
+
+  .no-print,
+  .sidebar,
+  .topbar {
+    display: none !important;
+  }
+
+  .relatorio-titulo-print {
+    display: block !important;
+    margin-bottom: 20px;
+    color: black !important;
+  }
+
+  .area-impressao {
+    padding: 20px !important;
+    background: white !important;
+  }
+
+  .relatorios-kpis,
+  .relatorios-resumo-financeiro,
+  .relatorios-grid {
+    display: block !important;
+  }
+
+  .relatorio-kpi,
+  .resumo-box,
+  .relatorio-card-tabela {
+    page-break-inside: avoid;
+    margin-bottom: 18px;
+    background: white !important;
+    color: black !important;
+    border: 1px solid #ddd !important;
+  }
+
+  .relatorio-kpi *,
+  .resumo-box *,
+  .relatorio-card-tabela * {
+    color: black !important;
+  }
+
+  .relatorio-card-tabela table {
+    min-width: 100% !important;
+  }
+}
