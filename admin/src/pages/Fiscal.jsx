@@ -9,6 +9,9 @@ import {
   FaMoneyBillWave,
   FaClipboardCheck,
   FaTimesCircle,
+  FaEye,
+  FaUpload,
+  FaTimes,
 } from "react-icons/fa";
 
 import "../styles/fiscal.css";
@@ -18,6 +21,8 @@ function Fiscal() {
   const [materias, setMaterias] = useState([]);
   const [notas, setNotas] = useState([]);
   const [resumo, setResumo] = useState(null);
+  const [notaSelecionada, setNotaSelecionada] = useState(null);
+  const [xmlNome, setXmlNome] = useState("");
 
   const [nota, setNota] = useState({
     numero: "",
@@ -72,6 +77,18 @@ function Fiscal() {
   function dataBR(data) {
     if (!data) return "-";
     return new Date(data).toLocaleDateString("pt-BR");
+  }
+
+  function selecionarXML(e) {
+    const arquivo = e.target.files?.[0];
+
+    if (!arquivo) return;
+
+    setXmlNome(arquivo.name);
+
+    alert(
+      "XML selecionado. A leitura automática do XML será feita na próxima etapa. Por enquanto, lance os dados manualmente."
+    );
   }
 
   function adicionarItem() {
@@ -143,6 +160,7 @@ function Fiscal() {
     });
 
     setItens([]);
+    setXmlNome("");
 
     carregarDados();
   }
@@ -208,6 +226,24 @@ function Fiscal() {
             <strong>{resumo?.notasCanceladas || 0}</strong>
             <p>Notas canceladas</p>
           </div>
+        </section>
+
+        <section className="xml-upload-card">
+          <div>
+            <FaUpload />
+            <strong>Importar XML da Nota</strong>
+            <span>
+              Selecione o arquivo XML da NF-e. A leitura automática será ativada
+              na próxima etapa.
+            </span>
+          </div>
+
+          <label className="xml-upload-btn">
+            Selecionar XML
+            <input type="file" accept=".xml" onChange={selecionarXML} />
+          </label>
+
+          {xmlNome && <p className="xml-nome">Arquivo: {xmlNome}</p>}
         </section>
 
         <section className="fiscal-grid">
@@ -348,8 +384,8 @@ function Fiscal() {
                 <option value="">Vincular matéria-prima</option>
                 {materias.map((materia) => (
                   <option key={materia._id} value={materia._id}>
-                    {materia.nome} - estoque {materia.estoqueAtual}{" "}
-                    {materia.unidade}
+                    {materia.nome} | Estoque: {materia.estoqueAtual}{" "}
+                    {materia.unidade} | Custo: {dinheiro(materia.custoUnitario)}
                   </option>
                 ))}
               </select>
@@ -417,14 +453,28 @@ function Fiscal() {
               ))}
             </div>
 
-            <div className="fiscal-total">
-              <span>Subtotal itens</span>
-              <strong>{dinheiro(valorItens)}</strong>
-            </div>
+            <div className="resumo-nota-card">
+              <h3>Resumo da Nota</h3>
 
-            <div className="fiscal-total destaque">
-              <span>Total da nota</span>
-              <strong>{dinheiro(totalNota)}</strong>
+              <div>
+                <span>Subtotal dos itens</span>
+                <strong>{dinheiro(valorItens)}</strong>
+              </div>
+
+              <div>
+                <span>Frete</span>
+                <strong>{dinheiro(nota.valorFrete)}</strong>
+              </div>
+
+              <div>
+                <span>Desconto</span>
+                <strong>{dinheiro(nota.valorDesconto)}</strong>
+              </div>
+
+              <div className="total">
+                <span>Total da nota</span>
+                <strong>{dinheiro(totalNota)}</strong>
+              </div>
             </div>
 
             <button className="btn-fiscal salvar" onClick={salvarNota}>
@@ -442,9 +492,11 @@ function Fiscal() {
                     <th>Data</th>
                     <th>Número</th>
                     <th>Fornecedor</th>
+                    <th>Itens</th>
                     <th>Valor</th>
+                    <th>Pagamento</th>
                     <th>Status</th>
-                    <th>Ação</th>
+                    <th>Ações</th>
                   </tr>
                 </thead>
 
@@ -454,9 +506,18 @@ function Fiscal() {
                       <td>{dataBR(nota.dataEntrada || nota.createdAt)}</td>
                       <td>{nota.numero}</td>
                       <td>{nota.fornecedor?.nome || nota.fornecedorNome}</td>
+                      <td>{nota.itens?.length || 0}</td>
                       <td>{dinheiro(nota.valorTotal)}</td>
+                      <td>{nota.formaPagamento}</td>
                       <td>{nota.status}</td>
-                      <td>
+                      <td className="acoes-nota">
+                        <button
+                          className="btn-ver"
+                          onClick={() => setNotaSelecionada(nota)}
+                        >
+                          <FaEye /> Ver
+                        </button>
+
                         {nota.status !== "cancelada" && (
                           <button
                             className="btn-cancelar"
@@ -471,7 +532,7 @@ function Fiscal() {
 
                   {notas.length === 0 && (
                     <tr>
-                      <td colSpan="6">Nenhuma nota lançada.</td>
+                      <td colSpan="8">Nenhuma nota lançada.</td>
                     </tr>
                   )}
                 </tbody>
@@ -479,6 +540,82 @@ function Fiscal() {
             </div>
           </div>
         </section>
+
+        {notaSelecionada && (
+          <div className="modal-fiscal-overlay">
+            <div className="modal-fiscal">
+              <button
+                className="modal-fechar"
+                onClick={() => setNotaSelecionada(null)}
+              >
+                <FaTimes />
+              </button>
+
+              <h2>Nota Fiscal de Entrada</h2>
+
+              <div className="modal-info-grid">
+                <div>
+                  <span>Número</span>
+                  <strong>{notaSelecionada.numero}</strong>
+                </div>
+
+                <div>
+                  <span>Série</span>
+                  <strong>{notaSelecionada.serie || "-"}</strong>
+                </div>
+
+                <div>
+                  <span>Fornecedor</span>
+                  <strong>
+                    {notaSelecionada.fornecedor?.nome ||
+                      notaSelecionada.fornecedorNome ||
+                      "-"}
+                  </strong>
+                </div>
+
+                <div>
+                  <span>Valor total</span>
+                  <strong>{dinheiro(notaSelecionada.valorTotal)}</strong>
+                </div>
+
+                <div>
+                  <span>Pagamento</span>
+                  <strong>{notaSelecionada.formaPagamento}</strong>
+                </div>
+
+                <div>
+                  <span>Status</span>
+                  <strong>{notaSelecionada.status}</strong>
+                </div>
+              </div>
+
+              <h3>Itens da Nota</h3>
+
+              <div className="modal-itens">
+                {(notaSelecionada.itens || []).map((item) => (
+                  <div key={item._id} className="modal-item">
+                    <div>
+                      <strong>{item.nome}</strong>
+                      <span>
+                        {item.quantidade} {item.unidade} x{" "}
+                        {dinheiro(item.valorUnitario)}
+                      </span>
+                    </div>
+
+                    <strong>{dinheiro(item.valorTotal)}</strong>
+                  </div>
+                ))}
+              </div>
+
+              {notaSelecionada.chaveAcesso && (
+                <div className="modal-chave">
+                  <span>Chave de acesso</span>
+                  <p>{notaSelecionada.chaveAcesso}</p>
+                </div>
+              )}
+            </div>
+          </div>
+        )}
       </div>
     </AdminLayout>
   );
