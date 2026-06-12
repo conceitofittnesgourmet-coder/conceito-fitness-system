@@ -408,3 +408,30 @@ exports.importarXmlNotaEntrada = async (req, res) => {
     });
   }
 };
+
+exports.excluirNotaEntrada = async (req, res) => {
+  try {
+    const nota = await NotaFiscalEntrada.findById(req.params.id);
+
+    if (!nota) {
+      return res.status(404).json({
+        success: false,
+        message: "Nota fiscal não encontrada.",
+      });
+    }
+
+    await NotaFiscalEntrada.findByIdAndDelete(req.params.id);
+
+    return res.json({
+      success: true,
+      message: "Nota fiscal excluída com sucesso.",
+    });
+  } catch (error) {
+    console.log("ERRO EXCLUIR NOTA ENTRADA:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};

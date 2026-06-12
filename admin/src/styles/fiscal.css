@@ -429,3 +429,13 @@
     grid-template-columns: 1fr;
   }
 }
+
+.btn-excluir {
+  border: none;
+  border-radius: 10px;
+  background: rgba(239, 68, 68, 0.32);
+  color: #fecaca;
+  padding: 9px 12px;
+  font-weight: 900;
+  cursor: pointer;
+}

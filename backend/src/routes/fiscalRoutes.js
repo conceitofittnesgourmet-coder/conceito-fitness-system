@@ -14,6 +14,7 @@ const {
   criarNotaEntrada,
   buscarNotaEntrada,
   cancelarNotaEntrada,
+  excluirNotaEntrada,
   resumoFiscal,
   importarXmlNotaEntrada,
 } = require("../controllers/fiscalcontroller");
@@ -31,5 +32,6 @@ router.get("/notas-entrada", authMiddleware, listarNotasEntrada);
 router.post("/notas-entrada", authMiddleware, criarNotaEntrada);
 router.get("/notas-entrada/:id", authMiddleware, buscarNotaEntrada);
 router.patch("/notas-entrada/:id/cancelar", authMiddleware, cancelarNotaEntrada);
+router.delete("/notas-entrada/:id", authMiddleware, excluirNotaEntrada);
 
 module.exports = router;

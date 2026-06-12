@@ -251,6 +251,31 @@ function Fiscal() {
     0
   );
 
+  async function excluirNota(id) {
+  if (
+    !window.confirm(
+      "Tem certeza que deseja excluir esta nota? Use isso apenas para duplicidades ou testes."
+    )
+  ) {
+    return;
+  }
+
+  try {
+    const response = await api.delete(`/fiscal/notas-entrada/${id}`);
+
+    alert(response.data.message || "Nota excluída com sucesso.");
+
+    await carregarDados();
+  } catch (error) {
+    console.log("Erro ao excluir nota:", error);
+
+    alert(
+      error.response?.data?.message ||
+        "Erro ao excluir nota fiscal."
+    );
+  }
+}
+
   const totalNota =
     valorItens + Number(nota.valorFrete || 0) - Number(nota.valorDesconto || 0);
 
@@ -590,6 +615,13 @@ function Fiscal() {
                         >
                           <FaEye /> Ver
                         </button>
+
+                        <button
+  className="btn-excluir"
+  onClick={() => excluirNota(nota._id)}
+>
+  Excluir
+</button>
 
                         {nota.status !== "cancelada" && (
                           <button
