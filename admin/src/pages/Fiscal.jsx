@@ -79,17 +79,60 @@ function Fiscal() {
     return new Date(data).toLocaleDateString("pt-BR");
   }
 
-  function selecionarXML(e) {
+  async function selecionarXML(e) {
+  try {
     const arquivo = e.target.files?.[0];
 
     if (!arquivo) return;
 
     setXmlNome(arquivo.name);
 
-    alert(
-      "XML selecionado. A leitura automática do XML será feita na próxima etapa. Por enquanto, lance os dados manualmente."
+    const formData = new FormData();
+    formData.append("xml", arquivo);
+
+    const response = await api.post(
+      "/fiscal/notas-entrada/importar-xml",
+      formData,
+      {
+        headers: {
+          "Content-Type": "multipart/form-data",
+        },
+      }
     );
+
+    const notaXml = response.data.nota;
+
+    setNota({
+      numero: notaXml.numero || "",
+      serie: notaXml.serie || "",
+      chaveAcesso: notaXml.chaveAcesso || "",
+      fornecedor: "",
+      fornecedorNome: notaXml.fornecedorNome || "",
+      fornecedorDocumento: notaXml.fornecedorDocumento || "",
+      dataEmissao: notaXml.dataEmissao || "",
+      valorFrete: notaXml.valorFrete || "",
+      valorDesconto: notaXml.valorDesconto || "",
+      formaPagamento: notaXml.formaPagamento || "BOLETO",
+      observacao: notaXml.observacao || "Importado por XML.",
+    });
+
+    setItens(
+      (notaXml.itens || []).map((item) => ({
+        materiaPrima: null,
+        nome: item.nome,
+        codigo: item.codigo,
+        unidade: item.unidade,
+        quantidade: item.quantidade,
+        valorUnitario: item.valorUnitario,
+      }))
+    );
+
+    alert("XML lido com sucesso. Confira os dados antes de salvar.");
+  } catch (error) {
+    console.log("Erro ao importar XML:", error);
+    alert(error.response?.data?.message || "Erro ao importar XML.");
   }
+}
 
   function adicionarItem() {
     if (!item.nome && !item.materiaPrima) {
@@ -233,9 +276,9 @@ function Fiscal() {
             <FaUpload />
             <strong>Importar XML da Nota</strong>
             <span>
-              Selecione o arquivo XML da NF-e. A leitura automática será ativada
-              na próxima etapa.
-            </span>
+  Selecione o XML da NF-e para preencher automaticamente fornecedor, número,
+  chave, data, valores e itens da nota.
+</span>
           </div>
 
           <label className="xml-upload-btn">

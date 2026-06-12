@@ -3,6 +3,7 @@ const Fornecedor = require("../models/fornecedor");
 const MateriaPrima = require("../models/materiaprima");
 const ContaPagar = require("../models/contapagar");
 const MovimentacaoFinanceira = require("../models/movimentacaofinanceira");
+const xml2js = require("xml2js");
 
 function numero(valor) {
   return Number(valor || 0);
@@ -238,6 +239,101 @@ exports.resumoFiscal = async (req, res) => {
     });
   } catch (error) {
     console.log("ERRO RESUMO FISCAL:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+exports.importarXmlNotaEntrada = async (req, res) => {
+  try {
+    if (!req.file) {
+      return res.status(400).json({
+        success: false,
+        message: "Nenhum XML enviado.",
+      });
+    }
+
+    const xml = req.file.buffer.toString("utf8");
+
+    const parser = new xml2js.Parser({
+      explicitArray: false,
+      mergeAttrs: true,
+      trim: true,
+    });
+
+    const resultado = await parser.parseStringPromise(xml);
+
+    const nfe =
+      resultado?.nfeProc?.NFe?.infNFe ||
+      resultado?.NFe?.infNFe ||
+      resultado?.nfeProc?.NFe?.infNFe;
+
+    if (!nfe) {
+      return res.status(400).json({
+        success: false,
+        message: "XML inválido ou estrutura de NF-e não reconhecida.",
+      });
+    }
+
+    const ide = nfe.ide || {};
+    const emit = nfe.emit || {};
+    const total = nfe.total?.ICMSTot || {};
+
+    const chaveAcesso =
+      nfe.Id?.replace("NFe", "") ||
+      resultado?.nfeProc?.protNFe?.infProt?.chNFe ||
+      "";
+
+    const detRaw = nfe.det || [];
+    const detArray = Array.isArray(detRaw) ? detRaw : [detRaw];
+
+    const itens = detArray.map((det) => {
+      const prod = det.prod || {};
+
+      const quantidade = Number(prod.qCom || 0);
+      const valorUnitario = Number(prod.vUnCom || 0);
+      const valorTotal = Number(prod.vProd || quantidade * valorUnitario || 0);
+
+      return {
+        materiaPrima: null,
+        nome: prod.xProd || "Produto da nota",
+        codigo: prod.cProd || "",
+        unidade: prod.uCom || "unidade",
+        quantidade,
+        valorUnitario,
+        valorTotal,
+      };
+    });
+
+    const nota = {
+      numero: ide.nNF || "",
+      serie: ide.serie || "",
+      chaveAcesso,
+      fornecedorNome: emit.xNome || "",
+      fornecedorDocumento: emit.CNPJ || emit.CPF || "",
+      dataEmissao: ide.dhEmi
+        ? new Date(ide.dhEmi).toISOString().slice(0, 10)
+        : ide.dEmi
+        ? new Date(ide.dEmi).toISOString().slice(0, 10)
+        : "",
+      valorFrete: Number(total.vFrete || 0),
+      valorDesconto: Number(total.vDesc || 0),
+      valorProdutos: Number(total.vProd || 0),
+      valorTotal: Number(total.vNF || 0),
+      formaPagamento: "BOLETO",
+      observacao: "Importado automaticamente por XML.",
+      itens,
+    };
+
+    return res.json({
+      success: true,
+      nota,
+    });
+  } catch (error) {
+    console.log("ERRO IMPORTAR XML NF-E:", error);
 
     return res.status(500).json({
       success: false,
