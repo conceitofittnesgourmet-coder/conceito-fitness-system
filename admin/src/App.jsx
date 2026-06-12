@@ -81,6 +81,8 @@ import Configuracoes from "./pages/Configuracoes";
 
 import Compras from "./pages/Compras";
 
+import Relatorios from "./pages/Relatorios";
+
 
 
 // ==========================================
@@ -498,6 +500,7 @@ function App() {
   }
 />
 
+ 
 <Route
   path="/compras"
   element={
@@ -507,6 +510,15 @@ function App() {
   }
 />
 
+      {/* RELATÓRIOS */}
+<Route
+  path="/relatorios"
+  element={
+    <PrivateRoute>
+      <Relatorios />
+    </PrivateRoute>
+  }
+/>
 
 
       {/* ANALYTICS */}
