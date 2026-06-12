@@ -17,6 +17,7 @@ import {
 import api from "../services/api";
 import socket from "../services/socket";
 import "../styles/pdv.css";
+import AdminLayout from "../layouts/AdminLayout";
 
 export default function Pdv() {
   const [cart, setCart] = useState([]);
@@ -296,47 +297,10 @@ window.open(`/cupom/${pedidoCriado._id}`, "_blank");
 }
 
   return (
-    <div className="pdv-page">
-      <aside className="pdv-sidebar-premium">
-        <div className="pdv-brand">
-          <div className="pdv-brand-icon">
-            <UtensilsCrossed />
-          </div>
-
-          <div>
-            <h2>CONCEITO</h2>
-            <span>FITNESS GOURMET</span>
-          </div>
-        </div>
-
-        <nav className="pdv-nav">
-          <Link to="/dashboard">Painel</Link>
-          <Link className="active" to="/pdv">PDV</Link>
-          <Link to="/produtos">Produtos</Link>
-          <Link to="/pedidos">Pedidos</Link>
-          <Link to="/cozinha">Cozinha</Link>
-          <Link to="/entregador">Entregas</Link>
-          <Link to="/clientes">Clientes</Link>
-          <Link to="/financeiro">Financeiro</Link>
-          <Link to="/caixa">Caixa</Link>
-          <Link to="/analytics">Análise</Link>
-        </nav>
-
-        <div className="pdv-clube-box">
-          <strong>👑 Clube Conceito</strong>
-          <span>Clube de Benefícios</span>
-          <p>Aumente suas vendas com benefícios exclusivos.</p>
-          <button>Gerenciar Clube</button>
-        </div>
-
-        <div className="pdv-user-box">
-          <div>●</div>
-          <span>Administrador</span>
-          <strong>Online</strong>
-        </div>
-      </aside>
-
-      <main className="pdv-main-premium">
+    <AdminLayout> 
+         <div className="pdv-page">
+      
+          <main className="pdv-main-premium">
         <header className="pdv-header-premium">
           <div className="pdv-title">
             <button className="menu-button">☰</button>
@@ -760,7 +724,8 @@ window.open(`/cupom/${pedidoCriado._id}`, "_blank");
             <span>Sincronizado</span>
           </div>
         </section>
-      </main>
-    </div>
-  );
+            </main>
+          </div>
+        </AdminLayout>
+    );
 }

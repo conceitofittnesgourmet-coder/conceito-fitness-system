@@ -79,6 +79,8 @@ import Cupom from "./pages/Cupom";
 
 import Configuracoes from "./pages/Configuracoes";
 
+import Compras from "./pages/Compras";
+
 
 
 // ==========================================
@@ -119,14 +121,17 @@ function EmConstrucao({ titulo }) {
 // ==========================================
 // DASHBOARD
 // ==========================================
-
 function Dashboard() {
-  const [dados, setDados] = useState({
-    totalPedidos: 0,
-    totalProdutos: 0,
-    totalClientes: 0,
-    faturamento: 0,
-  });
+const [dados, setDados] = useState({
+  totalPedidos: 0,
+  totalProdutos: 0,
+  totalClientes: 0,
+  faturamento: 0,
+  lucroTotal: 0,
+  custoTotal: 0,
+  margemLucro: 0,
+  topProdutosLucrativos: [],
+});
 
   const [loading, setLoading] = useState(true);
 
@@ -188,32 +193,46 @@ function Dashboard() {
 
         <section className="kpi-premium-grid">
           <div className="kpi-premium-card">
-            <div className="kpi-icon green"><FaShoppingBag /></div>
-            <span>Pedidos Hoje</span>
-            <strong>{dados.totalPedidos || 0}</strong>
-            <p>Pedidos registrados</p>
-          </div>
+  <div className="kpi-icon green"><FaShoppingBag /></div>
+  <span>Pedidos</span>
+  <strong>{dados.totalPedidos || 0}</strong>
+  <p>Pedidos registrados</p>
+</div>
 
-          <div className="kpi-premium-card">
-            <div className="kpi-icon blue"><FaBoxOpen /></div>
-            <span>Produtos Ativos</span>
-            <strong>{dados.totalProdutos || 0}</strong>
-            <p>Cardápio online</p>
-          </div>
+<div className="kpi-premium-card">
+  <div className="kpi-icon blue"><FaBoxOpen /></div>
+  <span>Produtos Ativos</span>
+  <strong>{dados.totalProdutos || 0}</strong>
+  <p>Cardápio online</p>
+</div>
 
-          <div className="kpi-premium-card">
-            <div className="kpi-icon gold"><FaMoneyBillWave /></div>
-            <span>Faturamento</span>
-            <strong>R$ {dados.faturamento || 0}</strong>
-            <p>Últimas 24h</p>
-          </div>
+<div className="kpi-premium-card">
+  <div className="kpi-icon gold"><FaMoneyBillWave /></div>
+  <span>Faturamento</span>
+  <strong>R$ {Number(dados.faturamento || 0).toFixed(2)}</strong>
+  <p>Receita total</p>
+</div>
 
-          <div className="kpi-premium-card">
-            <div className="kpi-icon purple"><FaUsers /></div>
-            <span>Clientes</span>
-            <strong>{dados.totalClientes || 0}</strong>
-            <p>Clientes ativos</p>
-          </div>
+<div className="kpi-premium-card">
+  <div className="kpi-icon purple"><FaUsers /></div>
+  <span>Clientes</span>
+  <strong>{dados.totalClientes || 0}</strong>
+  <p>Clientes cadastrados</p>
+</div>
+
+<div className="kpi-premium-card">
+  <div className="kpi-icon green"><FaChartLine /></div>
+  <span>Lucro Bruto</span>
+  <strong>R$ {Number(dados.lucroTotal || 0).toFixed(2)}</strong>
+  <p>Faturamento - CMV</p>
+</div>
+
+<div className="kpi-premium-card">
+  <div className="kpi-icon gold"><FaExclamationTriangle /></div>
+  <span>CMV</span>
+  <strong>R$ {Number(dados.custoTotal || 0).toFixed(2)}</strong>
+  <p>Custo dos produtos vendidos</p>
+</div>
         </section>
 
         <section className="dashboard-premium-grid">
@@ -237,6 +256,59 @@ function Dashboard() {
               </div>
               <FaCheckCircle />
             </div>
+
+            <div className="dashboard-panel">
+  <div className="panel-header">
+    <div>
+      <h2>Lucro Real</h2>
+      <p>CMV e margem da operação</p>
+    </div>
+    <FaMoneyBillWave />
+  </div>
+
+  <div className="status-list-premium">
+    <div>
+      <span>Lucro Bruto</span>
+      <strong>R$ {Number(dados.lucroTotal || 0).toFixed(2)}</strong>
+    </div>
+
+    <div>
+      <span>CMV</span>
+      <strong>R$ {Number(dados.custoTotal || 0).toFixed(2)}</strong>
+    </div>
+
+    <div>
+      <span>Margem</span>
+      <strong>{Number(dados.margemLucro || 0).toFixed(2)}%</strong>
+    </div>
+  </div>
+</div>
+
+<div className="dashboard-panel">
+  <div className="panel-header">
+    <div>
+      <h2>Produtos Mais Lucrativos</h2>
+      <p>Ranking por lucro bruto</p>
+    </div>
+    <FaChartLine />
+  </div>
+
+  <div className="status-list-premium">
+    {(dados.topProdutosLucrativos || []).slice(0, 5).map((item, index) => (
+      <div key={item.nome}>
+        <span>{index + 1}. {item.nome}</span>
+        <strong>R$ {Number(item.lucro || 0).toFixed(2)}</strong>
+      </div>
+    ))}
+
+    {(!dados.topProdutosLucrativos || dados.topProdutosLucrativos.length === 0) && (
+      <div>
+        <span>Nenhum produto lucrativo ainda</span>
+        <strong>R$ 0,00</strong>
+      </div>
+    )}
+  </div>
+</div>
 
             <div className="status-list-premium">
               <div><span>Servidor</span><strong>Online</strong></div>
@@ -422,6 +494,15 @@ function App() {
   element={
     <PrivateRoute>
       <Producao />
+    </PrivateRoute>
+  }
+/>
+
+<Route
+  path="/compras"
+  element={
+    <PrivateRoute>
+      <Compras />
     </PrivateRoute>
   }
 />

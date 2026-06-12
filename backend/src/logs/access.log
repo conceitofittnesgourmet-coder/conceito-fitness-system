@@ -2060,3 +2060,5 @@
 {"level":"info","message":{"ip":"::1","method":"GET","url":"/api/producao/materias-primas"},"timestamp":"2026-06-10T20:29:45.602Z"}
 {"level":"info","message":{"ip":"::1","method":"POST","url":"/api/pedidos"},"timestamp":"2026-06-10T20:39:17.301Z"}
 {"level":"info","message":{"ip":"::1","method":"GET","url":"/api/producao/materias-primas"},"timestamp":"2026-06-10T20:39:37.547Z"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/dashboard"},"timestamp":"2026-06-11T19:00:53.232Z"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/dashboard"},"timestamp":"2026-06-11T19:01:19.197Z"}

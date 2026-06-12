@@ -12,7 +12,8 @@ import {
   FaTruck,
   FaSignOutAlt,
   FaStore,
-  FaIndustry,
+FaIndustry,
+FaTruckLoading,
 } from "react-icons/fa";
 
 function AdminLayout({
@@ -53,6 +54,11 @@ function AdminLayout({
   label: "Produção",
   path: "/producao",
   icon: <FaIndustry />
+},
+{
+  label: "Compras",
+  path: "/compras",
+  icon: <FaTruckLoading />
 },
     { label: "Caixa", path: "/caixa", icon: <FaWallet /> },
     { label: "Analytics", path: "/analytics", icon: <FaChartPie /> },
@@ -112,11 +118,6 @@ function AdminLayout({
             Sistema Online
           </div>
         </header>
-
-        <Link to="/pdv" className="sidebar-link">
-  <ShoppingCart size={20} />
-  <span>PDV</span>
-</Link>
 
         <div className="page-content">{children}</div>
       </main>

@@ -9,7 +9,7 @@ const Usuario =
 
 const Cliente =
   require("../models/cliente");
-
+  
 exports.dashboard = async (req, res) => {
   try {
     const totalProdutos =
@@ -57,10 +57,13 @@ exports.dashboard = async (req, res) => {
     let credito = 0;
     let debito = 0;
     let dinheiro = 0;
-
     let maiorVenda = 0;
+const produtosVendidos = {};
 
-    const produtosVendidos = {};
+let lucroTotal = 0;
+let custoTotal = 0;
+
+const produtosLucrativos = {};
 
     pedidos.forEach((pedido) => {
       const total =
@@ -105,20 +108,40 @@ exports.dashboard = async (req, res) => {
           break;
       }
 
-      pedido.produtos?.forEach(
-        (produto) => {
-          const nome =
-            produto.nome ||
-            "Produto";
+     pedido.produtos?.forEach(
+  (produto) => {
 
-          produtosVendidos[nome] =
-            (produtosVendidos[nome] || 0) +
-            Number(
-              produto.quantidade || 1
-            );
-        }
-      );
-    });
+    const nome =
+      produto.nome || "Produto";
+
+    const quantidade =
+      Number(produto.quantidade || 1);
+
+    produtosVendidos[nome] =
+      (produtosVendidos[nome] || 0) +
+      quantidade;
+
+    const precoVenda =
+      Number(produto.preco || 0);
+
+    const custoProduto =
+      Number(produto.custo || 0);
+
+    const lucroProduto =
+      (precoVenda - custoProduto) *
+      quantidade;
+
+    const custoVenda =
+      custoProduto * quantidade;
+
+    lucroTotal += lucroProduto;
+    custoTotal += custoVenda;
+
+    produtosLucrativos[nome] =
+      (produtosLucrativos[nome] || 0) +
+      lucroProduto;
+  });
+  }); 
 
     const ticketMedio =
       totalPedidos > 0
@@ -139,6 +162,33 @@ exports.dashboard = async (req, res) => {
           nome: item[0],
           quantidade: item[1],
         }));
+
+      const margemLucro =
+  faturamento > 0
+    ? Number(
+        (
+          (lucroTotal /
+            faturamento) *
+          100
+        ).toFixed(2)
+      )
+    : 0;
+
+const topProdutosLucrativos =
+  Object.entries(
+    produtosLucrativos
+  )
+    .sort(
+      (a, b) =>
+        b[1] - a[1]
+    )
+    .slice(0, 10)
+    .map((item) => ({
+      nome: item[0],
+      lucro: Number(
+        item[1].toFixed(2)
+      ),
+    }));
 
     return res.status(200).json({
       success: true,
@@ -171,6 +221,11 @@ exports.dashboard = async (req, res) => {
           })),
 
         topProdutos,
+
+        lucroTotal,
+custoTotal,
+margemLucro,
+topProdutosLucrativos,
       },
     });
   } catch (error) {

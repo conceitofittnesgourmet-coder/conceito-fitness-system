@@ -24,6 +24,7 @@ const clienteRoutes = require("./routes/clienteRoutes");
 const freteRoutes = require("./routes/freteRoutes");
 const financeiroRoutes = require("./routes/financeiroRoutes");
 const producaoRoutes = require("./routes/producaoRoutes");
+const comprasRoutes = require("./routes/comprasRoutes");
 
 const app = express();
 
@@ -106,6 +107,7 @@ app.use("/api/clientes", clienteRoutes);
 app.use("/api/frete", freteRoutes);
 app.use("/api/financeiro", financeiroRoutes);
 app.use("/api/producao", producaoRoutes);
+app.use("/api/compras", comprasRoutes);
 app.use(errorHandler);
 
 module.exports = app;
