@@ -3,10 +3,10 @@ const mongoose = require("mongoose");
 const itemNotaSchema = new mongoose.Schema(
   {
     materiaPrima: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "MateriaPrima",
-      default: null,
-    },
+  type: mongoose.Schema.Types.ObjectId,
+  ref: "MateriaPrima",
+  required: false,
+},
 
     nome: {
       type: String,
