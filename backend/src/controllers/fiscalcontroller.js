@@ -5,7 +5,7 @@ const ContaPagar = require("../models/contapagar");
 const MovimentacaoFinanceira = require("../models/movimentacaofinanceira");
 const xml2js = require("xml2js");
 
-function numero(valor) {
+function toNumber(valor) {
   return Number(valor || 0);
 }
 
@@ -14,7 +14,7 @@ exports.listarNotasEntrada = async (req, res) => {
     const notas = await NotaFiscalEntrada.find()
       .populate("fornecedor")
       .populate("itens.materiaPrima")
-      .sort({ createdAt: -1 });
+      .sort({ createdAt: -1 }); 
 
     return res.json({
       success: true,
@@ -71,8 +71,8 @@ exports.criarNotaEntrada = async (req, res) => {
     let valorProdutos = 0;
 
     for (const item of itens) {
-      const quantidade = numero(item.quantidade);
-      const valorUnitario = numero(item.valorUnitario);
+      const quantidade = toNumber(item.quantidade);
+      const valorUnitario = toNumber(item.valorUnitario);
       const valorTotal = quantidade * valorUnitario;
 
       valorProdutos += valorTotal;
@@ -103,14 +103,14 @@ if (materia?._id) {
 itensCalculados.push(itemCalculado);
 
       if (materia) {
-        materia.estoqueAtual = numero(materia.estoqueAtual) + quantidade;
+        materia.estoqueAtual = toNumber(materia.estoqueAtual) + quantidade;
         materia.custoUnitario = valorUnitario;
         await materia.save();
       }
     }
 
     const totalNota =
-      numero(valorProdutos) + numero(valorFrete) - numero(valorDesconto);
+      toNumber(valorProdutos) + toNumber(valorFrete) - toNumber(valorDesconto);
 
     const nota = await NotaFiscalEntrada.create({
       numero,
@@ -123,8 +123,8 @@ itensCalculados.push(itemCalculado);
       dataEmissao: dataEmissao ? new Date(dataEmissao) : new Date(),
       dataEntrada: new Date(),
       valorProdutos: Number(valorProdutos.toFixed(2)),
-      valorFrete: numero(valorFrete),
-      valorDesconto: numero(valorDesconto),
+      valorFrete: toNumber(valorFrete),
+      valorDesconto: toNumber(valorDesconto),
       valorTotal: Number(totalNota.toFixed(2)),
       formaPagamento: formaPagamento || "PIX",
       status: "entrada_realizada",
@@ -232,7 +232,7 @@ exports.resumoFiscal = async (req, res) => {
 
     const valorTotalEntrada = notas
       .filter((n) => n.status !== "cancelada")
-      .reduce((acc, nota) => acc + numero(nota.valorTotal), 0);
+      .reduce((acc, nota) => acc + toNumber(nota.valorTotal), 0);
 
     const notasCanceladas = notas.filter((n) => n.status === "cancelada").length;
     const notasXml = notas.filter((n) => n.xmlImportado).length;
