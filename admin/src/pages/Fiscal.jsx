@@ -173,6 +173,7 @@ function Fiscal() {
   }
 
   async function salvarNota() {
+  try {
     if (!nota.numero) {
       alert("Informe o número da nota.");
       return;
@@ -183,10 +184,29 @@ function Fiscal() {
       return;
     }
 
-    await api.post("/fiscal/notas-entrada", {
+    const payload = {
       ...nota,
-      itens,
-    });
+      fornecedor: nota.fornecedor || null,
+      valorFrete: Number(nota.valorFrete || 0),
+      valorDesconto: Number(nota.valorDesconto || 0),
+      itens: itens.map((item) => ({
+        materiaPrima: item.materiaPrima || null,
+        nome: item.nome,
+        codigo: item.codigo || "",
+        unidade: item.unidade || "unidade",
+        quantidade: Number(item.quantidade || 0),
+        valorUnitario: Number(item.valorUnitario || 0),
+      })),
+    };
+
+    const response = await api.post("/fiscal/notas-entrada", payload);
+
+    if (!response.data.success) {
+      alert(response.data.message || "Não foi possível salvar a nota.");
+      return;
+    }
+
+    alert("Nota fiscal salva com sucesso e entrada registrada.");
 
     setNota({
       numero: "",
@@ -205,8 +225,18 @@ function Fiscal() {
     setItens([]);
     setXmlNome("");
 
-    carregarDados();
+    await carregarDados();
+  } catch (error) {
+    console.log("Erro ao salvar nota fiscal:", error);
+
+    const mensagem =
+      error.response?.data?.message ||
+      error.message ||
+      "Erro ao salvar nota fiscal.";
+
+    alert(mensagem);
   }
+}
 
   async function cancelarNota(id) {
     if (!window.confirm("Deseja cancelar esta nota no sistema?")) return;

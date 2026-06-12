@@ -79,9 +79,13 @@ exports.criarNotaEntrada = async (req, res) => {
 
       let materia = null;
 
-      if (item.materiaPrima) {
-        materia = await MateriaPrima.findById(item.materiaPrima);
-      }
+if (
+  item.materiaPrima &&
+  item.materiaPrima !== "null" &&
+  item.materiaPrima !== ""
+) {
+  materia = await MateriaPrima.findById(item.materiaPrima);
+}
 
       itensCalculados.push({
         materiaPrima: materia?._id || null,
