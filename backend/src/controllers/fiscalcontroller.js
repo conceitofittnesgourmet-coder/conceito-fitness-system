@@ -87,15 +87,20 @@ if (
   materia = await MateriaPrima.findById(item.materiaPrima);
 }
 
-      itensCalculados.push({
-        materiaPrima: materia?._id || null,
-        nome: item.nome || materia?.nome || "Item da nota",
-        codigo: item.codigo || "",
-        unidade: item.unidade || materia?.unidade || "unidade",
-        quantidade,
-        valorUnitario,
-        valorTotal,
-      });
+      const itemCalculado = {
+  nome: item.nome || materia?.nome || "Item da nota",
+  codigo: item.codigo || "",
+  unidade: item.unidade || materia?.unidade || "unidade",
+  quantidade,
+  valorUnitario,
+  valorTotal,
+};
+
+if (materia?._id) {
+  itemCalculado.materiaPrima = materia._id;
+}
+
+itensCalculados.push(itemCalculado);
 
       if (materia) {
         materia.estoqueAtual = numero(materia.estoqueAtual) + quantidade;
@@ -129,7 +134,7 @@ if (
     });
 
     await ContaPagar.create({
-      descricao: `NF Entrada ${numero}/${serie || ""}`,
+      descricao: `NF Entrada ${numero}${serie ? "/" + serie : ""}`,
       categoria: "Nota Fiscal Entrada",
       fornecedor: nota.fornecedorNome,
       valor: nota.valorTotal,
@@ -143,7 +148,7 @@ if (
     await MovimentacaoFinanceira.create({
       tipo: "saida",
       origem: "nota_fiscal_entrada",
-      descricao: `NF Entrada ${numero}/${serie || ""}`,
+      descricao: `NF Entrada ${numero}${serie ? "/" + serie : ""}`,
       categoria: "Fiscal",
       valor: nota.valorTotal,
       formaPagamento: nota.formaPagamento,
