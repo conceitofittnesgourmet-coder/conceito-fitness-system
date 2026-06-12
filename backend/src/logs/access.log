@@ -2068,3 +2068,4 @@
 {"level":"info","message":{"ip":"::1","method":"GET","url":"/api/producao/materias-primas"},"timestamp":"2026-06-11T23:33:40.859Z"}
 {"level":"info","message":{"ip":"::1","method":"GET","url":"/api/financeiro"},"timestamp":"2026-06-11T23:34:12.581Z"}
 {"level":"info","message":{"ip":"::1","method":"GET","url":"/api/relatorios"},"timestamp":"2026-06-12T14:09:33.329Z"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/relatorios"},"timestamp":"2026-06-12T14:42:23.132Z"}
