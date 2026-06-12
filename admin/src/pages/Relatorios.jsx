@@ -1,4 +1,4 @@
-import { useEffect, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import AdminLayout from "../layouts/AdminLayout";
 import api from "../services/api";
 
@@ -12,9 +12,6 @@ import {
   FaFilePdf,
   FaFileExcel,
   FaFilter,
-  FaArrowUp,
-  FaArrowDown,
-  FaClipboardList,
 } from "react-icons/fa";
 
 import "../styles/relatorios.css";
@@ -29,9 +26,9 @@ function Relatorios() {
     .slice(0, 10);
 
   const [filtros, setFiltros] = useState({
+    tipo: "vendas",
     inicio: inicioMes,
     fim: hoje,
-    tipo: "geral",
   });
 
   async function carregarRelatorio() {
@@ -55,12 +52,39 @@ function Relatorios() {
     carregarRelatorio();
   }, []);
 
+  const resumo = dados?.resumo || {};
+
+  const totalItensVendidos = useMemo(() => {
+    return (dados?.topProdutosVendidos || []).reduce(
+      (acc, item) => acc + Number(item.quantidade || 0),
+      0
+    );
+  }, [dados]);
+
   function dinheiro(valor) {
     return `R$ ${Number(valor || 0).toFixed(2)}`;
   }
 
-  function imprimir() {
-    window.print();
+  function dataBR(data) {
+    if (!data) return "-";
+    return new Date(data).toLocaleDateString("pt-BR");
+  }
+
+  function dataHoraBR(data = new Date()) {
+    return new Date(data).toLocaleString("pt-BR");
+  }
+
+  function imprimirA4() {
+    document.body.classList.remove("termica-print");
+    setTimeout(() => window.print(), 150);
+  }
+
+  function imprimirTermica() {
+    document.body.classList.add("termica-print");
+    setTimeout(() => {
+      window.print();
+      setTimeout(() => document.body.classList.remove("termica-print"), 500);
+    }, 150);
   }
 
   function exportarCSV() {
@@ -72,15 +96,15 @@ function Relatorios() {
       ["Período", filtros.inicio, filtros.fim],
       [],
       ["Resumo"],
-      ["Faturamento", dados.resumo?.faturamento || 0],
-      ["Lucro bruto", dados.resumo?.lucroTotal || 0],
-      ["CMV", dados.resumo?.custoTotal || 0],
-      ["Margem", `${dados.resumo?.margemLucro || 0}%`],
-      ["Entradas", dados.resumo?.entradas || 0],
-      ["Saídas", dados.resumo?.saidas || 0],
-      ["Saldo", dados.resumo?.saldo || 0],
-      ["Pedidos", dados.resumo?.totalPedidos || 0],
-      ["Ticket médio", dados.resumo?.ticketMedio || 0],
+      ["Faturamento", resumo.faturamento || 0],
+      ["Lucro bruto", resumo.lucroTotal || 0],
+      ["CMV", resumo.custoTotal || 0],
+      ["Margem", `${resumo.margemLucro || 0}%`],
+      ["Pedidos", resumo.totalPedidos || 0],
+      ["Ticket médio", resumo.ticketMedio || 0],
+      ["Entradas", resumo.entradas || 0],
+      ["Saídas", resumo.saidas || 0],
+      ["Saldo", resumo.saldo || 0],
     ];
 
     const csv = linhas.map((linha) => linha.join(";")).join("\n");
@@ -96,8 +120,6 @@ function Relatorios() {
     URL.revokeObjectURL(url);
   }
 
-  const resumo = dados?.resumo || {};
-
   const mostrar = (tipo) => filtros.tipo === "geral" || filtros.tipo === tipo;
 
   return (
@@ -111,20 +133,13 @@ function Relatorios() {
             <span>Central de inteligência</span>
             <h1>Relatórios Gerenciais</h1>
             <p>
-              Escolha o tipo de relatório, filtre por data e imprima somente o
-              que precisar.
+              Escolha o relatório, filtre por data e imprima em A4 ou na térmica
+              MP4200TH.
             </p>
           </div>
         </section>
 
         <section className="relatorios-filtros-card no-print">
-          <div className="filtros-header">
-            <div>
-              <h2>Filtros do relatório</h2>
-              <p>Você pode buscar por período ou por um único dia.</p>
-            </div>
-          </div>
-
           <div className="relatorios-filtros-grid novo-layout">
             <label>
               Tipo de relatório
@@ -135,7 +150,7 @@ function Relatorios() {
                 }
               >
                 <option value="geral">Relatório Completo</option>
-                <option value="vendas">Vendas</option>
+                <option value="vendas">Vendas / Pedidos</option>
                 <option value="financeiro">Financeiro</option>
                 <option value="compras">Compras</option>
                 <option value="estoque">Estoque</option>
@@ -169,15 +184,19 @@ function Relatorios() {
               <FaFilter /> Filtrar
             </button>
 
-            <button className="btn-relatorio" onClick={imprimir}>
-              <FaPrint /> Imprimir
+            <button className="btn-relatorio" onClick={imprimirA4}>
+              <FaPrint /> Imprimir A4
+            </button>
+
+            <button className="btn-relatorio" onClick={imprimirTermica}>
+              <FaPrint /> Térmica
             </button>
 
             <button className="btn-relatorio" onClick={exportarCSV}>
               <FaFileExcel /> Excel/CSV
             </button>
 
-            <button className="btn-relatorio" onClick={imprimir}>
+            <button className="btn-relatorio" onClick={imprimirA4}>
               <FaFilePdf /> PDF
             </button>
           </div>
@@ -186,153 +205,260 @@ function Relatorios() {
         {loading && <div className="relatorios-loading">Carregando...</div>}
 
         {!loading && dados && (
-          <div className="area-impressao">
-            <section className="relatorio-titulo-print">
-              <h1>Conceito Fitness Gourmet</h1>
-              <p>
-                Relatório: {filtros.tipo.toUpperCase()} | Período:{" "}
-                {filtros.inicio} até {filtros.fim}
-              </p>
-            </section>
+          <>
+            <div className="area-impressao">
+              <section className="relatorio-titulo-print">
+                <h1>Conceito Fitness Gourmet</h1>
+                <p>
+                  Relatório: {filtros.tipo.toUpperCase()} | Período:{" "}
+                  {filtros.inicio} até {filtros.fim}
+                </p>
+              </section>
 
-            <section className="relatorios-kpis">
-              <Kpi icon={<FaMoneyBillWave />} titulo="Faturamento" valor={dinheiro(resumo.faturamento)} texto="Receita no período" />
-              <Kpi icon={<FaChartLine />} titulo="Lucro Bruto" valor={dinheiro(resumo.lucroTotal)} texto="Faturamento - CMV" />
-              <Kpi icon={<FaBoxes />} titulo="CMV" valor={dinheiro(resumo.custoTotal)} texto="Custo dos vendidos" />
-              <Kpi icon={<FaShoppingBag />} titulo="Pedidos" valor={resumo.totalPedidos || 0} texto="Pedidos no período" />
-              <Kpi icon={<FaUsers />} titulo="Ticket Médio" valor={dinheiro(resumo.ticketMedio)} texto="Média por pedido" />
-              <Kpi icon={<FaMoneyBillWave />} titulo="Saldo" valor={dinheiro(resumo.saldo)} texto="Entradas - saídas" />
-            </section>
+              <section className="relatorios-kpis">
+                <Kpi icon={<FaMoneyBillWave />} titulo="Faturamento" valor={dinheiro(resumo.faturamento)} texto="Receita no período" />
+                <Kpi icon={<FaShoppingBag />} titulo="Pedidos" valor={resumo.totalPedidos || 0} texto="Total de pedidos" />
+                <Kpi icon={<FaUsers />} titulo="Ticket Médio" valor={dinheiro(resumo.ticketMedio)} texto="Média por pedido" />
+                <Kpi icon={<FaBoxes />} titulo="Itens Vendidos" valor={totalItensVendidos} texto="Total de itens" />
+                <Kpi icon={<FaChartLine />} titulo="Lucro Bruto" valor={dinheiro(resumo.lucroTotal)} texto="Faturamento - CMV" />
+                <Kpi icon={<FaMoneyBillWave />} titulo="Saldo" valor={dinheiro(resumo.saldo)} texto="Entradas - saídas" />
+              </section>
 
-            <section className="relatorios-resumo-financeiro">
-              <Resumo icon={<FaArrowUp />} titulo="Entradas" valor={dinheiro(resumo.entradas)} />
-              <Resumo icon={<FaArrowDown />} titulo="Saídas" valor={dinheiro(resumo.saidas)} />
-              <Resumo icon={<FaBoxes />} titulo="Compras" valor={dinheiro(resumo.totalCompras)} />
-              <Resumo icon={<FaChartLine />} titulo="Margem" valor={`${Number(resumo.margemLucro || 0).toFixed(2)}%`} />
-            </section>
+              <section className="relatorios-grid">
+                {mostrar("vendas") && (
+                  <>
+                    <Tabela
+                      titulo="Vendas / Pedidos"
+                      colunas={["Data", "Cliente", "Pagamento", "Status", "Total"]}
+                      vazio="Nenhuma venda no período."
+                      linhas={(dados.pedidos || []).map((p) => [
+                        dataBR(p.createdAt),
+                        p.cliente || "Cliente Balcão",
+                        p.pagamento || "-",
+                        p.status || "-",
+                        dinheiro(p.total),
+                      ])}
+                    />
 
-            <section className="relatorios-grid">
+                    <Tabela
+                      titulo="Produtos Mais Vendidos"
+                      colunas={["Produto", "Qtd"]}
+                      vazio="Nenhum produto vendido no período."
+                      linhas={(dados.topProdutosVendidos || []).map((item) => [
+                        item.nome,
+                        item.quantidade,
+                      ])}
+                    />
+
+                    <Tabela
+                      titulo="Produtos Mais Lucrativos"
+                      colunas={["Produto", "Lucro"]}
+                      vazio="Nenhum produto lucrativo no período."
+                      linhas={(dados.topProdutosLucrativos || []).map((item) => [
+                        item.nome,
+                        dinheiro(item.lucro),
+                      ])}
+                    />
+                  </>
+                )}
+
+                {mostrar("financeiro") && (
+                  <>
+                    <Tabela
+                      titulo="Movimentações Financeiras"
+                      colunas={["Data", "Tipo", "Origem", "Descrição", "Valor"]}
+                      vazio="Nenhuma movimentação no período."
+                      linhas={(dados.movimentacoes || []).map((m) => [
+                        dataBR(m.createdAt || m.data),
+                        m.tipo,
+                        m.origem,
+                        m.descricao,
+                        dinheiro(m.valor),
+                      ])}
+                    />
+
+                    <Tabela
+                      titulo="Contas a Pagar"
+                      colunas={["Descrição", "Categoria", "Valor", "Status"]}
+                      vazio="Nenhuma conta a pagar."
+                      linhas={(dados.contasPagar || []).map((c) => [
+                        c.descricao,
+                        c.categoria,
+                        dinheiro(c.valor),
+                        c.status,
+                      ])}
+                    />
+
+                    <Tabela
+                      titulo="Contas a Receber"
+                      colunas={["Descrição", "Cliente", "Valor", "Status"]}
+                      vazio="Nenhuma conta a receber."
+                      linhas={(dados.contasReceber || []).map((c) => [
+                        c.descricao,
+                        c.cliente,
+                        dinheiro(c.valor),
+                        c.status,
+                      ])}
+                    />
+                  </>
+                )}
+
+                {mostrar("compras") && (
+                  <Tabela
+                    titulo="Compras"
+                    colunas={["Data", "Fornecedor", "Valor", "Pagamento", "Status"]}
+                    vazio="Nenhuma compra no período."
+                    linhas={(dados.compras || []).map((compra) => [
+                      dataBR(compra.createdAt || compra.dataCompra),
+                      compra.fornecedor?.nome || compra.fornecedorNome || "-",
+                      dinheiro(compra.valorTotal),
+                      compra.formaPagamento || "-",
+                      compra.status,
+                    ])}
+                  />
+                )}
+
+                {mostrar("clientes") && (
+                  <Tabela
+                    titulo="Principais Clientes"
+                    colunas={["Cliente", "Telefone", "Gasto", "Clube"]}
+                    vazio="Nenhum cliente encontrado."
+                    linhas={(dados.topClientes || []).map((cliente) => [
+                      cliente.nome,
+                      cliente.telefone || "-",
+                      dinheiro(cliente.gasto),
+                      cliente.clube || "-",
+                    ])}
+                  />
+                )}
+
+                {mostrar("estoque") && (
+                  <Tabela
+                    titulo="Estoque Baixo"
+                    colunas={["Matéria-prima", "Estoque", "Mínimo"]}
+                    vazio="Nenhum estoque baixo."
+                    linhas={(dados.estoqueBaixo || []).map((item) => [
+                      item.nome,
+                      item.estoqueAtual,
+                      item.estoqueMinimo,
+                    ])}
+                  />
+                )}
+              </section>
+            </div>
+
+            <div className="impressao-termica">
+              <div className="termica-centro">
+                <strong>CONCEITO FITNESS GOURMET</strong>
+                <span>--------------------------------</span>
+                <span>RELATÓRIO: {filtros.tipo.toUpperCase()}</span>
+                <span>PERÍODO: {filtros.inicio} ATÉ {filtros.fim}</span>
+                <span>DATA/HORA: {dataHoraBR()}</span>
+                <span>--------------------------------</span>
+              </div>
+
+              <h3>RESUMO</h3>
+              <Linha label="FATURAMENTO" valor={dinheiro(resumo.faturamento)} />
+              <Linha label="PEDIDOS" valor={resumo.totalPedidos || 0} />
+              <Linha label="TICKET MÉDIO" valor={dinheiro(resumo.ticketMedio)} />
+              <Linha label="ITENS VENDIDOS" valor={totalItensVendidos} />
+              <Linha label="ENTRADAS" valor={dinheiro(resumo.entradas)} />
+              <Linha label="SAÍDAS" valor={dinheiro(resumo.saidas)} />
+              <Linha label="SALDO" valor={dinheiro(resumo.saldo)} />
+
               {mostrar("vendas") && (
                 <>
-                  <Tabela
-                    titulo="Vendas / Pedidos"
-                    colunas={["Data", "Cliente", "Pagamento", "Status", "Total"]}
-                    vazio="Nenhuma venda no período."
-                    linhas={(dados.pedidos || []).map((p) => [
-                      dataBR(p.createdAt),
-                      p.cliente || "Cliente Balcão",
-                      p.pagamento || "-",
-                      p.status || "-",
-                      dinheiro(p.total),
-                    ])}
-                  />
+                  <Separador />
+                  <h3>PEDIDOS</h3>
+                  {(dados.pedidos || []).slice(0, 20).map((p) => (
+                    <div className="termica-item" key={p._id}>
+                      <span>{dataBR(p.createdAt)} - {p.cliente || "Balcão"}</span>
+                      <strong>{dinheiro(p.total)}</strong>
+                    </div>
+                  ))}
 
-                  <Tabela
-                    titulo="Produtos Mais Vendidos"
-                    colunas={["Produto", "Qtd"]}
-                    vazio="Nenhum produto vendido no período."
-                    linhas={(dados.topProdutosVendidos || []).map((item) => [
-                      item.nome,
-                      item.quantidade,
-                    ])}
-                  />
+                  <Separador />
+                  <h3>PRODUTOS MAIS VENDIDOS</h3>
+                  {(dados.topProdutosVendidos || []).slice(0, 10).map((p) => (
+                    <div className="termica-item" key={p.nome}>
+                      <span>{p.nome}</span>
+                      <strong>{p.quantidade}</strong>
+                    </div>
+                  ))}
 
-                  <Tabela
-                    titulo="Produtos Mais Lucrativos"
-                    colunas={["Produto", "Lucro"]}
-                    vazio="Nenhum produto lucrativo no período."
-                    linhas={(dados.topProdutosLucrativos || []).map((item) => [
-                      item.nome,
-                      dinheiro(item.lucro),
-                    ])}
-                  />
+                  <Separador />
+                  <h3>PRODUTOS MAIS LUCRATIVOS</h3>
+                  {(dados.topProdutosLucrativos || []).slice(0, 10).map((p) => (
+                    <div className="termica-item" key={p.nome}>
+                      <span>{p.nome}</span>
+                      <strong>{dinheiro(p.lucro)}</strong>
+                    </div>
+                  ))}
                 </>
               )}
 
               {mostrar("financeiro") && (
                 <>
-                  <Tabela
-                    titulo="Movimentações Financeiras"
-                    colunas={["Data", "Tipo", "Origem", "Descrição", "Valor"]}
-                    vazio="Nenhuma movimentação no período."
-                    linhas={(dados.movimentacoes || []).map((m) => [
-                      dataBR(m.createdAt || m.data),
-                      m.tipo,
-                      m.origem,
-                      m.descricao,
-                      dinheiro(m.valor),
-                    ])}
-                  />
-
-                  <Tabela
-                    titulo="Contas a Pagar"
-                    colunas={["Descrição", "Categoria", "Valor", "Status"]}
-                    vazio="Nenhuma conta a pagar."
-                    linhas={(dados.contasPagar || []).map((c) => [
-                      c.descricao,
-                      c.categoria,
-                      dinheiro(c.valor),
-                      c.status,
-                    ])}
-                  />
-
-                  <Tabela
-                    titulo="Contas a Receber"
-                    colunas={["Descrição", "Cliente", "Valor", "Status"]}
-                    vazio="Nenhuma conta a receber."
-                    linhas={(dados.contasReceber || []).map((c) => [
-                      c.descricao,
-                      c.cliente,
-                      dinheiro(c.valor),
-                      c.status,
-                    ])}
-                  />
+                  <Separador />
+                  <h3>FINANCEIRO</h3>
+                  {(dados.movimentacoes || []).slice(0, 20).map((m) => (
+                    <div className="termica-item" key={m._id}>
+                      <span>{m.tipo} - {m.origem}</span>
+                      <strong>{dinheiro(m.valor)}</strong>
+                    </div>
+                  ))}
                 </>
               )}
 
               {mostrar("compras") && (
-                <Tabela
-                  titulo="Compras"
-                  colunas={["Data", "Fornecedor", "Valor", "Pagamento", "Status"]}
-                  vazio="Nenhuma compra no período."
-                  linhas={(dados.compras || []).map((compra) => [
-                    dataBR(compra.createdAt || compra.dataCompra),
-                    compra.fornecedor?.nome || compra.fornecedorNome || "-",
-                    dinheiro(compra.valorTotal),
-                    compra.formaPagamento || "-",
-                    compra.status,
-                  ])}
-                />
+                <>
+                  <Separador />
+                  <h3>COMPRAS</h3>
+                  {(dados.compras || []).slice(0, 20).map((c) => (
+                    <div className="termica-item" key={c._id}>
+                      <span>{c.fornecedor?.nome || c.fornecedorNome || "-"}</span>
+                      <strong>{dinheiro(c.valorTotal)}</strong>
+                    </div>
+                  ))}
+                </>
               )}
 
               {mostrar("clientes") && (
-                <Tabela
-                  titulo="Principais Clientes"
-                  colunas={["Cliente", "Telefone", "Gasto", "Clube"]}
-                  vazio="Nenhum cliente encontrado."
-                  linhas={(dados.topClientes || []).map((cliente) => [
-                    cliente.nome,
-                    cliente.telefone || "-",
-                    dinheiro(cliente.gasto),
-                    cliente.clube || "-",
-                  ])}
-                />
+                <>
+                  <Separador />
+                  <h3>CLIENTES</h3>
+                  {(dados.topClientes || []).slice(0, 20).map((c) => (
+                    <div className="termica-item" key={c.telefone || c.nome}>
+                      <span>{c.nome}</span>
+                      <strong>{dinheiro(c.gasto)}</strong>
+                    </div>
+                  ))}
+                </>
               )}
 
               {mostrar("estoque") && (
-                <Tabela
-                  titulo="Estoque Baixo"
-                  colunas={["Matéria-prima", "Estoque", "Mínimo"]}
-                  vazio="Nenhum estoque baixo."
-                  linhas={(dados.estoqueBaixo || []).map((item) => [
-                    item.nome,
-                    item.estoqueAtual,
-                    item.estoqueMinimo,
-                  ])}
-                />
+                <>
+                  <Separador />
+                  <h3>ESTOQUE BAIXO</h3>
+                  {(dados.estoqueBaixo || []).length === 0 && (
+                    <p>Nenhum estoque baixo.</p>
+                  )}
+                  {(dados.estoqueBaixo || []).map((e) => (
+                    <div className="termica-item" key={e._id}>
+                      <span>{e.nome}</span>
+                      <strong>{e.estoqueAtual}/{e.estoqueMinimo}</strong>
+                    </div>
+                  ))}
+                </>
               )}
-            </section>
-          </div>
+
+              <Separador />
+              <div className="termica-centro">
+                <strong>OBRIGADO!</strong>
+                <span>CONCEITO FITNESS GOURMET</span>
+              </div>
+            </div>
+          </>
         )}
       </div>
     </AdminLayout>
@@ -346,16 +472,6 @@ function Kpi({ icon, titulo, valor, texto }) {
       <span>{titulo}</span>
       <strong>{valor}</strong>
       <p>{texto}</p>
-    </div>
-  );
-}
-
-function Resumo({ icon, titulo, valor }) {
-  return (
-    <div className="resumo-box">
-      {icon}
-      <span>{titulo}</span>
-      <strong>{valor}</strong>
     </div>
   );
 }
@@ -396,9 +512,17 @@ function Tabela({ titulo, colunas, linhas, vazio }) {
   );
 }
 
-function dataBR(data) {
-  if (!data) return "-";
-  return new Date(data).toLocaleDateString("pt-BR");
+function Linha({ label, valor }) {
+  return (
+    <div className="termica-linha">
+      <span>{label}</span>
+      <strong>{valor}</strong>
+    </div>
+  );
+}
+
+function Separador() {
+  return <div className="termica-separador">--------------------------------</div>;
 }
 
 export default Relatorios;

@@ -394,3 +394,109 @@
     min-width: 100% !important;
   }
 }
+
+.impressao-termica {
+  display: none;
+}
+
+@media print {
+  @page {
+    size: 80mm auto;
+    margin: 0;
+  }
+
+  html,
+  body {
+    width: 80mm !important;
+    margin: 0 !important;
+    padding: 0 !important;
+    background: #fff !important;
+  }
+
+  body.termica-print * {
+    visibility: hidden !important;
+  }
+
+  body.termica-print .impressao-termica,
+  body.termica-print .impressao-termica * {
+    visibility: visible !important;
+  }
+
+  body.termica-print .impressao-termica {
+    display: block !important;
+    position: absolute !important;
+    left: 0 !important;
+    top: 0 !important;
+    width: 72mm !important;
+    padding: 4mm !important;
+    margin: 0 !important;
+    background: #fff !important;
+    color: #000 !important;
+    font-family: "Courier New", monospace !important;
+    font-size: 11px !important;
+    line-height: 1.25 !important;
+  }
+
+  body.termica-print .area-impressao,
+  body.termica-print .no-print,
+  body.termica-print .sidebar,
+  body.termica-print .topbar {
+    display: none !important;
+  }
+
+  .termica-centro {
+    text-align: center !important;
+    margin-bottom: 8px !important;
+  }
+
+  .termica-centro strong,
+  .termica-centro span {
+    display: block !important;
+    color: #000 !important;
+  }
+
+  .termica-separador {
+    color: #000 !important;
+    margin: 8px 0 !important;
+    font-family: "Courier New", monospace !important;
+    white-space: nowrap !important;
+  }
+
+  .impressao-termica h3 {
+    color: #000 !important;
+    font-size: 12px !important;
+    margin: 10px 0 6px !important;
+    padding: 0 !important;
+    font-family: "Courier New", monospace !important;
+  }
+
+  .termica-linha,
+  .termica-item {
+    display: flex !important;
+    justify-content: space-between !important;
+    gap: 6px !important;
+    color: #000 !important;
+    margin-bottom: 4px !important;
+    font-family: "Courier New", monospace !important;
+  }
+
+  .termica-linha span,
+  .termica-item span {
+    max-width: 45mm !important;
+    overflow: hidden !important;
+    text-overflow: ellipsis !important;
+    white-space: nowrap !important;
+    color: #000 !important;
+  }
+
+  .termica-linha strong,
+  .termica-item strong {
+    color: #000 !important;
+    white-space: nowrap !important;
+    text-align: right !important;
+  }
+
+  body:not(.termica-print) .impressao-termica {
+    display: none !important;
+  }
+}
