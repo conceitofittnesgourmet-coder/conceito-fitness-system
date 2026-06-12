@@ -146,14 +146,14 @@ itensCalculados.push(itemCalculado);
     });
 
     await MovimentacaoFinanceira.create({
-      tipo: "saida",
-      origem: "nota_fiscal_entrada",
-      descricao: `NF Entrada ${numero}${serie ? "/" + serie : ""}`,
-      categoria: "Fiscal",
-      valor: nota.valorTotal,
-      formaPagamento: nota.formaPagamento,
-      observacao: "Saída automática gerada pela entrada de nota fiscal.",
-    });
+  tipo: "saida",
+  origem: "compra",
+  descricao: `NF Entrada ${numero}${serie ? "/" + serie : ""}`,
+  categoria: "Fiscal",
+  valor: nota.valorTotal,
+  formaPagamento: nota.formaPagamento,
+  observacao: "Saída automática gerada pela entrada de nota fiscal.",
+});
 
     return res.status(201).json({
       success: true,
