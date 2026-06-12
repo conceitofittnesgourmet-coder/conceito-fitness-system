@@ -2062,3 +2062,8 @@
 {"level":"info","message":{"ip":"::1","method":"GET","url":"/api/producao/materias-primas"},"timestamp":"2026-06-10T20:39:37.547Z"}
 {"level":"info","message":{"ip":"::1","method":"GET","url":"/api/dashboard"},"timestamp":"2026-06-11T19:00:53.232Z"}
 {"level":"info","message":{"ip":"::1","method":"GET","url":"/api/dashboard"},"timestamp":"2026-06-11T19:01:19.197Z"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/compras/fornecedores"},"timestamp":"2026-06-11T23:26:46.971Z"}
+{"level":"info","message":{"ip":"::1","method":"POST","url":"/api/compras/fornecedores"},"timestamp":"2026-06-11T23:32:01.764Z"}
+{"level":"info","message":{"ip":"::1","method":"POST","url":"/api/compras"},"timestamp":"2026-06-11T23:33:13.706Z"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/producao/materias-primas"},"timestamp":"2026-06-11T23:33:40.859Z"}
+{"level":"info","message":{"ip":"::1","method":"GET","url":"/api/financeiro"},"timestamp":"2026-06-11T23:34:12.581Z"}
