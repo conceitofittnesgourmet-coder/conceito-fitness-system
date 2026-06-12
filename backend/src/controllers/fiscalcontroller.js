@@ -54,6 +54,20 @@ exports.criarNotaEntrada = async (req, res) => {
       });
     }
 
+    const notaDuplicada = await NotaFiscalEntrada.findOne({
+  $or: [
+    chaveAcesso ? { chaveAcesso } : null,
+    { numero, serie: serie || "" },
+  ].filter(Boolean),
+});
+
+if (notaDuplicada) {
+  return res.status(400).json({
+    success: false,
+    message: "Esta nota fiscal já foi lançada no sistema. Entrada bloqueada para evitar duplicidade.",
+  });
+}
+
     if (!itens || !Array.isArray(itens) || itens.length === 0) {
       return res.status(400).json({
         success: false,
@@ -207,7 +221,51 @@ exports.cancelarNotaEntrada = async (req, res) => {
       });
     }
 
+    if (nota.status === "cancelada") {
+      return res.status(400).json({
+        success: false,
+        message: "Esta nota já está cancelada.",
+      });
+    }
+
+    for (const item of nota.itens || []) {
+      if (item.materiaPrima) {
+        const materia = await MateriaPrima.findById(item.materiaPrima);
+
+        if (materia) {
+          materia.estoqueAtual = toNumber(materia.estoqueAtual) - toNumber(item.quantidade);
+
+          if (materia.estoqueAtual < 0) {
+            materia.estoqueAtual = 0;
+          }
+
+          await materia.save();
+        }
+      }
+    }
+
+    await ContaPagar.updateMany(
+      {
+        descricao: `NF Entrada ${nota.numero}${nota.serie ? "/" + nota.serie : ""}`,
+      },
+      {
+        status: "cancelada",
+        observacao: "Cancelada automaticamente pelo cancelamento da nota fiscal.",
+      }
+    );
+
+    await MovimentacaoFinanceira.updateMany(
+      {
+        descricao: `NF Entrada ${nota.numero}${nota.serie ? "/" + nota.serie : ""}`,
+      },
+      {
+        observacao: "Movimentação referente a nota fiscal cancelada.",
+      }
+    );
+
     nota.status = "cancelada";
+    nota.observacao = `${nota.observacao || ""} | Nota cancelada no sistema.`;
+
     await nota.save();
 
     return res.json({
