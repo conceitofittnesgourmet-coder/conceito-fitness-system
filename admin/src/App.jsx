@@ -83,6 +83,8 @@ import Compras from "./pages/Compras";
 
 import Relatorios from "./pages/Relatorios";
 
+import Fiscal from "./pages/Fiscal";
+
 
 
 // ==========================================
@@ -520,6 +522,15 @@ function App() {
   }
 />
 
+
+<Route
+  path="/fiscal"
+  element={
+    <PrivateRoute>
+      <Fiscal />
+    </PrivateRoute>
+  }
+/>
 
       {/* ANALYTICS */}
 

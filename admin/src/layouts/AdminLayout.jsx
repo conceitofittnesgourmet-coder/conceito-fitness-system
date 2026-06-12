@@ -14,6 +14,7 @@ import {
   FaStore,
 FaIndustry,
 FaFileAlt,
+FaFileInvoice, 
 FaTruckLoading,
 
 } from "react-icons/fa";
@@ -62,9 +63,15 @@ function AdminLayout({
   path: "/compras",
   icon: <FaTruckLoading />
 },
+
     { label: "Caixa", path: "/caixa", icon: <FaWallet /> },
     { label: "Analytics", path: "/analytics", icon: <FaChartPie /> },
     { label: "Relatórios", path: "/relatorios", icon: <FaFileAlt /> },
+    {
+  label: "Fiscal",
+  path: "/fiscal",
+  icon: <FaFileInvoice />,
+},
     ];
 
   return (
