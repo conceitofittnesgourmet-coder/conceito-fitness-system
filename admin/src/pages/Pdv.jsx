@@ -210,13 +210,24 @@ const totalPedido =
   }
 
   try {
-    const response = await api.post("/frete/calcular", {
-      endereco: enderecoEntrega,
-    });
+    const enderecoCompleto = [
+  enderecoEntrega,
+  numeroEntrega,
+  bairroEntrega,
+]
+  .filter(Boolean)
+  .join(", ");
+
+const response = await api.post(
+  "/frete/calcular",
+  {
+    endereco: enderecoCompleto,
+  }
+);
 
     const frete = Number(response.data.frete || 0);
 
-    setTaxaEntrega(frete);
+    setTaxaEntregaManual(frete);
     setDistanciaEntrega(response.data.distanciaKm || "");
 
     alert(`Frete calculado: R$ ${frete.toFixed(2)}`);
@@ -434,65 +445,7 @@ window.open(`/cupom/${pedidoCriado._id}`, "_blank");
             <div className="pdv-cart-top">
               <div>
                 <h2>Pedido Atual</h2>
-                <select
-
-  value={tipoPedido}
-  onChange={(e) => setTipoPedido(e.target.value)}
->
-  <option value="balcao">Balcão</option>
-  <option value="mesa">Mesa</option>
-  <option value="delivery">Delivery</option>
-  <option value="retirada">Retirada</option>
-  </select>
-
-{tipoPedido === "mesa" && (
-  <input
-    placeholder="Número da mesa"
-    value={numeroMesa}
-    onChange={(e) => setNumeroMesa(e.target.value)}
-  />
-)}
-
-{tipoPedido === "delivery" && (
-  <>
-    <input
-      placeholder="CEP"
-      value={cep}
-      onChange={(e) => setCep(e.target.value)}
-    />
-
-    <input
-      placeholder="Rua"
-      value={enderecoEntrega}
-      onChange={(e) => setEnderecoEntrega(e.target.value)}
-    />
-
-    <input
-      placeholder="Número"
-      value={numeroEntrega}
-      onChange={(e) => setNumeroEntrega(e.target.value)}
-    />
-
-    <input
-      placeholder="Bairro"
-      value={bairroEntrega}
-      onChange={(e) => setBairroEntrega(e.target.value)}
-    />
-
-    <input
-      placeholder="Complemento"
-      value={complementoEntrega}
-      onChange={(e) => setComplementoEntrega(e.target.value)}
-    />
-
-    <input
-      placeholder="Referência"
-      value={referenciaEntrega}
-      onChange={(e) => setReferenciaEntrega(e.target.value)}
-    />
-  </>
-)}
-  
+                
               </div>
 
               <button onClick={limparPedido}>
@@ -608,7 +561,7 @@ window.open(`/cupom/${pedidoCriado._id}`, "_blank");
     onChange={(e) => setTelefone(e.target.value)}
   />
 
-  <div className="tipo-pedido-box">
+  <div className="tipo-pedido-card">
   <label>Tipo do pedido</label>
 
   <select
@@ -616,18 +569,57 @@ window.open(`/cupom/${pedidoCriado._id}`, "_blank");
     onChange={(e) => setTipoPedido(e.target.value)}
   >
     <option value="balcao">Balcão</option>
-    <option value="retirada">Retirada</option>
+    <option value="mesa">Mesa</option>
     <option value="delivery">Delivery</option>
+    <option value="retirada">Retirada</option>
   </select>
 </div>
 
-{tipoPedido === "delivery" && (
-  <div className="delivery-box">
+{tipoPedido === "mesa" && (
+  <div className="delivery-card">
     <input
-      placeholder="Endereço de entrega"
-      value={enderecoEntrega}
-      onChange={(e) => setEnderecoEntrega(e.target.value)}
+      placeholder="Número da mesa"
+      value={numeroMesa}
+      onChange={(e) => setNumeroMesa(e.target.value)}
     />
+  </div>
+)}
+
+{tipoPedido === "delivery" && (
+  <div className="delivery-card">
+    <input
+      placeholder="CEP"
+      value={cep}
+      onChange={(e) => setCep(e.target.value)}
+    />
+
+    <div className="delivery-grid">
+      <input
+        placeholder="Rua"
+        value={enderecoEntrega}
+        onChange={(e) => setEnderecoEntrega(e.target.value)}
+      />
+
+      <input
+        placeholder="Número"
+        value={numeroEntrega}
+        onChange={(e) => setNumeroEntrega(e.target.value)}
+      />
+    </div>
+
+    <div className="delivery-grid">
+      <input
+        placeholder="Bairro"
+        value={bairroEntrega}
+        onChange={(e) => setBairroEntrega(e.target.value)}
+      />
+
+      <input
+        placeholder="Complemento"
+        value={complementoEntrega}
+        onChange={(e) => setComplementoEntrega(e.target.value)}
+      />
+    </div>
 
     <input
       placeholder="Ponto de referência"
@@ -642,15 +634,15 @@ window.open(`/cupom/${pedidoCriado._id}`, "_blank");
     >
       Calcular frete
     </button>
+    </div>
+   )}
 
-    {distanciaEntrega && (
-      <p className="distancia-entrega">
-        Distância: {distanciaEntrega} km
-      </p>
-    )}
-  </div>
+   {distanciaEntrega && (
+  <small>
+    Distância: {distanciaEntrega} km
+  </small>
 )}
-
+    
   <textarea
     placeholder="+ Observação do pedido"
     value={observacao}
