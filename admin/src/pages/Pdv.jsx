@@ -38,6 +38,10 @@ export default function Pdv() {
   const [descontoManual, setDescontoManual] = useState("");
   const [motivoDesconto, setMotivoDesconto] = useState("");
   const [trocoPara, setTrocoPara] = useState("");
+  const [cep, setCep] = useState("");
+  const [numeroEntrega, setNumeroEntrega] = useState("");
+  const [bairroEntrega, setBairroEntrega] = useState("");
+  const [complementoEntrega, setComplementoEntrega] = useState("");
 
   async function carregarProdutos() {
     try {

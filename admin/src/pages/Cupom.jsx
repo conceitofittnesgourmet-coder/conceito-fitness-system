@@ -65,21 +65,9 @@ export default function Cupom() {
   return acc + totalItem;
 }, 0);
 
-const taxaEntrega = Number(
-  pedido.taxaEntrega ||
-  pedido.taxa ||
-  pedido.valorEntrega ||
-  0
-);
-
-const desconto = Number(
-  pedido.desconto || 0
-);
-
-const total = Number(
-  pedido.total ||
-  subtotal + taxaEntrega - desconto
-);
+const taxaEntrega = Number(pedido.taxaEntrega || 0);
+const desconto = Number(pedido.desconto || 0);
+const total = Number(pedido.total || subtotal + taxaEntrega - desconto);
 
 return (
   <div className="cupom-page">
@@ -117,7 +105,10 @@ CNPJ: 67.199.298/0001-81
 
       <hr />
 
-      <p><strong>Pedido:</strong> #{pedido._id?.slice(-6)}</p>
+      <p>
+  <strong>Pedido Nº:</strong>{" "}
+  {String(pedido.numeroPedido || 1).padStart(6, "0")}
+</p>
       <p><strong>Data:</strong> {new Date().toLocaleDateString("pt-BR")}</p>
       <p><strong>Hora:</strong> {new Date().toLocaleTimeString("pt-BR")}</p>
       <p><strong>Cliente:</strong> {pedido.cliente || pedido.clienteNome || "Cliente Balcão"}</p>
@@ -132,11 +123,32 @@ CNPJ: 67.199.298/0001-81
       )}
 
       <p><strong>Pagamento:</strong> {pedido.pagamento || pedido.formaPagamento || "-"}</p>
-
       {pedido.observacao && (
-        <p><strong>Obs:</strong> {pedido.observacao}</p>
-      )}
+  <>
+    <hr />
 
+    <div className="cupom-observacao">
+      <strong>Observação:</strong>
+      <p>{pedido.observacao}</p>
+    </div>
+  </>
+)}
+
+{pedido.tipo === "delivery" && (
+  <>
+    <hr />
+
+    <div className="cupom-entrega">
+      <strong>ENTREGA</strong>
+
+      <p>{pedido.enderecoEntrega}</p>
+
+      <p>{pedido.referenciaEntrega}</p>
+    </div>
+  </>
+)}
+
+ 
       <hr />
 
       {produtos.map((item, index) => {
@@ -174,6 +186,29 @@ CNPJ: 67.199.298/0001-81
         <strong>- {desconto.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</strong>
       </div>
 
+      <div className="cupom-resumo">
+  <div>
+    <span>Subtotal:</span>
+    <strong>
+      R$ {(pedido.subtotal || 0).toFixed(2)}
+    </strong>
+  </div>
+
+  <div>
+    <span>Taxa Entrega:</span>
+    <strong>
+      R$ {(pedido.taxaEntrega || 0).toFixed(2)}
+    </strong>
+  </div>
+
+  <div>
+    <span>Desconto:</span>
+    <strong>
+      - R$ {(pedido.desconto || 0).toFixed(2)}
+    </strong>
+  </div>
+</div>
+
       <div className="cupom-total">
         <span>Total</span>
         <strong>{total.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</strong>
@@ -188,30 +223,4 @@ CNPJ: 67.199.298/0001-81
     </div>
   </div>
 );
-
-{pedido.observacao && (
-  <>
-    <hr />
-
-    <div className="cupom-observacao">
-      <strong>Observação:</strong>
-
-      <p>{pedido.observacao}</p>
-    </div>
-  </>
-)}
-
-{pedido.tipo === "delivery" && (
-  <>
-    <hr />
-
-    <div>
-      <strong>ENTREGA</strong>
-
-      <p>{pedido.enderecoEntrega}</p>
-
-      <p>{pedido.referenciaEntrega}</p>
-    </div>
-  </>
-)}
 }

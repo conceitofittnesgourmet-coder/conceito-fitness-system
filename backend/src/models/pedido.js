@@ -83,10 +83,6 @@ taxaEntrega: {
   default: 0,
 },
 
-desconto: {
-  type: Number,
-  default: 0,
-},
 
 pagamento: {
   type: String,
@@ -113,6 +109,11 @@ referenciaEntrega: {
   default: "",
 },
 
+desconto: {
+  type: Number,
+  default: 0,
+},
+
 motivoDesconto: {
   type: String,
   default: "",
@@ -122,6 +123,13 @@ observacao: {
   type: String,
   default: "",
 },
+
+numeroPedido: {
+  type: Number,
+  unique: true,
+  sparse: true,
+},
+
 
 
 

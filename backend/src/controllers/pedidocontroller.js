@@ -79,16 +79,62 @@ exports.criarPedido = async (req, res) => {
       });
     }
 
+    const ultimoPedido = await Pedido.findOne().sort({
+  numeroPedido: -1,
+});
+
+const proximoNumero =
+  ultimoPedido?.numeroPedido
+    ? ultimoPedido.numeroPedido + 1
+    : 1;
+
     const dadosPedido = {
-      cliente,
-      telefone: telefone || "",
-      produtos,
-      total: Number(total || 0),
-    };
+  numeroPedido: proximoNumero,
+
+  cliente,
+  telefone: telefone || "",
+
+  produtos,
+
+  total: Number(total || 0),
+
+  subtotal: Number(req.body.subtotal || total || 0),
+
+  taxaEntrega: Number(req.body.taxaEntrega || 0),
+
+  desconto: Number(req.body.desconto || 0),
+
+  motivoDesconto:
+    req.body.motivoDesconto || "",
+
+  observacao:
+    req.body.observacao || "",
+
+  enderecoEntrega:
+    req.body.enderecoEntrega || "",
+
+  referenciaEntrega:
+    req.body.referenciaEntrega || "",
+
+  pagamento:
+    req.body.pagamento || "PIX",
+
+  tipo:
+    req.body.tipo || "balcao",
+
+  mesa:
+    req.body.mesa || "",
+};
 
     if (req.usuario?.empresa) {
       dadosPedido.empresa = req.usuario.empresa;
     }
+
+    const ultimoPedido = await Pedido.findOne().sort({ numeroPedido: -1 });
+
+const proximoNumero = ultimoPedido?.numeroPedido
+  ? ultimoPedido.numeroPedido + 1
+  : 1;
 
     const pedidoCriado = await Pedido.create(dadosPedido);
     
