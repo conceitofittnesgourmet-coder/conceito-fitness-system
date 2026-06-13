@@ -2073,3 +2073,4 @@
 {"level":"info","message":{"ip":"::ffff:192.168.0.100","method":"GET","url":"/loginMsg.js"},"timestamp":"2026-06-12T17:00:33.630Z"}
 {"level":"info","message":{"ip":"::ffff:192.168.0.100","method":"GET","url":"/cgi/get.cgi?cmd=home_login"},"timestamp":"2026-06-12T17:00:33.639Z"}
 {"level":"info","message":{"ip":"::ffff:192.168.0.100","method":"POST","url":"/boaform/admin/formLogin"},"timestamp":"2026-06-12T17:00:33.708Z"}
+{"level":"info","message":{"ip":"::1","method":"POST","url":"/api/frete/calcular"},"timestamp":"2026-06-13T21:28:44.020Z"}
