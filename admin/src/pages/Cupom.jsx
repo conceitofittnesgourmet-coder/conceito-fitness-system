@@ -45,19 +45,25 @@ export default function Cupom() {
     pedido.itens ||
     [];
 
-  const subtotalCalculado = produtos.reduce((acc, item) => {
+  const subtotal = produtos.reduce((acc, item) => {
   const qtd = Number(item.quantidade || 1);
-  const preco = Number(item.preco || item.valorUnitario || 0);
-  return acc + qtd * preco;
-}, 0);
 
-const subtotal = Number(
-  pedido.subtotal ||
-  pedido.valorProdutos ||
-  pedido.totalItens ||
-  subtotalCalculado ||
-  0
-);
+  const preco = Number(
+    item.preco ||
+    item.valorUnitario ||
+    item.valor ||
+    0
+  );
+
+  const totalItem = Number(
+    item.subtotal ||
+    item.total ||
+    item.valorTotal ||
+    qtd * preco
+  );
+
+  return acc + totalItem;
+}, 0);
 
 const taxaEntrega = Number(
   pedido.taxaEntrega ||
@@ -66,7 +72,9 @@ const taxaEntrega = Number(
   0
 );
 
-const desconto = Number(pedido.desconto || 0);
+const desconto = Number(
+  pedido.desconto || 0
+);
 
 const total = Number(
   pedido.total ||
@@ -77,11 +85,35 @@ return (
   <div className="cupom-page">
     <div className="cupom">
       <h1>Conceito Fitness Gourmet</h1>
+      <p className="centro">
+CUPOM NÃO FISCAL
+</p>
 
+<p className="centro">
+Conceito Fitness Gourmet
+</p>
+
+<p className="centro">
+Shopping Palladium
+</p>
+
+<p className="centro">
+Loja L-111
+</p>
+
+<p className="centro">
+Umuarama - PR
+</p>
+
+<p className="centro">
+WhatsApp: (44) 99128-8775
+</p>
+
+<p className="centro">
+CNPJ: 67.199.298/0001-81
+</p>
       <p className="centro">CUPOM NÃO FISCAL</p>
-      <p className="centro">Shopping Palladium - Loja L-111</p>
-      <p className="centro">Umuarama - PR</p>
-      <p className="centro">WhatsApp: (44) 99128-8775</p>
+      
 
       <hr />
 
@@ -156,4 +188,30 @@ return (
     </div>
   </div>
 );
+
+{pedido.observacao && (
+  <>
+    <hr />
+
+    <div className="cupom-observacao">
+      <strong>Observação:</strong>
+
+      <p>{pedido.observacao}</p>
+    </div>
+  </>
+)}
+
+{pedido.tipo === "delivery" && (
+  <>
+    <hr />
+
+    <div>
+      <strong>ENTREGA</strong>
+
+      <p>{pedido.enderecoEntrega}</p>
+
+      <p>{pedido.referenciaEntrega}</p>
+    </div>
+  </>
+)}
 }

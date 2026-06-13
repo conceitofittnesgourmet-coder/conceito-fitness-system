@@ -423,13 +423,37 @@ window.open(`/cupom/${pedidoCriado._id}`, "_blank");
 {tipoPedido === "delivery" && (
   <>
     <input
-      placeholder="Endereço de entrega"
+      placeholder="CEP"
+      value={cep}
+      onChange={(e) => setCep(e.target.value)}
+    />
+
+    <input
+      placeholder="Rua"
       value={enderecoEntrega}
       onChange={(e) => setEnderecoEntrega(e.target.value)}
     />
 
     <input
-      placeholder="Ponto de referência"
+      placeholder="Número"
+      value={numeroEntrega}
+      onChange={(e) => setNumeroEntrega(e.target.value)}
+    />
+
+    <input
+      placeholder="Bairro"
+      value={bairroEntrega}
+      onChange={(e) => setBairroEntrega(e.target.value)}
+    />
+
+    <input
+      placeholder="Complemento"
+      value={complementoEntrega}
+      onChange={(e) => setComplementoEntrega(e.target.value)}
+    />
+
+    <input
+      placeholder="Referência"
       value={referenciaEntrega}
       onChange={(e) => setReferenciaEntrega(e.target.value)}
     />
