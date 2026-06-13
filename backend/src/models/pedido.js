@@ -104,6 +104,26 @@ enderecoEntrega: {
   default: "",
 },
 
+cep: {
+  type: String,
+  default: "",
+},
+
+numeroEntrega: {
+  type: String,
+  default: "",
+},
+
+bairroEntrega: {
+  type: String,
+  default: "",
+},
+
+complementoEntrega: {
+  type: String,
+  default: "",
+},
+
 referenciaEntrega: {
   type: String,
   default: "",

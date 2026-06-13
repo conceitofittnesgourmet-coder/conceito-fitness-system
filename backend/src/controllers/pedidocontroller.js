@@ -113,6 +113,18 @@ const proximoNumero =
   enderecoEntrega:
     req.body.enderecoEntrega || "",
 
+  cep:
+  req.body.cep || "",
+
+numeroEntrega:
+  req.body.numeroEntrega || "",
+
+bairroEntrega:
+  req.body.bairroEntrega || "",
+
+complementoEntrega:
+  req.body.complementoEntrega || "",
+
   referenciaEntrega:
     req.body.referenciaEntrega || "",
 

@@ -187,12 +187,6 @@ function diminuirQuantidade(id) {
   return acc + preco * quantidade;
 }, 0);
 
-const taxaEntregaPedido =
-  Number(taxaEntregaManual || 0);
-
-const descontoPedido =
-  Number(descontoManual || 0);
-
 const totalPedido =
   subtotalPedido + taxaEntregaPedido - descontoPedido;
   const troco =
@@ -205,14 +199,15 @@ const totalPedido =
 
    async function calcularFretePDV() {
   const enderecoCompleto = [
-    enderecoEntrega,
-    numeroEntrega,
-    bairroEntrega,
-    "Umuarama",
-    "PR",
-  ]
-    .filter(Boolean)
-    .join(", ");
+  enderecoEntrega,
+  numeroEntrega,
+  bairroEntrega,
+  "Umuarama",
+  "Paraná",
+  "Brasil"
+]
+.filter(Boolean)
+.join(", ");
 
   if (!enderecoEntrega.trim() || !numeroEntrega.trim()) {
     alert("Informe rua e número para calcular o frete.");
@@ -265,9 +260,18 @@ mesa:
     ? numeroMesa
     : "Balcão",
 
-enderecoEntrega,
+enderecoEntrega: [
+  enderecoEntrega,
+  numeroEntrega,
+  bairroEntrega,
+  complementoEntrega,
+].filter(Boolean).join(", "),
 
 referenciaEntrega,
+cep,
+numeroEntrega,
+bairroEntrega,
+complementoEntrega,
 
 taxaEntrega:
   Number(taxaEntregaManual || 0),
@@ -303,8 +307,18 @@ desconto: descontoPedido,
 motivoDesconto,
 observacao,
 tipo: tipoPedido,
-enderecoEntrega,
+
+enderecoEntrega: [
+  enderecoEntrega,
+  numeroEntrega,
+  bairroEntrega,
+  complementoEntrega,
+]
+.filter(Boolean)
+.join(", "),
+
 referenciaEntrega,
+
 total: totalPedido,
 };
 

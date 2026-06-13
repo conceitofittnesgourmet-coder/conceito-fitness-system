@@ -130,7 +130,21 @@ CNPJ: 67.199.298/0001-81
     <div className="cupom-entrega">
       <strong>ENTREGA</strong>
 
-      <p>{pedido.enderecoEntrega}</p>
+      <p>
+  {pedido.enderecoEntrega}
+</p>
+
+{pedido.numeroEntrega && (
+  <p>Número: {pedido.numeroEntrega}</p>
+)}
+
+{pedido.bairroEntrega && (
+  <p>Bairro: {pedido.bairroEntrega}</p>
+)}
+
+{pedido.complementoEntrega && (
+  <p>Complemento: {pedido.complementoEntrega}</p>
+)}
 
       <p>{pedido.referenciaEntrega}</p>
     </div>
