@@ -45,184 +45,115 @@ export default function Cupom() {
     pedido.itens ||
     [];
 
-  return (
-    <div className="cupom-page">
-      <div className="cupom">
+  const subtotalCalculado = produtos.reduce((acc, item) => {
+  const qtd = Number(item.quantidade || 1);
+  const preco = Number(item.preco || item.valorUnitario || 0);
+  return acc + qtd * preco;
+}, 0);
 
-        <h1>
-          {empresa?.nomeFantasia ||
-            "CONCEITO FITNESS GOURMET"}
-        </h1>
+const subtotal = Number(
+  pedido.subtotal ||
+  pedido.valorProdutos ||
+  pedido.totalItens ||
+  subtotalCalculado ||
+  0
+);
 
-        {empresa?.cnpj && (
-          <p>
-            CNPJ: {empresa.cnpj}
-          </p>
-        )}
+const taxaEntrega = Number(
+  pedido.taxaEntrega ||
+  pedido.taxa ||
+  pedido.valorEntrega ||
+  0
+);
 
-        {empresa?.telefone && (
-          <p>
-            Tel: {empresa.telefone}
-          </p>
-        )}
+const desconto = Number(pedido.desconto || 0);
 
-        {empresa?.whatsapp && (
-          <p>
-            WhatsApp: {empresa.whatsapp}
-          </p>
-        )}
+const total = Number(
+  pedido.total ||
+  subtotal + taxaEntrega - desconto
+);
 
-        <p>CUPOM NÃO FISCAL</p>
+return (
+  <div className="cupom-page">
+    <div className="cupom">
+      <h1>Conceito Fitness Gourmet</h1>
 
-<p>
-Shopping Palladium
-</p>
+      <p className="centro">CUPOM NÃO FISCAL</p>
+      <p className="centro">Shopping Palladium - Loja L-111</p>
+      <p className="centro">Umuarama - PR</p>
+      <p className="centro">WhatsApp: (44) 99128-8775</p>
 
-<p>
-Loja L-111
-</p>
+      <hr />
 
-<p>
-Umuarama - PR
-</p>
+      <p><strong>Pedido:</strong> #{pedido._id?.slice(-6)}</p>
+      <p><strong>Data:</strong> {new Date().toLocaleDateString("pt-BR")}</p>
+      <p><strong>Hora:</strong> {new Date().toLocaleTimeString("pt-BR")}</p>
+      <p><strong>Cliente:</strong> {pedido.cliente || pedido.clienteNome || "Cliente Balcão"}</p>
+      <p><strong>Telefone:</strong> {pedido.telefone || "-"}</p>
+      <p><strong>Tipo:</strong> {pedido.tipo || pedido.mesa || "Balcão"}</p>
 
+      {(pedido.endereco || pedido.enderecoEntrega) && (
         <p>
-  Data:
-  {" "}
-  {new Date().toLocaleDateString("pt-BR")}
-</p>
-
-<p>
-  Hora:
-  {" "}
-  {new Date().toLocaleTimeString("pt-BR")}
-</p>
-
-<hr />
-
-
-        <p>
-          <strong>Pedido:</strong>{" "}
-          #{pedido._id?.slice(-6)}
+          <strong>Endereço:</strong>{" "}
+          {pedido.endereco || pedido.enderecoEntrega}
         </p>
+      )}
 
-        <p>
-          <strong>Cliente:</strong>{" "}
-          {pedido.cliente ||
-            "Cliente Balcão"}
-        </p>
+      <p><strong>Pagamento:</strong> {pedido.pagamento || pedido.formaPagamento || "-"}</p>
 
-        <p>
-          <strong>Telefone:</strong>{" "}
-          {pedido.telefone || "-"}
-        </p>
+      {pedido.observacao && (
+        <p><strong>Obs:</strong> {pedido.observacao}</p>
+      )}
 
-        <p>
-          <strong>Tipo:</strong>{" "}
-          {pedido.tipo ||
-            pedido.mesa ||
-            "Balcão"}
-        </p>
+      <hr />
 
-        <p>
-          <strong>Pagamento:</strong>{" "}
-          {pedido.pagamento || "-"}
-        </p>
+      {produtos.map((item, index) => {
+        const qtd = Number(item.quantidade || 1);
+        const preco = Number(item.preco || item.valorUnitario || 0);
+        const totalItem = Number(item.subtotal || item.total || qtd * preco);
 
-        <hr />
+        return (
+          <div className="cupom-item" key={index}>
+            <span>{qtd}x {item.nome || item.produtoNome || item.produto}</span>
+            <strong>
+              {totalItem.toLocaleString("pt-BR", {
+                style: "currency",
+                currency: "BRL",
+              })}
+            </strong>
+          </div>
+        );
+      })}
 
-        {produtos.map(
-          (item, index) => (
-            <div
-              className="cupom-item"
-              key={index}
-            >
-              <span>
-                {item.quantidade || 1}x{" "}
-                {item.nome ||
-                  item.produto}
-              </span>
+      <hr />
 
-              <strong>
-                R${" "}
-                {Number(
-                  item.subtotal ||
-                    Number(
-                      item.preco || 0
-                    ) *
-                      Number(
-                        item.quantidade ||
-                          1
-                      )
-                ).toFixed(2)}
-              </strong>
-            </div>
-          )
-        )}
-
-        <hr />
-
-        <div className="cupom-item">
-  <span>Subtotal</span>
-  <strong>
-    R$ {Number(pedido.subtotal || 0).toFixed(2)}
-  </strong>
-</div>
-
-<div className="cupom-item">
-  <span>Taxa de entrega</span>
-  <strong>
-    R$ {Number(pedido.taxaEntrega || 0).toFixed(2)}
-  </strong>
-</div>
-
-<div className="cupom-item">
-  <span>Desconto</span>
-  <strong>
-    - R$ {Number(pedido.desconto || 0).toFixed(2)}
-  </strong>
-</div>
-
-        <div className="cupom-total">
-          <span>Total</span>
-
-          <strong>
-            R${" "}
-            {Number(
-              pedido.total || 0
-            ).toFixed(2)}
-          </strong>
-        </div>
-
-        {pedido.observacao && (
-          <>
-            <hr />
-
-            <p>
-              <strong>Obs:</strong>{" "}
-              {pedido.observacao}
-            </p>
-          </>
-        )}
-
-        <hr />
-
-        {empresa?.endereco && (
-          <p
-            style={{
-              textAlign: "center",
-              fontSize: "12px",
-            }}
-          >
-            {empresa.endereco}
-          </p>
-        )}
-
-        <p className="cupom-footer">
-          {empresa?.mensagemCupom ||
-            "Obrigado pela preferência! Alimentação saudável com sabor premium."}
-        </p>
+      <div className="cupom-linha">
+        <span>Subtotal</span>
+        <strong>{subtotal.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</strong>
       </div>
+
+      <div className="cupom-linha">
+        <span>Taxa de entrega</span>
+        <strong>{taxaEntrega.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</strong>
+      </div>
+
+      <div className="cupom-linha">
+        <span>Desconto</span>
+        <strong>- {desconto.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</strong>
+      </div>
+
+      <div className="cupom-total">
+        <span>Total</span>
+        <strong>{total.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</strong>
+      </div>
+
+      <hr />
+
+      <p className="cupom-footer">
+        Obrigado pela preferência!<br />
+        Alimentação saudável com sabor premium.
+      </p>
     </div>
-  );
+  </div>
+);
 }
