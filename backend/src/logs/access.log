@@ -2069,3 +2069,7 @@
 {"level":"info","message":{"ip":"::1","method":"GET","url":"/api/financeiro"},"timestamp":"2026-06-11T23:34:12.581Z"}
 {"level":"info","message":{"ip":"::1","method":"GET","url":"/api/relatorios"},"timestamp":"2026-06-12T14:09:33.329Z"}
 {"level":"info","message":{"ip":"::1","method":"GET","url":"/api/relatorios"},"timestamp":"2026-06-12T14:42:23.132Z"}
+{"level":"info","message":{"ip":"::ffff:192.168.0.100","method":"GET","url":"/"},"timestamp":"2026-06-12T17:00:27.593Z"}
+{"level":"info","message":{"ip":"::ffff:192.168.0.100","method":"GET","url":"/loginMsg.js"},"timestamp":"2026-06-12T17:00:33.630Z"}
+{"level":"info","message":{"ip":"::ffff:192.168.0.100","method":"GET","url":"/cgi/get.cgi?cmd=home_login"},"timestamp":"2026-06-12T17:00:33.639Z"}
+{"level":"info","message":{"ip":"::ffff:192.168.0.100","method":"POST","url":"/boaform/admin/formLogin"},"timestamp":"2026-06-12T17:00:33.708Z"}
