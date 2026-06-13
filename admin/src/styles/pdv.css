@@ -676,3 +676,22 @@
   font-weight: 900;
   cursor: pointer;
 }
+
+.tipo-pedido-card select {
+  appearance: none;
+  -webkit-appearance: none;
+  background: #142033;
+  color: #ffffff;
+}
+
+.tipo-pedido-card select option {
+  background: #142033;
+  color: #ffffff;
+  font-weight: 700;
+}
+
+.tipo-pedido-card select option:hover,
+.tipo-pedido-card select option:checked {
+  background: #22c55e;
+  color: #06130b;
+}

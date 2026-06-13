@@ -204,26 +204,25 @@ const totalPedido =
     : 0;
 
    async function calcularFretePDV() {
-  if (!enderecoEntrega.trim()) {
-    alert("Informe o endereço de entrega.");
+  const enderecoCompleto = [
+    enderecoEntrega,
+    numeroEntrega,
+    bairroEntrega,
+    "Umuarama",
+    "PR",
+  ]
+    .filter(Boolean)
+    .join(", ");
+
+  if (!enderecoEntrega.trim() || !numeroEntrega.trim()) {
+    alert("Informe rua e número para calcular o frete.");
     return;
   }
 
   try {
-    const enderecoCompleto = [
-  enderecoEntrega,
-  numeroEntrega,
-  bairroEntrega,
-]
-  .filter(Boolean)
-  .join(", ");
-
-const response = await api.post(
-  "/frete/calcular",
-  {
-    endereco: enderecoCompleto,
-  }
-);
+    const response = await api.post("/frete/calcular", {
+      endereco: enderecoCompleto,
+    });
 
     const frete = Number(response.data.frete || 0);
 
@@ -233,7 +232,10 @@ const response = await api.post(
     alert(`Frete calculado: R$ ${frete.toFixed(2)}`);
   } catch (error) {
     console.log("Erro ao calcular frete:", error);
-    alert("Não foi possível calcular o frete.");
+    alert(
+      error.response?.data?.message ||
+      "Não foi possível calcular o frete."
+    );
   }
 }
 
