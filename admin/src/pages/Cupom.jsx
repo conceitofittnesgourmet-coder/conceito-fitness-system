@@ -72,13 +72,11 @@ const total = Number(pedido.total || subtotal + taxaEntrega - desconto);
 return (
   <div className="cupom-page">
     <div className="cupom">
+      
       <h1>Conceito Fitness Gourmet</h1>
-      <p className="centro">
-CUPOM NÃO FISCAL
-</p>
 
 <p className="centro">
-Conceito Fitness Gourmet
+CUPOM NÃO FISCAL
 </p>
 
 <p className="centro">
@@ -100,7 +98,6 @@ WhatsApp: (44) 99128-8775
 <p className="centro">
 CNPJ: 67.199.298/0001-81
 </p>
-      <p className="centro">CUPOM NÃO FISCAL</p>
       
 
       <hr />
@@ -113,15 +110,7 @@ CNPJ: 67.199.298/0001-81
       <p><strong>Hora:</strong> {new Date().toLocaleTimeString("pt-BR")}</p>
       <p><strong>Cliente:</strong> {pedido.cliente || pedido.clienteNome || "Cliente Balcão"}</p>
       <p><strong>Telefone:</strong> {pedido.telefone || "-"}</p>
-      <p><strong>Tipo:</strong> {pedido.tipo || pedido.mesa || "Balcão"}</p>
-
-      {(pedido.endereco || pedido.enderecoEntrega) && (
-        <p>
-          <strong>Endereço:</strong>{" "}
-          {pedido.endereco || pedido.enderecoEntrega}
-        </p>
-      )}
-
+      <p><strong>Tipo:</strong> {pedido.tipo || pedido.mesa || "Balcão"}</p>        
       <p><strong>Pagamento:</strong> {pedido.pagamento || pedido.formaPagamento || "-"}</p>
       {pedido.observacao && (
   <>
@@ -134,7 +123,7 @@ CNPJ: 67.199.298/0001-81
   </>
 )}
 
-{pedido.tipo === "delivery" && (
+{(pedido.tipo === "delivery" || pedido.tipo === "entrega") && (
   <>
     <hr />
 
@@ -186,30 +175,7 @@ CNPJ: 67.199.298/0001-81
         <strong>- {desconto.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</strong>
       </div>
 
-      <div className="cupom-resumo">
-  <div>
-    <span>Subtotal:</span>
-    <strong>
-      R$ {(pedido.subtotal || 0).toFixed(2)}
-    </strong>
-  </div>
-
-  <div>
-    <span>Taxa Entrega:</span>
-    <strong>
-      R$ {(pedido.taxaEntrega || 0).toFixed(2)}
-    </strong>
-  </div>
-
-  <div>
-    <span>Desconto:</span>
-    <strong>
-      - R$ {(pedido.desconto || 0).toFixed(2)}
-    </strong>
-  </div>
-</div>
-
-      <div className="cupom-total">
+        <div className="cupom-total">
         <span>Total</span>
         <strong>{total.toLocaleString("pt-BR", { style: "currency", currency: "BRL" })}</strong>
       </div>
