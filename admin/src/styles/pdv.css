@@ -584,3 +584,41 @@
   min-width: 24px;
   text-align: center;
 }
+
+.tipo-pedido-box,
+.delivery-box {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin: 12px 0;
+}
+
+.tipo-pedido-box label {
+  color: #fff;
+  font-weight: 800;
+}
+
+.tipo-pedido-box select,
+.delivery-box input {
+  width: 100%;
+  border: 1px solid rgba(255,255,255,0.15);
+  background: rgba(255,255,255,0.08);
+  color: #fff;
+  border-radius: 12px;
+  padding: 12px;
+}
+
+.btn-calcular-frete {
+  border: none;
+  border-radius: 12px;
+  background: #00e044;
+  color: #06130b;
+  font-weight: 900;
+  padding: 12px;
+  cursor: pointer;
+}
+
+.distancia-entrega {
+  color: #00e044;
+  font-weight: 800;
+}

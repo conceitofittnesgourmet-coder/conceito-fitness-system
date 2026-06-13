@@ -33,6 +33,7 @@ export default function Pdv() {
   const [tipoPedido, setTipoPedido] = useState("balcao");
   const [numeroMesa, setNumeroMesa] = useState("");
   const [enderecoEntrega, setEnderecoEntrega] = useState("");
+  const [distanciaEntrega, setDistanciaEntrega] = useState("");
   const [referenciaEntrega, setReferenciaEntrega] = useState("");
   const [taxaEntregaManual, setTaxaEntregaManual] = useState("");
   const [descontoManual, setDescontoManual] = useState("");
@@ -202,6 +203,29 @@ const totalPedido =
       )
     : 0;
 
+   async function calcularFretePDV() {
+  if (!enderecoEntrega.trim()) {
+    alert("Informe o endereço de entrega.");
+    return;
+  }
+
+  try {
+    const response = await api.post("/frete/calcular", {
+      endereco: enderecoEntrega,
+    });
+
+    const frete = Number(response.data.frete || 0);
+
+    setTaxaEntrega(frete);
+    setDistanciaEntrega(response.data.distanciaKm || "");
+
+    alert(`Frete calculado: R$ ${frete.toFixed(2)}`);
+  } catch (error) {
+    console.log("Erro ao calcular frete:", error);
+    alert("Não foi possível calcular o frete.");
+  }
+}
+
    async function finalizarPedido() {
   try {
     const caixaAberto = localStorage.getItem("caixaAberto") === "true";
@@ -260,11 +284,16 @@ troco: Number(troco || 0),
   imagem: item.imagem,
 })),
 
-      subtotal: subtotalPedido,
+    subtotal: subtotalPedido,
 taxaEntrega: taxaEntregaPedido,
 desconto: descontoPedido,
+motivoDesconto,
+observacao,
+tipo: tipoPedido,
+enderecoEntrega,
+referenciaEntrega,
 total: totalPedido,
-    };
+};
 
         
     const response = await api.post("/pedidos", novoPedido);
@@ -578,6 +607,49 @@ window.open(`/cupom/${pedidoCriado._id}`, "_blank");
     value={telefone}
     onChange={(e) => setTelefone(e.target.value)}
   />
+
+  <div className="tipo-pedido-box">
+  <label>Tipo do pedido</label>
+
+  <select
+    value={tipoPedido}
+    onChange={(e) => setTipoPedido(e.target.value)}
+  >
+    <option value="balcao">Balcão</option>
+    <option value="retirada">Retirada</option>
+    <option value="delivery">Delivery</option>
+  </select>
+</div>
+
+{tipoPedido === "delivery" && (
+  <div className="delivery-box">
+    <input
+      placeholder="Endereço de entrega"
+      value={enderecoEntrega}
+      onChange={(e) => setEnderecoEntrega(e.target.value)}
+    />
+
+    <input
+      placeholder="Ponto de referência"
+      value={referenciaEntrega}
+      onChange={(e) => setReferenciaEntrega(e.target.value)}
+    />
+
+    <button
+      type="button"
+      className="btn-calcular-frete"
+      onClick={calcularFretePDV}
+    >
+      Calcular frete
+    </button>
+
+    {distanciaEntrega && (
+      <p className="distancia-entrega">
+        Distância: {distanciaEntrega} km
+      </p>
+    )}
+  </div>
+)}
 
   <textarea
     placeholder="+ Observação do pedido"
