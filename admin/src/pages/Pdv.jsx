@@ -187,8 +187,13 @@ function diminuirQuantidade(id) {
   return acc + preco * quantidade;
 }, 0);
 
+const taxaEntregaPedido = Number(taxaEntregaManual || 0);
+
+const descontoPedido = Number(descontoManual || 0);
+
 const totalPedido =
   subtotalPedido + taxaEntregaPedido - descontoPedido;
+
   const troco =
   pagamento === "DINHEIRO"
     ? Math.max(
