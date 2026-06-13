@@ -72,9 +72,34 @@ export default function Cupom() {
           </p>
         )}
 
-        <p>Cupom de venda</p>
+        <p>CUPOM NÃO FISCAL</p>
 
-        <hr />
+<p>
+Shopping Palladium
+</p>
+
+<p>
+Loja L-111
+</p>
+
+<p>
+Umuarama - PR
+</p>
+
+        <p>
+  Data:
+  {" "}
+  {new Date().toLocaleDateString("pt-BR")}
+</p>
+
+<p>
+  Hora:
+  {" "}
+  {new Date().toLocaleTimeString("pt-BR")}
+</p>
+
+<hr />
+
 
         <p>
           <strong>Pedido:</strong>{" "}
