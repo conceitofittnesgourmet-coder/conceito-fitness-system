@@ -130,12 +130,7 @@ const proximoNumero =
       dadosPedido.empresa = req.usuario.empresa;
     }
 
-    const ultimoPedido = await Pedido.findOne().sort({ numeroPedido: -1 });
-
-const proximoNumero = ultimoPedido?.numeroPedido
-  ? ultimoPedido.numeroPedido + 1
-  : 1;
-
+    
     const pedidoCriado = await Pedido.create(dadosPedido);
     
     // ===============================
