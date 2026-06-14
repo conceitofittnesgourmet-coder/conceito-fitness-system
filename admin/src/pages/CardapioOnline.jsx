@@ -349,7 +349,12 @@ Aguardo confirmação.
           {badge && <span className="co-badge">{badge}</span>}
 
           <img
-            src={getImagemProduto(produto)}
+            src={
+  produto?.imagens?.[0]?.url
+    ?.replace("https//", "https://")
+    ?.replace("http//", "http://") ||
+  "/sem-imagem.png"
+}
             alt={produto.nome}
             onError={(e) => {
               e.currentTarget.onerror = null;
@@ -588,7 +593,12 @@ Aguardo confirmação.
                 <div className="co-news-card" key={produto._id || produto.id}>
                   <span>NOVO</span>
                   <img
-  src={getImagemProduto(produto)}
+  src={
+  produto?.imagens?.[0]?.url
+    ?.replace("https//", "https://")
+    ?.replace("http//", "http://") ||
+  "/sem-imagem.png"
+}
   alt={produto.nome}
   onError={(e) => {
     e.currentTarget.onerror = null;
