@@ -92,87 +92,80 @@ setProdutos(lista);
     };
   }, []);
 
-  function getImagemProduto(produto) {
+  function corrigirUrlImagem(valor) {
   const backendURL = "https://conceito-fitness-system.onrender.com";
 
-  let imagem =
-    produto?.imagens?.[0]?.url ||
-    produto?.imagens?.[0]?.secure_url ||
-    produto?.imagens?.[0]?.path ||
-    produto?.imagens?.[0]?.filename ||
-    produto?.imagens?.[0]?.name ||
-    produto?.imagens?.[0] ||
-    produto?.imagem?.url ||
-    produto?.imagem?.secure_url ||
-    produto?.imagem?.path ||
-    produto?.imagem?.filename ||
-    produto?.imagem ||
-    produto?.foto ||
-    produto?.image ||
-    produto?.urlImagem ||
-    produto?.imagemUrl ||
-    produto?.imageUrl ||
-    produto?.fotoUrl ||
-    produto?.thumbnail ||
-    "";
+  if (!valor) return "/sem-imagem.png";
 
-  if (typeof imagem === "object") {
-    imagem =
-      imagem.url ||
-      imagem.secure_url ||
-      imagem.path ||
-      imagem.filename ||
-      imagem.name ||
+  let url = "";
+
+  if (typeof valor === "object") {
+    url =
+      valor.url ||
+      valor.secure_url ||
+      valor.path ||
+      valor.filename ||
+      valor.name ||
       "";
+  } else {
+    url = String(valor);
   }
 
-  if (!imagem) return "/sem-imagem.png";
+  url = url.trim().replaceAll("\\", "/");
 
-  imagem = String(imagem).trim().replaceAll("\\", "/");
-  if (imagem.includes("res.cloudinary.com")) {
-  let limpa = imagem.substring(
-    imagem.indexOf("res.cloudinary.com")
-  );
+  if (!url) return "/sem-imagem.png";
 
-  limpa = limpa
-    .replace("https//", "")
-    .replace("http//", "")
-    .replace("https:/", "")
-    .replace("http:/", "")
-    .replace("https://", "")
-    .replace("http://", "");
+  if (url.includes("res.cloudinary.com")) {
+    const parte = url.substring(url.indexOf("res.cloudinary.com"));
+    return `https://${parte}`;
+  }
 
-  return `https://${limpa}`;
-}
-
-  
-  imagem = imagem
+  url = url
     .replace("https//", "https://")
     .replace("http//", "http://")
     .replace("https:/", "https://")
     .replace("http:/", "http://");
 
-  if (imagem.startsWith("//")) {
-    return `https:${imagem}`;
+  if (url.startsWith("http://") || url.startsWith("https://")) {
+    return url;
   }
 
-  if (imagem.startsWith("http://") || imagem.startsWith("https://")) {
-    return imagem;
+  if (url.startsWith("/uploads")) {
+    return `${backendURL}${url}`;
   }
 
-  if (imagem.startsWith("/api/uploads")) {
-    return `${backendURL}${imagem.replace("/api", "")}`;
+  if (url.startsWith("uploads")) {
+    return `${backendURL}/${url}`;
   }
 
-  if (imagem.startsWith("/uploads")) {
-    return `${backendURL}${imagem}`;
-  }
+  return `${backendURL}/uploads/${url}`;
+}
 
-  if (imagem.startsWith("uploads")) {
-    return `${backendURL}/${imagem}`;
-  }
+  function getImagemProduto(produto) {
+  const possiveisImagens = [
+    produto?.imagens?.[0]?.url,
+    produto?.imagens?.[0]?.secure_url,
+    produto?.imagens?.[0]?.path,
+    produto?.imagens?.[0]?.filename,
+    produto?.imagens?.[0]?.name,
+    produto?.imagens?.[0],
+    produto?.imagem?.url,
+    produto?.imagem?.secure_url,
+    produto?.imagem?.path,
+    produto?.imagem?.filename,
+    produto?.imagem,
+    produto?.foto,
+    produto?.image,
+    produto?.urlImagem,
+    produto?.imagemUrl,
+    produto?.imageUrl,
+    produto?.fotoUrl,
+    produto?.thumbnail,
+  ];
 
-  return `${backendURL}/uploads/${imagem}`;
+  const imagemValida = possiveisImagens.find(Boolean);
+
+  return corrigirUrlImagem(imagemValida);
 }
 
   function adicionarProduto(produto) {
@@ -349,18 +342,13 @@ Aguardo confirmação.
           {badge && <span className="co-badge">{badge}</span>}
 
           <img
-            src={
-  produto?.imagens?.[0]?.url
-    ?.replace("https//", "https://")
-    ?.replace("http//", "http://") ||
-  "/sem-imagem.png"
-}
-            alt={produto.nome}
-            onError={(e) => {
-              e.currentTarget.onerror = null;
-              e.currentTarget.src = "/sem-imagem.png";
-            }}
-          />
+  src={getImagemProduto(produto)}
+  alt={produto.nome}
+  onError={(e) => {
+    e.currentTarget.onerror = null;
+    e.currentTarget.src = "/sem-imagem.png";
+  }}
+/>
         </div>
 
         <div className="co-product-body">
@@ -593,19 +581,15 @@ Aguardo confirmação.
                 <div className="co-news-card" key={produto._id || produto.id}>
                   <span>NOVO</span>
                   <img
-  src={
-  produto?.imagens?.[0]?.url
-    ?.replace("https//", "https://")
-    ?.replace("http//", "http://") ||
-  "/sem-imagem.png"
-}
+  src={getImagemProduto(produto)}
   alt={produto.nome}
   onError={(e) => {
     e.currentTarget.onerror = null;
     e.currentTarget.src = "/sem-imagem.png";
   }}
 />
-                  <strong>{produto.nome}</strong>
+
+                    <strong>{produto.nome}</strong>
                   <small>R$ {Number(produto.preco || 0).toFixed(2)}</small>
                 </div>
               ))}
