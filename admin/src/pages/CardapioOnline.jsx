@@ -88,28 +88,46 @@ function filtrarCategoria(cat) {
   }, []);
 
   function getImagemProduto(produto) {
-    const baseURL = api.defaults.baseURL || "https://conceito-fitness-system.onrender.com";
-    const backendURL = baseURL.replace("/api", "");
+  const backendURL = "https://conceito-fitness-system.onrender.com";
 
-    const imagem =
-  produto?.imagens?.[0]?.url ||
-  produto?.imagens?.[0] ||
-  produto?.imagem?.url ||
-  produto?.imagem ||
-  produto?.foto ||
-  produto?.image ||
-  produto?.urlImagem ||
-  produto?.imageUrl ||
-  produto?.fotoUrl ||
-  produto?.thumbnail ||
-  "";
+  const imagem =
+    produto?.imagens?.[0]?.url ||
+    produto?.imagens?.[0]?.path ||
+    produto?.imagens?.[0]?.filename ||
+    produto?.imagens?.[0] ||
+    produto?.imagem?.url ||
+    produto?.imagem?.path ||
+    produto?.imagem?.filename ||
+    produto?.imagem ||
+    produto?.foto ||
+    produto?.image ||
+    produto?.urlImagem ||
+    produto?.imageUrl ||
+    produto?.fotoUrl ||
+    "";
 
-    if (!imagem) return "/sem-imagem.png";
-    if (typeof imagem === "object") return imagem.url || "/sem-imagem.png";
-    if (imagem.startsWith("http")) return imagem;
-    if (imagem.startsWith("/uploads")) return `${backendURL}${imagem}`;
-    return `${backendURL}/uploads/${imagem}`;
+  if (!imagem) {
+    return "/sem-imagem.png";
   }
+
+  if (typeof imagem === "object") {
+    return imagem.url || imagem.path || "/sem-imagem.png";
+  }
+
+  if (imagem.startsWith("http")) {
+    return imagem;
+  }
+
+  if (imagem.startsWith("/uploads")) {
+    return `${backendURL}${imagem}`;
+  }
+
+  if (imagem.startsWith("uploads")) {
+    return `${backendURL}/${imagem}`;
+  }
+
+  return `${backendURL}/uploads/${imagem}`;
+}
 
   function adicionarProduto(produto) {
     const id = produto._id || produto.id;
