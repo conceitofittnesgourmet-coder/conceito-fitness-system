@@ -16,6 +16,7 @@ FaIndustry,
 FaFileAlt,
 FaFileInvoice, 
 FaTruckLoading,
+FaGlobe,
 
 } from "react-icons/fa";
 
@@ -46,6 +47,11 @@ function AdminLayout({
   path: "/pdv",
   icon: <ShoppingCart size={20} />
 },
+{
+  label: "Cardápio Online",
+  path: "/cardapio-online-admin",
+  icon: <FaGlobe />
+},
     { label: "Painel", path: "/", icon: <FaChartLine /> },
     { label: "Produtos", path: "/produtos", icon: <FaBoxOpen /> },
     { label: "Pedidos", path: "/pedidos", icon: <FaReceipt /> },
@@ -53,6 +59,7 @@ function AdminLayout({
     { label: "Entregador", path: "/entregador", icon: <FaTruck /> },
     { label: "Clientes", path: "/clientes", icon: <FaUsers /> },
     { label: "Financeiro", path: "/financeiro", icon: <FaWallet /> },
+
     {
   label: "Produção",
   path: "/producao",

@@ -85,6 +85,8 @@ import Relatorios from "./pages/Relatorios";
 
 import Fiscal from "./pages/Fiscal";
 
+import CardapioOnlineAdmin from "./pages/cardapioonlineadmin"; 
+
 
 
 // ==========================================
@@ -412,7 +414,8 @@ function App() {
 
       />
 
-
+              
+        <Route path="/cardapio-online-admin" element={<CardapioOnlineAdmin />} />
 
 
 
