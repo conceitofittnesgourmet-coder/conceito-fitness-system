@@ -1,7 +1,7 @@
 import AdminLayout from "../layouts/AdminLayout";
 
 export default function CardapioOnlineAdmin() {
-  const linkCardapio = "https://www.conceitofitgourmet.com.br/cardapio";
+  const linkCardapio = "https://www.conceitofitgourmet.com.br/cardapio-online";
 
   function copiarLink() {
     navigator.clipboard.writeText(linkCardapio);
