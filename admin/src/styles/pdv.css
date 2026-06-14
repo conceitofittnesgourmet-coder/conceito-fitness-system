@@ -702,56 +702,52 @@
   color: #06130b;
 }
 
-/* ==============================
-   PDV PREMIUM CORRIGIDO
-   Layout sem quebrar funções
-============================== */
+/* RESET FINAL PDV PREMIUM */
 
 .pdv-page {
   display: block !important;
+  width: 100% !important;
   min-height: 100vh;
-  background:
-    radial-gradient(circle at top left, rgba(34,197,94,0.14), transparent 32%),
-    linear-gradient(135deg, #020617, #071421 55%, #020617);
-  overflow-x: hidden;
+  overflow-x: hidden !important;
 }
 
 .pdv-main-premium {
-  width: 100%;
-  padding: 24px;
+  width: 100% !important;
+  max-width: 100% !important;
+  padding: 22px !important;
 }
 
 .pdv-header-premium {
-  display: flex !important;
-  justify-content: space-between;
-  align-items: center;
-  gap: 22px;
-  margin-bottom: 22px;
+  display: grid !important;
+  grid-template-columns: 1fr auto !important;
+  gap: 20px !important;
+  align-items: center !important;
 }
 
 .pdv-title h1 {
-  font-size: 34px;
-  line-height: 1.05;
+  font-size: 32px !important;
+  line-height: 1.1 !important;
+  white-space: nowrap !important;
 }
 
 .pdv-header-actions {
-  display: flex;
-  flex-wrap: wrap;
-  gap: 12px;
+  display: flex !important;
+  gap: 12px !important;
+  align-items: center !important;
 }
 
 .pdv-workspace {
   display: grid !important;
-  grid-template-columns: minmax(0, 1fr) 430px !important;
+  grid-template-columns: minmax(0, 1fr) 420px !important;
   gap: 20px !important;
-  align-items: start;
+  align-items: start !important;
+  width: 100% !important;
 }
 
 .pdv-products-panel {
-  width: 100%;
-  padding: 18px;
-  border-radius: 24px;
-  background: rgba(15, 23, 42, 0.82);
+  width: 100% !important;
+  min-width: 0 !important;
+  padding: 18px !important;
 }
 
 .pdv-products-grid {
@@ -761,115 +757,58 @@
 }
 
 .pdv-product-card {
-  min-height: 220px;
-  border-radius: 20px;
-  background: linear-gradient(180deg, rgba(15,23,42,0.96), rgba(2,6,23,0.78));
-  border: 1px solid rgba(148,163,184,0.14);
-  overflow: hidden;
-  position: relative;
-  z-index: 1;
+  height: 230px !important;
+  min-height: 230px !important;
+  position: relative !important;
+  z-index: 1 !important;
 }
 
 .pdv-product-img {
-  height: 115px;
-  margin: 10px;
-  border-radius: 16px;
-}
-
-.pdv-product-img img {
-  border-radius: 14px;
-}
-
-.pdv-product-info {
-  padding: 10px 14px 14px;
+  height: 115px !important;
 }
 
 .pdv-product-info h3 {
-  font-size: 15px;
-  line-height: 1.2;
-}
-
-.pdv-product-info button,
-.controle-quantidade button,
-.finalizar-pedido,
-.payment-grid button,
-.btn-calcular-frete {
-  pointer-events: auto !important;
-  position: relative;
-  z-index: 5;
+  font-size: 15px !important;
+  line-height: 1.2 !important;
 }
 
 .pdv-cart-premium {
-  width: 430px;
-  padding: 18px;
-  border-radius: 24px;
-  background: rgba(15, 23, 42, 0.88);
-  border: 1px solid rgba(148,163,184,0.14);
-  position: sticky;
-  top: 18px;
-  max-height: calc(100vh - 36px);
-  overflow-y: auto;
-  z-index: 2;
+  width: 420px !important;
+  min-width: 420px !important;
+  max-width: 420px !important;
+  position: sticky !important;
+  top: 20px !important;
+  max-height: calc(100vh - 40px) !important;
+  overflow-y: auto !important;
+  z-index: 10 !important;
 }
 
-.pdv-cart-list {
-  max-height: 210px;
-  overflow-y: auto;
-}
-
-.pdv-cliente-box,
-.pdv-ajustes-pedido,
-.pdv-total-box {
-  border-radius: 18px;
-  background: rgba(2,6,23,0.28);
-  border: 1px solid rgba(148,163,184,0.10);
-  padding: 12px;
-}
-
-.pdv-total-box {
-  margin-top: 14px;
-}
-
-.total-final {
-  border-radius: 16px;
-  background: rgba(34,197,94,0.08);
-  border: 1px solid rgba(34,197,94,0.25);
-  padding: 12px !important;
-}
-
-.payment-grid {
-  display: grid;
-  grid-template-columns: repeat(4, 1fr);
-  gap: 10px;
-}
-
-.payment-grid button {
-  height: 66px;
-  border-radius: 16px;
-}
-
-.finalizar-pedido {
-  height: 58px;
-  border-radius: 16px;
-  background: linear-gradient(135deg, #16a34a, #22c55e);
-  color: #03130a;
-  font-weight: 900;
+.pdv-product-info button,
+.pdv-cart-row button,
+.payment-grid button,
+.finalizar-pedido,
+.btn-calcular-frete {
+  pointer-events: auto !important;
+  z-index: 20 !important;
+  position: relative !important;
 }
 
 .pdv-bottom-stats {
-  margin-top: 22px;
-  display: grid;
-  grid-template-columns: repeat(5, 1fr);
-  gap: 14px;
+  display: grid !important;
+  grid-template-columns: repeat(5, 1fr) !important;
+  gap: 14px !important;
+  margin-top: 22px !important;
 }
 
-@media (max-width: 1300px) {
+@media (max-width: 1250px) {
   .pdv-workspace {
-    grid-template-columns: minmax(0, 1fr) 400px !important;
+    grid-template-columns: minmax(0, 1fr) 380px !important;
   }
 
   .pdv-cart-premium {
-    width: 400px;
+    width: 380px !important;
+    min-width: 380px !important;
+    max-width: 380px !important;
   }
 
   .pdv-products-grid {
