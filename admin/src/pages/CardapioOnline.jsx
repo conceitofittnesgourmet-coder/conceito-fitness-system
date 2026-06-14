@@ -116,8 +116,6 @@ setProdutos(lista);
     produto?.thumbnail ||
     "";
 
-  if (!imagem) return "/sem-imagem.png";
-
   if (typeof imagem === "object") {
     imagem =
       imagem.url ||
@@ -130,17 +128,29 @@ setProdutos(lista);
 
   if (!imagem) return "/sem-imagem.png";
 
-  imagem = String(imagem).replaceAll("\\", "/");
+  imagem = String(imagem).trim().replaceAll("\\", "/");
 
-  if (imagem.startsWith("https//")) {
-  imagem = imagem.replace("https//", "https://");
-}
+  if (imagem.includes("res.cloudinary.com")) {
+    const cloudinaryPath = imagem.substring(
+      imagem.indexOf("res.cloudinary.com")
+    );
 
-if (imagem.startsWith("http//")) {
-  imagem = imagem.replace("http//", "http://");
-}
+    return `https://${cloudinaryPath}`;
+  }
 
-  if (imagem.startsWith("http")) return imagem;
+  imagem = imagem
+    .replace("https//", "https://")
+    .replace("http//", "http://")
+    .replace("https:/", "https://")
+    .replace("http:/", "http://");
+
+  if (imagem.startsWith("//")) {
+    return `https:${imagem}`;
+  }
+
+  if (imagem.startsWith("http://") || imagem.startsWith("https://")) {
+    return imagem;
+  }
 
   if (imagem.startsWith("/api/uploads")) {
     return `${backendURL}${imagem.replace("/api", "")}`;
