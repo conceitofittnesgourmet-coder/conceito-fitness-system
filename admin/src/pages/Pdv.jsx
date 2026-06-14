@@ -180,19 +180,35 @@ function diminuirQuantidade(id) {
     setCart([]);
   }
 
-  const subtotalPedido = cart.reduce((acc, item) => {
-  const preco = Number(item.preco || 0);
+  function moeda(valor) {
+  return Number(valor || 0).toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  });
+}
+
+const subtotalPedido = cart.reduce((acc, item) => {
+  const preco = Number(
+    String(item.preco || 0).replace(",", ".")
+  );
+
   const quantidade = Number(item.quantidade || 1);
 
   return acc + preco * quantidade;
 }, 0);
 
-const taxaEntregaPedido = Number(taxaEntregaManual || 0);
+const taxaEntregaPedido = Number(
+  String(taxaEntregaManual || 0).replace(",", ".")
+);
 
-const descontoPedido = Number(descontoManual || 0);
+const descontoPedido = Number(
+  String(descontoManual || 0).replace(",", ".")
+);
 
-const totalPedido =
-  subtotalPedido + taxaEntregaPedido - descontoPedido;
+const totalPedido = Math.max(
+  0,
+  subtotalPedido + taxaEntregaPedido - descontoPedido
+);
 
   const troco =
   pagamento === "DINHEIRO"
@@ -719,23 +735,23 @@ window.open(`/cupom/${pedidoCriado._id}`, "_blank");
               <div>
 
                 <span>Subtotal</span>
-                <strong>R$ {subtotalPedido.toFixed(2)}</strong>
+                <strong>{moeda(subtotalPedido)}</strong>
              </div> 
             
               <div>
                 <span>Taxa de entrega</span>
-                <strong>R$ {taxaEntregaPedido.toFixed(2)}</strong>
+                <strong>{moeda(taxaEntregaPedido)}</strong>
               </div>
 
               <div>
                 <span>Desconto</span>
-                <strong className="desconto">- R$ {descontoPedido.toFixed(2)}</strong>
+                <strong className="desconto">- {moeda(descontoPedido)}</strong>
               </div>
 
               <div className="total-final">
                 <span>Total</span>
                 <strong>
-  R$ {totalPedido.toFixed(2)}
+  {moeda(totalPedido)}
 </strong>
               </div>
             </div>
@@ -757,7 +773,7 @@ window.open(`/cupom/${pedidoCriado._id}`, "_blank");
     />
 
     <small>
-      Troco: R$ {troco.toFixed(2)}
+      Troco: {moeda(troco)}
     </small>
   </div>
 )}
