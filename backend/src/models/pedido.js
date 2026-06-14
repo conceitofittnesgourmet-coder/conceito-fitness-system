@@ -158,16 +158,12 @@ numeroPedido: {
         type: String,
 
         enum: [
-
-          "pendente",
-
-          "producao",
-
-          "pronto",
-
-          "entregue"
-
-        ],
+  "pendente",
+  "producao",
+  "pronto",
+  "entregue",
+  "cancelado"
+],
 
         default: "pendente"
 

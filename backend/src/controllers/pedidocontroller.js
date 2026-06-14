@@ -367,3 +367,60 @@ exports.atualizarStatus = async (req, res) => {
     });
   }
 };
+
+exports.cancelarPedido = async (req, res) => {
+  try {
+    const pedido = await Pedido.findById(req.params.id);
+
+    if (!pedido) {
+      return res.status(404).json({
+        success: false,
+        message: "Pedido não encontrado",
+      });
+    }
+
+    pedido.status = "cancelado";
+
+    await pedido.save();
+
+    await ContaReceber.updateMany(
+      { pedido: pedido._id },
+      {
+        status: "cancelada",
+      }
+    );
+
+    await MovimentacaoFinanceira.deleteMany({
+      pedido: pedido._id,
+    });
+
+    for (const item of pedido.produtos || []) {
+      if (!item.produtoId) continue;
+
+      const produto = await Produto.findById(
+        item.produtoId
+      );
+
+      if (produto) {
+        produto.estoque =
+          Number(produto.estoque || 0) +
+          Number(item.quantidade || 0);
+
+        await produto.save();
+      }
+    }
+
+    return res.json({
+      success: true,
+      message: "Pedido cancelado com sucesso",
+    });
+
+  } catch (error) {
+    console.log(error);
+
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};

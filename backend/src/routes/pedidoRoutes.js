@@ -12,4 +12,9 @@ router.post("/", pedidoController.criarPedido);
 
 router.put("/:id/status", pedidoController.atualizarStatus);
 
+router.put(
+  "/:id/cancelar",
+  pedidoController.cancelarPedido
+);
+
 module.exports = router;

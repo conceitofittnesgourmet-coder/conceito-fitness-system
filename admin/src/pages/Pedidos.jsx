@@ -300,7 +300,26 @@ function Pedidos() {
         "Status atualizado"
       );
 
+    
+      async function cancelarPedido(id) {
+  const confirmar = window.confirm(
+    "Deseja realmente cancelar esta venda?"
+  );
 
+  if (!confirmar) return;
+
+  try {
+    await api.put(`/pedidos/${id}/cancelar`);
+
+    toast.success("Venda cancelada com sucesso");
+
+    carregarPedidos();
+  } catch (error) {
+    console.log(error);
+
+    toast.error("Erro ao cancelar venda");
+  }
+}
 
 
 
@@ -686,11 +705,16 @@ function Pedidos() {
                 </div>
 
 
-
+                  {
+  pedido.status === "cancelado" && (
+    <span>❌</span>
+  )
+}
 
 
                 <span
-                  className={`status ${pedido.status}`}
+
+                    className={`status ${pedido.status}`}
                 >
 
                   {
@@ -914,8 +938,18 @@ function Pedidos() {
                     )
 
                   }
-
                 >
+                  <button
+  className="btn-cancelar"
+  disabled={pedido.status === "entregue"}
+  onClick={() =>
+    cancelarPedido(pedido._id)
+  }
+>
+  ❌ Cancelar
+</button>
+
+                
 
                   <FaTruck />
 

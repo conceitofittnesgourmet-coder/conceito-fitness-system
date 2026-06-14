@@ -109,3 +109,13 @@
   border-radius:14px;
   font-weight:700;
 }
+
+.btn-cancelar {
+  background: #dc2626;
+  color: white;
+  border: none;
+}
+
+.btn-cancelar:hover {
+  background: #b91c1c;
+}
