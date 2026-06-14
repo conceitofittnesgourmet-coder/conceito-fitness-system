@@ -43,6 +43,8 @@ export default function Pdv() {
   const [numeroEntrega, setNumeroEntrega] = useState("");
   const [bairroEntrega, setBairroEntrega] = useState("");
   const [complementoEntrega, setComplementoEntrega] = useState("");
+  const [buscaProduto, setBuscaProduto] = useState("");
+  const [categoriaAtiva, setCategoriaAtiva] = useState("Todos");
 
   async function carregarProdutos() {
     try {
@@ -95,6 +97,7 @@ export default function Pdv() {
     produto?.urlImagem ||
     "";
 
+    
   if (!imagem) {
     return "/sem-imagem.png";
   }
@@ -209,6 +212,19 @@ const totalPedido = Math.max(
   0,
   subtotalPedido + taxaEntregaPedido - descontoPedido
 );
+
+const produtosFiltrados = produtos.filter((produto) => {
+  const nome = produto.nome?.toLowerCase() || "";
+  const categoria = produto.categoria || "";
+
+  const passaBusca = nome.includes(buscaProduto.toLowerCase());
+
+  const passaCategoria =
+    categoriaAtiva === "Todos" ||
+    categoria.toLowerCase() === categoriaAtiva.toLowerCase();
+
+  return passaBusca && passaCategoria;
+});
 
   const troco =
   pagamento === "DINHEIRO"
@@ -400,7 +416,11 @@ window.open(`/cupom/${pedidoCriado._id}`, "_blank");
 
             <div className="pdv-search-premium">
               <Search size={18} />
-              <input placeholder="Buscar produto..." />
+              <input
+  placeholder="Buscar produto..."
+  value={buscaProduto}
+  onChange={(e) => setBuscaProduto(e.target.value)}
+/>
               <span>F2</span>
             </div>
 
@@ -415,14 +435,56 @@ window.open(`/cupom/${pedidoCriado._id}`, "_blank");
         <section className="pdv-workspace">
           <div className="pdv-products-panel">
             <div className="pdv-categories-premium">
-              <button className="active">Todos</button>
-              <button>Bolos e Tortas</button>
-              <button>Sobremesas</button>
-              <button>Salgados</button>
-              <button>Bebidas</button>
-              <button>Cafés</button>
-              <button>Combos</button>
-              <button>Outros</button>
+              <button
+                className={categoriaAtiva === "Todos" ? "active" : ""}
+                onClick={() => setCategoriaAtiva("Todos")}
+              >
+                Todos
+              </button>
+              <button
+                className={categoriaAtiva === "Bolos e Tortas" ? "active" : ""}
+                onClick={() => setCategoriaAtiva("Bolos e Tortas")}
+              >
+                Bolos e Tortas
+              </button>
+              <button
+                className={categoriaAtiva === "Sobremesas" ? "active" : ""}
+                onClick={() => setCategoriaAtiva("Sobremesas")}
+              >
+                Sobremesas
+              </button>
+              <button
+                className={categoriaAtiva === "Salgados" ? "active" : ""}
+                onClick={() => setCategoriaAtiva("Salgados")}
+              >
+                Salgados
+              </button>
+              <button
+                className={categoriaAtiva === "Bebidas" ? "active" : ""}
+                onClick={() => setCategoriaAtiva("Bebidas")}
+              >
+                Bebidas
+              </button>
+              <button
+  className={categoriaAtiva === "Cafés" ? "active" : ""}
+  onClick={() => setCategoriaAtiva("Cafés")}
+>
+  Cafés
+</button>
+
+<button
+  className={categoriaAtiva === "Combos" ? "active" : ""}
+  onClick={() => setCategoriaAtiva("Combos")}
+>
+  Combos
+</button>
+
+<button
+  className={categoriaAtiva === "Outros" ? "active" : ""}
+  onClick={() => setCategoriaAtiva("Outros")}
+>
+  Outros
+</button>
             </div>
 
             <div className="pdv-products-grid">
@@ -433,7 +495,7 @@ window.open(`/cupom/${pedidoCriado._id}`, "_blank");
               )}
 
               {!loadingProdutos &&
-                produtos.map((produto) => (
+                produtosFiltrados.map((produto) => (
                   <div className="pdv-product-card" key={produto._id || produto.id}>
                     <div className="pdv-product-img">
                       <img
