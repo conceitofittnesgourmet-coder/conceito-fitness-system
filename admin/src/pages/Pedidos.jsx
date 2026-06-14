@@ -274,34 +274,30 @@ function Pedidos() {
   // STATUS
   // ==========================================
 
-  async function atualizarStatus(
+  async function atualizarStatus(id, status) {
+  try {
+    await api.put(
+      `/pedidos/${id}/status`,
+      { status }
+    );
 
-    id,
+    toast.success("Status atualizado");
 
-    status
+    carregarPedidos();
 
-  ) {
+  } catch (error) {
+    console.log(error);
 
-    try {
-
-      await api.put(
-
-        `/pedidos/${id}/status`,
-
-        { status }
-
-      );
+    toast.error(
+      "Erro ao atualizar status"
+    );
+  }
+}
 
 
 
+async function cancelarPedido(id) {
 
-
-      toast.success(
-        "Status atualizado"
-      );
-
-    
-      async function cancelarPedido(id) {
   const confirmar = window.confirm(
     "Deseja realmente cancelar esta venda?"
   );
@@ -309,41 +305,28 @@ function Pedidos() {
   if (!confirmar) return;
 
   try {
-    await api.put(`/pedidos/${id}/cancelar`);
 
-    toast.success("Venda cancelada com sucesso");
+    await api.put(
+      `/pedidos/${id}/cancelar`
+    );
+
+    toast.success(
+      "Venda cancelada com sucesso"
+    );
 
     carregarPedidos();
+
   } catch (error) {
+
     console.log(error);
 
-    toast.error("Erro ao cancelar venda");
+    toast.error(
+      "Erro ao cancelar venda"
+    );
   }
 }
-
-
-
-      carregarPedidos();
-
-    } catch (error) {
-
-      console.log(error);
-
-
-
-
-
-      toast.error(
-        "Erro ao atualizar status"
-      );
-
-    }
-
-  }
-
-
-
-
+    
+      
 
   // ==========================================
   // SOCKET.IO
@@ -866,111 +849,59 @@ function Pedidos() {
               {/* BOTÕES */}
 
               <div className="pedido-actions pedido-actions-premium">
+  {pedido.status !== "cancelado" && (
+    <>
+      <button
+        className="btn-producao"
+        onClick={() => atualizarStatus(pedido._id, "producao")}
+      >
+        <FaFire />
+        Produção
+      </button>
 
-                <button
+      <button
+        className="btn-pronto"
+        onClick={() => atualizarStatus(pedido._id, "pronto")}
+      >
+        <FaCheck />
+        Pronto
+      </button>
 
-                  className="btn-producao"
+      <button
+        className="btn-entregue"
+        onClick={() => atualizarStatus(pedido._id, "entregue")}
+      >
+        <FaTruck />
+        Entregue
+      </button>
 
-                  onClick={() =>
+      <button
+        className="btn-cancelar"
+        onClick={() => cancelarPedido(pedido._id)}
+      >
+        ❌ Cancelar
+      </button>
+    </>
+  )}
 
-                    atualizarStatus(
+  {pedido.status === "cancelado" && (
+    <button
+      className="btn-cancelado"
+      disabled
+    >
+      Venda cancelada
+    </button>
+  )}
 
-                      pedido._id,
+  </div>
 
-                      "producao"
+</div>
 
-                    )
+))
 
-                  }
+}
 
-                >
-
-                  <FaFire />
-
-                  Produção
-
-                </button>
-
-
-
-
-
-                <button
-
-                  className="btn-pronto"
-
-                  onClick={() =>
-
-                    atualizarStatus(
-
-                      pedido._id,
-
-                      "pronto"
-
-                    )
-
-                  }
-
-                >
-
-                  <FaCheck />
-
-                  Pronto
-
-                </button>
-
-
-
-
-
-                <button
-
-                  className="btn-entregue"
-
-                  onClick={() =>
-
-                    atualizarStatus(
-
-                      pedido._id,
-
-                      "entregue"
-
-                    )
-
-                  }
-                >
-                  <button
-  className="btn-cancelar"
-  disabled={pedido.status === "entregue"}
-  onClick={() =>
-    cancelarPedido(pedido._id)
-  }
->
-  ❌ Cancelar
-</button>
-
-                
-
-                  <FaTruck />
-
-                  Entregue
-
-                </button>
-
-              </div>
-
-            </div>
-
-          ))
-
-        }
-
-      </div>
-
-
-
-
-
+</div>              
       {/* IMPRESSÃO */}
 
       
