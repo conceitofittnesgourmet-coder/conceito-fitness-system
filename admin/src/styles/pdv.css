@@ -91,8 +91,8 @@
 
 .pdv-workspace {
   display: grid;
-  grid-template-columns: 1fr 520px;
-  gap: 22px;
+  grid-template-columns: 1fr 430px;
+  gap: 18px;
 }
 
 .pdv-products-panel,
@@ -131,7 +131,7 @@
 
 .pdv-products-grid {
   display: grid;
-  grid-template-columns: repeat(4, minmax(160px, 1fr));
+  grid-template-columns: repeat(auto-fill, minmax(170px, 1fr));
   gap: 14px;
 }
 
@@ -211,7 +211,13 @@
   padding: 16px;
   display: flex;
   flex-direction: column;
-  min-height: 640px;
+  min-height: calc(100vh - 40px);
+
+  position: sticky;
+  top: 20px;
+
+  max-height: calc(100vh - 40px);
+  overflow-y: auto;
 }
 
 .pdv-cart-top {
