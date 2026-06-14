@@ -70,7 +70,7 @@ function filtrarCategoria(cat) {
       const lista = response.data.produtos || [];
 
 console.log("PRODUTOS CARDAPIO:", lista);
-console.log("IMAGEM PRIMEIRO PRODUTO:", lista[0]);
+console.log("PRODUTO COMPLETO:", JSON.stringify(lista[0], null, 2));
 
 setProdutos(lista);
     } catch (error) {

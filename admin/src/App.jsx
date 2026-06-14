@@ -582,7 +582,6 @@ function App() {
 
 
 
-
 <Route
 
   path="/carrinho"
