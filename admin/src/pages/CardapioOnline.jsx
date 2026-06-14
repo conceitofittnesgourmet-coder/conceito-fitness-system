@@ -132,6 +132,14 @@ setProdutos(lista);
 
   imagem = String(imagem).replaceAll("\\", "/");
 
+  if (imagem.startsWith("https//")) {
+  imagem = imagem.replace("https//", "https://");
+}
+
+if (imagem.startsWith("http//")) {
+  imagem = imagem.replace("http//", "http://");
+}
+
   if (imagem.startsWith("http")) return imagem;
 
   if (imagem.startsWith("/api/uploads")) {
