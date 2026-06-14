@@ -67,7 +67,12 @@ function filtrarCategoria(cat) {
   async function carregarProdutos() {
     try {
       const response = await api.get("/produtos");
-      setProdutos(response.data.produtos || []);
+      const lista = response.data.produtos || [];
+
+console.log("PRODUTOS CARDAPIO:", lista);
+console.log("IMAGEM PRIMEIRO PRODUTO:", lista[0]);
+
+setProdutos(lista);
     } catch (error) {
       console.log("Erro ao carregar cardápio online:", error);
     }
@@ -90,32 +95,47 @@ function filtrarCategoria(cat) {
   function getImagemProduto(produto) {
   const backendURL = "https://conceito-fitness-system.onrender.com";
 
-  const imagem =
+  let imagem =
     produto?.imagens?.[0]?.url ||
+    produto?.imagens?.[0]?.secure_url ||
     produto?.imagens?.[0]?.path ||
     produto?.imagens?.[0]?.filename ||
+    produto?.imagens?.[0]?.name ||
     produto?.imagens?.[0] ||
     produto?.imagem?.url ||
+    produto?.imagem?.secure_url ||
     produto?.imagem?.path ||
     produto?.imagem?.filename ||
     produto?.imagem ||
     produto?.foto ||
     produto?.image ||
     produto?.urlImagem ||
+    produto?.imagemUrl ||
     produto?.imageUrl ||
     produto?.fotoUrl ||
+    produto?.thumbnail ||
     "";
 
-  if (!imagem) {
-    return "/sem-imagem.png";
-  }
+  if (!imagem) return "/sem-imagem.png";
 
   if (typeof imagem === "object") {
-    return imagem.url || imagem.path || "/sem-imagem.png";
+    imagem =
+      imagem.url ||
+      imagem.secure_url ||
+      imagem.path ||
+      imagem.filename ||
+      imagem.name ||
+      "";
   }
 
-  if (imagem.startsWith("http")) {
-    return imagem;
+  if (!imagem) return "/sem-imagem.png";
+
+  imagem = String(imagem).replaceAll("\\", "/");
+
+  if (imagem.startsWith("http")) return imagem;
+
+  if (imagem.startsWith("/api/uploads")) {
+    return `${backendURL}${imagem.replace("/api", "")}`;
   }
 
   if (imagem.startsWith("/uploads")) {
