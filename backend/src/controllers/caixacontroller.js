@@ -172,12 +172,15 @@ exports.resumoCaixa = async (req, res) => {
     const inicio = caixa?.abertoEm || new Date(new Date().setHours(0, 0, 0, 0));
 
     const pedidos = await Pedido.find({
-      createdAt: {
-        $gte: inicio,
-      },
-    }).sort({
-      createdAt: -1,
-    });
+  createdAt: {
+    $gte: inicio,
+  },
+  status: {
+    $ne: "cancelado",
+  },
+}).sort({
+  createdAt: -1,
+});
 
     const total = pedidos.reduce((acc, p) => acc + Number(p.total || 0), 0);
 

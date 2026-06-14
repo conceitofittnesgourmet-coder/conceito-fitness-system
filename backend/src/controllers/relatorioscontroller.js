@@ -15,8 +15,8 @@ function montarPeriodo(query) {
     : new Date(hoje.getFullYear(), hoje.getMonth(), 1);
 
   const fim = query.fim
-    ? new Date(`${query.fim}T23:59:59`)
-    : hoje;
+  ? new Date(`${query.fim}T23:59:59.999`)
+  : hoje;
 
   return { inicio, fim };
 }
@@ -30,8 +30,16 @@ exports.relatorioGeral = async (req, res) => {
     const { inicio, fim } = montarPeriodo(req.query);
 
     const pedidos = await Pedido.find({
-      createdAt: { $gte: inicio, $lte: fim },
-    }).sort({ createdAt: -1 });
+  createdAt: {
+    $gte: inicio,
+    $lte: fim,
+  },
+  status: {
+    $ne: "cancelado",
+  },
+}).sort({
+  createdAt: -1,
+});
 
     const contasPagar = await ContaPagar.find({
       createdAt: { $gte: inicio, $lte: fim },
