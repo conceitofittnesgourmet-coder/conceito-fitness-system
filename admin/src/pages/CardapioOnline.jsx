@@ -129,15 +129,23 @@ setProdutos(lista);
   if (!imagem) return "/sem-imagem.png";
 
   imagem = String(imagem).trim().replaceAll("\\", "/");
-
   if (imagem.includes("res.cloudinary.com")) {
-    const cloudinaryPath = imagem.substring(
-      imagem.indexOf("res.cloudinary.com")
-    );
+  let limpa = imagem.substring(
+    imagem.indexOf("res.cloudinary.com")
+  );
 
-    return `https://${cloudinaryPath}`;
-  }
+  limpa = limpa
+    .replace("https//", "")
+    .replace("http//", "")
+    .replace("https:/", "")
+    .replace("http:/", "")
+    .replace("https://", "")
+    .replace("http://", "");
 
+  return `https://${limpa}`;
+}
+
+  
   imagem = imagem
     .replace("https//", "https://")
     .replace("http//", "http://")
