@@ -92,13 +92,17 @@ function filtrarCategoria(cat) {
     const backendURL = baseURL.replace("/api", "");
 
     const imagem =
-      produto?.imagens?.[0]?.url ||
-      produto?.imagens?.[0] ||
-      produto?.imagem?.url ||
-      produto?.imagem ||
-      produto?.foto ||
-      produto?.image ||
-      "";
+  produto?.imagens?.[0]?.url ||
+  produto?.imagens?.[0] ||
+  produto?.imagem?.url ||
+  produto?.imagem ||
+  produto?.foto ||
+  produto?.image ||
+  produto?.urlImagem ||
+  produto?.imageUrl ||
+  produto?.fotoUrl ||
+  produto?.thumbnail ||
+  "";
 
     if (!imagem) return "/sem-imagem.png";
     if (typeof imagem === "object") return imagem.url || "/sem-imagem.png";
@@ -519,7 +523,14 @@ Aguardo confirmação.
               {novidades.map((produto) => (
                 <div className="co-news-card" key={produto._id || produto.id}>
                   <span>NOVO</span>
-                  <img src={getImagemProduto(produto)} alt={produto.nome} />
+                  <img
+  src={getImagemProduto(produto)}
+  alt={produto.nome}
+  onError={(e) => {
+    e.currentTarget.onerror = null;
+    e.currentTarget.src = "/sem-imagem.png";
+  }}
+/>
                   <strong>{produto.nome}</strong>
                   <small>R$ {Number(produto.preco || 0).toFixed(2)}</small>
                 </div>
