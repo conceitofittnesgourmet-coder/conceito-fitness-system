@@ -234,37 +234,30 @@ const produtosFiltrados = produtos.filter((produto) => {
       )
     : 0;
 
-  async function calcularFretePDV() {
-
+ async function calcularFretePDV() {
   if (!enderecoEntrega.trim()) {
     alert("Informe o endereço.");
     return;
   }
 
+  const enderecoCompleto = `${enderecoEntrega}, Umuarama, Paraná, Brasil`;
+
   try {
+    const response = await api.post("/frete/calcular", {
+      endereco: enderecoCompleto,
+    });
 
-    const response = await api.post(
-      "/frete/calcular",
-      {
-        endereco: enderecoEntrega,
-      }
-    );
+    const frete = Number(response.data.frete || 0);
+    const distancia = Number(response.data.distanciaKm || 0);
 
-    setTaxaEntregaManual(
-      Number(response.data.frete || 0)
-    );
-
-    setDistanciaEntrega(
-      Number(response.data.distanciaKm || 0)
-    );
-
+    setTaxaEntregaManual(frete);
+    setDistanciaEntrega(distancia);
   } catch (error) {
-
-    console.log(error);
+    console.log("Erro ao calcular frete:", error);
 
     alert(
       error.response?.data?.message ||
-      "Erro ao calcular frete."
+        "Não conseguimos localizar esse endereço. Tente informar rua e número."
     );
   }
 }
