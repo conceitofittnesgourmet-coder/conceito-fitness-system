@@ -39,10 +39,6 @@ export default function Pdv() {
   const [descontoManual, setDescontoManual] = useState("");
   const [motivoDesconto, setMotivoDesconto] = useState("");
   const [trocoPara, setTrocoPara] = useState("");
-  const [cep, setCep] = useState("");
-  const [numeroEntrega, setNumeroEntrega] = useState("");
-  const [bairroEntrega, setBairroEntrega] = useState("");
-  const [complementoEntrega, setComplementoEntrega] = useState("");
   const [buscaProduto, setBuscaProduto] = useState("");
   const [categoriaAtiva, setCategoriaAtiva] = useState("Todos");
 
@@ -291,10 +287,6 @@ mesa:
 enderecoEntrega,
 
 referenciaEntrega,
-cep,
-numeroEntrega,
-bairroEntrega,
-complementoEntrega,
 
 taxaEntrega:
   Number(taxaEntregaManual || 0),
