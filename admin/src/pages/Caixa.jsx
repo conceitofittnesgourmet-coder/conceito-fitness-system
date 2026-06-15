@@ -330,190 +330,156 @@ ${conteudo}
           </div>
         </section>
 
-        <section className={`caixa-status-hero ${caixaAberto ? "aberto" : "fechado"}`}>
-          <div className="caixa-status-icon">
-            {caixaAberto ? <FaLockOpen /> : <FaLock />}
-          </div>
-
-          <div>
-            <span>{caixaAberto ? "CAIXA ABERTO" : "CAIXA FECHADO"}</span>
-            <p>
-              {caixaAberto
-                ? `Aberto por ${caixa?.operador || "Administrador"}`
-                : "Abra o caixa para iniciar as vendas"}
-            </p>
-          </div>
-
-          <div className="caixa-hero-metric">
-            <small>Saldo Inicial</small>
-            <strong>R$ {Number(saldoInicial || 0).toFixed(2)}</strong>
-          </div>
-
-          <div className="caixa-hero-metric">
-            <small>Vendas do Dia</small>
-            <strong className="green">R$ {resumo.total.toFixed(2)}</strong>
-          </div>
-
-          <div className="caixa-hero-metric">
-            <small>Saldo Atual</small>
-            <strong>R$ {resumo.saldoAtual.toFixed(2)}</strong>
-          </div>
-
- {caixaAberto && (
-  <div className="fechamento-caixa-box">
-    <h3>Conferência de Fechamento</h3>
-
-    <div className="fechamento-resumo-grid">
-      <div>
-        <span>PIX sistema</span>
-        <strong>R$ {resumo.pix.toFixed(2)}</strong>
-      </div>
-
-      <div>
-        <span>Crédito sistema</span>
-        <strong>R$ {resumo.credito.toFixed(2)}</strong>
-      </div>
-
-      <div>
-        <span>Débito sistema</span>
-        <strong>R$ {resumo.debito.toFixed(2)}</strong>
-      </div>
-
-      <div>
-        <span>Dinheiro sistema</span>
-        <strong>R$ {resumo.dinheiro.toFixed(2)}</strong>
-      </div>
+        <section className="caixa-fechamento-layout">
+  <div className={`caixa-status-hero ${caixaAberto ? "aberto" : "fechado"}`}>
+    <div className="caixa-status-icon">
+      {caixaAberto ? <FaLockOpen /> : <FaLock />}
     </div>
 
-    <div className="fechamento-inputs-grid">
-      <label>
-        PIX conferido
-        <input
-          type="number"
-          value={conferenciaPix}
-          onChange={(e) => setConferenciaPix(e.target.value)}
-          placeholder="0,00"
-        />
-      </label>
-
-      <label>
-        Crédito conferido
-        <input
-          type="number"
-          value={conferenciaCredito}
-          onChange={(e) => setConferenciaCredito(e.target.value)}
-          placeholder="0,00"
-        />
-      </label>
-
-      <label>
-        Débito conferido
-        <input
-          type="number"
-          value={conferenciaDebito}
-          onChange={(e) => setConferenciaDebito(e.target.value)}
-          placeholder="0,00"
-        />
-      </label>
-
-      <label>
-        Dinheiro contado
-        <input
-          type="number"
-          value={conferenciaDinheiro}
-          onChange={(e) => {
-            setConferenciaDinheiro(e.target.value);
-            setValorContado(e.target.value);
-          }}
-          placeholder="0,00"
-        />
-      </label>
+    <div>
+      <span>{caixaAberto ? "CAIXA ABERTO" : "CAIXA FECHADO"}</span>
+      <p>
+        {caixaAberto
+          ? `Aberto por ${caixa?.operador || "Administrador"}`
+          : "Abra o caixa para iniciar as vendas"}
+      </p>
     </div>
 
-    <div className="fechamento-total-box">
-      <div>
-        <span>Total vendas sistema</span>
-        <strong>R$ {resumo.total.toFixed(2)}</strong>
-      </div>
-
-      <div>
-        <span>Total conferido</span>
-        <strong>R$ {totalConferido.toFixed(2)}</strong>
-      </div>
-
-      <div>
-        <span>Dinheiro esperado</span>
-        <strong>R$ {dinheiroEsperado.toFixed(2)}</strong>
-      </div>
-
-      <div className={diferencaVendas === 0 ? "ok" : "erro"}>
-        <span>Diferença vendas</span>
-        <strong>R$ {diferencaVendas.toFixed(2)}</strong>
-      </div>
-
-      <div className={diferencaDinheiro === 0 ? "ok" : "erro"}>
-        <span>Diferença dinheiro</span>
-        <strong>R$ {diferencaDinheiro.toFixed(2)}</strong>
-      </div>
+    <div className="caixa-hero-metric">
+      <small>Saldo Inicial</small>
+      <strong>R$ {Number(saldoInicial || 0).toFixed(2)}</strong>
     </div>
 
-    <textarea
-      className="fechamento-observacao"
-      placeholder="Observação do fechamento"
-      value={observacaoFechamento}
-      onChange={(e) => setObservacaoFechamento(e.target.value)}
-    />
+    <div className="caixa-hero-metric">
+      <small>Vendas do Dia</small>
+      <strong className="green">R$ {resumo.total.toFixed(2)}</strong>
+    </div>
+
+    <div className="caixa-hero-metric">
+      <small>Saldo Atual</small>
+      <strong>R$ {resumo.saldoAtual.toFixed(2)}</strong>
+    </div>
+
+    {caixaAberto ? (
+      <div className="caixa-actions-final">
+        <button className="caixa-fechar-btn" onClick={fecharCaixa}>
+          <FaLock />
+          Fechar Caixa
+        </button>
+
+        <button className="caixa-imprimir-btn" onClick={imprimirFechamento}>
+          Imprimir Fechamento
+        </button>
+      </div>
+    ) : (
+      <div className="caixa-abrir-inline">
+        <input
+          type="number"
+          value={saldoInicial}
+          onChange={(e) => setSaldoInicial(Number(e.target.value))}
+        />
+
+        <button onClick={abrirCaixa}>
+          <FaLockOpen />
+          Abrir Caixa
+        </button>
+      </div>
+    )}
   </div>
-)}
 
+  {caixaAberto && (
+    <div className="fechamento-caixa-box">
+      <h3>Conferência de Fechamento</h3>
 
-          {caixaAberto ? (
-            <div
-  style={{
-    display: "flex",
-    gap: "10px",
-    marginTop: "10px",
-  }}
->
-  <button
-    className="caixa-fechar-btn"
-    onClick={fecharCaixa}
-  >
-    <FaLock />
-    Fechar Caixa
-  </button>
+      <div className="fechamento-resumo-grid">
+        <div>
+          <span>PIX sistema</span>
+          <strong>R$ {resumo.pix.toFixed(2)}</strong>
+        </div>
 
-  <button
-    style={{
-      background: "#0ea5e9",
-      color: "#fff",
-      border: "none",
-      padding: "10px 16px",
-      borderRadius: "10px",
-      cursor: "pointer",
-    }}
-    onClick={imprimirFechamento}
-  >
-    Imprimir Fechamento
-  </button>
-</div>
-          ) : (
-        
-            <div className="caixa-abrir-inline">
-              <input
-                type="number"
-                value={saldoInicial}
-                onChange={(e) => setSaldoInicial(Number(e.target.value))}
-              />
+        <div>
+          <span>Crédito sistema</span>
+          <strong>R$ {resumo.credito.toFixed(2)}</strong>
+        </div>
 
-              <button onClick={abrirCaixa}>
-                <FaLockOpen />
-                Abrir Caixa
-              </button>
-            </div>
-          )}
-        </section>
+        <div>
+          <span>Débito sistema</span>
+          <strong>R$ {resumo.debito.toFixed(2)}</strong>
+        </div>
 
+        <div>
+          <span>Dinheiro sistema</span>
+          <strong>R$ {resumo.dinheiro.toFixed(2)}</strong>
+        </div>
+      </div>
+
+      <div className="fechamento-inputs-grid">
+        <label>
+          PIX conferido
+          <input type="number" value={conferenciaPix} onChange={(e) => setConferenciaPix(e.target.value)} placeholder="0,00" />
+        </label>
+
+        <label>
+          Crédito conferido
+          <input type="number" value={conferenciaCredito} onChange={(e) => setConferenciaCredito(e.target.value)} placeholder="0,00" />
+        </label>
+
+        <label>
+          Débito conferido
+          <input type="number" value={conferenciaDebito} onChange={(e) => setConferenciaDebito(e.target.value)} placeholder="0,00" />
+        </label>
+
+        <label>
+          Dinheiro contado
+          <input
+            type="number"
+            value={conferenciaDinheiro}
+            onChange={(e) => {
+              setConferenciaDinheiro(e.target.value);
+              setValorContado(e.target.value);
+            }}
+            placeholder="0,00"
+          />
+        </label>
+      </div>
+
+      <div className="fechamento-total-box">
+        <div>
+          <span>Total vendas</span>
+          <strong>R$ {resumo.total.toFixed(2)}</strong>
+        </div>
+
+        <div>
+          <span>Total conferido</span>
+          <strong>R$ {totalConferido.toFixed(2)}</strong>
+        </div>
+
+        <div>
+          <span>Dinheiro esperado</span>
+          <strong>R$ {dinheiroEsperado.toFixed(2)}</strong>
+        </div>
+
+        <div className={diferencaVendas === 0 ? "ok" : "erro"}>
+          <span>Diferença vendas</span>
+          <strong>R$ {diferencaVendas.toFixed(2)}</strong>
+        </div>
+
+        <div className={diferencaDinheiro === 0 ? "ok" : "erro"}>
+          <span>Diferença dinheiro</span>
+          <strong>R$ {diferencaDinheiro.toFixed(2)}</strong>
+        </div>
+      </div>
+
+      <textarea
+        className="fechamento-observacao"
+        placeholder="Observação do fechamento"
+        value={observacaoFechamento}
+        onChange={(e) => setObservacaoFechamento(e.target.value)}
+      />
+    </div>
+  )}
+</section>
+      
         <section className="caixa-pro-kpis">
           <div className="caixa-pro-kpi green">
             <FaMoneyBillWave />
