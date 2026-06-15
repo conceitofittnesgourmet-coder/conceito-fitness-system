@@ -365,11 +365,15 @@ total: totalPedido,
 const pedidoCriado = response.data.pedido || response.data;
 
 const desejaImprimir = window.confirm(
-  "Pedido finalizado com sucesso!\n\nDeseja imprimir o cupom agora?"
+  "Pedido finalizado com sucesso!\n\nClique em OK para imprimir ou Cancelar para finalizar sem imprimir."
 );
 
 if (desejaImprimir) {
-  window.open(`/cupom/${pedidoCriado._id}`, "_blank");
+  const janela = window.open(`/cupom/${pedidoCriado._id}?print=true`, "_blank");
+
+  if (janela) {
+    janela.focus();
+  }
 }
 
     setCart([]);

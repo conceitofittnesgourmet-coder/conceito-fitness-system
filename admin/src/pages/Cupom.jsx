@@ -10,6 +10,17 @@ export default function Cupom() {
   const [empresa, setEmpresa] = useState(null);
 
   useEffect(() => {
+  const params = new URLSearchParams(window.location.search);
+  const deveImprimir = params.get("print") === "true";
+
+  if (deveImprimir) {
+    setTimeout(() => {
+      window.print();
+    }, 800);
+  }
+}, []);
+
+  useEffect(() => {
     async function carregar() {
       try {
         const [pedidoRes, empresaRes] = await Promise.all([
