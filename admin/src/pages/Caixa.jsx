@@ -113,24 +113,28 @@ setHistoricoCaixas(
       saldoAtual: Number(resumoApi?.saldoAtual || 0),
       quantidadePedidos: Number(resumoApi?.quantidadePedidos || vendas.length),
     };
-  }, [pedidos, resumoApi]);
-  const dinheiroEsperado =
-  Number(saldoInicial || 0) +
-  Number(resumo.dinheiro || 0) +
-  Number(resumo.totalSuprimentos || 0) -
+  const pixConferidoValor = valorMoeda(conferenciaPix);
+const creditoConferidoValor = valorMoeda(conferenciaCredito);
+const debitoConferidoValor = valorMoeda(conferenciaDebito);
+const dinheiroContadoValor = valorMoeda(conferenciaDinheiro);
+
+const dinheiroVendasConferido =
+  dinheiroContadoValor -
+  Number(saldoInicial || 0) -
+  Number(resumo.totalSuprimentos || 0) +
   Number(resumo.totalSangrias || 0);
 
 const totalConferido =
-  valorMoeda(conferenciaPix) +
-  valorMoeda(conferenciaCredito) +
-  valorMoeda(conferenciaDebito) +
-  valorMoeda(conferenciaDinheiro);
+  pixConferidoValor +
+  creditoConferidoValor +
+  debitoConferidoValor +
+  dinheiroVendasConferido;
 
 const diferencaVendas =
   totalConferido - Number(resumo.total || 0);
 
 const diferencaDinheiro =
-  valorMoeda(conferenciaDinheiro) - dinheiroEsperado;
+  dinheiroContadoValor - dinheiroEsperado;
 
   async function abrirCaixa() {
     try {
