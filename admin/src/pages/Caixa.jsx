@@ -2,6 +2,7 @@ import { useEffect, useMemo, useState } from "react";
 import AdminLayout from "../layouts/AdminLayout";
 import api from "../services/api";
 import socket from "../services/socket";
+import "../styles/caixa.css";
 
 import {
   FaLockOpen,
@@ -29,6 +30,10 @@ function Caixa() {
   const [valorContado, setValorContado] = useState("");
   const [observacaoFechamento, setObservacaoFechamento] = useState("");
   const [historicoCaixas, setHistoricoCaixas] = useState([]);
+  const [conferenciaPix, setConferenciaPix] = useState("");
+  const [conferenciaCredito, setConferenciaCredito] = useState("");
+  const [conferenciaDebito, setConferenciaDebito] = useState("");
+  const [conferenciaDinheiro, setConferenciaDinheiro] = useState("");
 
   const caixaAberto = caixa?.status === "aberto";
 
@@ -95,6 +100,23 @@ setHistoricoCaixas(
       quantidadePedidos: Number(resumoApi?.quantidadePedidos || vendas.length),
     };
   }, [pedidos, resumoApi]);
+  const dinheiroEsperado =
+  Number(saldoInicial || 0) +
+  Number(resumo.dinheiro || 0) +
+  Number(resumo.totalSuprimentos || 0) -
+  Number(resumo.totalSangrias || 0);
+
+const totalConferido =
+  Number(conferenciaPix || 0) +
+  Number(conferenciaCredito || 0) +
+  Number(conferenciaDebito || 0) +
+  Number(conferenciaDinheiro || 0);
+
+const diferencaVendas =
+  totalConferido - Number(resumo.total || 0);
+
+const diferencaDinheiro =
+  Number(conferenciaDinheiro || 0) - dinheiroEsperado;
 
   async function abrirCaixa() {
     try {
@@ -122,10 +144,10 @@ setHistoricoCaixas(
     try {
       const response = await api.post("/caixa/fechar", {
   valorContado:
-    Number(valorContado || 0),
+  Number(conferenciaDinheiro || valorContado || 0),
 
   saldoEsperado:
-    Number(resumo.saldoAtual || 0),
+    Number(dinheiroEsperado || 0),
 
   observacao:
     observacaoFechamento,
@@ -189,21 +211,17 @@ setHistoricoCaixas(
   }
 
   function imprimirFechamento() {
-  const conteudo = `
+ const conteudo = `
 CONCEITO FITNESS GOURMET
 
-DATA: ${new Date().toLocaleDateString("pt-BR")}
+FECHAMENTO DE CAIXA
 
-OPERADOR:
-${caixa?.operador || "Administrador"}
+DATA: ${new Date().toLocaleDateString("pt-BR")}
+OPERADOR: ${caixa?.operador || "Administrador"}
 
 --------------------------------
 
-SALDO INICIAL:
-R$ ${Number(saldoInicial || 0).toFixed(2)}
-
-TOTAL VENDAS:
-R$ ${resumo.total.toFixed(2)}
+FORMAS DE PAGAMENTO - SISTEMA
 
 PIX:
 R$ ${resumo.pix.toFixed(2)}
@@ -217,7 +235,37 @@ R$ ${resumo.debito.toFixed(2)}
 DINHEIRO:
 R$ ${resumo.dinheiro.toFixed(2)}
 
+TOTAL DE VENDAS:
+R$ ${resumo.total.toFixed(2)}
+
 --------------------------------
+
+CONFERÊNCIA INFORMADA
+
+PIX CONFERIDO:
+R$ ${Number(conferenciaPix || 0).toFixed(2)}
+
+CRÉDITO CONFERIDO:
+R$ ${Number(conferenciaCredito || 0).toFixed(2)}
+
+DÉBITO CONFERIDO:
+R$ ${Number(conferenciaDebito || 0).toFixed(2)}
+
+DINHEIRO CONTADO:
+R$ ${Number(conferenciaDinheiro || 0).toFixed(2)}
+
+TOTAL CONFERIDO:
+R$ ${totalConferido.toFixed(2)}
+
+--------------------------------
+
+DINHEIRO FÍSICO
+
+SALDO INICIAL:
+R$ ${Number(saldoInicial || 0).toFixed(2)}
+
+DINHEIRO EM VENDAS:
+R$ ${resumo.dinheiro.toFixed(2)}
 
 SUPRIMENTOS:
 R$ ${resumo.totalSuprimentos.toFixed(2)}
@@ -225,19 +273,17 @@ R$ ${resumo.totalSuprimentos.toFixed(2)}
 SANGRIAS:
 R$ ${resumo.totalSangrias.toFixed(2)}
 
---------------------------------
+DINHEIRO ESPERADO:
+R$ ${dinheiroEsperado.toFixed(2)}
 
-SALDO ESPERADO:
-R$ ${resumo.saldoAtual.toFixed(2)}
+DINHEIRO CONTADO:
+R$ ${Number(conferenciaDinheiro || 0).toFixed(2)}
 
-VALOR CONTADO:
-R$ ${Number(valorContado || 0).toFixed(2)}
+DIFERENÇA DINHEIRO:
+R$ ${diferencaDinheiro.toFixed(2)}
 
-DIFERENÇA:
-R$ ${(
-  Number(valorContado || 0) -
-  Number(resumo.saldoAtual || 0)
-).toFixed(2)}
+DIFERENÇA TOTAL VENDAS:
+R$ ${diferencaVendas.toFixed(2)}
 
 --------------------------------
 
@@ -318,31 +364,117 @@ ${conteudo}
             <strong>R$ {resumo.saldoAtual.toFixed(2)}</strong>
           </div>
 
-  {caixaAberto && (
-  <div style={{ marginBottom: 12 }}>
-  <input
-    type="number"
-    placeholder="Dinheiro contado no caixa"
-    value={valorContado}
-    onChange={(e) =>
-      setValorContado(e.target.value)
-    }
-  />
+ {caixaAberto && (
+  <div className="fechamento-caixa-box">
+    <h3>Conferência de Fechamento</h3>
 
-  <textarea
-    placeholder="Observação do fechamento"
-    value={observacaoFechamento}
-    onChange={(e) =>
-      setObservacaoFechamento(e.target.value)
-    }
-  />
+    <div className="fechamento-resumo-grid">
+      <div>
+        <span>PIX sistema</span>
+        <strong>R$ {resumo.pix.toFixed(2)}</strong>
+      </div>
+
+      <div>
+        <span>Crédito sistema</span>
+        <strong>R$ {resumo.credito.toFixed(2)}</strong>
+      </div>
+
+      <div>
+        <span>Débito sistema</span>
+        <strong>R$ {resumo.debito.toFixed(2)}</strong>
+      </div>
+
+      <div>
+        <span>Dinheiro sistema</span>
+        <strong>R$ {resumo.dinheiro.toFixed(2)}</strong>
+      </div>
+    </div>
+
+    <div className="fechamento-inputs-grid">
+      <label>
+        PIX conferido
+        <input
+          type="number"
+          value={conferenciaPix}
+          onChange={(e) => setConferenciaPix(e.target.value)}
+          placeholder="0,00"
+        />
+      </label>
+
+      <label>
+        Crédito conferido
+        <input
+          type="number"
+          value={conferenciaCredito}
+          onChange={(e) => setConferenciaCredito(e.target.value)}
+          placeholder="0,00"
+        />
+      </label>
+
+      <label>
+        Débito conferido
+        <input
+          type="number"
+          value={conferenciaDebito}
+          onChange={(e) => setConferenciaDebito(e.target.value)}
+          placeholder="0,00"
+        />
+      </label>
+
+      <label>
+        Dinheiro contado
+        <input
+          type="number"
+          value={conferenciaDinheiro}
+          onChange={(e) => {
+            setConferenciaDinheiro(e.target.value);
+            setValorContado(e.target.value);
+          }}
+          placeholder="0,00"
+        />
+      </label>
+    </div>
+
+    <div className="fechamento-total-box">
+      <div>
+        <span>Total vendas sistema</span>
+        <strong>R$ {resumo.total.toFixed(2)}</strong>
+      </div>
+
+      <div>
+        <span>Total conferido</span>
+        <strong>R$ {totalConferido.toFixed(2)}</strong>
+      </div>
+
+      <div>
+        <span>Dinheiro esperado</span>
+        <strong>R$ {dinheiroEsperado.toFixed(2)}</strong>
+      </div>
+
+      <div className={diferencaVendas === 0 ? "ok" : "erro"}>
+        <span>Diferença vendas</span>
+        <strong>R$ {diferencaVendas.toFixed(2)}</strong>
+      </div>
+
+      <div className={diferencaDinheiro === 0 ? "ok" : "erro"}>
+        <span>Diferença dinheiro</span>
+        <strong>R$ {diferencaDinheiro.toFixed(2)}</strong>
+      </div>
+    </div>
+
+    <textarea
+      className="fechamento-observacao"
+      placeholder="Observação do fechamento"
+      value={observacaoFechamento}
+      onChange={(e) => setObservacaoFechamento(e.target.value)}
+    />
   </div>
 )}
 
 <div style={{ marginBottom: 8 }}>
   <strong>
-    Saldo esperado:
-    R$ {resumo.saldoAtual.toFixed(2)}
+    saldoEsperado:
+  Number(dinheiroEsperado || 0),
   </strong>
 </div>
 
