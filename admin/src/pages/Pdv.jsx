@@ -364,9 +364,13 @@ total: totalPedido,
 
 const pedidoCriado = response.data.pedido || response.data;
 
-window.open(`/cupom/${pedidoCriado._id}`, "_blank");
+const desejaImprimir = window.confirm(
+  "Pedido finalizado com sucesso!\n\nDeseja imprimir o cupom agora?"
+);
 
-    alert("Pedido realizado com sucesso!");
+if (desejaImprimir) {
+  window.open(`/cupom/${pedidoCriado._id}`, "_blank");
+}
 
     setCart([]);
 
