@@ -13,12 +13,31 @@ export default function Cupom() {
   const params = new URLSearchParams(window.location.search);
   const deveImprimir = params.get("print") === "true";
 
-  if (deveImprimir) {
+  if (desejaImprimir) {
+  const iframe = document.createElement("iframe");
+
+  iframe.style.position = "fixed";
+  iframe.style.right = "0";
+  iframe.style.bottom = "0";
+  iframe.style.width = "0";
+  iframe.style.height = "0";
+  iframe.style.border = "0";
+
+  iframe.src = `/cupom/${pedidoCriado._id}`;
+
+  document.body.appendChild(iframe);
+
+  iframe.onload = () => {
     setTimeout(() => {
-      window.print();
-    }, 800);
-  }
-}, []);
+      iframe.contentWindow.focus();
+      iframe.contentWindow.print();
+
+      setTimeout(() => {
+        document.body.removeChild(iframe);
+      }, 3000);
+    }, 1000);
+  };
+}
 
   useEffect(() => {
     async function carregar() {
