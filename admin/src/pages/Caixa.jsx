@@ -17,6 +17,20 @@ import {
   FaBell,
 } from "react-icons/fa";
 
+function valorMoeda(valor) {
+  if (valor === null || valor === undefined || valor === "") return 0;
+
+  return (
+    Number(
+      String(valor)
+        .replace("R$", "")
+        .replace(/\./g, "")
+        .replace(",", ".")
+        .trim()
+    ) || 0
+  );
+}
+
 function Caixa() {
   const [pedidos, setPedidos] = useState([]);
   const [caixa, setCaixa] = useState(null);
@@ -83,18 +97,7 @@ setHistoricoCaixas(
   }, []);
 
   const resumo = useMemo(() => {
-    function valorMoeda(valor) {
-  if (valor === null || valor === undefined || valor === "") return 0;
-
-  return Number(
-    String(valor)
-      .replace("R$", "")
-      .replace(/\./g, "")
-      .replace(",", ".")
-      .trim()
-  ) || 0;
-}
-    const vendas = pedidos || [];
+        const vendas = pedidos || [];
 
     return {
       vendas,
