@@ -97,26 +97,40 @@ setHistoricoCaixas(
   }, []);
 
   const resumo = useMemo(() => {
-        const vendas = pedidos || [];
+  const vendas = pedidos || [];
 
-    return {
-      vendas,
-      total: Number(resumoApi?.total || 0),
-      pix: Number(resumoApi?.pix || 0),
-      credito: Number(resumoApi?.credito || 0),
-      debito: Number(resumoApi?.debito || 0),
-      dinheiro: Number(resumoApi?.dinheiro || 0),
-      ticketMedio: Number(resumoApi?.ticketMedio || 0),
-      maiorVenda: Number(resumoApi?.maiorVenda || 0),
-      totalSangrias: Number(resumoApi?.totalSangrias || 0),
-      totalSuprimentos: Number(resumoApi?.totalSuprimentos || 0),
-      saldoAtual: Number(resumoApi?.saldoAtual || 0),
-      quantidadePedidos: Number(resumoApi?.quantidadePedidos || vendas.length),
-    };
-  const pixConferidoValor = valorMoeda(conferenciaPix);
-const creditoConferidoValor = valorMoeda(conferenciaCredito);
-const debitoConferidoValor = valorMoeda(conferenciaDebito);
-const dinheiroContadoValor = valorMoeda(conferenciaDinheiro);
+  return {
+    vendas,
+    total: Number(resumoApi?.total || 0),
+    pix: Number(resumoApi?.pix || 0),
+    credito: Number(resumoApi?.credito || 0),
+    debito: Number(resumoApi?.debito || 0),
+    dinheiro: Number(resumoApi?.dinheiro || 0),
+    ticketMedio: Number(resumoApi?.ticketMedio || 0),
+    maiorVenda: Number(resumoApi?.maiorVenda || 0),
+    totalSangrias: Number(resumoApi?.totalSangrias || 0),
+    totalSuprimentos: Number(resumoApi?.totalSuprimentos || 0),
+    saldoAtual: Number(resumoApi?.saldoAtual || 0),
+    quantidadePedidos: Number(resumoApi?.quantidadePedidos || vendas.length),
+  };
+}, [pedidos, resumoApi]);
+
+const dinheiroEsperado =
+  Number(saldoInicial || 0) +
+  Number(resumo.dinheiro || 0) +
+  Number(resumo.totalSuprimentos || 0) -
+  Number(resumo.totalSangrias || 0);
+
+const pixConferidoValor = valorMoeda(conferenciaPix);
+
+const creditoConferidoValor =
+  valorMoeda(conferenciaCredito);
+
+const debitoConferidoValor =
+  valorMoeda(conferenciaDebito);
+
+const dinheiroContadoValor =
+  valorMoeda(conferenciaDinheiro);
 
 const dinheiroVendasConferido =
   dinheiroContadoValor -
@@ -135,6 +149,7 @@ const diferencaVendas =
 
 const diferencaDinheiro =
   dinheiroContadoValor - dinheiroEsperado;
+ 
 
   async function abrirCaixa() {
     try {
@@ -256,16 +271,16 @@ R$ ${resumo.total.toFixed(2)}
 CONFERÊNCIA INFORMADA
 
 PIX CONFERIDO:
-R$ ${Number(conferenciaPix || 0).toFixed(2)}
+R$ ${pixConferidoValor.toFixed(2)}
 
 CRÉDITO CONFERIDO:
-R$ ${Number(conferenciaCredito || 0).toFixed(2)}
+R$ ${creditoConferidoValor.toFixed(2)}
 
 DÉBITO CONFERIDO:
-R$ ${Number(conferenciaDebito || 0).toFixed(2)}
+R$ ${debitoConferidoValor.toFixed(2)}
 
 DINHEIRO CONTADO:
-R$ ${Number(conferenciaDinheiro || 0).toFixed(2)}
+R$ ${dinheiroContadoValor.toFixed(2)}
 
 TOTAL CONFERIDO:
 R$ ${totalConferido.toFixed(2)}
