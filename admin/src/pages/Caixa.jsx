@@ -143,14 +143,9 @@ const diferencaDinheiro =
 
     try {
       const response = await api.post("/caixa/fechar", {
-  valorContado:
-  Number(conferenciaDinheiro || valorContado || 0),
-
-  saldoEsperado:
-    Number(dinheiroEsperado || 0),
-
-  observacao:
-    observacaoFechamento,
+  valorContado: Number(conferenciaDinheiro || valorContado || 0),
+  saldoEsperado: Number(dinheiroEsperado || 0),
+  observacao: observacaoFechamento,
 });
 
       setCaixa(response.data.caixa);
@@ -471,35 +466,6 @@ ${conteudo}
   </div>
 )}
 
-<div style={{ marginBottom: 8 }}>
-  <strong>
-    saldoEsperado:
-  Number(dinheiroEsperado || 0),
-  </strong>
-</div>
-
-{valorContado && (
-  <div
-    style={{
-      marginBottom: 12,
-      padding: 10,
-      borderRadius: 10,
-      background:
-        Number(valorContado) - Number(resumo.saldoAtual) === 0
-          ? "#166534"
-          : "#991b1b",
-      color: "#fff",
-    }}
-  >
-    <strong>
-      Diferença:
-      R$ {(
-        Number(valorContado || 0) -
-        Number(resumo.saldoAtual || 0)
-      ).toFixed(2)}
-    </strong>
-  </div>
-)}
 
           {caixaAberto ? (
             <div
