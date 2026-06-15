@@ -83,6 +83,17 @@ setHistoricoCaixas(
   }, []);
 
   const resumo = useMemo(() => {
+    function valorMoeda(valor) {
+  if (valor === null || valor === undefined || valor === "") return 0;
+
+  return Number(
+    String(valor)
+      .replace("R$", "")
+      .replace(/\./g, "")
+      .replace(",", ".")
+      .trim()
+  ) || 0;
+}
     const vendas = pedidos || [];
 
     return {
@@ -107,16 +118,16 @@ setHistoricoCaixas(
   Number(resumo.totalSangrias || 0);
 
 const totalConferido =
-  Number(conferenciaPix || 0) +
-  Number(conferenciaCredito || 0) +
-  Number(conferenciaDebito || 0) +
-  Number(conferenciaDinheiro || 0);
+  valorMoeda(conferenciaPix) +
+  valorMoeda(conferenciaCredito) +
+  valorMoeda(conferenciaDebito) +
+  valorMoeda(conferenciaDinheiro);
 
 const diferencaVendas =
   totalConferido - Number(resumo.total || 0);
 
 const diferencaDinheiro =
-  Number(conferenciaDinheiro || 0) - dinheiroEsperado;
+  valorMoeda(conferenciaDinheiro) - dinheiroEsperado;
 
   async function abrirCaixa() {
     try {
@@ -143,7 +154,7 @@ const diferencaDinheiro =
 
     try {
       const response = await api.post("/caixa/fechar", {
-  valorContado: Number(conferenciaDinheiro || valorContado || 0),
+  valorContado: valorMoeda(conferenciaDinheiro || valorContado),
   saldoEsperado: Number(dinheiroEsperado || 0),
   observacao: observacaoFechamento,
 });
@@ -374,9 +385,10 @@ ${conteudo}
     ) : (
       <div className="caixa-abrir-inline">
         <input
-          type="number"
+          type="text"
+inputMode="decimal"
           value={saldoInicial}
-          onChange={(e) => setSaldoInicial(Number(e.target.value))}
+          onChange={(e) => setSaldoInicial(valorMoeda(e.target.value))}
         />
 
         <button onClick={abrirCaixa}>
@@ -416,23 +428,27 @@ ${conteudo}
       <div className="fechamento-inputs-grid">
         <label>
           PIX conferido
-          <input type="number" value={conferenciaPix} onChange={(e) => setConferenciaPix(e.target.value)} placeholder="0,00" />
+          <input type="text"
+inputMode="decimal" value={conferenciaPix} onChange={(e) => setConferenciaPix(e.target.value)} placeholder="0,00" />
         </label>
 
         <label>
           Crédito conferido
-          <input type="number" value={conferenciaCredito} onChange={(e) => setConferenciaCredito(e.target.value)} placeholder="0,00" />
+          <input type="text"
+inputMode="decimal" value={conferenciaCredito} onChange={(e) => setConferenciaCredito(e.target.value)} placeholder="0,00" />
         </label>
 
         <label>
           Débito conferido
-          <input type="number" value={conferenciaDebito} onChange={(e) => setConferenciaDebito(e.target.value)} placeholder="0,00" />
+          <input type="text"
+inputMode="decimal" value={conferenciaDebito} onChange={(e) => setConferenciaDebito(e.target.value)} placeholder="0,00" />
         </label>
 
         <label>
           Dinheiro contado
           <input
-            type="number"
+            type="text"
+            inputMode="decimal"
             value={conferenciaDinheiro}
             onChange={(e) => {
               setConferenciaDinheiro(e.target.value);
@@ -645,7 +661,8 @@ ${conteudo}
               </div>
 
               <input
-                type="number"
+                type="text"
+inputMode="decimal"
                 placeholder="Valor da sangria"
                 value={valorSangria}
                 onChange={(e) => setValorSangria(e.target.value)}
@@ -674,7 +691,8 @@ ${conteudo}
               </div>
 
               <input
-                type="number"
+                type="text"
+                inputMode="decimal"
                 placeholder="Valor do suprimento"
                 value={valorSuprimento}
                 onChange={(e) => setValorSuprimento(e.target.value)}
