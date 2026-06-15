@@ -9,36 +9,7 @@ export default function Cupom() {
   const [pedido, setPedido] = useState(null);
   const [empresa, setEmpresa] = useState(null);
 
-  useEffect(() => {
-  const params = new URLSearchParams(window.location.search);
-  const deveImprimir = params.get("print") === "true";
-
-  if (desejaImprimir) {
-  const iframe = document.createElement("iframe");
-
-  iframe.style.position = "fixed";
-  iframe.style.right = "0";
-  iframe.style.bottom = "0";
-  iframe.style.width = "0";
-  iframe.style.height = "0";
-  iframe.style.border = "0";
-
-  iframe.src = `/cupom/${pedidoCriado._id}`;
-
-  document.body.appendChild(iframe);
-
-  iframe.onload = () => {
-    setTimeout(() => {
-      iframe.contentWindow.focus();
-      iframe.contentWindow.print();
-
-      setTimeout(() => {
-        document.body.removeChild(iframe);
-      }, 3000);
-    }, 1000);
-  };
-}
-
+  
   useEffect(() => {
     async function carregar() {
       try {
