@@ -234,39 +234,37 @@ const produtosFiltrados = produtos.filter((produto) => {
       )
     : 0;
 
-   async function calcularFretePDV() {
-  const enderecoCompleto = [
-  enderecoEntrega,
-  numeroEntrega,
-  bairroEntrega,
-  "Umuarama",
-  "Paraná",
-  "Brasil"
-]
-.filter(Boolean)
-.join(", ");
+  async function calcularFretePDV() {
 
-  if (!enderecoEntrega.trim() || !numeroEntrega.trim()) {
-    alert("Informe rua e número para calcular o frete.");
+  if (!enderecoEntrega.trim()) {
+    alert("Informe o endereço.");
     return;
   }
 
   try {
-    const response = await api.post("/frete/calcular", {
-      endereco: enderecoCompleto,
-    });
 
-    const frete = Number(response.data.frete || 0);
+    const response = await api.post(
+      "/frete/calcular",
+      {
+        endereco: enderecoEntrega,
+      }
+    );
 
-    setTaxaEntregaManual(frete);
-    setDistanciaEntrega(response.data.distanciaKm || "");
+    setTaxaEntregaManual(
+      Number(response.data.frete || 0)
+    );
 
-    alert(`Frete calculado: R$ ${frete.toFixed(2)}`);
+    setDistanciaEntrega(
+      Number(response.data.distanciaKm || 0)
+    );
+
   } catch (error) {
-    console.log("Erro ao calcular frete:", error);
+
+    console.log(error);
+
     alert(
       error.response?.data?.message ||
-      "Não foi possível calcular o frete."
+      "Erro ao calcular frete."
     );
   }
 }
@@ -297,12 +295,7 @@ mesa:
     ? numeroMesa
     : "Balcão",
 
-enderecoEntrega: [
-  enderecoEntrega,
-  numeroEntrega,
-  bairroEntrega,
-  complementoEntrega,
-].filter(Boolean).join(", "),
+enderecoEntrega,
 
 referenciaEntrega,
 cep,
@@ -345,14 +338,7 @@ motivoDesconto,
 observacao,
 tipo: tipoPedido,
 
-enderecoEntrega: [
-  enderecoEntrega,
-  numeroEntrega,
-  bairroEntrega,
-  complementoEntrega,
-]
-.filter(Boolean)
-.join(", "),
+enderecoEntrega,
 
 referenciaEntrega,
 
@@ -662,44 +648,21 @@ if (desejaImprimir) {
 
 {tipoPedido === "delivery" && (
   <div className="delivery-card">
+
     <input
-      placeholder="CEP"
-      value={cep}
-      onChange={(e) => setCep(e.target.value)}
-    />
-
-    <div className="delivery-grid">
-      <input
-        placeholder="Rua"
-        value={enderecoEntrega}
-        onChange={(e) => setEnderecoEntrega(e.target.value)}
-      />
-
-      <input
-        placeholder="Número"
-        value={numeroEntrega}
-        onChange={(e) => setNumeroEntrega(e.target.value)}
-      />
-    </div>
-
-    <div className="delivery-grid">
-      <input
-        placeholder="Bairro"
-        value={bairroEntrega}
-        onChange={(e) => setBairroEntrega(e.target.value)}
-      />
-
-      <input
-        placeholder="Complemento"
-        value={complementoEntrega}
-        onChange={(e) => setComplementoEntrega(e.target.value)}
-      />
-    </div>
+  placeholder="Ex: Rua Bahia 1624 Centro"
+  value={enderecoEntrega}
+  onChange={(e) =>
+    setEnderecoEntrega(e.target.value)
+  }
+/>
 
     <input
       placeholder="Ponto de referência"
       value={referenciaEntrega}
-      onChange={(e) => setReferenciaEntrega(e.target.value)}
+      onChange={(e) =>
+        setReferenciaEntrega(e.target.value)
+      }
     />
 
     <button
@@ -709,13 +672,20 @@ if (desejaImprimir) {
     >
       Calcular frete
     </button>
-    </div>
-   )}
+
+  </div>
+)}
 
    {distanciaEntrega && (
-  <small>
-    Distância: {distanciaEntrega} km
-  </small>
+  <div className="frete-info">
+    <strong>
+      Distância: {Number(distanciaEntrega).toFixed(2)} km
+    </strong>
+
+    <strong>
+      Frete: {moeda(taxaEntregaManual)}
+    </strong>
+  </div>
 )}
     
   <textarea
