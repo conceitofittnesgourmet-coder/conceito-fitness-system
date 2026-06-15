@@ -19,8 +19,45 @@ import socket from "../services/socket";
 import "../styles/pdv.css";
 import AdminLayout from "../layouts/AdminLayout";
 
+const COMANDAS_INICIAIS = [
+  { id: "balcao", nome: "Balcão", tipo: "balcao" },
+  { id: "delivery", nome: "Delivery", tipo: "delivery" },
+  { id: "retirada", nome: "Retirada", tipo: "retirada" },
+  { id: "mesa01", nome: "Mesa 01", tipo: "mesa", numero: "01" },
+  { id: "mesa02", nome: "Mesa 02", tipo: "mesa", numero: "02" },
+  { id: "mesa03", nome: "Mesa 03", tipo: "mesa", numero: "03" },
+  { id: "mesa04", nome: "Mesa 04", tipo: "mesa", numero: "04" },
+  { id: "mesa05", nome: "Mesa 05", tipo: "mesa", numero: "05" },
+  { id: "mesa06", nome: "Mesa 06", tipo: "mesa", numero: "06" },
+  { id: "mesa07", nome: "Mesa 07", tipo: "mesa", numero: "07" },
+  { id: "mesa08", nome: "Mesa 08", tipo: "mesa", numero: "08" },
+  { id: "mesa09", nome: "Mesa 09", tipo: "mesa", numero: "09" },
+];
+
+function criarComandasVazias() {
+  return COMANDAS_INICIAIS.reduce((acc, comanda) => {
+    acc[comanda.id] = [];
+    return acc;
+  }, {});
+}
+
 export default function Pdv() {
-  const [cart, setCart] = useState([]);
+  const [comandaAtiva, setComandaAtiva] = useState("balcao");
+  const [comandas, setComandas] = useState(() => {
+  const salvas = localStorage.getItem("pdvComandas");
+
+  if (salvas) {
+    try {
+      return JSON.parse(salvas);
+    } catch {
+      return criarComandasVazias();
+    }
+  }
+
+  return criarComandasVazias();
+});
+
+  const cart = comandas[comandaAtiva] || [];
   const [pagamento, setPagamento] = useState("PIX");
   const [produtos, setProdutos] = useState([]);
   const [loadingProdutos, setLoadingProdutos] = useState(true);
@@ -79,6 +116,10 @@ export default function Pdv() {
   };
 }, []);
 
+useEffect(() => {
+  localStorage.setItem("pdvComandas", JSON.stringify(comandas));
+}, [comandas]);
+
   function getImagemProduto(produto) {
   const baseURL = api.defaults.baseURL || "https://conceito-fitness-system.onrender.com";
   const backendURL = baseURL.replace("/api", "");
@@ -113,7 +154,60 @@ export default function Pdv() {
   return `${backendURL}/uploads/${imagem}`;
 }
 
-  function adicionarProduto(produto) {
+function atualizarCarrinhoComanda(novoCarrinho) {
+  setComandas((anteriores) => ({
+    ...anteriores,
+    [comandaAtiva]: novoCarrinho,
+  }));
+}
+
+function selecionarComanda(comanda) {
+  setComandaAtiva(comanda.id);
+  setTipoPedido(comanda.tipo);
+
+  if (comanda.tipo === "mesa") {
+    setNumeroMesa(comanda.numero);
+    setMesa(`Mesa ${comanda.numero}`);
+    setCliente(`Mesa ${comanda.numero}`);
+  }
+
+  if (comanda.tipo === "balcao") {
+    setNumeroMesa("");
+    setMesa("Balcão");
+    setCliente("Cliente Balcão");
+  }
+
+  if (comanda.tipo === "delivery") {
+    setNumeroMesa("");
+    setMesa("Delivery");
+    setCliente("Cliente Delivery");
+  }
+
+  if (comanda.tipo === "retirada") {
+    setNumeroMesa("");
+    setMesa("Retirada");
+    setCliente("Cliente Retirada");
+  }
+}
+
+function resumoComanda(id) {
+  const itens = comandas[id] || [];
+
+  const quantidade = itens.reduce(
+    (acc, item) => acc + Number(item.quantidade || 1),
+    0
+  );
+
+  const total = itens.reduce(
+    (acc, item) =>
+      acc + Number(item.preco || 0) * Number(item.quantidade || 1),
+    0
+  );
+
+  return { quantidade, total };
+}
+
+ function adicionarProduto(produto) {
   const id = produto._id || produto.id;
 
   const existe = cart.find((item) => item.id === id);
@@ -128,7 +222,7 @@ export default function Pdv() {
   };
 
   if (existe) {
-    setCart(
+    atualizarCarrinhoComanda(
       cart.map((item) =>
         item.id === id
           ? {
@@ -139,16 +233,16 @@ export default function Pdv() {
       )
     );
   } else {
-    setCart([...cart, produtoFormatado]);
+    atualizarCarrinhoComanda([...cart, produtoFormatado]);
   }
 }
 
   function removerProduto(id) {
-    setCart(cart.filter((item) => item.id !== id));
-  }
- 
+  atualizarCarrinhoComanda(cart.filter((item) => item.id !== id));
+}
+
 function aumentarQuantidade(id) {
-  setCart(
+  atualizarCarrinhoComanda(
     cart.map((item) =>
       item.id === id
         ? {
@@ -161,7 +255,7 @@ function aumentarQuantidade(id) {
 }
 
 function diminuirQuantidade(id) {
-  setCart(
+  atualizarCarrinhoComanda(
     cart
       .map((item) =>
         item.id === id
@@ -175,9 +269,11 @@ function diminuirQuantidade(id) {
   );
 }
 
-  function limparPedido() {
-    setCart([]);
-  }
+function limparPedido() {
+  if (!window.confirm("Deseja limpar esta comanda?")) return;
+
+  atualizarCarrinhoComanda([]);
+} 
 
   function moeda(valor) {
   return Number(valor || 0).toLocaleString("pt-BR", {
@@ -347,7 +443,7 @@ if (desejaImprimir) {
   }
 }
 
-    setCart([]);
+    atualizarCarrinhoComanda([]);
 
     setCliente("Cliente Balcão");
 
@@ -410,6 +506,47 @@ if (desejaImprimir) {
             </button>
           </div>
         </header>
+
+        <section className="pdv-comandas-premium">
+  <div className="pdv-comandas-header">
+    <div>
+      <span>Atendimento simultâneo</span>
+      <h2>Mesas e Comandas</h2>
+    </div>
+
+    <strong>
+      Comanda ativa:{" "}
+      {COMANDAS_INICIAIS.find((c) => c.id === comandaAtiva)?.nome}
+    </strong>
+  </div>
+
+  <div className="pdv-comandas-grid">
+    {COMANDAS_INICIAIS.map((comanda) => {
+      const resumo = resumoComanda(comanda.id);
+      const ativa = comandaAtiva === comanda.id;
+      const ocupada = resumo.quantidade > 0;
+
+      return (
+        <button
+          key={comanda.id}
+          type="button"
+          className={`pdv-comanda-card ${ativa ? "active" : ""} ${
+            ocupada ? "ocupada" : "livre"
+          }`}
+          onClick={() => selecionarComanda(comanda)}
+        >
+          <div>
+            <span>{ocupada ? "Ocupada" : "Livre"}</span>
+            <strong>{comanda.nome}</strong>
+          </div>
+
+          <small>{resumo.quantidade} item(ns)</small>
+          <b>{moeda(resumo.total)}</b>
+        </button>
+      );
+    })}
+  </div>
+</section>
 
         <section className="pdv-workspace">
           <div className="pdv-products-panel">
@@ -490,7 +627,12 @@ if (desejaImprimir) {
           <aside className="pdv-cart-premium">
             <div className="pdv-cart-top">
               <div>
-                <h2>Pedido Atual</h2>
+                <h2>
+  Pedido Atual
+  <span>
+    {COMANDAS_INICIAIS.find((c) => c.id === comandaAtiva)?.nome}
+  </span>
+</h2>
                 
               </div>
 
