@@ -208,14 +208,15 @@ setProdutos(lista);
   }
 
   const categorias = [
-    { nome: "Todos", icon: <Gift /> },
-    { nome: "CAFÉS", icon: <Coffee /> },
-    { nome: "Bebidas", icon: <CupSoda /> },
-    { nome: "BOLOS", icon: <CakeSlice /> },
-    { nome: "DOCES", icon: <CakeSlice /> },
-    { nome: "Salgados", icon: <ChefHat /> },
-    { nome: "Gourmet", icon: <Star /> },
-  ];
+  "Todos",
+  ...Array.from(
+    new Set(
+      produtos
+        .map((produto) => produto.categoria)
+        .filter(Boolean)
+    )
+  ),
+];
 
   const produtosFiltrados = produtos.filter((produto) => {
     const matchBusca = produto.nome
@@ -498,15 +499,15 @@ Aguardo confirmação.
 
             <div className="co-category-grid">
               {categorias.map((cat) => (
-                <button
-                  key={cat.nome}
-                  className={categoria === cat.nome ? "active" : ""}
-                  onClick={() => filtrarCategoria(cat.nome)}
-                >
-                  {cat.icon}
-                  <span>{cat.nome}</span>
-                </button>
-              ))}
+  <button
+    key={cat}
+    className={categoria === cat ? "active" : ""}
+    onClick={() => filtrarCategoria(cat)}
+  >
+    <Gift />
+    <span>{cat}</span>
+  </button>
+))}
             </div>
           </div>
 

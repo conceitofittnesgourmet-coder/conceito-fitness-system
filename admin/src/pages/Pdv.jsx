@@ -439,56 +439,24 @@ if (desejaImprimir) {
         <section className="pdv-workspace">
           <div className="pdv-products-panel">
             <div className="pdv-categories-premium">
-              <button
-                className={categoriaAtiva === "Todos" ? "active" : ""}
-                onClick={() => setCategoriaAtiva("Todos")}
-              >
-                Todos
-              </button>
-              <button
-                className={categoriaAtiva === "Bolos e Tortas" ? "active" : ""}
-                onClick={() => setCategoriaAtiva("Bolos e Tortas")}
-              >
-                Bolos e Tortas
-              </button>
-              <button
-                className={categoriaAtiva === "Sobremesas" ? "active" : ""}
-                onClick={() => setCategoriaAtiva("Sobremesas")}
-              >
-                Sobremesas
-              </button>
-              <button
-                className={categoriaAtiva === "Salgados" ? "active" : ""}
-                onClick={() => setCategoriaAtiva("Salgados")}
-              >
-                Salgados
-              </button>
-              <button
-                className={categoriaAtiva === "Bebidas" ? "active" : ""}
-                onClick={() => setCategoriaAtiva("Bebidas")}
-              >
-                Bebidas
-              </button>
-              <button
-  className={categoriaAtiva === "Cafés" ? "active" : ""}
-  onClick={() => setCategoriaAtiva("Cafés")}
->
-  Cafés
-</button>
-
-<button
-  className={categoriaAtiva === "Combos" ? "active" : ""}
-  onClick={() => setCategoriaAtiva("Combos")}
->
-  Combos
-</button>
-
-<button
-  className={categoriaAtiva === "Outros" ? "active" : ""}
-  onClick={() => setCategoriaAtiva("Outros")}
->
-  Outros
-</button>
+             {[
+  "Todos",
+  ...Array.from(
+    new Set(
+      produtos
+        .map((produto) => produto.categoria)
+        .filter(Boolean)
+    )
+  ),
+].map((cat) => (
+  <button
+    key={cat}
+    className={categoriaAtiva === cat ? "active" : ""}
+    onClick={() => setCategoriaAtiva(cat)}
+  >
+    {cat}
+  </button>
+))}
             </div>
 
             <div className="pdv-products-grid">
