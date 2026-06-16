@@ -23,7 +23,7 @@ function Fiscal() {
   const [resumo, setResumo] = useState(null);
   const [notaSelecionada, setNotaSelecionada] = useState(null);
   const [xmlNome, setXmlNome] = useState("");
-
+  const [configuracaoFiscal, setConfiguracaoFiscal] = useState(null);
   const [nota, setNota] = useState({
     numero: "",
     serie: "",
@@ -55,7 +55,9 @@ function Fiscal() {
       const materiasRes = await api.get("/producao/materias-primas");
       const notasRes = await api.get("/fiscal/notas-entrada");
       const resumoRes = await api.get("/fiscal/resumo");
-
+      const configRes = await api.get("/fiscal-config");
+      const configRes = await api.get("/fiscal-config");
+      setConfigFiscal(configRes.data.configuracao || configFiscal);
       setFornecedores(fornecedoresRes.data.fornecedores || []);
       setMaterias(materiasRes.data.materias || []);
       setNotas(notasRes.data.notas || []);
@@ -238,6 +240,26 @@ function Fiscal() {
   }
 }
 
+async function salvarConfigFiscal() {
+  try {
+    const response = await api.put("/fiscal-config", configFiscal);
+
+    if (!response.data.success) {
+      alert("Não foi possível salvar a configuração fiscal.");
+      return;
+    }
+
+    alert("Configuração fiscal salva com sucesso.");
+    await carregarDados();
+  } catch (error) {
+    console.log("Erro ao salvar configuração fiscal:", error);
+    alert(
+      error.response?.data?.message ||
+        "Erro ao salvar configuração fiscal."
+    );
+  }
+}
+
   async function cancelarNota(id) {
     if (!window.confirm("Deseja cancelar esta nota no sistema?")) return;
 
@@ -295,6 +317,117 @@ function Fiscal() {
             </p>
           </div>
         </section>
+
+        <section className="fiscal-card grande">
+  <h2>Configuração NFC-e</h2>
+
+  <p>
+    Deixe esta área preenchida. A emissão oficial ficará pendente apenas do
+    credenciamento NFC-e, CSC e liberação da Receita PR.
+  </p>
+
+  <div className="fiscal-form-grid">
+    <select
+      value={configFiscal.ambiente}
+      onChange={(e) =>
+        setConfigFiscal({
+          ...configFiscal,
+          ambiente: e.target.value,
+        })
+      }
+    >
+      <option value="homologacao">Homologação</option>
+      <option value="producao">Produção</option>
+    </select>
+
+    <input
+      type="number"
+      placeholder="Série NFC-e"
+      value={configFiscal.serieNfce}
+      onChange={(e) =>
+        setConfigFiscal({
+          ...configFiscal,
+          serieNfce: e.target.value,
+        })
+      }
+    />
+
+    <input
+      type="number"
+      placeholder="Próximo número NFC-e"
+      value={configFiscal.proximoNumeroNfce}
+      onChange={(e) =>
+        setConfigFiscal({
+          ...configFiscal,
+          proximoNumeroNfce: e.target.value,
+        })
+      }
+    />
+
+    <input
+      placeholder="ID CSC"
+      value={configFiscal.cscId}
+      onChange={(e) =>
+        setConfigFiscal({
+          ...configFiscal,
+          cscId: e.target.value,
+        })
+      }
+    />
+
+    <input
+      placeholder="CSC / Token de segurança"
+      value={configFiscal.cscToken}
+      onChange={(e) =>
+        setConfigFiscal({
+          ...configFiscal,
+          cscToken: e.target.value,
+        })
+      }
+    />
+
+    <select
+      value={configFiscal.certificadoConfigurado ? "sim" : "nao"}
+      onChange={(e) =>
+        setConfigFiscal({
+          ...configFiscal,
+          certificadoConfigurado: e.target.value === "sim",
+        })
+      }
+    >
+      <option value="nao">Certificado pendente</option>
+      <option value="sim">Certificado configurado</option>
+    </select>
+
+    <select
+      value={configFiscal.credenciadoNfce ? "sim" : "nao"}
+      onChange={(e) =>
+        setConfigFiscal({
+          ...configFiscal,
+          credenciadoNfce: e.target.value === "sim",
+        })
+      }
+    >
+      <option value="nao">NFC-e não credenciada</option>
+      <option value="sim">NFC-e credenciada</option>
+    </select>
+  </div>
+
+  <textarea
+    placeholder="Observações fiscais"
+    value={configFiscal.observacao}
+    onChange={(e) =>
+      setConfigFiscal({
+        ...configFiscal,
+        observacao: e.target.value,
+      })
+    }
+  />
+
+  <button className="btn-fiscal salvar" onClick={salvarConfigFiscal}>
+    Salvar Configuração Fiscal
+  </button>
+</section>
 
         <section className="fiscal-kpis">
           <div className="fiscal-kpi">

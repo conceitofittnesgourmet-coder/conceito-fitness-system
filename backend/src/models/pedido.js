@@ -36,6 +36,11 @@ const pedidoSchema =
 
       },
 
+      cpfNota: {
+  type: String,
+  default: "",
+},
+
 
 
 

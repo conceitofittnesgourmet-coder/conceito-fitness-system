@@ -63,7 +63,7 @@ exports.buscarPedido = async (req, res) => {
 // CRIAR
 exports.criarPedido = async (req, res) => {
   try {
-    const { cliente, telefone, produtos, total } = req.body || {};
+   const { cliente, telefone, cpfNota, produtos, total } = req.body || {};
 
     if (!cliente) {
       return res.status(400).json({
@@ -93,6 +93,8 @@ const proximoNumero =
 
   cliente,
   telefone: telefone || "",
+
+  cpfNota: cpfNota || "",
 
   produtos,
 

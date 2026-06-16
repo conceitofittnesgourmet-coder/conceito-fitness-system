@@ -27,6 +27,7 @@ const producaoRoutes = require("./routes/producaoRoutes");
 const comprasRoutes = require("./routes/comprasRoutes");
 const relatoriosRoutes = require("./routes/relatoriosRoutes");
 const fiscalRoutes = require("./routes/fiscalRoutes");
+const configuracaoFiscalRoutes = require("./routes/configuracaofiscalRoutes");
 
 const app = express();
 
@@ -112,6 +113,7 @@ app.use("/api/producao", producaoRoutes);
 app.use("/api/compras", comprasRoutes);
 app.use("/api/relatorios", relatoriosRoutes);
 app.use("/api/fiscal", fiscalRoutes);
+app.use("/api/configuracao-fiscal", configuracaoFiscalRoutes);
 app.use(errorHandler);
 
 module.exports = app;
