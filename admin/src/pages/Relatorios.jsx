@@ -224,6 +224,96 @@ function Relatorios() {
                 <Kpi icon={<FaMoneyBillWave />} titulo="Saldo" valor={dinheiro(resumo.saldo)} texto="Entradas - saídas" />
               </section>
 
+<section className="relatorios-dashboard">
+  <div className="dashboard-card sucesso">
+    <span>Faturamento</span>
+    <strong>{dinheiro(resumo.faturamento)}</strong>
+  </div>
+
+  <div className="dashboard-card lucro">
+    <span>Lucro Bruto</span>
+    <strong>{dinheiro(resumo.lucroTotal)}</strong>
+  </div>
+
+  <div className="dashboard-card caixa">
+    <span>Saldo Financeiro</span>
+    <strong>{dinheiro(resumo.saldo)}</strong>
+  </div>
+
+  <div className="dashboard-card compras">
+    <span>Compras</span>
+    <strong>{dinheiro(resumo.totalCompras)}</strong>
+  </div>
+
+  <div className="dashboard-card alerta">
+    <span>Contas a Pagar</span>
+    <strong>{dinheiro(resumo.contasPagarTotal)}</strong>
+  </div>
+
+  <div className="dashboard-card receber">
+    <span>Contas a Receber</span>
+    <strong>{dinheiro(resumo.contasReceberTotal)}</strong>
+  </div>
+
+  <div className="dashboard-card estoque">
+    <span>Estoque Crítico</span>
+    <strong>{resumo.estoqueBaixo || 0}</strong>
+  </div>
+
+  <div className="dashboard-card ticket">
+    <span>Ticket Médio</span>
+    <strong>{dinheiro(resumo.ticketMedio)}</strong>
+  </div>
+</section>
+
+<section className="relatorio-card-tabela">
+  <h2>DRE Gerencial</h2>
+
+  <table>
+    <tbody>
+      <tr>
+        <td>Receita Bruta</td>
+        <td>{dinheiro(resumo.faturamento)}</td>
+      </tr>
+
+      <tr>
+        <td>(-) CMV</td>
+        <td>{dinheiro(resumo.custoTotal)}</td>
+      </tr>
+
+      <tr>
+        <td>= Lucro Bruto</td>
+        <td>{dinheiro(resumo.lucroTotal)}</td>
+      </tr>
+
+      <tr>
+        <td>(-) Compras</td>
+        <td>{dinheiro(resumo.totalCompras)}</td>
+      </tr>
+
+      <tr>
+        <td>(-) Contas a Pagar</td>
+        <td>{dinheiro(resumo.contasPagarTotal)}</td>
+      </tr>
+
+      <tr>
+        <td>
+          <strong>Resultado Operacional</strong>
+        </td>
+        <td>
+          <strong>
+            {dinheiro(
+              (resumo.lucroTotal || 0)
+              - (resumo.totalCompras || 0)
+              - (resumo.contasPagarTotal || 0)
+            )}
+          </strong>
+        </td>
+      </tr>
+    </tbody>
+  </table>
+</section>
+
               <section className="relatorios-grid">
                 {mostrar("vendas") && (
                   <>

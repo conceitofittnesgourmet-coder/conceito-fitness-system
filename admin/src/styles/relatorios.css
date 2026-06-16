@@ -500,3 +500,63 @@
     display: none !important;
   }
 }
+
+.relatorios-dashboard{
+  display:grid;
+  grid-template-columns:repeat(4,minmax(180px,1fr));
+  gap:16px;
+  margin-bottom:24px;
+}
+
+.dashboard-card{
+  padding:18px;
+  border-radius:20px;
+  background:rgba(15,23,42,.88);
+  border:1px solid rgba(148,163,184,.18);
+}
+
+.dashboard-card span{
+  display:block;
+  color:rgba(255,255,255,.65);
+  font-size:13px;
+  font-weight:700;
+}
+
+.dashboard-card strong{
+  display:block;
+  margin-top:8px;
+  color:#fff;
+  font-size:24px;
+}
+
+.dashboard-card.sucesso{
+  border-left:5px solid #22c55e;
+}
+
+.dashboard-card.lucro{
+  border-left:5px solid #3b82f6;
+}
+
+.dashboard-card.caixa{
+  border-left:5px solid #f59e0b;
+}
+
+.dashboard-card.compras{
+  border-left:5px solid #ef4444;
+}
+
+.dashboard-card.alerta{
+  border-left:5px solid #dc2626;
+}
+
+.dashboard-card.receber{
+  border-left:5px solid #10b981;
+}
+
+.dashboard-card.estoque{
+  border-left:5px solid #f97316;
+}
+
+.dashboard-card.ticket{
+  border-left:5px solid #8b5cf6;
+}
