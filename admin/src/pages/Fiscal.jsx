@@ -56,7 +56,6 @@ function Fiscal() {
       const notasRes = await api.get("/fiscal/notas-entrada");
       const resumoRes = await api.get("/fiscal/resumo");
       const configRes = await api.get("/fiscal-config");
-      const configRes = await api.get("/fiscal-config");
       setConfigFiscal(configRes.data.configuracao || configFiscal);
       setFornecedores(fornecedoresRes.data.fornecedores || []);
       setMaterias(materiasRes.data.materias || []);
