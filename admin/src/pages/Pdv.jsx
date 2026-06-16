@@ -64,6 +64,7 @@ export default function Pdv() {
   const [mesa, setMesa] = useState("Balcão");
   const [cliente, setCliente] = useState("Cliente Balcão");
   const [telefone, setTelefone] = useState("");
+  const [cpfNota, setCpfNota] = useState("");
   const [observacao, setObservacao] = useState("");
   const [clientes, setClientes] = useState([]);
   const [buscaCliente, setBuscaCliente] = useState("");
@@ -372,6 +373,7 @@ if (!caixaAberto) {
       cliente,
 
       telefone,
+      cpfNota,
 
       tipo: tipoPedido,
 
@@ -448,6 +450,8 @@ if (desejaImprimir) {
     setCliente("Cliente Balcão");
 
     setTelefone("");
+
+    setCpfNota("");
 
     setObservacao("");
 
@@ -748,6 +752,12 @@ if (desejaImprimir) {
     value={telefone}
     onChange={(e) => setTelefone(e.target.value)}
   />
+
+  <input
+  placeholder="CPF/CNPJ na nota - opcional"
+  value={cpfNota}
+  onChange={(e) => setCpfNota(e.target.value)}
+/>
 
   <div className="tipo-pedido-card">
   <label>Tipo do pedido</label>

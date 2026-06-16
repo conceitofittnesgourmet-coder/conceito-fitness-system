@@ -111,6 +111,11 @@ CNPJ: 67.199.298/0001-81
       <p><strong>Hora:</strong> {new Date().toLocaleTimeString("pt-BR")}</p>
       <p><strong>Cliente:</strong> {pedido.cliente || pedido.clienteNome || "Cliente Balcão"}</p>
       <p><strong>Telefone:</strong> {pedido.telefone || "-"}</p>
+      {pedido.cpfNota && (
+  <p>
+    <strong>CPF/CNPJ na nota:</strong> {pedido.cpfNota}
+  </p>
+)}
       <p><strong>Tipo:</strong> {pedido.tipo || pedido.mesa || "Balcão"}</p>        
       <p><strong>Pagamento:</strong> {pedido.pagamento || pedido.formaPagamento || "-"}</p>
       {pedido.observacao && (
