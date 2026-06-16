@@ -113,7 +113,7 @@ app.use("/api/producao", producaoRoutes);
 app.use("/api/compras", comprasRoutes);
 app.use("/api/relatorios", relatoriosRoutes);
 app.use("/api/fiscal", fiscalRoutes);
-app.use("/api/configuracao-fiscal", configuracaoFiscalRoutes);
+app.use("/api/fiscal-config", configuracaoFiscalRoutes);
 app.use(errorHandler);
 
 module.exports = app;
