@@ -23,7 +23,16 @@ function Fiscal() {
   const [resumo, setResumo] = useState(null);
   const [notaSelecionada, setNotaSelecionada] = useState(null);
   const [xmlNome, setXmlNome] = useState("");
-  const [configuracaoFiscal, setConfiguracaoFiscal] = useState(null);
+  const [configFiscal, setConfigFiscal] = useState({
+  ambiente: "homologacao",
+  serieNfce: 1,
+  proximoNumeroNfce: 1,
+  cscId: "",
+  cscToken: "",
+  certificadoConfigurado: false,
+  credenciadoNfce: false,
+  observacao: "",
+});
   const [nota, setNota] = useState({
     numero: "",
     serie: "",
