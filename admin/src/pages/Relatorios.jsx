@@ -314,6 +314,63 @@ function Relatorios() {
   </table>
 </section>
 
+<section className="relatorio-card-tabela">
+  <h2>Vendas por Forma de Pagamento</h2>
+
+  <table>
+    <tbody>
+      {Object.entries(dados.vendasPorPagamento || {}).map(([forma, valor]) => (
+        <tr key={forma}>
+          <td>{forma}</td>
+          <td>{dinheiro(valor)}</td>
+        </tr>
+      ))}
+
+      {Object.keys(dados.vendasPorPagamento || {}).length === 0 && (
+        <tr>
+          <td colSpan="2">Nenhuma venda por pagamento no período.</td>
+        </tr>
+      )}
+    </tbody>
+  </table>
+</section>
+
+<section className="relatorio-card-tabela">
+  <h2>Contas a Pagar — Vencimentos</h2>
+
+  <table>
+    <thead>
+      <tr>
+        <th>Descrição</th>
+        <th>Vencimento</th>
+        <th>Status</th>
+        <th>Valor</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      {(dados.contasPagar || [])
+        .filter((conta) => conta.status !== "paga")
+        .slice(0, 10)
+        .map((conta) => (
+          <tr key={conta._id}>
+            <td>{conta.descricao}</td>
+            <td>{dataBR(conta.vencimento)}</td>
+            <td>{conta.status}</td>
+            <td>{dinheiro(conta.valor)}</td>
+          </tr>
+        ))}
+
+      {(dados.contasPagar || []).filter((conta) => conta.status !== "paga")
+        .length === 0 && (
+        <tr>
+          <td colSpan="4">Nenhuma conta pendente no período.</td>
+        </tr>
+      )}
+    </tbody>
+  </table>
+</section>
+
               <section className="relatorios-grid">
                 {mostrar("vendas") && (
                   <>
@@ -410,16 +467,18 @@ function Relatorios() {
 
                 {mostrar("clientes") && (
                   <Tabela
-                    titulo="Principais Clientes"
-                    colunas={["Cliente", "Telefone", "Gasto", "Clube"]}
-                    vazio="Nenhum cliente encontrado."
-                    linhas={(dados.topClientes || []).map((cliente) => [
-                      cliente.nome,
-                      cliente.telefone || "-",
-                      dinheiro(cliente.gasto),
-                      cliente.clube || "-",
-                    ])}
-                  />
+  titulo="Ranking Avançado de Clientes"
+  colunas={["Cliente", "Telefone", "Gasto", "Pontos", "Cashback", "Clube"]}
+  vazio="Nenhum cliente encontrado."
+  linhas={(dados.topClientes || []).map((cliente) => [
+    cliente.nome,
+    cliente.telefone || "-",
+    dinheiro(cliente.gasto),
+    cliente.pontos || 0,
+    dinheiro(cliente.cashback),
+    cliente.clube || "-",
+  ])}
+/>
                 )}
 
                 {mostrar("estoque") && (
