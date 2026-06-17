@@ -23,8 +23,9 @@ exports.emitirPorPedido = async (req, res) => {
 
 exports.emitirTesteUltimoPedido = async (req, res) => {
   try {
-    const pedido = await Pedido.findOne().sort({ createdAt: -1 });
-
+    const pedido = await Pedido.findOne({
+  status: { $ne: "cancelado" },
+}).sort({ createdAt: -1 });
     if (!pedido) {
       return res.status(404).json({
         success: false,
