@@ -12,7 +12,7 @@ function criarHttpsAgent() {
   return new https.Agent({
     pfx: Buffer.from(pfxBase64, "base64"),
     passphrase: senha,
-    rejectUnauthorized: true,
+    rejectUnauthorized: false,
   });
 }
 
