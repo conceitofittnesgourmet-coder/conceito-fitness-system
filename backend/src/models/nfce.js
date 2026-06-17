@@ -72,6 +72,20 @@ const nfceSchema = new mongoose.Schema(
       default: "",
     },
 
+    recibo: {
+  type: String,
+  default: "",
+},
+
+cStat: {
+  type: String,
+  default: "",
+},
+
+dataAutorizacao: {
+  type: Date,
+},
+
     mensagemSefaz: {
       type: String,
       default: "",
