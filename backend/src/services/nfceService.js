@@ -3,6 +3,8 @@ const Pedido = require("../models/pedido");
 const Nfce = require("../models/nfce");
 const ConfiguracaoFiscal = require("../models/configuracaofiscal");
 
+const { assinarXmlNfce } = require("./xmlSignatureService");
+
 function somenteNumeros(valor = "") {
   return String(valor).replace(/\D/g, "");
 }
@@ -314,6 +316,30 @@ async function gerarNfceDoPedido(pedidoId) {
   return nfce;
 }
 
+async function assinarNfce(nfceId) {
+  const nfce = await Nfce.findById(nfceId);
+
+  if (!nfce) {
+    throw new Error("NFC-e não encontrada.");
+  }
+
+  if (!nfce.xml) {
+    throw new Error("XML da NFC-e não encontrado.");
+  }
+
+  const xmlAssinado = assinarXmlNfce(nfce.xml);
+
+  nfce.xmlAssinado = xmlAssinado;
+  nfce.status = "assinada";
+  nfce.mensagemSefaz =
+    "XML assinado com certificado A1. Próxima etapa: transmissão SEFAZ.";
+
+  await nfce.save();
+
+  return nfce;
+}
+
 module.exports = {
   gerarNfceDoPedido,
+  assinarNfce,
 };

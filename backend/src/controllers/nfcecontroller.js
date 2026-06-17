@@ -1,6 +1,9 @@
 const Pedido = require("../models/pedido");
 const Nfce = require("../models/nfce");
-const { gerarNfceDoPedido } = require("../services/nfceService");
+const {
+  gerarNfceDoPedido,
+  assinarNfce,
+} = require("../services/nfceService");
 
 exports.emitirPorPedido = async (req, res) => {
   try {
@@ -110,6 +113,53 @@ exports.buscarPorId = async (req, res) => {
       nfce,
     });
   } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+exports.assinarPorId = async (req, res) => {
+  try {
+    const nfce = await assinarNfce(req.params.id);
+
+    return res.json({
+      success: true,
+      message: "NFC-e assinada com sucesso.",
+      nfce,
+    });
+  } catch (error) {
+    console.log("ERRO ASSINAR NFCE:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+exports.assinarUltima = async (req, res) => {
+  try {
+    const nfce = await Nfce.findOne().sort({ createdAt: -1 });
+
+    if (!nfce) {
+      return res.status(404).json({
+        success: false,
+        message: "Nenhuma NFC-e encontrada.",
+      });
+    }
+
+    const nfceAssinada = await assinarNfce(nfce._id);
+
+    return res.json({
+      success: true,
+      message: "Última NFC-e assinada com sucesso.",
+      nfce: nfceAssinada,
+    });
+  } catch (error) {
+    console.log("ERRO ASSINAR ÚLTIMA NFCE:", error);
+
     return res.status(500).json({
       success: false,
       message: error.message,

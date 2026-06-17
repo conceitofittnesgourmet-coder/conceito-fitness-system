@@ -49,6 +49,11 @@ const nfceSchema = new mongoose.Schema(
       default: "",
     },
 
+    xmlAssinado: {
+  type: String,
+  default: "",
+},
+
     status: {
       type: String,
       enum: [
