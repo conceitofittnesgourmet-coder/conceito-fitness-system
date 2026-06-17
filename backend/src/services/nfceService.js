@@ -4,6 +4,10 @@ const Nfce = require("../models/nfce");
 const ConfiguracaoFiscal = require("../models/configuracaofiscal");
 
 const { assinarXmlNfce } = require("./xmlSignatureService");
+const {
+  transmitirNfceParaSefaz,
+  consultarReciboSefaz,
+} = require("./sefazPrService");
 
 function somenteNumeros(valor = "") {
   return String(valor).replace(/\D/g, "");
@@ -270,17 +274,7 @@ async function gerarNfceDoPedido(pedidoId) {
     ambiente,
   });
 
-  function obterCodigoPagamento(tipo) {
-  const pagamento = String(tipo || "").toUpperCase();
-
-  if (pagamento.includes("PIX")) return "17";
-  if (pagamento.includes("DINHEIRO")) return "01";
-  if (pagamento.includes("DEBITO")) return "04";
-  if (pagamento.includes("CRÉDITO")) return "03";
-  if (pagamento.includes("CREDITO")) return "03";
-
-  return "99";
-}
+  
 
   const xml = montarXmlNfce({
     pedido,
@@ -339,7 +333,65 @@ async function assinarNfce(nfceId) {
   return nfce;
 }
 
+async function transmitirNfce(nfceId) {
+  const nfce = await Nfce.findById(nfceId);
+
+  if (!nfce) throw new Error("NFC-e não encontrada.");
+  if (!nfce.xmlAssinado) throw new Error("XML assinado não encontrado.");
+
+  const idLote = String(nfce.numero).padStart(15, "0");
+  const retorno = await transmitirNfceParaSefaz(nfce.xmlAssinado, idLote);
+
+  nfce.cStat = retorno.cStat || "";
+  nfce.recibo = retorno.nRec || "";
+  nfce.protocolo = retorno.nProt || "";
+  nfce.mensagemSefaz = retorno.xMotivo || "Retorno SEFAZ recebido.";
+
+  if (retorno.cStat === "100") {
+    nfce.status = "autorizada";
+    nfce.dataAutorizacao = retorno.dhRecbto
+      ? new Date(retorno.dhRecbto)
+      : new Date();
+  } else if (retorno.cStat === "103" || retorno.nRec) {
+    nfce.status = "assinada";
+  } else {
+    nfce.status = "rejeitada";
+  }
+
+  await nfce.save();
+  return nfce;
+}
+
+async function consultarRetornoNfce(nfceId) {
+  const nfce = await Nfce.findById(nfceId);
+
+  if (!nfce) throw new Error("NFC-e não encontrada.");
+  if (!nfce.recibo) throw new Error("Recibo não encontrado para consulta.");
+
+  const retorno = await consultarReciboSefaz(nfce.recibo);
+
+  nfce.cStat = retorno.cStat || "";
+  nfce.protocolo = retorno.nProt || "";
+  nfce.mensagemSefaz = retorno.xMotivo || "Consulta SEFAZ realizada.";
+
+  if (retorno.cStat === "100") {
+    nfce.status = "autorizada";
+    nfce.dataAutorizacao = retorno.dhRecbto
+      ? new Date(retorno.dhRecbto)
+      : new Date();
+  } else if (retorno.cStat === "105") {
+    nfce.status = "assinada";
+  } else {
+    nfce.status = "rejeitada";
+  }
+
+  await nfce.save();
+  return nfce;
+}
+
 module.exports = {
   gerarNfceDoPedido,
   assinarNfce,
+  transmitirNfce,
+  consultarRetornoNfce,
 };

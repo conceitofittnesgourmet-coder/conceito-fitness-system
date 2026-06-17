@@ -3,6 +3,8 @@ const Nfce = require("../models/nfce");
 const {
   gerarNfceDoPedido,
   assinarNfce,
+  transmitirNfce,
+  consultarRetornoNfce,
 } = require("../services/nfceService");
 
 exports.emitirPorPedido = async (req, res) => {
@@ -159,6 +161,44 @@ exports.assinarUltima = async (req, res) => {
     });
   } catch (error) {
     console.log("ERRO ASSINAR ÚLTIMA NFCE:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+exports.transmitirPorId = async (req, res) => {
+  try {
+    const nfce = await transmitirNfce(req.params.id);
+
+    return res.json({
+      success: true,
+      message: "Transmissão enviada para SEFAZ.",
+      nfce,
+    });
+  } catch (error) {
+    console.log("ERRO TRANSMITIR NFCE:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+exports.consultarPorId = async (req, res) => {
+  try {
+    const nfce = await consultarRetornoNfce(req.params.id);
+
+    return res.json({
+      success: true,
+      message: "Consulta SEFAZ realizada.",
+      nfce,
+    });
+  } catch (error) {
+    console.log("ERRO CONSULTAR NFCE:", error);
 
     return res.status(500).json({
       success: false,
