@@ -28,6 +28,7 @@ const comprasRoutes = require("./routes/comprasRoutes");
 const relatoriosRoutes = require("./routes/relatoriosRoutes");
 const fiscalRoutes = require("./routes/fiscalRoutes");
 const configuracaoFiscalRoutes = require("./routes/configuracaofiscalRoutes");
+const nfceRoutes = require("./routes/nfceRoutes");
 
 const app = express();
 
@@ -114,6 +115,7 @@ app.use("/api/compras", comprasRoutes);
 app.use("/api/relatorios", relatoriosRoutes);
 app.use("/api/fiscal", fiscalRoutes);
 app.use("/api/fiscal-config", configuracaoFiscalRoutes);
+app.use("/api/nfce", nfceRoutes);
 app.use(errorHandler);
 
 module.exports = app;
