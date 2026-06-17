@@ -22,6 +22,8 @@ function Fiscal() {
   const [notas, setNotas] = useState([]);
   const [resumo, setResumo] = useState(null);
   const [notaSelecionada, setNotaSelecionada] = useState(null);
+  const [ultimaNfce, setUltimaNfce] = useState(null);
+  const [carregandoNfce, setCarregandoNfce] = useState(false);
   const [xmlNome, setXmlNome] = useState("");
   const [configFiscal, setConfigFiscal] = useState({
   ambiente: "homologacao",
@@ -77,8 +79,9 @@ function Fiscal() {
   }
 
   useEffect(() => {
-    carregarDados();
-  }, []);
+  carregarDados();
+  buscarUltimaNfce();
+}, []);
 
   function dinheiro(valor) {
     return `R$ ${Number(valor || 0).toFixed(2)}`;
@@ -268,6 +271,72 @@ async function salvarConfigFiscal() {
   }
 }
 
+async function buscarUltimaNfce() {
+  try {
+    const response = await api.get("/nfce");
+
+    const lista = response.data.nfces || response.data || [];
+
+    if (Array.isArray(lista) && lista.length > 0) {
+      setUltimaNfce(lista[0]);
+    }
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+async function transmitirUltimaNfce() {
+  try {
+    if (!ultimaNfce?._id) {
+      alert("Nenhuma NFC-e encontrada.");
+      return;
+    }
+
+    setCarregandoNfce(true);
+
+    const response = await api.post(
+      `/nfce/transmitir/${ultimaNfce._id}`
+    );
+
+    alert(response.data.message || "NFC-e transmitida.");
+
+    await buscarUltimaNfce();
+  } catch (error) {
+    alert(
+      error.response?.data?.message ||
+        "Erro ao transmitir NFC-e."
+    );
+  } finally {
+    setCarregandoNfce(false);
+  }
+}
+
+async function consultarRetornoNfce() {
+  try {
+    if (!ultimaNfce?._id) {
+      alert("Nenhuma NFC-e encontrada.");
+      return;
+    }
+
+    setCarregandoNfce(true);
+
+    const response = await api.get(
+      `/nfce/consultar/${ultimaNfce._id}`
+    );
+
+    alert(response.data.message || "Consulta realizada.");
+
+    await buscarUltimaNfce();
+  } catch (error) {
+    alert(
+      error.response?.data?.message ||
+        "Erro ao consultar retorno."
+    );
+  } finally {
+    setCarregandoNfce(false);
+  }
+}
+
   async function cancelarNota(id) {
     if (!window.confirm("Deseja cancelar esta nota no sistema?")) return;
 
@@ -435,6 +504,61 @@ async function salvarConfigFiscal() {
   <button className="btn-fiscal salvar" onClick={salvarConfigFiscal}>
     Salvar Configuração Fiscal
   </button>
+</section>
+
+<section className="fiscal-card grande">
+  <h2>Emissão NFC-e</h2>
+
+  <p>
+    Controle de transmissão e retorno da SEFAZ.
+  </p>
+
+  <div className="fiscal-kpis">
+    <div className="fiscal-kpi">
+      <span>Número</span>
+      <strong>{ultimaNfce?.numero || "-"}</strong>
+    </div>
+
+    <div className="fiscal-kpi">
+      <span>Status</span>
+      <strong>{ultimaNfce?.status || "-"}</strong>
+    </div>
+
+    <div className="fiscal-kpi">
+      <span>cStat</span>
+      <strong>{ultimaNfce?.cStat || "-"}</strong>
+    </div>
+  </div>
+
+  <textarea
+    readOnly
+    value={ultimaNfce?.mensagemSefaz || ""}
+    placeholder="Mensagem da SEFAZ"
+  />
+
+  <div
+    style={{
+      display: "flex",
+      gap: "12px",
+      marginTop: "15px",
+    }}
+  >
+    <button
+      className="btn-fiscal salvar"
+      onClick={transmitirUltimaNfce}
+      disabled={carregandoNfce}
+    >
+      Transmitir NFC-e
+    </button>
+
+    <button
+      className="btn-fiscal"
+      onClick={consultarRetornoNfce}
+      disabled={carregandoNfce}
+    >
+      Consultar Retorno
+    </button>
+  </div>
 </section>
 
         <section className="fiscal-kpis">
