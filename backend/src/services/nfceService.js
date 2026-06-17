@@ -167,17 +167,17 @@ function montarXmlNfce({ pedido, numero, serie, chaveDados, ambiente }) {
       <xNome>CONCEITO FITNESS GOURMET LTDA</xNome>
       <xFant>CONCEITO FITNESS GOURMET</xFant>
       <enderEmit>
-        <xLgr>ENDERECO DA EMPRESA</xLgr>
-        <nro>0</nro>
-        <xBairro>CENTRO</xBairro>
-        <cMun>4128104</cMun>
-        <xMun>UMUARAMA</xMun>
-        <UF>PR</UF>
-        <CEP>87500000</CEP>
-        <cPais>1058</cPais>
-        <xPais>BRASIL</xPais>
-      </enderEmit>
-      <IE>${somenteNumeros(process.env.EMPRESA_IE || "0000000000")}</IE>
+  <xLgr>AV PARANA</xLgr>
+  <nro>8455</nro>
+  <xBairro>ZONA III</xBairro>
+  <cMun>4128104</cMun>
+  <xMun>UMUARAMA</xMun>
+  <UF>PR</UF>
+  <CEP>87502000</CEP>
+  <cPais>1058</cPais>
+  <xPais>BRASIL</xPais>
+</enderEmit>
+      <IE>${somenteNumeros(process.env.EMPRESA_IE || "9123591400")}</IE>
       <CRT>1</CRT>
     </emit>
 
@@ -215,7 +215,7 @@ function montarXmlNfce({ pedido, numero, serie, chaveDados, ambiente }) {
 
     <pag>
       <detPag>
-        <tPag>99</tPag>
+        <tPag>${obterCodigoPagamento(pedido.pagamento)}</tPag>
         <vPag>${valorTotal.toFixed(2)}</vPag>
       </detPag>
     </pag>
@@ -234,6 +234,12 @@ async function gerarNfceDoPedido(pedidoId) {
     throw new Error("Pedido não encontrado.");
   }
 
+  if (pedido.status === "cancelado") {
+  throw new Error(
+    "Não é permitido emitir NFC-e para pedido cancelado."
+  );
+}
+
   const config =
     (await ConfiguracaoFiscal.findOne()) ||
     (await ConfiguracaoFiscal.create({}));
@@ -248,6 +254,18 @@ async function gerarNfceDoPedido(pedidoId) {
     serie,
     ambiente,
   });
+
+  function obterCodigoPagamento(tipo) {
+  const pagamento = String(tipo || "").toUpperCase();
+
+  if (pagamento.includes("PIX")) return "17";
+  if (pagamento.includes("DINHEIRO")) return "01";
+  if (pagamento.includes("DEBITO")) return "04";
+  if (pagamento.includes("CRÉDITO")) return "03";
+  if (pagamento.includes("CREDITO")) return "03";
+
+  return "99";
+}
 
   const xml = montarXmlNfce({
     pedido,
