@@ -206,3 +206,55 @@ exports.consultarPorId = async (req, res) => {
     });
   }
 };
+
+exports.visualizarXml = async (req, res) => {
+  try {
+    const nfce = await Nfce.findById(req.params.id);
+
+    if (!nfce) {
+      return res.status(404).json({
+        success: false,
+        message: "NFC-e não encontrada."
+      });
+    }
+
+    res.setHeader("Content-Type", "application/xml");
+
+    return res.send(nfce.xml || "");
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};
+
+exports.downloadXml = async (req, res) => {
+  try {
+    const nfce = await Nfce.findById(req.params.id);
+
+    if (!nfce) {
+      return res.status(404).json({
+        success: false,
+        message: "NFC-e não encontrada."
+      });
+    }
+
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename=NFCE-${nfce.numero}.xml`
+    );
+
+    res.setHeader(
+      "Content-Type",
+      "application/xml"
+    );
+
+    return res.send(nfce.xml || "");
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message
+    });
+  }
+};

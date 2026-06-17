@@ -20,6 +20,10 @@ router.get("/transmitir/:id", controller.transmitirPorId);
 router.get("/consultar/:id", controller.consultarPorId);
 router.post("/consultar/:id", controller.consultarPorId);
 
+router.get("/:id/xml", controller.visualizarXml);
+
+router.get("/:id/download", controller.downloadXml);
+
 router.get("/:id", controller.buscarPorId);
 
 module.exports = router;
