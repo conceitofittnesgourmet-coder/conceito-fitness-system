@@ -23,6 +23,7 @@ function Fiscal() {
   const [resumo, setResumo] = useState(null);
   const [notaSelecionada, setNotaSelecionada] = useState(null);
   const [ultimaNfce, setUltimaNfce] = useState(null);
+  const [nfces, setNfces] = useState([]);
   const [carregandoNfce, setCarregandoNfce] = useState(false);
   const [xmlNome, setXmlNome] = useState("");
   const [configFiscal, setConfigFiscal] = useState({
@@ -275,9 +276,11 @@ async function buscarUltimaNfce() {
   try {
     const response = await api.get("/nfce");
 
-    const lista = response.data.nfces || response.data || [];
+    const lista = response.data.nfces || [];
 
-    if (Array.isArray(lista) && lista.length > 0) {
+    setNfces(lista);
+
+    if (lista.length > 0) {
       setUltimaNfce(lista[0]);
     }
   } catch (error) {
@@ -334,6 +337,41 @@ async function consultarRetornoNfce() {
     );
   } finally {
     setCarregandoNfce(false);
+  }
+}
+
+async function baixarXmlNfce(id) {
+  try {
+    window.open(
+      `${api.defaults.baseURL}/nfce/xml/${id}`,
+      "_blank"
+    );
+  } catch (error) {
+    console.log(error);
+  }
+}
+
+async function visualizarXmlNfce(id) {
+  try {
+    const response = await api.get(`/nfce/${id}`);
+
+    const xml =
+      response.data.nfce?.xml ||
+      "XML não encontrado.";
+
+    const novaJanela = window.open();
+
+    novaJanela.document.write(`
+      <pre style="
+        white-space: pre-wrap;
+        padding:20px;
+        font-family: monospace;
+      ">
+${xml}
+      </pre>
+    `);
+  } catch (error) {
+    alert("Erro ao carregar XML.");
   }
 }
 
@@ -558,6 +596,70 @@ async function consultarRetornoNfce() {
     >
       Consultar Retorno
     </button>
+  </div>
+</section>
+
+<section className="fiscal-card grande">
+  <h2>Histórico de NFC-e</h2>
+
+  <div className="fiscal-table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Número</th>
+          <th>Cliente</th>
+          <th>Valor</th>
+          <th>Status</th>
+          <th>cStat</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+
+      <tbody>
+        {nfces.map((nfce) => (
+          <tr key={nfce._id}>
+            <td>{nfce.numero}</td>
+            <td>{nfce.cpfNota || "Consumidor Final"}</td>
+            <td>{dinheiro(nfce.valorTotal)}</td>
+            <td>{nfce.status}</td>
+            <td>{nfce.cStat || "-"}</td>
+
+            <td
+              style={{
+                display: "flex",
+                gap: "8px",
+              }}
+            >
+              <button
+                className="btn-ver"
+                onClick={() =>
+                  visualizarXmlNfce(nfce._id)
+                }
+              >
+                XML
+              </button>
+
+              <button
+                className="btn-fiscal"
+                onClick={() =>
+                  baixarXmlNfce(nfce._id)
+                }
+              >
+                Download
+              </button>
+            </td>
+          </tr>
+        ))}
+
+        {nfces.length === 0 && (
+          <tr>
+            <td colSpan="6">
+              Nenhuma NFC-e encontrada.
+            </td>
+          </tr>
+        )}
+      </tbody>
+    </table>
   </div>
 </section>
 
