@@ -1,4 +1,5 @@
 const ConfiguracaoFiscal = require("../models/configuracaofiscal");
+const { validarCertificadoA1 } = require("../services/certificadoservice");
 
 exports.buscarConfiguracao = async (req, res) => {
   try {
@@ -66,6 +67,26 @@ exports.salvarConfiguracao = async (req, res) => {
   } catch (error) {
     console.log("ERRO SALVAR CONFIG FISCAL:", error);
 
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+exports.statusFiscal = async (req, res) => {
+  try {
+    const certificado = validarCertificadoA1();
+
+    return res.json({
+      success: true,
+      certificado,
+      ambiente: process.env.NFCE_AMBIENTE || "homologacao",
+      uf: process.env.NFCE_UF || "PR",
+      cscConfigurado: Boolean(process.env.NFCE_CSC),
+      cscIdConfigurado: Boolean(process.env.NFCE_CSC_ID),
+    });
+  } catch (error) {
     return res.status(500).json({
       success: false,
       message: error.message,
