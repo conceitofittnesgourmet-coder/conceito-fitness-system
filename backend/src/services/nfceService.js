@@ -66,6 +66,19 @@ function escapeXml(valor = "") {
     .replace(/'/g, "&apos;");
 }
 
+function obterCodigoPagamento(tipo) {
+  const pagamento = String(tipo || "").toUpperCase();
+
+  if (pagamento.includes("PIX")) return "17";
+  if (pagamento.includes("DINHEIRO")) return "01";
+  if (pagamento.includes("DEBITO")) return "04";
+  if (pagamento.includes("DÉBITO")) return "04";
+  if (pagamento.includes("CREDITO")) return "03";
+  if (pagamento.includes("CRÉDITO")) return "03";
+
+  return "99";
+}
+
 function montarItensXml(produtos = []) {
   return produtos
     .map((item, index) => {
