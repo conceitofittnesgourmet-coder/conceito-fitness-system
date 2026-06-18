@@ -105,7 +105,11 @@ function montarItensXml(produtos = []) {
         <prod>
           <cProd>${escapeXml(item.produtoId || index + 1)}</cProd>
           <cEAN>SEM GTIN</cEAN>
-          <xProd>${escapeXml(item.nome || "Produto")}</xProd>
+          <xProd>${
+  process.env.NFCE_AMBIENTE !== "producao" && index === 0
+    ? "NOTA FISCAL EMITIDA EM AMBIENTE DE HOMOLOGACAO - SEM VALOR FISCAL"
+    : escapeXml(item.nome || "Produto")
+}</xProd>
           <NCM>21069090</NCM>
           <CFOP>5102</CFOP>
           <uCom>UN</uCom>
