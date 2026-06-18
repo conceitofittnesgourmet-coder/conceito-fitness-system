@@ -160,10 +160,7 @@ function montarXmlNfce({ pedido, numero, serie, chaveDados, ambiente }) {
   const cnpj = somenteNumeros(process.env.EMPRESA_CNPJ || "67199298000181");
   const cpfNota = somenteNumeros(pedido.cpfNota || "");
   const valorTotal = Number(pedido.total || 0);
-  const codigoPagamento =
-  ambiente !== "producao"
-    ? "17"
-    : obterCodigoPagamento(pedido.pagamento);
+  const codigoPagamento = "17";
   const dhEmi = new Date()
   .toLocaleString("sv-SE", { timeZone: "America/Sao_Paulo" })
   .replace(" ", "T") + "-03:00";
@@ -261,11 +258,11 @@ function montarXmlNfce({ pedido, numero, serie, chaveDados, ambiente }) {
     </transp>
 
         <pag>
-      <detPag>
-        <tPag>${codigoPagamento}</tPag>
-        <vPag>${valorTotal.toFixed(2)}</vPag>
-      </detPag>
-    </pag>
+  <detPag>
+    <tPag>17</tPag>
+    <vPag>${valorTotal.toFixed(2)}</vPag>
+  </detPag>
+</pag>
 
     <infAdic>
   <infCpl>TESTE</infCpl>
