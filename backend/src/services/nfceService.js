@@ -341,6 +341,13 @@ async function gerarNfceDoPedido(pedidoId) {
     chaveDados,
     ambiente,
   });
+  
+  console.log("========== TESTE QR CODE NFC-E ==========");
+  console.log("NUMERO NFC-E:", numero);
+  console.log("CHAVE:", chaveDados.chave);
+  console.log("AMBIENTE:", ambiente);
+  console.log("QR CODE:", gerarQrCodeUrl(chaveDados.chave, ambiente));
+  console.log("=========================================");
 
   const qrCodeUrl = crypto
     .createHash("sha256")
