@@ -188,7 +188,7 @@ function montarXmlNfce({ pedido, numero, serie, chaveDados, ambiente }) {
       <indFinal>1</indFinal>
       <indPres>1</indPres>
       <procEmi>0</procEmi>
-      <verProc>ConceitoFitnessERP-1.0</verProc>
+      <verProc>ConceitoFitERP-1.0</verProc>
     </ide>
 
     <emit>
