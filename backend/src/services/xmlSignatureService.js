@@ -7,7 +7,7 @@ function assinarXmlNfce(xml) {
   const assinatura = new SignedXml({
     privateKey: chavePrivadaPem,
     publicCert: certificadoPem,
-    signatureAlgorithm: "http://www.w3.org/2001/04/xmldsig-more#rsa-sha256",
+    signatureAlgorithm: "http://www.w3.org/2000/09/xmldsig#rsa-sha1",
     canonicalizationAlgorithm:
       "http://www.w3.org/TR/2001/REC-xml-c14n-20010315",
   });
@@ -18,7 +18,7 @@ function assinarXmlNfce(xml) {
       "http://www.w3.org/2000/09/xmldsig#enveloped-signature",
       "http://www.w3.org/TR/2001/REC-xml-c14n-20010315",
     ],
-    digestAlgorithm: "http://www.w3.org/2001/04/xmlenc#sha256",
+    digestAlgorithm: "http://www.w3.org/2000/09/xmldsig#sha1",
   });
 
   assinatura.computeSignature(xml, {
