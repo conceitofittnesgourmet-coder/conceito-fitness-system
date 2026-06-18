@@ -157,14 +157,19 @@ function montarXmlNfce({ pedido, numero, serie, chaveDados, ambiente }) {
 
   const id = `NFe${chaveDados.chave}`;
 
-  const destXml =
-    cpfNota.length === 11
-      ? `
+ const destXml =
+  cpfNota.length === 11
+    ? `
       <dest>
+        ${
+          ambiente !== "producao"
+            ? "<xNome>NF-E EMITIDA EM AMBIENTE DE HOMOLOGACAO - SEM VALOR FISCAL</xNome>"
+            : ""
+        }
         <CPF>${cpfNota}</CPF>
         <indIEDest>9</indIEDest>
       </dest>`
-      : "";
+    : "";
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <NFe xmlns="http://www.portalfiscal.inf.br/nfe">
