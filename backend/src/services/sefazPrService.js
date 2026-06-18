@@ -27,15 +27,23 @@ function urlsSefaz() {
   }
 
   return {
-    autorizacao:
-      "https://homologacao.nfce.sefa.pr.gov.br/nfce/NFeAutorizacao4",
-    retorno:
-      "https://homologacao.nfce.sefa.pr.gov.br/nfce/NFeRetAutorizacao4",
+    autorizacao: "https://homologacao.nfce.sefa.pr.gov.br/nfce/NFeAutorizacao4",
+    retorno: "https://homologacao.nfce.sefa.pr.gov.br/nfce/NFeRetAutorizacao4",
   };
 }
 
 function removerDeclaracaoXml(xml = "") {
   return String(xml).replace(/<\?xml[^>]*\?>/g, "").trim();
+}
+
+function extrairTag(xml, tag) {
+  const match = String(xml).match(new RegExp(`<${tag}>(.*?)</${tag}>`));
+  return match ? match[1] : "";
+}
+
+function extrairBloco(xml, tag) {
+  const match = String(xml).match(new RegExp(`<${tag}[\\s\\S]*?</${tag}>`));
+  return match ? match[0] : "";
 }
 
 function montarEnvelopeAutorizacao(xmlAssinado, idLote) {
@@ -55,43 +63,29 @@ function montarEnvelopeAutorizacao(xmlAssinado, idLote) {
 </soap12:Envelope>`;
 }
 
-function montarEnvelopeConsultaRecibo(recibo, ambiente = "homologacao") {
-  const tpAmb = ambiente === "producao" ? "1" : "2";
+function extrairRetornoSefaz(xml) {
+  const protNFe = extrairBloco(xml, "protNFe");
+  const infProt = extrairBloco(xml, "infProt");
 
-  return `<?xml version="1.0" encoding="UTF-8"?>
-<soap12:Envelope xmlns:soap12="http://www.w3.org/2003/05/soap-envelope">
-  <soap12:Body>
-    <nfeDadosMsg xmlns="http://www.portalfiscal.inf.br/nfe/wsdl/NFeRetAutorizacao4">
-      <consReciNFe xmlns="http://www.portalfiscal.inf.br/nfe" versao="4.00">
-        <tpAmb>${tpAmb}</tpAmb>
-        <nRec>${recibo}</nRec>
-      </consReciNFe>
-    </nfeDadosMsg>
-  </soap12:Body>
-</soap12:Envelope>`;
-}
+  const cStatProtocolo = infProt ? extrairTag(infProt, "cStat") : "";
+  const motivoProtocolo = infProt ? extrairTag(infProt, "xMotivo") : "";
+  const protocolo = infProt ? extrairTag(infProt, "nProt") : "";
+  const dhRecbto = infProt ? extrairTag(infProt, "dhRecbto") : "";
 
-function extrairTag(xml, tag) {
-  const regex = new RegExp(`<${tag}>(.*?)</${tag}>`);
-  const match = String(xml).match(regex);
-  return match ? match[1] : "";
-}
-
-function extrairProtocolo(xml) {
   return {
-    cStat: extrairTag(xml, "cStat"),
-    xMotivo: extrairTag(xml, "xMotivo"),
-    nProt: extrairTag(xml, "nProt"),
+    cStat: cStatProtocolo || extrairTag(xml, "cStat"),
+    xMotivo: motivoProtocolo || extrairTag(xml, "xMotivo"),
+    nProt: protocolo,
     nRec: extrairTag(xml, "nRec"),
-    dhRecbto: extrairTag(xml, "dhRecbto"),
+    dhRecbto,
+    protNFe,
     xmlRetorno: xml,
-  };
+};
 }
 
 async function transmitirNfceParaSefaz(xmlAssinado, idLote) {
   const agent = criarHttpsAgent();
   const urls = urlsSefaz();
-
   const envelope = montarEnvelopeAutorizacao(xmlAssinado, idLote);
 
   const response = await axios.post(urls.autorizacao, envelope, {
@@ -102,28 +96,9 @@ async function transmitirNfceParaSefaz(xmlAssinado, idLote) {
     },
   });
 
-  return extrairProtocolo(response.data);
-}
-
-async function consultarReciboSefaz(recibo) {
-  const agent = criarHttpsAgent();
-  const urls = urlsSefaz();
-  const ambiente = process.env.NFCE_AMBIENTE || "homologacao";
-
-  const envelope = montarEnvelopeConsultaRecibo(recibo, ambiente);
-
-  const response = await axios.post(urls.retorno, envelope, {
-    httpsAgent: agent,
-    timeout: 60000,
-    headers: {
-      "Content-Type": "application/soap+xml; charset=utf-8",
-    },
-  });
-
-  return extrairProtocolo(response.data);
+  return extrairRetornoSefaz(response.data);
 }
 
 module.exports = {
   transmitirNfceParaSefaz,
-  consultarReciboSefaz,
 };

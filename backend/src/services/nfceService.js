@@ -347,17 +347,27 @@ async function transmitirNfce(nfceId) {
   nfce.protocolo = retorno.nProt || "";
   nfce.mensagemSefaz = retorno.xMotivo || "Retorno SEFAZ recebido.";
 
-  if (retorno.cStat === "100") {
+ if (retorno.cStat === "100") {
   nfce.status = "autorizada";
+  nfce.protocolo = retorno.nProt || "";
   nfce.dataAutorizacao = retorno.dhRecbto
     ? new Date(retorno.dhRecbto)
     : new Date();
-} else if (retorno.cStat === "103" || retorno.cStat === "105" || retorno.nRec) {
+} else if (
+  retorno.cStat === "103" ||
+  retorno.cStat === "104" ||
+  retorno.cStat === "105" ||
+  retorno.nRec
+) {
   nfce.status = "assinada";
-} else if (retorno.cStat === "108" || retorno.cStat === "109") {
+} else if (
+  retorno.cStat === "108" ||
+  retorno.cStat === "109"
+) {
   nfce.status = "assinada";
   nfce.mensagemSefaz =
-    retorno.xMotivo || "SEFAZ temporariamente indisponível. Tente novamente.";
+    retorno.xMotivo ||
+    "SEFAZ temporariamente indisponível. Tente novamente.";
 } else {
   nfce.status = "rejeitada";
 }
@@ -380,15 +390,25 @@ async function consultarRetornoNfce(nfceId) {
 
   if (retorno.cStat === "100") {
   nfce.status = "autorizada";
+  nfce.protocolo = retorno.nProt || "";
   nfce.dataAutorizacao = retorno.dhRecbto
     ? new Date(retorno.dhRecbto)
     : new Date();
-} else if (retorno.cStat === "103" || retorno.cStat === "105" || retorno.nRec) {
+} else if (
+  retorno.cStat === "103" ||
+  retorno.cStat === "104" ||
+  retorno.cStat === "105" ||
+  retorno.nRec
+) {
   nfce.status = "assinada";
-} else if (retorno.cStat === "108" || retorno.cStat === "109") {
+} else if (
+  retorno.cStat === "108" ||
+  retorno.cStat === "109"
+) {
   nfce.status = "assinada";
   nfce.mensagemSefaz =
-    retorno.xMotivo || "SEFAZ temporariamente indisponível. Tente novamente.";
+    retorno.xMotivo ||
+    "SEFAZ temporariamente indisponível. Tente novamente.";
 } else {
   nfce.status = "rejeitada";
 }
