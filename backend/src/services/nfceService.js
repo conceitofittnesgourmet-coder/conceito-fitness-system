@@ -296,9 +296,9 @@ function montarXmlNfce({ pedido, numero, serie, chaveDados, ambiente }) {
   <email>conceitofittnesgourmet@gmail.com</email>
   <fone>44999999999</fone>
 </infRespTec>
-    </infNFe>
+      </infNFe>
   <infNFeSupl>
-    <qrCode><![CDATA[${gerarQrCodeUrl(chaveDados.chave, ambiente)}]]></qrCode>
+    <qrCode>${escapeXml(gerarQrCodeUrl(chaveDados.chave, ambiente))}</qrCode>
     <urlChave>${gerarUrlConsulta(ambiente)}</urlChave>
   </infNFeSupl>
 </NFe>`;
