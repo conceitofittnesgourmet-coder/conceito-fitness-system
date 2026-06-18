@@ -24,6 +24,8 @@ router.get("/:id/xml", controller.visualizarXml);
 
 router.get("/:id/download", controller.downloadXml);
 
+router.get("/:id/danfe", controller.visualizarDanfe);
+
 router.get("/:id", controller.buscarPorId);
 
 module.exports = router;

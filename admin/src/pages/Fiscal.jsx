@@ -351,6 +351,17 @@ async function baixarXmlNfce(id) {
   }
 }
 
+async function abrirDanfeNfce(id) {
+  try {
+    window.open(
+      `${api.defaults.baseURL}/nfce/${id}/danfe`,
+      "_blank"
+    );
+  } catch (error) {
+    console.log(error);
+  }
+}
+
 async function visualizarXmlNfce(id) {
   try {
     const response = await api.get(`/nfce/${id}`);
@@ -647,6 +658,16 @@ ${xml}
               >
                 Download
               </button>
+
+<button
+  className="btn-fiscal salvar"
+  onClick={() =>
+    abrirDanfeNfce(nfce._id)
+  }
+>
+  DANFE
+</button>
+
             </td>
           </tr>
         ))}

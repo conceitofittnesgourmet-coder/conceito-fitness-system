@@ -6,6 +6,7 @@ const {
   transmitirNfce,
   consultarRetornoNfce,
 } = require("../services/nfceService");
+const { gerarDanfeNfceHtml } = require("../services/danfeNfceService");
 
 exports.emitirPorPedido = async (req, res) => {
   try {
@@ -255,6 +256,32 @@ exports.downloadXml = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: error.message
+    });
+  }
+};
+
+exports.visualizarDanfe = async (req, res) => {
+  try {
+    const nfce = await Nfce.findById(req.params.id).populate("pedido");
+
+    if (!nfce) {
+      return res.status(404).json({
+        success: false,
+        message: "NFC-e não encontrada.",
+      });
+    }
+
+    const html = await gerarDanfeNfceHtml(nfce);
+
+    res.setHeader("Content-Type", "text/html; charset=utf-8");
+
+    return res.send(html);
+  } catch (error) {
+    console.log("ERRO DANFE NFCE:", error);
+
+    return res.status(500).json({
+      success: false,
+      message: error.message,
     });
   }
 };
