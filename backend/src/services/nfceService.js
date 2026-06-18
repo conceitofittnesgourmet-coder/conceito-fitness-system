@@ -259,7 +259,7 @@ function montarXmlNfce({ pedido, numero, serie, chaveDados, ambiente }) {
 
         <pag>
   <detPag>
-    <tPag>17</tPag>
+    <tPag>01</tPag>
     <vPag>${valorTotal.toFixed(2)}</vPag>
   </detPag>
 </pag>
