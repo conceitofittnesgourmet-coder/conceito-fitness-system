@@ -33,7 +33,11 @@ function urlsSefaz() {
 }
 
 function removerDeclaracaoXml(xml = "") {
-  return String(xml).replace(/<\?xml[^>]*\?>/g, "").trim();
+  return String(xml)
+    .replace(/^\uFEFF/, "")
+    .replace(/<\?xml[^>]*\?>/g, "")
+    .replace(/>\s+</g, "><")
+    .trim();
 }
 
 function extrairTag(xml, tag) {
@@ -47,20 +51,11 @@ function extrairBloco(xml, tag) {
 }
 
 function montarEnvelopeAutorizacao(xmlAssinado, idLote) {
-  const nfeLimpa = removerDeclaracaoXml(xmlAssinado);
+  const nfeLimpa = removerDeclaracaoXml(xmlAssinado)
+    .replace(/>\s+</g, "><")
+    .trim();
 
-  return `<?xml version="1.0" encoding="UTF-8"?>
-<soap12:Envelope xmlns:soap12="http://www.w3.org/2003/05/soap-envelope">
-  <soap12:Body>
-    <nfeDadosMsg xmlns="http://www.portalfiscal.inf.br/nfe/wsdl/NFeAutorizacao4">
-      <enviNFe xmlns="http://www.portalfiscal.inf.br/nfe" versao="4.00">
-        <idLote>${idLote}</idLote>
-        <indSinc>1</indSinc>
-        ${nfeLimpa}
-      </enviNFe>
-    </nfeDadosMsg>
-  </soap12:Body>
-</soap12:Envelope>`;
+  return `<?xml version="1.0" encoding="UTF-8"?><soap12:Envelope xmlns:soap12="http://www.w3.org/2003/05/soap-envelope"><soap12:Body><nfeDadosMsg xmlns="http://www.portalfiscal.inf.br/nfe/wsdl/NFeAutorizacao4"><enviNFe xmlns="http://www.portalfiscal.inf.br/nfe" versao="4.00"><idLote>${idLote}</idLote><indSinc>1</indSinc>${nfeLimpa}</enviNFe></nfeDadosMsg></soap12:Body></soap12:Envelope>`;
 }
 
 function extrairRetornoSefaz(xml) {

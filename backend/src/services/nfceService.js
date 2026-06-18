@@ -191,8 +191,8 @@ function montarXmlNfce({ pedido, numero, serie, chaveDados, ambiente }) {
 
     <emit>
       <CNPJ>${cnpj}</CNPJ>
-      <xNome>CONCEITO FITNESS GOURMET LTDA</xNome>
-      <xFant>CONCEITO FITNESS GOURMET</xFant>
+      <xNome>CONCEITO FITNESS</xNome>
+      <xFant>CONCEITO FITNESS</xFant>
       <enderEmit>
   <xLgr>AV PARANA</xLgr>
   <nro>8455</nro>
@@ -248,8 +248,8 @@ function montarXmlNfce({ pedido, numero, serie, chaveDados, ambiente }) {
     </pag>
 
     <infAdic>
-      <infCpl>NFC-e gerada em ambiente de homologacao pelo sistema Conceito Fitness.</infCpl>
-    </infAdic>
+  <infCpl>TESTE</infCpl>
+</infAdic>
   </infNFe>
 </NFe>`;
 }
