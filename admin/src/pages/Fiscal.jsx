@@ -343,7 +343,7 @@ async function consultarRetornoNfce() {
 async function baixarXmlNfce(id) {
   try {
     window.open(
-      `${api.defaults.baseURL}/nfce/xml/${id}`,
+      `${api.defaults.baseURL}/nfce/${id}/download`,
       "_blank"
     );
   } catch (error) {
