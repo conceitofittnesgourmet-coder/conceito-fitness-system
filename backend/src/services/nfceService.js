@@ -161,12 +161,12 @@ function montarXmlNfce({ pedido, numero, serie, chaveDados, ambiente }) {
   cpfNota.length === 11
     ? `
       <dest>
+        <CPF>${cpfNota}</CPF>
         ${
           ambiente !== "producao"
             ? "<xNome>NF-E EMITIDA EM AMBIENTE DE HOMOLOGACAO - SEM VALOR FISCAL</xNome>"
             : ""
         }
-        <CPF>${cpfNota}</CPF>
         <indIEDest>9</indIEDest>
       </dest>`
     : "";
