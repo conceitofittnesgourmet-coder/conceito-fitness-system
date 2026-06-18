@@ -158,10 +158,10 @@ function montarItensXml(produtos = []) {
 
 function gerarUrlConsulta(ambiente) {
   if (ambiente === "producao") {
-    return "https://www.fazenda.pr.gov.br/nfce/qrcode";
+    return "http://www.fazenda.pr.gov.br/nfce/consulta";
   }
 
-  return "https://www.fazenda.pr.gov.br/nfce/qrcode";
+  return "http://www.fazenda.pr.gov.br/nfce/consulta";
 }
 
 function gerarQrCodeUrl(chaveAcesso, ambiente) {
@@ -176,7 +176,7 @@ function gerarQrCodeUrl(chaveAcesso, ambiente) {
     .digest("hex")
     .toUpperCase();
 
-  return `${gerarUrlConsulta(ambiente)}?p=${dados}|${hash}`;
+  return `http://www.fazenda.pr.gov.br/nfce/qrcode?p=${dados}|${hash}`;
 }
 
 function montarXmlNfce({ pedido, numero, serie, chaveDados, ambiente }) {
