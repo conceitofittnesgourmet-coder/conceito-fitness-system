@@ -27,6 +27,7 @@ function calcularDV(chave43) {
     pesoIndex = pesoIndex + 1 >= pesos.length ? 0 : pesoIndex + 1;
   }
 
+  
   const resto = soma % 11;
   const dv = 11 - resto;
 
@@ -70,6 +71,13 @@ function escapeXml(valor = "") {
     .replace(/>/g, "&gt;")
     .replace(/"/g, "&quot;")
     .replace(/'/g, "&apos;");
+}
+
+function limparXmlParaSefaz(xml = "") {
+  return String(xml)
+    .replace(/<\?xml[^>]*\?>/g, "")
+    .replace(/>\s+</g, "><")
+    .trim();
 }
 
 function obterCodigoPagamento(tipo) {
@@ -321,8 +329,10 @@ async function assinarNfce(nfceId) {
     throw new Error("XML da NFC-e não encontrado.");
   }
 
-  const xmlAssinado = assinarXmlNfce(nfce.xml);
+  const xmlLimpo = limparXmlParaSefaz(nfce.xml);
+  const xmlAssinado = assinarXmlNfce(xmlLimpo);
 
+  nfce.xml = xmlLimpo;
   nfce.xmlAssinado = xmlAssinado;
   nfce.status = "assinada";
   nfce.mensagemSefaz =
