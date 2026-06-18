@@ -5,6 +5,8 @@ const ContaReceber = require("../models/contareceber");
 const MovimentacaoFinanceira = require("../models/movimentacaofinanceira");
 const FichaTecnica = require("../models/fichatecnica");
 const MateriaPrima = require("../models/materiaprima");
+const { gerarNfceDoPedido } = require("../services/nfceService");
+const Nfce = require("../models/nfce");
 
 
 // LISTAR
@@ -334,6 +336,7 @@ return res.status(201).json({
 // ATUALIZAR STATUS
 exports.atualizarStatus = async (req, res) => {
   try {
+
     const pedido = await Pedido.findByIdAndUpdate(
       req.params.id,
       {
@@ -352,16 +355,41 @@ exports.atualizarStatus = async (req, res) => {
       });
     }
 
+    if (req.body.status === "entregue") {
+
+      const nfceExistente = await Nfce.findOne({
+        pedido: pedido._id,
+      });
+
+      if (!nfceExistente) {
+        try {
+          await gerarNfceDoPedido(pedido._id);
+        } catch (nfceError) {
+          console.log(
+            "ERRO GERAR NFC-E AUTOMATICA:",
+            nfceError.message
+          );
+        }
+      }
+    }
+
     if (global.io) {
-      global.io.emit("pedido-atualizado", pedido);
+      global.io.emit(
+        "pedido-atualizado",
+        pedido
+      );
     }
 
     return res.json({
       success: true,
       pedido,
     });
+
   } catch (error) {
-    console.log("ERRO ATUALIZAR STATUS:", error);
+    console.log(
+      "ERRO ATUALIZAR STATUS:",
+      error
+    );
 
     return res.status(500).json({
       success: false,
