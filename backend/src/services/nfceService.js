@@ -156,11 +156,34 @@ function montarItensXml(produtos = []) {
     .join("");
 }
 
+function gerarUrlConsulta(ambiente) {
+  if (ambiente === "producao") {
+    return "https://www.fazenda.pr.gov.br/nfce/qrcode";
+  }
+
+  return "https://www.fazenda.pr.gov.br/nfce/qrcode";
+}
+
+function gerarQrCodeUrl(chaveAcesso, ambiente) {
+  const tpAmb = ambiente === "producao" ? "1" : "2";
+  const cscId = process.env.NFCE_CSC_ID || "000001";
+  const csc = process.env.NFCE_CSC || "";
+
+  const dados = `${chaveAcesso}|2|${tpAmb}|${cscId}`;
+  const hash = crypto
+    .createHash("sha1")
+    .update(dados + csc)
+    .digest("hex")
+    .toUpperCase();
+
+  return `${gerarUrlConsulta(ambiente)}?p=${dados}|${hash}`;
+}
+
 function montarXmlNfce({ pedido, numero, serie, chaveDados, ambiente }) {
   const cnpj = somenteNumeros(process.env.EMPRESA_CNPJ || "67199298000181");
   const cpfNota = somenteNumeros(pedido.cpfNota || "");
   const valorTotal = Number(pedido.total || 0);
-  const codigoPagamento = "17";
+  
   const dhEmi = new Date()
   .toLocaleString("sv-SE", { timeZone: "America/Sao_Paulo" })
   .replace(" ", "T") + "-03:00";
@@ -273,7 +296,11 @@ function montarXmlNfce({ pedido, numero, serie, chaveDados, ambiente }) {
   <email>conceitofittnesgourmet@gmail.com</email>
   <fone>44999999999</fone>
 </infRespTec>
-  </infNFe>
+    </infNFe>
+  <infNFeSupl>
+    <qrCode><![CDATA[${gerarQrCodeUrl(chaveDados.chave, ambiente)}]]></qrCode>
+    <urlChave>${gerarUrlConsulta(ambiente)}</urlChave>
+  </infNFeSupl>
 </NFe>`;
 }
 
