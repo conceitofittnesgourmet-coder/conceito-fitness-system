@@ -253,9 +253,17 @@ function montarXmlNfce({ pedido, numero, serie, chaveDados, ambiente }) {
 
     <pag>
       <detPag>
-        <tPag>${obterCodigoPagamento(pedido.pagamento)}</tPag>
-        <vPag>${valorTotal.toFixed(2)}</vPag>
-      </detPag>
+  <tPag>${obterCodigoPagamento(pedido.pagamento)}</tPag>
+  <vPag>${valorTotal.toFixed(2)}</vPag>
+  ${
+    ["03", "04"].includes(obterCodigoPagamento(pedido.pagamento))
+      ? `
+  <card>
+    <tpIntegra>2</tpIntegra>
+  </card>`
+      : ""
+  }
+</detPag>
     </pag>
 
     <infAdic>
