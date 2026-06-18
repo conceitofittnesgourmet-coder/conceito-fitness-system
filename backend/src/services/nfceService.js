@@ -81,16 +81,21 @@ function limparXmlParaSefaz(xml = "") {
 }
 
 function obterCodigoPagamento(tipo) {
-  const pagamento = String(tipo || "").toUpperCase();
+  const pagamento = String(tipo || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toUpperCase();
 
   if (pagamento.includes("PIX")) return "17";
   if (pagamento.includes("DINHEIRO")) return "01";
   if (pagamento.includes("DEBITO")) return "04";
-  if (pagamento.includes("DÉBITO")) return "04";
   if (pagamento.includes("CREDITO")) return "03";
-  if (pagamento.includes("CRÉDITO")) return "03";
+  if (pagamento.includes("CARTAO")) return "03";
+  if (pagamento.includes("CARTAO DE CREDITO")) return "03";
+  if (pagamento.includes("CARTAO DE DEBITO")) return "04";
 
-  return "99";
+  return "17";
 }
 
 function montarItensXml(produtos = []) {
