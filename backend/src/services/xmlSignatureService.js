@@ -23,7 +23,7 @@ function assinarXmlNfce(xml) {
 
   assinatura.computeSignature(xml, {
     location: {
-  reference: "//*[local-name(.)='infNFeSupl']",
+  reference: "//*[local-name(.)='infNFe']",
   action: "after",
 },
   });

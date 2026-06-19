@@ -302,11 +302,7 @@ function montarXmlNfce({ pedido, numero, serie, chaveDados, ambiente }) {
   <fone>44999999999</fone>
 </infRespTec>
       </infNFe>
-  <infNFeSupl>
-    <qrCode>${escapeXml(gerarQrCodeUrl(chaveDados.chave, ambiente))}</qrCode>
-    <urlChave>${gerarUrlConsulta(ambiente)}</urlChave>
-  </infNFeSupl>
-</NFe>`;
+    </NFe>`;
 }
 
 async function gerarNfceDoPedido(pedidoId) {
@@ -337,7 +333,52 @@ async function gerarNfceDoPedido(pedidoId) {
     ambiente,
   });
 
-  
+function extrairTagXml(xml, tag) {
+  const match = String(xml).match(new RegExp(`<${tag}>(.*?)</${tag}>`));
+  return match ? match[1] : "";
+}
+
+function gerarUrlConsulta(ambiente) {
+  return "http://www.fazenda.pr.gov.br/nfce/consulta";
+}
+
+function gerarQrCodeUrlCompleto({ chaveAcesso, ambiente, cpfNota, dhEmi, valorTotal, digestValue }) {
+  const tpAmb = ambiente === "producao" ? "1" : "2";
+
+  const cscId = String(process.env.NFCE_CSC_ID || "000001")
+    .replace(/\D/g, "")
+    .padStart(6, "0");
+
+  const csc = process.env.NFCE_CSC || "";
+
+  const dhEmiHex = Buffer.from(dhEmi, "utf8")
+    .toString("hex")
+    .toUpperCase();
+
+  const cDest = somenteNumeros(cpfNota || "");
+  const vNF = Number(valorTotal || 0).toFixed(2);
+  const vICMS = "0.00";
+
+  const dados = `${chaveAcesso}|2|${tpAmb}|${cDest}|${dhEmiHex}|${vNF}|${vICMS}|${digestValue}|${cscId}`;
+
+  const hash = crypto
+    .createHash("sha1")
+    .update(dados + csc)
+    .digest("hex")
+    .toUpperCase();
+
+  return `http://www.fazenda.pr.gov.br/nfce/qrcode?p=${dados}|${hash}`;
+}
+
+function inserirInfNFeSupl(xmlAssinado, qrCodeUrl, ambiente) {
+  const bloco = `
+  <infNFeSupl>
+    <qrCode>${escapeXml(qrCodeUrl)}</qrCode>
+    <urlChave>${gerarUrlConsulta(ambiente)}</urlChave>
+  </infNFeSupl>`;
+
+  return xmlAssinado.replace("</infNFe>", `</infNFe>${bloco}`);
+}  
 
   const xml = montarXmlNfce({
     pedido,
@@ -392,13 +433,32 @@ async function assinarNfce(nfceId) {
   }
 
   const xmlLimpo = limparXmlParaSefaz(nfce.xml);
-  const xmlAssinado = assinarXmlNfce(xmlLimpo);
+  const xmlAssinadoBase = assinarXmlNfce(xmlLimpo);
+
+  const digestValue = extrairTagXml(xmlAssinadoBase, "DigestValue");
+  const dhEmi = extrairTagXml(xmlLimpo, "dhEmi");
+
+  const qrCodeUrl = gerarQrCodeUrlCompleto({
+    chaveAcesso: nfce.chaveAcesso,
+    ambiente: nfce.ambiente,
+    cpfNota: nfce.cpfNota,
+    dhEmi,
+    valorTotal: nfce.valorTotal,
+    digestValue,
+  });
+
+  const xmlAssinadoFinal = inserirInfNFeSupl(
+    xmlAssinadoBase,
+    qrCodeUrl,
+    nfce.ambiente
+  );
 
   nfce.xml = xmlLimpo;
-  nfce.xmlAssinado = xmlAssinado;
+  nfce.xmlAssinado = xmlAssinadoFinal;
+  nfce.qrCodeUrl = qrCodeUrl;
   nfce.status = "assinada";
   nfce.mensagemSefaz =
-    "XML assinado com certificado A1. Próxima etapa: transmissão SEFAZ.";
+    "XML assinado com QR Code NFC-e. Próxima etapa: transmissão SEFAZ.";
 
   await nfce.save();
 
