@@ -460,6 +460,12 @@ async function assinarNfce(nfceId) {
 
   await nfce.save();
 
+console.log("========== QR CODE COMPLETO ==========");
+console.log("DADOS:", dados);
+console.log("HASH:", hash);
+console.log("URL:", `http://www.fazenda.pr.gov.br/nfce/qrcode?p=${dados}|${hash}`);
+console.log("=====================================");
+
   return nfce;
 }
 
