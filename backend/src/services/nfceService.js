@@ -166,10 +166,15 @@ function gerarUrlConsulta(ambiente) {
 
 function gerarQrCodeUrl(chaveAcesso, ambiente) {
   const tpAmb = ambiente === "producao" ? "1" : "2";
-  const cscId = process.env.NFCE_CSC_ID || "000001";
+
+  const cscId = String(process.env.NFCE_CSC_ID || "1")
+    .replace(/\D/g, "")
+    .replace(/^0+/, "") || "1";
+
   const csc = process.env.NFCE_CSC || "";
 
   const dados = `${chaveAcesso}|2|${tpAmb}|${cscId}`;
+
   const hash = crypto
     .createHash("sha1")
     .update(dados + csc)
@@ -341,7 +346,7 @@ async function gerarNfceDoPedido(pedidoId) {
     chaveDados,
     ambiente,
   });
-  
+
   console.log("========== TESTE QR CODE NFC-E ==========");
   console.log("NUMERO NFC-E:", numero);
   console.log("CHAVE:", chaveDados.chave);
