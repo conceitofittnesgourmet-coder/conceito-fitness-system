@@ -421,6 +421,11 @@ function inserirInfNFeSupl(xmlAssinado, qrCodeUrl, ambiente) {
   return nfce;
 }
 
+function extrairTagXml(xml, tag) {
+  const match = String(xml).match(new RegExp(`<${tag}>(.*?)</${tag}>`));
+  return match ? match[1] : "";
+}
+
 async function assinarNfce(nfceId) {
   const nfce = await Nfce.findById(nfceId);
 
