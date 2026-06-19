@@ -42,3 +42,4 @@ function assinarXmlNfce(xml) {
 module.exports = {
   assinarXmlNfce,
 };
+
