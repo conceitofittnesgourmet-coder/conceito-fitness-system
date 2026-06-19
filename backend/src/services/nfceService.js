@@ -176,9 +176,10 @@ function gerarUrlConsulta(ambiente) {
 function gerarQrCodeUrlCompleto({ chaveAcesso, ambiente }) {
   const tpAmb = ambiente === "producao" ? "1" : "2";
 
-  const cscId = String(process.env.NFCE_CSC_ID || "000001")
+  const cscId =
+  String(process.env.NFCE_CSC_ID || "000001")
     .replace(/\D/g, "")
-    .padStart(6, "0");
+    .replace(/^0+/, "") || "1";
 
   const csc = process.env.NFCE_CSC || "";
 
