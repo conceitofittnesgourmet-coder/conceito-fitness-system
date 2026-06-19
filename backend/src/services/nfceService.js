@@ -173,7 +173,7 @@ function gerarUrlConsulta(ambiente) {
   return "http://www.fazenda.pr.gov.br/nfce/consulta";
 }
 
-function gerarQrCodeUrlCompleto({ chaveAcesso, ambiente, cpfNota, dhEmi, valorTotal, digestValue }) {
+function gerarQrCodeUrlCompleto({ chaveAcesso, ambiente }) {
   const tpAmb = ambiente === "producao" ? "1" : "2";
 
   const cscId = String(process.env.NFCE_CSC_ID || "000001")
@@ -182,19 +182,7 @@ function gerarQrCodeUrlCompleto({ chaveAcesso, ambiente, cpfNota, dhEmi, valorTo
 
   const csc = process.env.NFCE_CSC || "";
 
-  const dhEmiHex = Buffer.from(dhEmi, "utf8")
-    .toString("hex")
-    .toUpperCase();
-
-  const cDest = somenteNumeros(cpfNota || "");
-  const vNF = Number(valorTotal || 0).toFixed(2);
-  const vICMS = "0.00";
-
-  const digestHex = Buffer.from(digestValue, "base64")
-  .toString("hex")
-  .toUpperCase();
-
-const dados = `${chaveAcesso}|2|${tpAmb}|${cDest}|${dhEmiHex}|${vNF}|${vICMS}|${digestHex}|${cscId}`;
+  const dados = `${chaveAcesso}|2|${tpAmb}|${cscId}`;
 
   const hash = crypto
     .createHash("sha1")
@@ -202,12 +190,11 @@ const dados = `${chaveAcesso}|2|${tpAmb}|${cDest}|${dhEmiHex}|${vNF}|${vICMS}|${
     .digest("hex")
     .toUpperCase();
 
-    console.log("========== QR CODE COMPLETO ==========");
-    console.log("DADOS:", dados);
-    console.log("HASH:", hash);
-    console.log("URL:", `http://www.fazenda.pr.gov.br/nfce/qrcode?p=${dados}|${hash}`);
-    console.log("=====================================");
-
+  console.log("========== QR CODE NFC-E ==========");
+  console.log("DADOS:", dados);
+  console.log("HASH:", hash);
+  console.log("URL:", `http://www.fazenda.pr.gov.br/nfce/qrcode?p=${dados}|${hash}`);
+  console.log("===================================");
 
   return `http://www.fazenda.pr.gov.br/nfce/qrcode?p=${dados}|${hash}`;
 }
@@ -424,13 +411,9 @@ async function assinarNfce(nfceId) {
   const dhEmi = extrairTagXml(xmlLimpo, "dhEmi");
 
   const qrCodeUrl = gerarQrCodeUrlCompleto({
-    chaveAcesso: nfce.chaveAcesso,
-    ambiente: nfce.ambiente,
-    cpfNota: nfce.cpfNota,
-    dhEmi,
-    valorTotal: nfce.valorTotal,
-    digestValue,
-  });
+  chaveAcesso: nfce.chaveAcesso,
+  ambiente: nfce.ambiente,
+});
 
   const xmlAssinadoFinal = inserirInfNFeSupl(
     xmlAssinadoBase,
