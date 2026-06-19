@@ -415,6 +415,50 @@ async function gerarNfceDoPedido(pedidoId) {
   return nfce;
 }
 
+async function assinarNfce(nfceId) {
+  const nfce = await Nfce.findById(nfceId);
+
+  if (!nfce) {
+    throw new Error("NFC-e não encontrada.");
+  }
+
+  if (!nfce.xml) {
+    throw new Error("XML da NFC-e não encontrado.");
+  }
+
+  const xmlLimpo = limparXmlParaSefaz(nfce.xml);
+  const xmlAssinadoBase = assinarXmlNfce(xmlLimpo);
+
+  const digestValue = extrairTagXml(xmlAssinadoBase, "DigestValue");
+  const dhEmi = extrairTagXml(xmlLimpo, "dhEmi");
+
+  const qrCodeUrl = gerarQrCodeUrlCompleto({
+    chaveAcesso: nfce.chaveAcesso,
+    ambiente: nfce.ambiente,
+    cpfNota: nfce.cpfNota,
+    dhEmi,
+    valorTotal: nfce.valorTotal,
+    digestValue,
+  });
+
+  const xmlAssinadoFinal = inserirInfNFeSupl(
+    xmlAssinadoBase,
+    qrCodeUrl,
+    nfce.ambiente
+  );
+
+  nfce.xml = xmlLimpo;
+  nfce.xmlAssinado = xmlAssinadoFinal;
+  nfce.qrCodeUrl = qrCodeUrl;
+  nfce.status = "assinada";
+  nfce.mensagemSefaz =
+    "XML assinado com QR Code NFC-e. Próxima etapa: transmissão SEFAZ.";
+
+  await nfce.save();
+
+  return nfce;
+}
+
 async function transmitirNfce(nfceId) {
   const nfce = await Nfce.findById(nfceId);
 
