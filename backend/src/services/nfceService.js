@@ -368,11 +368,7 @@ async function gerarNfceDoPedido(pedidoId) {
   });
 
   
-  const qrCodeUrl = crypto
-    .createHash("sha256")
-    .update(`${chaveDados.chave}|${process.env.NFCE_CSC || ""}`)
-    .digest("hex");
-
+  
   const nfce = await Nfce.create({
     pedido: pedido._id,
     numero,
@@ -383,7 +379,7 @@ async function gerarNfceDoPedido(pedidoId) {
     valorTotal: Number(pedido.total || 0),
     xml,
     status: "gerada",
-    qrCodeUrl,
+    qrCodeUrl: "",
     mensagemSefaz:
       "NFC-e gerada em homologação. Próxima etapa: assinatura e transmissão SEFAZ.",
   });
