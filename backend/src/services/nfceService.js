@@ -210,7 +210,11 @@ function gerarQrCodeUrlCompleto({ chaveAcesso, ambiente, cpfNota, dhEmi, valorTo
   const vNF = Number(valorTotal || 0).toFixed(2);
   const vICMS = "0.00";
 
-  const dados = `${chaveAcesso}|2|${tpAmb}|${cDest}|${dhEmiHex}|${vNF}|${vICMS}|${digestValue}|${cscId}`;
+  const digestHex = Buffer.from(digestValue, "base64")
+  .toString("hex")
+  .toUpperCase();
+
+const dados = `${chaveAcesso}|2|${tpAmb}|${cDest}|${dhEmiHex}|${vNF}|${vICMS}|${digestHex}|${cscId}`;
 
   const hash = crypto
     .createHash("sha1")
