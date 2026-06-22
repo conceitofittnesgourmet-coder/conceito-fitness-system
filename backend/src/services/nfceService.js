@@ -277,7 +277,7 @@ function textoParaHex(valor) {
   return Buffer.from(String(valor || ""), "utf8").toString("hex").toUpperCase();
 }
 
-function gerarQrCodeUrlNfce({ chaveAcesso, ambiente, cpfNota, dhEmi, valorTotal, digestValue }) {
+function gerarQrCodeUrlNfce({ chaveAcesso, ambiente }) {
   const csc = getCscToken();
 
   if (!csc) {
@@ -288,11 +288,6 @@ function gerarQrCodeUrlNfce({ chaveAcesso, ambiente, cpfNota, dhEmi, valorTotal,
     chaveAcesso,
     "2",
     getTpAmb(ambiente),
-    somenteNumeros(cpfNota || ""),
-    textoParaHex(dhEmi),
-    Number(valorTotal || 0).toFixed(2),
-    "0.00",
-    digestBase64ParaHex(digestValue),
     getCscIdParaQrCode(),
   ].join("|");
 
@@ -301,10 +296,6 @@ function gerarQrCodeUrlNfce({ chaveAcesso, ambiente, cpfNota, dhEmi, valorTotal,
     .update(dados + csc, "utf8")
     .digest("hex")
     .toUpperCase();
-
-    console.log("CSC_ID_USADO:", getCscIdParaQrCode());
-    console.log("CSC_USADO:", getCscToken());
-    console.log("QRCODE_FINAL:", `${URL_QRCODE_PR}?p=${dados}|${hash}`);
 
   return `${URL_QRCODE_PR}?p=${dados}|${hash}`;
 }
@@ -374,14 +365,10 @@ async function assinarNfce(nfceId) {
   const digestValue = extrairTagXml(xmlAssinadoBase, "DigestValue");
   const dhEmi = extrairTagXml(xmlLimpo, "dhEmi");
 
-  const qrCodeUrl = gerarQrCodeUrlNfce({
-    chaveAcesso: nfce.chaveAcesso,
-    ambiente: nfce.ambiente,
-    cpfNota: nfce.cpfNota,
-    dhEmi,
-    valorTotal: nfce.valorTotal,
-    digestValue,
-  });
+ const qrCodeUrl = gerarQrCodeUrlNfce({
+  chaveAcesso: nfce.chaveAcesso,
+  ambiente: nfce.ambiente,
+});
 
   const xmlAssinadoFinal = inserirInfNFeSupl(xmlAssinadoBase, qrCodeUrl);
 
