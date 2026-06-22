@@ -203,6 +203,9 @@ function montarXmlPagamento(pedido, valorTotal) {
         </card>`
       : "";
 
+console.log("PAGAMENTO RECEBIDO:", pedido.pagamento);
+console.log("TPAG GERADO:", tPag);
+
   return `
     <pag>
       <detPag>
