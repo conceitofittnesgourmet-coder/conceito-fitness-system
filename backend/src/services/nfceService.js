@@ -302,6 +302,10 @@ function gerarQrCodeUrlNfce({ chaveAcesso, ambiente, cpfNota, dhEmi, valorTotal,
     .digest("hex")
     .toUpperCase();
 
+    console.log("CSC_ID_USADO:", getCscIdParaQrCode());
+    console.log("CSC_USADO:", getCscToken());
+    console.log("QRCODE_FINAL:", `${URL_QRCODE_PR}?p=${dados}|${hash}`);
+
   return `${URL_QRCODE_PR}?p=${dados}|${hash}`;
 }
 
