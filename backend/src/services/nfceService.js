@@ -195,11 +195,20 @@ function montarItensXml(produtos = [], ambiente) {
 function montarXmlPagamento(pedido, valorTotal) {
   const tPag = obterCodigoPagamento(pedido.pagamento || pedido.formaPagamento);
 
+  const cardXml =
+    ["03", "04"].includes(tPag)
+      ? `
+        <card>
+          <tpIntegra>2</tpIntegra>
+        </card>`
+      : "";
+
   return `
     <pag>
       <detPag>
         <tPag>${tPag}</tPag>
         <vPag>${valorTotal.toFixed(2)}</vPag>
+        ${cardXml}
       </detPag>
     </pag>`;
 }
