@@ -266,7 +266,7 @@ exports.downloadXml = async (req, res) => {
       "application/xml"
     );
 
-    return res.send(nfce.xml || "");
+    return res.send(nfce.xmlAssinado || nfce.xml || "");
   } catch (error) {
     return res.status(500).json({
       success: false,
