@@ -398,7 +398,7 @@ async function transmitirNfce(nfceId) {
   let nfce = await Nfce.findById(nfceId);
 
   if (!nfce) throw new Error("NFC-e não encontrada.");
-  if (!nfce.xmlAssinado) nfce = await assinarNfce(nfceId);
+  nfce = await assinarNfce(nfceId);
 
   const idLote = String(nfce.numero).padStart(15, "0");
   const retorno = await transmitirNfceParaSefaz(nfce.xmlAssinado, idLote);
