@@ -49,6 +49,7 @@ function Produtos() {
   const [nome, setNome] = useState("");
   const [categoria, setCategoria] = useState("");
   const [categorias, setCategorias] = useState("");
+  const [categoriasDisponiveis, setCategoriasDisponiveis] = useState([]);
   const [descricao, setDescricao] = useState("");
   const [preco, setPreco] = useState("");
   const [custo, setCusto] = useState("");
@@ -108,6 +109,16 @@ function Produtos() {
       toast.error("Erro ao carregar produtos");
     }
   }
+
+  async function carregarCategorias() {
+  try {
+    const response = await api.get("/categorias");
+    setCategoriasDisponiveis(response.data.categorias || []);
+  } catch (error) {
+    console.log(error);
+    toast.error("Erro ao carregar categorias");
+  }
+}
 
   async function cadastrarProduto() {
     try {
@@ -272,6 +283,7 @@ const bateBusca =
 
   useEffect(() => {
     carregarProdutos();
+    carregarCategorias();
 
     socket.on("produto-criado", carregarProdutos);
     socket.on("produto-atualizado", carregarProdutos);
@@ -333,11 +345,32 @@ const bateBusca =
             <div className="field-premium">
   <label>Categorias extras</label>
 
-  <input
-    placeholder="Doces, Low Carb, Sem Glúten"
-    value={categorias}
-    onChange={(e) => setCategorias(e.target.value)}
-  />
+  <div className="chips-premium">
+    {categoriasDisponiveis.map((cat) => (
+      <label key={cat._id}>
+        <input
+          type="checkbox"
+          checked={categorias
+            .split(",")
+            .map((c) => c.trim())
+            .includes(cat.nome)}
+          onChange={(e) => {
+            const atuais = categorias
+              .split(",")
+              .map((c) => c.trim())
+              .filter(Boolean);
+
+            const novas = e.target.checked
+              ? [...atuais, cat.nome]
+              : atuais.filter((c) => c !== cat.nome);
+
+            setCategorias(novas.join(", "));
+          }}
+        />
+        {cat.nome}
+      </label>
+    ))}
+  </div>
 </div>
           </div>
 
@@ -673,11 +706,36 @@ const bateBusca =
 
               <input value={editNome} onChange={(e) => setEditNome(e.target.value)} />
               <input value={editCategoria} onChange={(e) => setEditCategoria(e.target.value)} />
-              <input
-  placeholder="Categorias extras: Low Carb, Sem Glúten, Promoções"
-  value={editCategorias}
-  onChange={(e) => setEditCategorias(e.target.value)}
-/>
+              <div className="field-premium">
+  <label>Categorias extras</label>
+
+  <div className="chips-premium">
+    {categoriasDisponiveis.map((cat) => (
+      <label key={cat._id}>
+        <input
+          type="checkbox"
+          checked={editCategorias
+            .split(",")
+            .map((c) => c.trim())
+            .includes(cat.nome)}
+          onChange={(e) => {
+            const atuais = editCategorias
+              .split(",")
+              .map((c) => c.trim())
+              .filter(Boolean);
+
+            const novas = e.target.checked
+              ? [...atuais, cat.nome]
+              : atuais.filter((c) => c !== cat.nome);
+
+            setEditCategorias(novas.join(", "));
+          }}
+        />
+        {cat.nome}
+      </label>
+    ))}
+  </div>
+</div>
               <textarea value={editDescricao} onChange={(e) => setEditDescricao(e.target.value)} />
               <input value={editPreco} onChange={(e) => setEditPreco(e.target.value)} />
               <input
