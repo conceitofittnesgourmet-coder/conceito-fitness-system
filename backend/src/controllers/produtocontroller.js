@@ -48,6 +48,7 @@ console.log("FILES:", req.files);
   estoque,
   descricao,
   categoria,
+  categorias,
   tempoPreparo,
   restricoes,
   peso,
@@ -66,6 +67,14 @@ console.log("FILES:", req.files);
     const precoVenda = Number(
   String(preco).replace(",", ".")
 );
+
+const categoriasArray =
+  categorias
+    ? categorias
+        .split(",")
+        .map((c) => c.trim())
+        .filter(Boolean)
+    : [];
 
 const custoProduto = Number(
   String(req.body.custo || 0).replace(",", ".")
@@ -88,6 +97,7 @@ const produto = await Produto.create({
   nome,
   descricao: descricao || "",
   categoria: categoria || "Gourmet",
+  categorias: categoriasArray,
   preco: precoVenda,
   custo: custoProduto,
   lucro,
@@ -125,7 +135,7 @@ const produto = await Produto.create({
 // LISTAR PRODUTOS
 const listarProdutos = async (req, res) => {
   try {
-    const { search, destaque, ativo, page = 1, limit = 50 } = req.query;
+    const { search, destaque, ativo, page = 1, limit = 9999 } = req.query;
 
     const filtro = {};
 
@@ -146,7 +156,7 @@ const listarProdutos = async (req, res) => {
 
     const skip = (Number(page) - 1) * Number(limit);
 
-    const produtos = await Produto.find()
+    const produtos = await Produto.find(filtro)
       .sort({ createdAt: -1 })
       .skip(skip)
       .limit(Number(limit));

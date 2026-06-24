@@ -27,6 +27,11 @@ const produtoSchema = new mongoose.Schema(
      default: "Gourmet"
     },
 
+    categorias: {
+     type: [String],
+     default: [],
+   },
+
     preco: {
       type: Number,
       required: true,

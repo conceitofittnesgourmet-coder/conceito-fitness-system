@@ -48,6 +48,7 @@ function Produtos() {
 
   const [nome, setNome] = useState("");
   const [categoria, setCategoria] = useState("");
+  const [categorias, setCategorias] = useState("");
   const [descricao, setDescricao] = useState("");
   const [preco, setPreco] = useState("");
   const [custo, setCusto] = useState("");
@@ -120,6 +121,7 @@ function Produtos() {
 
       formData.append("nome", nome);
       formData.append("categoria", categoria);
+      formData.append("categorias", categorias);
       formData.append("descricao", descricao);
       formData.append("preco", preco);
       formData.append("custo", custo);
@@ -129,6 +131,7 @@ function Produtos() {
       formData.append("restricoes", restricoes);
       formData.append("peso", peso);
       formData.append("destaque", destaque);
+      
       
 
       imagens.forEach((img) => {
@@ -315,6 +318,16 @@ function Produtos() {
                 onChange={(e) => setCategoria(e.target.value)}
               />
             </div>
+
+            <div className="field-premium">
+  <label>Categorias extras</label>
+
+  <input
+    placeholder="Doces, Low Carb, Sem Glúten"
+    value={categorias}
+    onChange={(e) => setCategorias(e.target.value)}
+  />
+</div>
           </div>
 
           <div className="field-premium full">
