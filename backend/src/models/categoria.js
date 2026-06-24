@@ -1,31 +1,42 @@
 const mongoose = require("mongoose");
 
-const CategoriaSchema = new mongoose.Schema({
+const categoriaSchema = new mongoose.Schema(
+  {
+    nome: {
+      type: String,
+      required: true,
+      trim: true,
+    },
 
-  nome: {
-    type: String,
-    required: true
+    slug: {
+      type: String,
+      required: true,
+      unique: true,
+      trim: true,
+    },
+
+    descricao: {
+      type: String,
+      default: "",
+    },
+
+    tipo: {
+      type: String,
+      default: "produto",
+    },
+
+    ordem: {
+      type: Number,
+      default: 0,
+    },
+
+    ativo: {
+      type: Boolean,
+      default: true,
+    },
   },
-
-  slug: {
-    type: String,
-    required: true,
-    unique: true
-  },
-
-  ativa: {
-    type: Boolean,
-    default: true
-  },
-
-  ordem: {
-    type: Number,
-    default: 0
-  }
-
-});
-
-module.exports = mongoose.model(
-  "Categoria",
-  CategoriaSchema
+  { timestamps: true }
 );
+
+module.exports =
+  mongoose.models.Categoria || mongoose.model("Categoria", categoriaSchema);

@@ -29,6 +29,7 @@ const relatoriosRoutes = require("./routes/relatoriosRoutes");
 const fiscalRoutes = require("./routes/fiscalRoutes");
 const configuracaoFiscalRoutes = require("./routes/configuracaofiscalRoutes");
 const nfceRoutes = require("./routes/nfceRoutes");
+const categoriaRoutes = require("./routes/categoriaRoutes");
 
 const app = express();
 
@@ -98,6 +99,7 @@ app.get("/", (req, res) => {
 
 app.use("/api/auth", authRoutes);
 app.use("/api/produtos", produtoRoutes);
+app.use("/api/categorias", categoriaRoutes);
 app.use("/api/pedidos", pedidoRoutes);
 app.use("/api/dashboard", dashboardRoutes);
 app.use("/api/analytics", analyticsRoutes);
