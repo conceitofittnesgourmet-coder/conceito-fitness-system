@@ -250,9 +250,16 @@ function Produtos() {
     return produtos.filter((produto) => {
       const termo = busca.toLowerCase();
 
-      const bateBusca =
-        produto.nome?.toLowerCase().includes(termo) ||
-        produto.categoria?.toLowerCase().includes(termo);
+      const categoriasTexto = [
+  produto.categoria,
+  ...(produto.categorias || []),
+]
+  .join(" ")
+  .toLowerCase();
+
+const bateBusca =
+  produto.nome?.toLowerCase().includes(termo) ||
+  categoriasTexto.includes(termo);
 
       if (!bateBusca) return false;
 
@@ -564,6 +571,22 @@ function Produtos() {
                   <div className="produto-body-premium">
                     <h3>{produto.nome}</h3>
                     <strong>R$ {Number(produto.preco || 0).toFixed(2)}</strong>
+
+                    <div className="chips-premium">
+  <span>{produto.categoria}</span>
+
+  {produto.categorias?.map((cat) => (
+    <span key={cat}>{cat}</span>
+  ))}
+</div>
+
+                    {produto.categorias?.length > 0 && (
+  <div className="chips-premium">
+    {produto.categorias.map((cat) => (
+      <span key={cat}>{cat}</span>
+    ))}
+  </div>
+)}
 
                     <p>
   Custo:
