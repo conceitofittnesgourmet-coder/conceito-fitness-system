@@ -69,6 +69,7 @@ function Produtos() {
 
   const [editNome, setEditNome] = useState("");
   const [editCategoria, setEditCategoria] = useState("");
+  const [editCategorias, setEditCategorias] = useState("");
   const [editDescricao, setEditDescricao] = useState("");
   const [editPreco, setEditPreco] = useState("");
   const [editCusto, setEditCusto] = useState("");
@@ -174,6 +175,7 @@ function Produtos() {
 
     setEditNome(produto.nome || "");
     setEditCategoria(produto.categoria || "");
+    setEditCategorias(produto.categorias?.join(", ") || "");
     setEditDescricao(produto.descricao || "");
     setEditPreco(produto.preco || "");
     setEditCusto(produto.custo || "");
@@ -196,6 +198,7 @@ function Produtos() {
 
       formData.append("nome", editNome);
       formData.append("categoria", editCategoria);
+      formData.append("categorias", editCategorias);
       formData.append("descricao", editDescricao);
       formData.append("preco", editPreco);
       formData.append("custo", editCusto);
@@ -232,6 +235,7 @@ function Produtos() {
 
     setNome("");
     setCategoria("");
+    setCategorias("");
     setDescricao("");
     setPreco("");
     setEstoque("");
@@ -646,6 +650,11 @@ function Produtos() {
 
               <input value={editNome} onChange={(e) => setEditNome(e.target.value)} />
               <input value={editCategoria} onChange={(e) => setEditCategoria(e.target.value)} />
+              <input
+  placeholder="Categorias extras: Low Carb, Sem Glúten, Promoções"
+  value={editCategorias}
+  onChange={(e) => setEditCategorias(e.target.value)}
+/>
               <textarea value={editDescricao} onChange={(e) => setEditDescricao(e.target.value)} />
               <input value={editPreco} onChange={(e) => setEditPreco(e.target.value)} />
               <input
