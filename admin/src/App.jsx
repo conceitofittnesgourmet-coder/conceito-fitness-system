@@ -87,6 +87,8 @@ import Fiscal from "./pages/Fiscal";
 
 import CardapioOnlineAdmin from "./pages/cardapioonlineadmin"; 
 
+import Categorias from "./pages/Categorias";
+
 
 
 // ==========================================
@@ -437,7 +439,14 @@ function App() {
 
       />
 
-
+<Route
+  path="/categorias"
+  element={
+    <PrivateRoute>
+      <Categorias />
+    </PrivateRoute>
+  }
+/>
 
 
 

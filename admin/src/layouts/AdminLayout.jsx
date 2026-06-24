@@ -17,6 +17,7 @@ FaFileAlt,
 FaFileInvoice, 
 FaTruckLoading,
 FaGlobe,
+FaTags,
 
 } from "react-icons/fa";
 
@@ -54,11 +55,13 @@ function AdminLayout({
 },
     { label: "Painel", path: "/", icon: <FaChartLine /> },
     { label: "Produtos", path: "/produtos", icon: <FaBoxOpen /> },
+    { label: "Categorias", path: "/categorias", icon: <FaTags /> },
     { label: "Pedidos", path: "/pedidos", icon: <FaReceipt /> },
     { label: "Cozinha", path: "/cozinha", icon: <FaUtensils /> },
     { label: "Entregador", path: "/entregador", icon: <FaTruck /> },
     { label: "Clientes", path: "/clientes", icon: <FaUsers /> },
     { label: "Financeiro", path: "/financeiro", icon: <FaWallet /> },
+    
 
     {
   label: "Produção",
