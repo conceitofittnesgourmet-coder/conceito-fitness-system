@@ -211,15 +211,46 @@ function resumoComanda(id) {
  function adicionarProduto(produto) {
   const id = produto._id || produto.id;
 
+  const vendaPorPeso = Boolean(produto.vendaPorPeso);
+  const permiteFracionado = Boolean(produto.permiteFracionado);
+  const unidadeMedida = produto.unidadeMedida || "UN";
+
+  let quantidadeInicial = 1;
+
+  if (vendaPorPeso || permiteFracionado || unidadeMedida === "KG") {
+    const valorDigitado = window.prompt(
+      `Informe a quantidade em ${unidadeMedida} para ${produto.nome}`,
+      "1"
+    );
+
+    if (!valorDigitado) return;
+
+    quantidadeInicial = Number(
+      String(valorDigitado).replace(",", ".")
+    );
+
+    if (!quantidadeInicial || quantidadeInicial <= 0) {
+      alert("Quantidade inválida.");
+      return;
+    }
+  }
+
   const existe = cart.find((item) => item.id === id);
+
+  const precoUnitario = Number(produto.preco || 0);
 
   const produtoFormatado = {
     id,
     produtoId: produto._id || produto.id,
     nome: produto.nome,
-    preco: Number(produto.preco || 0),
+    preco: precoUnitario,
+    precoUnitario,
+    unidadeMedida,
+    vendaPorPeso,
+    permiteFracionado,
+    quantidade: quantidadeInicial,
+    subtotal: precoUnitario * quantidadeInicial,
     imagem: getImagemProduto(produto),
-    quantidade: 1,
   };
 
   if (existe) {
@@ -228,7 +259,11 @@ function resumoComanda(id) {
         item.id === id
           ? {
               ...item,
-              quantidade: Number(item.quantidade || 1) + 1,
+              quantidade:
+                Number(item.quantidade || 0) + quantidadeInicial,
+              subtotal:
+                Number(item.preco || 0) *
+                (Number(item.quantidade || 0) + quantidadeInicial),
             }
           : item
       )
@@ -244,29 +279,43 @@ function resumoComanda(id) {
 
 function aumentarQuantidade(id) {
   atualizarCarrinhoComanda(
-    cart.map((item) =>
-      item.id === id
-        ? {
-            ...item,
-            quantidade: Number(item.quantidade || 1) + 1,
-          }
-        : item
-    )
+    cart.map((item) => {
+      if (item.id !== id) return item;
+
+      const incremento =
+        item.vendaPorPeso || item.permiteFracionado ? 0.1 : 1;
+
+      const novaQuantidade =
+        Number(item.quantidade || 0) + incremento;
+
+      return {
+        ...item,
+        quantidade: Number(novaQuantidade.toFixed(3)),
+        subtotal: Number(item.preco || 0) * novaQuantidade,
+      };
+    })
   );
 }
 
 function diminuirQuantidade(id) {
   atualizarCarrinhoComanda(
     cart
-      .map((item) =>
-        item.id === id
-          ? {
-              ...item,
-              quantidade: Number(item.quantidade || 1) - 1,
-            }
-          : item
-      )
-      .filter((item) => item.quantidade > 0)
+      .map((item) => {
+        if (item.id !== id) return item;
+
+        const decremento =
+          item.vendaPorPeso || item.permiteFracionado ? 0.1 : 1;
+
+        const novaQuantidade =
+          Number(item.quantidade || 0) - decremento;
+
+        return {
+          ...item,
+          quantidade: Number(novaQuantidade.toFixed(3)),
+          subtotal: Number(item.preco || 0) * novaQuantidade,
+        };
+      })
+      .filter((item) => Number(item.quantidade || 0) > 0)
   );
 }
 
@@ -284,13 +333,12 @@ function limparPedido() {
 }
 
 const subtotalPedido = cart.reduce((acc, item) => {
-  const preco = Number(
-    String(item.preco || 0).replace(",", ".")
-  );
+  const subtotal =
+    item.subtotal !== undefined
+      ? Number(item.subtotal || 0)
+      : Number(item.preco || 0) * Number(item.quantidade || 1);
 
-  const quantidade = Number(item.quantidade || 1);
-
-  return acc + preco * quantidade;
+  return acc + subtotal;
 }, 0);
 
 const taxaEntregaPedido = Number(
@@ -409,8 +457,15 @@ troco: Number(troco || 0),
   produtoId: item.produtoId,
   nome: item.nome,
   quantidade: Number(item.quantidade || 1),
-  preco: Number(item.preco || 0),
-  subtotal: Number(item.preco || 0) * Number(item.quantidade || 1),
+  preco: Number(item.precoUnitario || item.preco || 0),
+  precoUnitario: Number(item.precoUnitario || item.preco || 0),
+  unidadeMedida: item.unidadeMedida || "UN",
+  vendaPorPeso: Boolean(item.vendaPorPeso),
+  permiteFracionado: Boolean(item.permiteFracionado),
+  subtotal:
+    item.subtotal !== undefined
+      ? Number(item.subtotal || 0)
+      : Number(item.preco || 0) * Number(item.quantidade || 1),
   imagem: item.imagem,
 })),
 
@@ -676,7 +731,13 @@ if (desejaImprimir) {
       -
     </button>
 
-    <strong>{item.quantidade}</strong>
+    <strong>
+  {item.vendaPorPeso || item.permiteFracionado
+    ? Number(item.quantidade || 0).toFixed(3)
+    : item.quantidade}
+  {" "}
+  {item.unidadeMedida || "UN"}
+</strong>
 
     <button
       type="button"
@@ -692,7 +753,11 @@ if (desejaImprimir) {
 </small>
 
 <strong>
-  R$ {(Number(item.preco || 0) * Number(item.quantidade || 1)).toFixed(2)}
+  R$ {Number(
+  item.subtotal !== undefined
+    ? item.subtotal
+    : Number(item.preco || 0) * Number(item.quantidade || 1)
+).toFixed(2)}
 </strong>
 
                   <button onClick={() => removerProduto(item.id)}>×</button>
