@@ -20,8 +20,19 @@ const categoriaSchema = new mongoose.Schema(
       default: "",
     },
 
+    icone: {
+      type: String,
+      default: "",
+    },
+
+    cor: {
+      type: String,
+      default: "#22c55e",
+    },
+
     tipo: {
       type: String,
+      enum: ["produto", "combo", "kit", "bolo", "sazonal"],
       default: "produto",
     },
 
@@ -31,6 +42,21 @@ const categoriaSchema = new mongoose.Schema(
     },
 
     ativo: {
+      type: Boolean,
+      default: true,
+    },
+
+    mostrarPdv: {
+      type: Boolean,
+      default: true,
+    },
+
+    mostrarCardapio: {
+      type: Boolean,
+      default: true,
+    },
+
+    mostrarDelivery: {
       type: Boolean,
       default: true,
     },
