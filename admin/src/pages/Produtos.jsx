@@ -335,11 +335,18 @@ const bateBusca =
 
             <div className="field-premium">
               <label>Categoria *</label>
-              <input
-                placeholder="Ex.: Bolos, Bebidas, Snacks"
-                value={categoria}
-                onChange={(e) => setCategoria(e.target.value)}
-              />
+              <select
+  value={categoria}
+  onChange={(e) => setCategoria(e.target.value)}
+>
+  <option value="">Selecione a categoria principal</option>
+
+  {categoriasDisponiveis.map((cat) => (
+    <option key={cat._id} value={cat.nome}>
+      {cat.nome}
+    </option>
+  ))}
+</select>
             </div>
 
             <div className="field-premium">
@@ -705,7 +712,18 @@ const bateBusca =
               <h2>Editar Produto</h2>
 
               <input value={editNome} onChange={(e) => setEditNome(e.target.value)} />
-              <input value={editCategoria} onChange={(e) => setEditCategoria(e.target.value)} />
+              <select
+  value={editCategoria}
+  onChange={(e) => setEditCategoria(e.target.value)}
+>
+  <option value="">Selecione a categoria principal</option>
+
+  {categoriasDisponiveis.map((cat) => (
+    <option key={cat._id} value={cat.nome}>
+      {cat.nome}
+    </option>
+  ))}
+</select>
               <div className="field-premium">
   <label>Categorias extras</label>
 
