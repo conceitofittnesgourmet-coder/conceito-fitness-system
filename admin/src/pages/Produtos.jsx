@@ -58,6 +58,9 @@ function Produtos() {
   const [tempoPreparo, setTempoPreparo] = useState("");
   const [restricoes, setRestricoes] = useState("");
   const [peso, setPeso] = useState("");
+  const [unidadeMedida, setUnidadeMedida] = useState("UN");
+  const [vendaPorPeso, setVendaPorPeso] = useState(false);
+  const [permiteFracionado, setPermiteFracionado] = useState(false);
   const [destaque, setDestaque] = useState(false);
   const [imagens, setImagens] = useState([]);
   const [loading, setLoading] = useState(false);
@@ -79,6 +82,9 @@ function Produtos() {
   const [editTempoPreparo, setEditTempoPreparo] = useState("");
   const [editRestricoes, setEditRestricoes] = useState("");
   const [editPeso, setEditPeso] = useState("");
+  const [editUnidadeMedida, setEditUnidadeMedida] = useState("UN");
+  const [editVendaPorPeso, setEditVendaPorPeso] = useState(false);
+  const [editPermiteFracionado, setEditPermiteFracionado] = useState(false);
   const [editDestaque, setEditDestaque] = useState(false);
   const [editImagem, setEditImagem] = useState(null);
   const [previewEdit, setPreviewEdit] = useState(null);
@@ -142,6 +148,9 @@ function Produtos() {
       formData.append("tempoPreparo", tempoPreparo);
       formData.append("restricoes", restricoes);
       formData.append("peso", peso);
+      formData.append("unidadeMedida", unidadeMedida);
+      formData.append("vendaPorPeso", vendaPorPeso);
+      formData.append("permiteFracionado", permiteFracionado);
       formData.append("destaque", destaque);
       
       
@@ -195,6 +204,9 @@ function Produtos() {
     setEditTempoPreparo(produto.tempoPreparo || "");
     setEditRestricoes(produto.restricoes || "");
     setEditPeso(produto.peso || "");
+    setEditUnidadeMedida(produto.unidadeMedida || "UN");
+    setEditVendaPorPeso(Boolean(produto.vendaPorPeso));
+    setEditPermiteFracionado(Boolean(produto.permiteFracionado));
     setEditDestaque(Boolean(produto.destaque));
     setPreviewEdit(getImagemUrl(produto.imagens?.[0]));
     setEditImagem(null);
@@ -218,6 +230,9 @@ function Produtos() {
       formData.append("tempoPreparo", editTempoPreparo);
       formData.append("restricoes", editRestricoes);
       formData.append("peso", editPeso);
+      formData.append("unidadeMedida", editUnidadeMedida);
+      formData.append("vendaPorPeso", editVendaPorPeso);
+      formData.append("permiteFracionado", editPermiteFracionado);
       formData.append("destaque", editDestaque);
 
       if (editImagem) {
@@ -253,6 +268,9 @@ function Produtos() {
     setTempoPreparo("");
     setRestricoes("");
     setPeso("");
+    setUnidadeMedida("UN");
+    setVendaPorPeso(false);
+    setPermiteFracionado(false);
     setDestaque(false);
     setImagens([]);
   }
@@ -476,6 +494,65 @@ const bateBusca =
                   />
                 </div>
               </div>
+
+              <div className="field-premium">
+  <label>Unidade de Medida</label>
+  <select
+  value={editUnidadeMedida}
+  onChange={(e) => setEditUnidadeMedida(e.target.value)}
+>
+  <option value="UN">Unidade</option>
+  <option value="KG">Quilo</option>
+  <option value="G">Grama</option>
+  <option value="L">Litro</option>
+  <option value="ML">Mililitro</option>
+  <option value="PACOTE">Pacote</option>
+  <option value="FARDO">Fardo</option>
+  <option value="CAIXA">Caixa</option>
+</select>
+
+<label className="checkbox-label">
+  <input
+    type="checkbox"
+    checked={editVendaPorPeso}
+    onChange={(e) => setEditVendaPorPeso(e.target.checked)}
+  />
+  Venda por peso
+</label>
+
+<label className="checkbox-label">
+  <input
+    type="checkbox"
+    checked={editPermiteFracionado}
+    onChange={(e) => setEditPermiteFracionado(e.target.checked)}
+  />
+  Permitir quantidade fracionada
+</label>
+</div>
+
+<label className="premium-switch">
+  <div>
+    <strong>Venda por peso</strong>
+    <span>Ex.: bolo vendido por kg</span>
+  </div>
+  <input
+    type="checkbox"
+    checked={vendaPorPeso}
+    onChange={(e) => setVendaPorPeso(e.target.checked)}
+  />
+</label>
+
+<label className="premium-switch">
+  <div>
+    <strong>Permitir fracionado</strong>
+    <span>Ex.: 1,375 kg</span>
+  </div>
+  <input
+    type="checkbox"
+    checked={permiteFracionado}
+    onChange={(e) => setPermiteFracionado(e.target.checked)}
+  />
+</label>
 
               <div className="field-premium full">
                 <label>Restrições</label>
