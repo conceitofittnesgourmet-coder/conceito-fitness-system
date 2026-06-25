@@ -42,13 +42,16 @@ console.log("CUSTO RECEBIDO:", req.body.custo);
 console.log("================================");
 console.log("FILES:", req.files);
   try {
-    const {
+   const {
   nome,
   preco,
   estoque,
   descricao,
   categoria,
   categorias,
+  unidadeMedida,
+  vendaPorPeso,
+  permiteFracionado,
   tempoPreparo,
   restricoes,
   peso,
@@ -107,6 +110,9 @@ const produto = await Produto.create({
   tempoPreparo: Number(tempoPreparo || 0),
   restricoes: restricoes || "",
   peso: peso || "",
+  unidadeMedida: unidadeMedida || "UN",
+  vendaPorPeso: vendaPorPeso === "true" || vendaPorPeso === true,
+  permiteFracionado: permiteFracionado === "true" || permiteFracionado === true,
   destaque: destaque === "true" || destaque === true,
   slug: generateSlug(nome),
   imagens,
@@ -324,6 +330,20 @@ dadosAtualizados.margem =
         ).toFixed(2)
       )
     : 0;
+
+    if (req.body.unidadeMedida) {
+  dadosAtualizados.unidadeMedida = req.body.unidadeMedida;
+}
+
+if (req.body.vendaPorPeso !== undefined) {
+  dadosAtualizados.vendaPorPeso =
+    req.body.vendaPorPeso === "true" || req.body.vendaPorPeso === true;
+}
+
+if (req.body.permiteFracionado !== undefined) {
+  dadosAtualizados.permiteFracionado =
+    req.body.permiteFracionado === "true" || req.body.permiteFracionado === true;
+}
 
     const produtoAtualizado = await Produto.findByIdAndUpdate(
       req.params.id,

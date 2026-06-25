@@ -27,6 +27,22 @@ const produtoSchema = new mongoose.Schema(
      default: "Gourmet"
     },
 
+    unidadeMedida: {
+  type: String,
+  enum: ["UN", "KG", "G", "L", "ML", "PACOTE", "FARDO", "CAIXA"],
+  default: "UN",
+},
+
+vendaPorPeso: {
+  type: Boolean,
+  default: false,
+},
+
+permiteFracionado: {
+  type: Boolean,
+  default: false,
+},
+
     categorias: {
      type: [String],
      default: [],
