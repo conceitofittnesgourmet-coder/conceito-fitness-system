@@ -17,6 +17,19 @@ const produtoSchema = new mongoose.Schema(
       unique: true,
     },
 
+    codigoBarras: {
+  type: String,
+  default: "",
+  trim: true,
+  index: true,
+},
+
+sku: {
+  type: String,
+  default: "",
+  trim: true,
+},
+
     descricao: {
       type: String,
       default: "",

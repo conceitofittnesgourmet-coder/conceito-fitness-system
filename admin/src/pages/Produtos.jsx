@@ -64,6 +64,9 @@ function Produtos() {
   const [destaque, setDestaque] = useState(false);
   const [imagens, setImagens] = useState([]);
   const [loading, setLoading] = useState(false);
+  const [codigoBarras, setCodigoBarras] = useState("");
+  const [sku, setSku] = useState("");
+
 
   const [busca, setBusca] = useState("");
   const [filtro, setFiltro] = useState("todos");
@@ -89,6 +92,8 @@ function Produtos() {
   const [editImagem, setEditImagem] = useState(null);
   const [previewEdit, setPreviewEdit] = useState(null);
   const [loadingEditar, setLoadingEditar] = useState(false);
+  const [editCodigoBarras, setEditCodigoBarras] = useState("");
+  const [editSku, setEditSku] = useState("");
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     accept: { "image/*": [] },
@@ -152,6 +157,8 @@ function Produtos() {
       formData.append("vendaPorPeso", vendaPorPeso);
       formData.append("permiteFracionado", permiteFracionado);
       formData.append("destaque", destaque);
+      formData.append("codigoBarras", codigoBarras);
+      formData.append("sku", sku);
       
       
 
@@ -208,6 +215,8 @@ function Produtos() {
     setEditVendaPorPeso(Boolean(produto.vendaPorPeso));
     setEditPermiteFracionado(Boolean(produto.permiteFracionado));
     setEditDestaque(Boolean(produto.destaque));
+    setEditCodigoBarras(produto.codigoBarras || "");
+    setEditSku(produto.sku || "");
     setPreviewEdit(getImagemUrl(produto.imagens?.[0]));
     setEditImagem(null);
     setModalOpen(true);
@@ -234,6 +243,8 @@ function Produtos() {
       formData.append("vendaPorPeso", editVendaPorPeso);
       formData.append("permiteFracionado", editPermiteFracionado);
       formData.append("destaque", editDestaque);
+      formData.append("codigoBarras", editCodigoBarras);
+      formData.append("sku", editSku);
 
       if (editImagem) {
         formData.append("imagens", editImagem);
@@ -272,6 +283,8 @@ function Produtos() {
     setVendaPorPeso(false);
     setPermiteFracionado(false);
     setDestaque(false);
+    setCodigoBarras("");
+    setSku("");
     setImagens([]);
   }
 
@@ -627,6 +640,24 @@ const bateBusca =
           </div>
         </section>
 
+        <div className="field-premium">
+  <label>Código de Barras</label>
+  <input
+    placeholder="Ex.: 7891234567890"
+    value={codigoBarras}
+    onChange={(e) => setCodigoBarras(e.target.value)}
+  />
+</div>
+
+<div className="field-premium">
+  <label>SKU / Código Interno</label>
+  <input
+    placeholder="Ex.: BOLO-CHOC-001"
+    value={sku}
+    onChange={(e) => setSku(e.target.value)}
+  />
+</div>
+
         <section className="produtos-list-premium">
           <div className="list-header-premium">
             <h2>
@@ -863,6 +894,17 @@ const bateBusca =
               <input value={editTempoPreparo} onChange={(e) => setEditTempoPreparo(e.target.value)} />
               <input value={editRestricoes} onChange={(e) => setEditRestricoes(e.target.value)} />
               <input value={editPeso} onChange={(e) => setEditPeso(e.target.value)} />
+              <input
+  placeholder="Código de Barras"
+  value={editCodigoBarras}
+  onChange={(e) => setEditCodigoBarras(e.target.value)}
+/>
+
+<input
+  placeholder="SKU / Código Interno"
+  value={editSku}
+  onChange={(e) => setEditSku(e.target.value)}
+/>
 
               <label className="checkbox-label">
                 <input

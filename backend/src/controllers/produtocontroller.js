@@ -114,6 +114,8 @@ const produto = await Produto.create({
   vendaPorPeso: vendaPorPeso === "true" || vendaPorPeso === true,
   permiteFracionado: permiteFracionado === "true" || permiteFracionado === true,
   destaque: destaque === "true" || destaque === true,
+  codigoBarras: req.body.codigoBarras || "",
+sku: req.body.sku || "",
   slug: generateSlug(nome),
   imagens,
 });
@@ -343,6 +345,14 @@ if (req.body.vendaPorPeso !== undefined) {
 if (req.body.permiteFracionado !== undefined) {
   dadosAtualizados.permiteFracionado =
     req.body.permiteFracionado === "true" || req.body.permiteFracionado === true;
+}
+
+if (req.body.codigoBarras !== undefined) {
+  dadosAtualizados.codigoBarras = req.body.codigoBarras;
+}
+
+if (req.body.sku !== undefined) {
+  dadosAtualizados.sku = req.body.sku;
 }
 
     const produtoAtualizado = await Produto.findByIdAndUpdate(
