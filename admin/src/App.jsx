@@ -89,6 +89,8 @@ import CardapioOnlineAdmin from "./pages/cardapioonlineadmin";
 
 import Categorias from "./pages/Categorias";
 
+import GruposComponentes from "./pages/GruposComponentes";
+
 
 
 // ==========================================
@@ -448,7 +450,10 @@ function App() {
   }
 />
 
-
+<Route
+  path="/admin/grupos-componentes"
+  element={<GruposComponentes />}
+/>
 
       {/* PEDIDOS */}
 

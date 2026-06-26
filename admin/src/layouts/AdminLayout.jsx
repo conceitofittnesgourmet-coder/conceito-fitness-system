@@ -1,6 +1,7 @@
 import { Link } from "react-router-dom";
 import { ShoppingCart } from "lucide-react";
 import { NavLink } from "react-router-dom";
+import { FaLayerGroup } from "react-icons/fa";
 import {
   FaChartLine,
   FaBoxOpen,
@@ -56,6 +57,11 @@ function AdminLayout({
     { label: "Painel", path: "/", icon: <FaChartLine /> },
     { label: "Produtos", path: "/produtos", icon: <FaBoxOpen /> },
     { label: "Categorias", path: "/categorias", icon: <FaTags /> },
+    {
+  label: "Grupos",
+  icon: <FaLayerGroup />,
+  to: "/admin/grupos-componentes",
+},
     { label: "Pedidos", path: "/pedidos", icon: <FaReceipt /> },
     { label: "Cozinha", path: "/cozinha", icon: <FaUtensils /> },
     { label: "Entregador", path: "/entregador", icon: <FaTruck /> },
