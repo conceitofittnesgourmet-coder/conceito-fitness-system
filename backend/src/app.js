@@ -30,6 +30,8 @@ const fiscalRoutes = require("./routes/fiscalRoutes");
 const configuracaoFiscalRoutes = require("./routes/configuracaofiscalRoutes");
 const nfceRoutes = require("./routes/nfceRoutes");
 const categoriaRoutes = require("./routes/categoriaRoutes");
+const grupoComponenteRoutes = require("./routes/grupoComponenteRoutes");
+const opcaoComponenteRoutes = require("./routes/opcaoComponenteRoutes");
 
 const app = express();
 
@@ -118,6 +120,8 @@ app.use("/api/relatorios", relatoriosRoutes);
 app.use("/api/fiscal", fiscalRoutes);
 app.use("/api/fiscal-config", configuracaoFiscalRoutes);
 app.use("/api/nfce", nfceRoutes);
+app.use("/api/grupos-componentes", grupoComponenteRoutes);
+app.use("/api/opcoes-componentes", opcaoComponenteRoutes);
 app.use(errorHandler);
 
 module.exports = app;
