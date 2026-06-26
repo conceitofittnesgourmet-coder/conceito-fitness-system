@@ -79,6 +79,8 @@ export default function Pdv() {
   const [trocoPara, setTrocoPara] = useState("");
   const [buscaProduto, setBuscaProduto] = useState("");
   const [categoriaAtiva, setCategoriaAtiva] = useState("Todos");
+  const [produtoPesoModal, setProdutoPesoModal] = useState(null);
+  const [quantidadePeso, setQuantidadePeso] = useState("1");
 
   async function carregarProdutos() {
     try {
@@ -217,23 +219,67 @@ function resumoComanda(id) {
 
   let quantidadeInicial = 1;
 
-  if (vendaPorPeso || permiteFracionado || unidadeMedida === "KG") {
-    const valorDigitado = window.prompt(
-      `Informe a quantidade em ${unidadeMedida} para ${produto.nome}`,
-      "1"
-    );
+ if (vendaPorPeso || permiteFracionado || unidadeMedida === "KG") {
+  setProdutoPesoModal(produto);
+  setQuantidadePeso("1");
+  return;
+}
 
-    if (!valorDigitado) return;
+  function confirmarProdutoPeso() {
+  if (!produtoPesoModal) return;
 
-    quantidadeInicial = Number(
-      String(valorDigitado).replace(",", ".")
-    );
+  const produto = produtoPesoModal;
+  const id = produto._id || produto.id;
 
-    if (!quantidadeInicial || quantidadeInicial <= 0) {
-      alert("Quantidade inválida.");
-      return;
-    }
+  const quantidadeInformada = Number(
+    String(quantidadePeso || "0").replace(",", ".")
+  );
+
+  if (!quantidadeInformada || quantidadeInformada <= 0) {
+    alert("Informe uma quantidade válida.");
+    return;
   }
+
+  const existe = cart.find((item) => item.id === id);
+  const precoUnitario = Number(produto.preco || 0);
+
+  const itemFormatado = {
+    id,
+    produtoId: produto._id || produto.id,
+    nome: produto.nome,
+    preco: precoUnitario,
+    precoUnitario,
+    unidadeMedida: produto.unidadeMedida || "KG",
+    vendaPorPeso: Boolean(produto.vendaPorPeso),
+    permiteFracionado: Boolean(produto.permiteFracionado),
+    quantidade: quantidadeInformada,
+    subtotal: precoUnitario * quantidadeInformada,
+    imagem: getImagemProduto(produto),
+  };
+
+  if (existe) {
+    atualizarCarrinhoComanda(
+      cart.map((item) =>
+        item.id === id
+          ? {
+              ...item,
+              quantidade: Number(
+                (Number(item.quantidade || 0) + quantidadeInformada).toFixed(3)
+              ),
+              subtotal:
+                Number(item.precoUnitario || item.preco || 0) *
+                (Number(item.quantidade || 0) + quantidadeInformada),
+            }
+          : item
+      )
+    );
+  } else {
+    atualizarCarrinhoComanda([...cart, itemFormatado]);
+  }
+
+  setProdutoPesoModal(null);
+  setQuantidadePeso("1");
+}
 
   const existe = cart.find((item) => item.id === id);
 
@@ -1064,6 +1110,58 @@ if (desejaImprimir) {
           </div>
         </section>
             </main>
+
+           {produtoPesoModal && (
+  <div className="modal-overlay">
+    <div className="modal">
+      <h2>{produtoPesoModal.nome}</h2>
+
+      <p>
+        Unidade: <strong>{produtoPesoModal.unidadeMedida || "KG"}</strong>
+      </p>
+
+      <p>
+        Preço:{" "}
+        <strong>
+          {moeda(produtoPesoModal.preco)} / {produtoPesoModal.unidadeMedida || "KG"}
+        </strong>
+      </p>
+
+      <input
+        type="text"
+        inputMode="decimal"
+        value={quantidadePeso}
+        onChange={(e) => setQuantidadePeso(e.target.value)}
+        placeholder="Ex.: 1,375"
+      />
+
+      <h3>
+        Total:{" "}
+        {moeda(
+          Number(produtoPesoModal.preco || 0) *
+            Number(String(quantidadePeso || 0).replace(",", "."))
+        )}
+      </h3>
+
+      <div className="modal-buttons">
+        <button className="btn-save" onClick={confirmarProdutoPeso}>
+          Adicionar
+        </button>
+
+        <button
+          className="btn-cancel"
+          onClick={() => {
+            setProdutoPesoModal(null);
+            setQuantidadePeso("1");
+          }}
+        >
+          Cancelar
+        </button>
+      </div>
+    </div>
+  </div>
+)}  
+
           </div>
         </AdminLayout>
     );
