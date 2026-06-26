@@ -210,6 +210,20 @@ function resumoComanda(id) {
   return { quantidade, total };
 }
 
+  function buscarProdutoPorCodigo(codigo) {
+  const codigoLimpo = String(codigo || "").trim();
+
+  if (!codigoLimpo) return null;
+
+  return produtos.find((produto) => {
+    return (
+      String(produto.codigoBarras || "").trim() === codigoLimpo ||
+      String(produto.sku || "").trim().toLowerCase() ===
+        codigoLimpo.toLowerCase()
+    );
+  });
+}
+
  function adicionarProduto(produto) {
   const id = produto._id || produto.id;
 
@@ -597,9 +611,22 @@ if (desejaImprimir) {
             <div className="pdv-search-premium">
               <Search size={18} />
               <input
-  placeholder="Buscar produto..."
+  placeholder="Buscar produto ou ler código de barras..."
   value={buscaProduto}
   onChange={(e) => setBuscaProduto(e.target.value)}
+  onKeyDown={(e) => {
+    if (e.key !== "Enter") return;
+
+    const produtoEncontrado = buscarProdutoPorCodigo(buscaProduto);
+
+    if (!produtoEncontrado) {
+      alert("Produto não encontrado para este código.");
+      return;
+    }
+
+    adicionarProduto(produtoEncontrado);
+    setBuscaProduto("");
+  }}
 />
               <span>F2</span>
             </div>
