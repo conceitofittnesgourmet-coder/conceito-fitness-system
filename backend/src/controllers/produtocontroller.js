@@ -116,6 +116,14 @@ const produto = await Produto.create({
   destaque: destaque === "true" || destaque === true,
   codigoBarras: req.body.codigoBarras || "",
 sku: req.body.sku || "",
+produtoComposto: req.body.produtoComposto === "true" || req.body.produtoComposto === true,
+tipoComposicao: req.body.tipoComposicao || "simples",
+itensComposicao: req.body.itensComposicao
+  ? JSON.parse(req.body.itensComposicao)
+  : [],
+permiteMontagemCliente:
+  req.body.permiteMontagemCliente === "true" ||
+  req.body.permiteMontagemCliente === true,
   slug: generateSlug(nome),
   imagens,
 });
@@ -353,6 +361,27 @@ if (req.body.codigoBarras !== undefined) {
 
 if (req.body.sku !== undefined) {
   dadosAtualizados.sku = req.body.sku;
+}
+
+if (req.body.produtoComposto !== undefined) {
+  dadosAtualizados.produtoComposto =
+    req.body.produtoComposto === "true" || req.body.produtoComposto === true;
+}
+
+if (req.body.tipoComposicao !== undefined) {
+  dadosAtualizados.tipoComposicao = req.body.tipoComposicao || "simples";
+}
+
+if (req.body.itensComposicao !== undefined) {
+  dadosAtualizados.itensComposicao = req.body.itensComposicao
+    ? JSON.parse(req.body.itensComposicao)
+    : [];
+}
+
+if (req.body.permiteMontagemCliente !== undefined) {
+  dadosAtualizados.permiteMontagemCliente =
+    req.body.permiteMontagemCliente === "true" ||
+    req.body.permiteMontagemCliente === true;
 }
 
     const produtoAtualizado = await Produto.findByIdAndUpdate(

@@ -61,6 +61,40 @@ permiteFracionado: {
      default: [],
    },
 
+   produtoComposto: {
+  type: Boolean,
+  default: false,
+},
+
+tipoComposicao: {
+  type: String,
+  enum: ["simples", "combo", "kit", "cesta", "bolo_personalizado"],
+  default: "simples",
+},
+
+itensComposicao: [
+  {
+    produto: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "Produto",
+    },
+    nome: String,
+    quantidade: {
+      type: Number,
+      default: 1,
+    },
+    obrigatorio: {
+      type: Boolean,
+      default: true,
+    },
+  },
+],
+
+permiteMontagemCliente: {
+  type: Boolean,
+  default: false,
+},
+
     preco: {
       type: Number,
       required: true,
