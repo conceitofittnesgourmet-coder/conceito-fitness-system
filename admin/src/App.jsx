@@ -452,7 +452,11 @@ function App() {
 
 <Route
   path="/admin/grupos-componentes"
-  element={<GruposComponentes />}
+  element={
+    <PrivateRoute>
+      <GruposComponentes />
+    </PrivateRoute>
+  }
 />
 
       {/* PEDIDOS */}

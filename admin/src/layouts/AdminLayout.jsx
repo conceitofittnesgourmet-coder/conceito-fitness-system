@@ -57,10 +57,11 @@ function AdminLayout({
     { label: "Painel", path: "/", icon: <FaChartLine /> },
     { label: "Produtos", path: "/produtos", icon: <FaBoxOpen /> },
     { label: "Categorias", path: "/categorias", icon: <FaTags /> },
-    {
+    
+  {
   label: "Grupos",
+  path: "/admin/grupos-componentes",
   icon: <FaLayerGroup />,
-  to: "/admin/grupos-componentes",
 },
     { label: "Pedidos", path: "/pedidos", icon: <FaReceipt /> },
     { label: "Cozinha", path: "/cozinha", icon: <FaUtensils /> },
