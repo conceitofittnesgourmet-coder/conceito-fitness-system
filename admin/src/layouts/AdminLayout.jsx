@@ -19,6 +19,7 @@ FaFileInvoice,
 FaTruckLoading,
 FaGlobe,
 FaTags,
+FaList,
 
 } from "react-icons/fa";
 
@@ -62,6 +63,11 @@ function AdminLayout({
   label: "Grupos",
   path: "/admin/grupos-componentes",
   icon: <FaLayerGroup />,
+},
+{
+  label: "Opções",
+  path: "/admin/opcoes-componentes",
+  icon: <FaList />,
 },
     { label: "Pedidos", path: "/pedidos", icon: <FaReceipt /> },
     { label: "Cozinha", path: "/cozinha", icon: <FaUtensils /> },

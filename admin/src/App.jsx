@@ -91,6 +91,8 @@ import Categorias from "./pages/Categorias";
 
 import GruposComponentes from "./pages/GruposComponentes";
 
+import OpcoesComponentes from "./pages/OpcoesComponentes";
+
 
 
 // ==========================================
@@ -455,6 +457,15 @@ function App() {
   element={
     <PrivateRoute>
       <GruposComponentes />
+    </PrivateRoute>
+  }
+/>
+
+<Route
+  path="/admin/opcoes-componentes"
+  element={
+    <PrivateRoute>
+      <OpcoesComponentes />
     </PrivateRoute>
   }
 />
