@@ -123,7 +123,20 @@ itensComposicao: req.body.itensComposicao
   : [],
 gruposComponentes: req.body.gruposComponentes
   ? JSON.parse(req.body.gruposComponentes)
-  : [],  
+  : [],
+  configuravel:
+  req.body.configuravel === "true" ||
+  req.body.configuravel === true,
+
+permiteObservacao:
+  req.body.permiteObservacao === "true" ||
+  req.body.permiteObservacao === true,
+
+quantidadeMinima:
+  Number(req.body.quantidadeMinima || 1),
+
+quantidadeMaxima:
+  Number(req.body.quantidadeMaxima || 1),  
 permiteMontagemCliente:
   req.body.permiteMontagemCliente === "true" ||
   req.body.permiteMontagemCliente === true,
@@ -392,6 +405,28 @@ if (req.body.gruposComponentes !== undefined) {
   dadosAtualizados.gruposComponentes = req.body.gruposComponentes
     ? JSON.parse(req.body.gruposComponentes)
     : [];
+}
+
+if (req.body.configuravel !== undefined) {
+  dadosAtualizados.configuravel =
+    req.body.configuravel === "true" ||
+    req.body.configuravel === true;
+}
+
+if (req.body.permiteObservacao !== undefined) {
+  dadosAtualizados.permiteObservacao =
+    req.body.permiteObservacao === "true" ||
+    req.body.permiteObservacao === true;
+}
+
+if (req.body.quantidadeMinima !== undefined) {
+  dadosAtualizados.quantidadeMinima =
+    Number(req.body.quantidadeMinima);
+}
+
+if (req.body.quantidadeMaxima !== undefined) {
+  dadosAtualizados.quantidadeMaxima =
+    Number(req.body.quantidadeMaxima);
 }
 
     const produtoAtualizado = await Produto.findByIdAndUpdate(

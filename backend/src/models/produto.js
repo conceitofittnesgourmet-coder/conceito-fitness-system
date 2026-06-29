@@ -97,6 +97,26 @@ gruposComponentes: [
   },
 ],
 
+configuravel: {
+  type: Boolean,
+  default: false,
+},
+
+permiteObservacao: {
+  type: Boolean,
+  default: true,
+},
+
+quantidadeMinima: {
+  type: Number,
+  default: 1,
+},
+
+quantidadeMaxima: {
+  type: Number,
+  default: 1,
+},
+
 permiteMontagemCliente: {
   type: Boolean,
   default: false,
