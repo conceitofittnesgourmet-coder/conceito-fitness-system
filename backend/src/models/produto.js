@@ -90,6 +90,13 @@ itensComposicao: [
   },
 ],
 
+gruposComponentes: [
+  {
+    type: mongoose.Schema.Types.ObjectId,
+    ref: "GrupoComponente",
+  },
+],
+
 permiteMontagemCliente: {
   type: Boolean,
   default: false,

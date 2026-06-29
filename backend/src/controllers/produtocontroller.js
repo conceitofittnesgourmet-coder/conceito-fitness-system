@@ -121,6 +121,9 @@ tipoComposicao: req.body.tipoComposicao || "simples",
 itensComposicao: req.body.itensComposicao
   ? JSON.parse(req.body.itensComposicao)
   : [],
+gruposComponentes: req.body.gruposComponentes
+  ? JSON.parse(req.body.gruposComponentes)
+  : [],  
 permiteMontagemCliente:
   req.body.permiteMontagemCliente === "true" ||
   req.body.permiteMontagemCliente === true,
@@ -147,6 +150,7 @@ permiteMontagemCliente:
     });
   }
 };
+
 
 // LISTAR PRODUTOS
 const listarProdutos = async (req, res) => {
@@ -382,6 +386,12 @@ if (req.body.permiteMontagemCliente !== undefined) {
   dadosAtualizados.permiteMontagemCliente =
     req.body.permiteMontagemCliente === "true" ||
     req.body.permiteMontagemCliente === true;
+}
+
+if (req.body.gruposComponentes !== undefined) {
+  dadosAtualizados.gruposComponentes = req.body.gruposComponentes
+    ? JSON.parse(req.body.gruposComponentes)
+    : [];
 }
 
     const produtoAtualizado = await Produto.findByIdAndUpdate(
