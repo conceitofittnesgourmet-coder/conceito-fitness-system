@@ -66,6 +66,8 @@ function Produtos() {
   const [loading, setLoading] = useState(false);
   const [codigoBarras, setCodigoBarras] = useState("");
   const [sku, setSku] = useState("");
+  const [gruposComponentes, setGruposComponentes] = useState([]);
+  const [gruposSelecionados, setGruposSelecionados] = useState([]);
 
 
   const [busca, setBusca] = useState("");
@@ -94,6 +96,7 @@ function Produtos() {
   const [loadingEditar, setLoadingEditar] = useState(false);
   const [editCodigoBarras, setEditCodigoBarras] = useState("");
   const [editSku, setEditSku] = useState("");
+  const [editGruposSelecionados, setEditGruposSelecionados] = useState([]);
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     accept: { "image/*": [] },
@@ -131,6 +134,16 @@ function Produtos() {
   }
 }
 
+  async function carregarGruposComponentes() {
+  try {
+    const response = await api.get("/grupos-componentes");
+    setGruposComponentes(response.data.grupos || []);
+  } catch (error) {
+    console.log(error);
+    toast.error("Erro ao carregar grupos de componentes");
+  }
+}
+
   async function cadastrarProduto() {
     try {
       if (!nome || !preco || !estoque) {
@@ -159,6 +172,10 @@ function Produtos() {
       formData.append("destaque", destaque);
       formData.append("codigoBarras", codigoBarras);
       formData.append("sku", sku);
+      formData.append(
+  "gruposComponentes",
+  JSON.stringify(gruposSelecionados)
+);
       
       
 
@@ -217,6 +234,11 @@ function Produtos() {
     setEditDestaque(Boolean(produto.destaque));
     setEditCodigoBarras(produto.codigoBarras || "");
     setEditSku(produto.sku || "");
+    setEditGruposSelecionados(
+  (produto.gruposComponentes || []).map((grupo) =>
+    typeof grupo === "string" ? grupo : grupo._id
+  )
+);
     setPreviewEdit(getImagemUrl(produto.imagens?.[0]));
     setEditImagem(null);
     setModalOpen(true);
@@ -245,6 +267,10 @@ function Produtos() {
       formData.append("destaque", editDestaque);
       formData.append("codigoBarras", editCodigoBarras);
       formData.append("sku", editSku);
+      formData.append(
+  "gruposComponentes",
+  JSON.stringify(editGruposSelecionados)
+);
 
       if (editImagem) {
         formData.append("imagens", editImagem);
@@ -285,6 +311,7 @@ function Produtos() {
     setDestaque(false);
     setCodigoBarras("");
     setSku("");
+    setGruposSelecionados([]);
     setImagens([]);
   }
 
@@ -315,6 +342,7 @@ const bateBusca =
   useEffect(() => {
     carregarProdutos();
     carregarCategorias();
+    carregarGruposComponentes();
 
     socket.on("produto-criado", carregarProdutos);
     socket.on("produto-atualizado", carregarProdutos);
@@ -382,6 +410,41 @@ const bateBusca =
 
             <div className="field-premium">
   <label>Categorias extras</label>
+
+  <div className="premium-box">
+  <h3>Construtor Universal</h3>
+
+  <p>
+    Este produto utiliza quais grupos de componentes?
+  </p>
+
+  <div className="chips-premium">
+    {gruposComponentes.map((grupo) => (
+      <label key={grupo._id}>
+        <input
+          type="checkbox"
+          checked={gruposSelecionados.includes(grupo._id)}
+          onChange={(e) => {
+            if (e.target.checked) {
+              setGruposSelecionados([
+                ...gruposSelecionados,
+                grupo._id,
+              ]);
+            } else {
+              setGruposSelecionados(
+                gruposSelecionados.filter(
+                  (id) => id !== grupo._id
+                )
+              );
+            }
+          }}
+        />
+
+        {grupo.nome}
+      </label>
+    ))}
+  </div>
+</div>
 
   <div className="chips-premium">
     {categoriasDisponiveis.map((cat) => (
@@ -511,8 +574,8 @@ const bateBusca =
               <div className="field-premium">
   <label>Unidade de Medida</label>
   <select
-  value={editUnidadeMedida}
-  onChange={(e) => setEditUnidadeMedida(e.target.value)}
+ value={unidadeMedida}
+onChange={(e) => setUnidadeMedida(e.target.value)}
 >
   <option value="UN">Unidade</option>
   <option value="KG">Quilo</option>
@@ -588,6 +651,37 @@ const bateBusca =
                   <strong>Produto em destaque</strong>
                   <span>Marque para destacar no cardápio</span>
                 </div>
+
+              <div className="field-premium">
+  <label>Grupos do Construtor Universal</label>
+
+  <div className="chips-premium">
+    {gruposComponentes.map((grupo) => (
+      <label key={grupo._id}>
+        <input
+          type="checkbox"
+          checked={editGruposSelecionados.includes(grupo._id)}
+          onChange={(e) => {
+            if (e.target.checked) {
+              setEditGruposSelecionados([
+                ...editGruposSelecionados,
+                grupo._id,
+              ]);
+            } else {
+              setEditGruposSelecionados(
+                editGruposSelecionados.filter(
+                  (id) => id !== grupo._id
+                )
+              );
+            }
+          }}
+        />
+
+        {grupo.nome}
+      </label>
+    ))}
+  </div>
+</div>
 
                 <input
                   type="checkbox"
