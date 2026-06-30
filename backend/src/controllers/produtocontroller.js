@@ -121,6 +121,17 @@ tipoComposicao: req.body.tipoComposicao || "simples",
 itensComposicao: req.body.itensComposicao
   ? JSON.parse(req.body.itensComposicao)
   : [],
+  informacoesNutricionais: req.body.informacoesNutricionais
+  ? JSON.parse(req.body.informacoesNutricionais)
+  : {},
+
+alergenos: req.body.alergenos
+  ? JSON.parse(req.body.alergenos)
+  : {},
+
+selos: req.body.selos
+  ? JSON.parse(req.body.selos)
+  : {},
 gruposComponentes: req.body.gruposComponentes
   ? JSON.parse(req.body.gruposComponentes)
   : [],
@@ -427,6 +438,25 @@ if (req.body.quantidadeMinima !== undefined) {
 if (req.body.quantidadeMaxima !== undefined) {
   dadosAtualizados.quantidadeMaxima =
     Number(req.body.quantidadeMaxima);
+}
+
+if (req.body.informacoesNutricionais !== undefined) {
+  dadosAtualizados.informacoesNutricionais =
+    req.body.informacoesNutricionais
+      ? JSON.parse(req.body.informacoesNutricionais)
+      : {};
+}
+
+if (req.body.alergenos !== undefined) {
+  dadosAtualizados.alergenos = req.body.alergenos
+    ? JSON.parse(req.body.alergenos)
+    : {};
+}
+
+if (req.body.selos !== undefined) {
+  dadosAtualizados.selos = req.body.selos
+    ? JSON.parse(req.body.selos)
+    : {};
 }
 
     const produtoAtualizado = await Produto.findByIdAndUpdate(

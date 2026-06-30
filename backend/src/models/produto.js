@@ -90,6 +90,33 @@ itensComposicao: [
   },
 ],
 
+informacoesNutricionais: {
+  calorias: { type: Number, default: 0 },
+  proteinas: { type: Number, default: 0 },
+  carboidratos: { type: Number, default: 0 },
+  gorduras: { type: Number, default: 0 },
+  fibras: { type: Number, default: 0 },
+  sodio: { type: Number, default: 0 },
+},
+
+alergenos: {
+  contemLeite: { type: Boolean, default: false },
+  contemOvos: { type: Boolean, default: false },
+  contemSoja: { type: Boolean, default: false },
+  contemCastanhas: { type: Boolean, default: false },
+  contemAmendoim: { type: Boolean, default: false },
+  contemGluten: { type: Boolean, default: false },
+},
+
+selos: {
+  semGluten: { type: Boolean, default: false },
+  zeroLactose: { type: Boolean, default: false },
+  zeroAcucar: { type: Boolean, default: false },
+  lowCarb: { type: Boolean, default: false },
+  vegano: { type: Boolean, default: false },
+  fit: { type: Boolean, default: false },
+},
+
 gruposComponentes: [
   {
     type: mongoose.Schema.Types.ObjectId,
