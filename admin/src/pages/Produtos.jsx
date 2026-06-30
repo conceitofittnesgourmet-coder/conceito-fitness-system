@@ -20,6 +20,10 @@ import toast from "react-hot-toast";
 import AdminLayout from "../layouts/AdminLayout";
 import socket from "../services/socket";
 import api from "../services/api";
+import CategoriasProduto from "../components/ProdutoForm/CategoriasProduto";
+import ConstrutorUniversalProduto from "../components/ProdutoForm/ConstrutorUniversalProduto";
+import CodigoBarrasProduto from "../components/ProdutoForm/CodigoBarrasProduto";
+import UnidadeVendaProduto from "../components/ProdutoForm/UnidadeVendaProduto";
 
 const API_URL = "https://conceito-fitness-system.onrender.com";
 
@@ -391,89 +395,21 @@ const bateBusca =
                 onChange={(e) => setNome(e.target.value)}
               />
             </div>
-
-            <div className="field-premium">
-              <label>Categoria *</label>
-              <select
-  value={categoria}
-  onChange={(e) => setCategoria(e.target.value)}
->
-  <option value="">Selecione a categoria principal</option>
-
-  {categoriasDisponiveis.map((cat) => (
-    <option key={cat._id} value={cat.nome}>
-      {cat.nome}
-    </option>
-  ))}
-</select>
-            </div>
-
-            <div className="field-premium">
-  <label>Categorias extras</label>
-
-  <div className="premium-box">
-  <h3>Construtor Universal</h3>
-
-  <p>
-    Este produto utiliza quais grupos de componentes?
-  </p>
-
-  <div className="chips-premium">
-    {gruposComponentes.map((grupo) => (
-      <label key={grupo._id}>
-        <input
-          type="checkbox"
-          checked={gruposSelecionados.includes(grupo._id)}
-          onChange={(e) => {
-            if (e.target.checked) {
-              setGruposSelecionados([
-                ...gruposSelecionados,
-                grupo._id,
-              ]);
-            } else {
-              setGruposSelecionados(
-                gruposSelecionados.filter(
-                  (id) => id !== grupo._id
-                )
-              );
-            }
-          }}
-        />
-
-        {grupo.nome}
-      </label>
-    ))}
-  </div>
-</div>
-
-  <div className="chips-premium">
-    {categoriasDisponiveis.map((cat) => (
-      <label key={cat._id}>
-        <input
-          type="checkbox"
-          checked={categorias
-            .split(",")
-            .map((c) => c.trim())
-            .includes(cat.nome)}
-          onChange={(e) => {
-            const atuais = categorias
-              .split(",")
-              .map((c) => c.trim())
-              .filter(Boolean);
-
-            const novas = e.target.checked
-              ? [...atuais, cat.nome]
-              : atuais.filter((c) => c !== cat.nome);
-
-            setCategorias(novas.join(", "));
-          }}
-        />
-        {cat.nome}
-      </label>
-    ))}
-  </div>
-</div>
           </div>
+
+          <CategoriasProduto
+            categoria={categoria}
+            setCategoria={setCategoria}
+            categorias={categorias}
+            setCategorias={setCategorias}
+            categoriasDisponiveis={categoriasDisponiveis}
+          />
+
+          <ConstrutorUniversalProduto
+            gruposComponentes={gruposComponentes}
+            gruposSelecionados={gruposSelecionados}
+            setGruposSelecionados={setGruposSelecionados}
+          />
 
           <div className="field-premium full">
             <label>Descrição do produto</label>
@@ -571,64 +507,21 @@ const bateBusca =
                 </div>
               </div>
 
-              <div className="field-premium">
-  <label>Unidade de Medida</label>
-  <select
- value={unidadeMedida}
-onChange={(e) => setUnidadeMedida(e.target.value)}
->
-  <option value="UN">Unidade</option>
-  <option value="KG">Quilo</option>
-  <option value="G">Grama</option>
-  <option value="L">Litro</option>
-  <option value="ML">Mililitro</option>
-  <option value="PACOTE">Pacote</option>
-  <option value="FARDO">Fardo</option>
-  <option value="CAIXA">Caixa</option>
-</select>
+              <UnidadeVendaProduto
+                unidadeMedida={unidadeMedida}
+                setUnidadeMedida={setUnidadeMedida}
+                vendaPorPeso={vendaPorPeso}
+                setVendaPorPeso={setVendaPorPeso}
+                permiteFracionado={permiteFracionado}
+                setPermiteFracionado={setPermiteFracionado}
+              />
 
-<label className="checkbox-label">
-  <input
-    type="checkbox"
-    checked={editVendaPorPeso}
-    onChange={(e) => setEditVendaPorPeso(e.target.checked)}
-  />
-  Venda por peso
-</label>
-
-<label className="checkbox-label">
-  <input
-    type="checkbox"
-    checked={editPermiteFracionado}
-    onChange={(e) => setEditPermiteFracionado(e.target.checked)}
-  />
-  Permitir quantidade fracionada
-</label>
-</div>
-
-<label className="premium-switch">
-  <div>
-    <strong>Venda por peso</strong>
-    <span>Ex.: bolo vendido por kg</span>
-  </div>
-  <input
-    type="checkbox"
-    checked={vendaPorPeso}
-    onChange={(e) => setVendaPorPeso(e.target.checked)}
-  />
-</label>
-
-<label className="premium-switch">
-  <div>
-    <strong>Permitir fracionado</strong>
-    <span>Ex.: 1,375 kg</span>
-  </div>
-  <input
-    type="checkbox"
-    checked={permiteFracionado}
-    onChange={(e) => setPermiteFracionado(e.target.checked)}
-  />
-</label>
+              <CodigoBarrasProduto
+                codigoBarras={codigoBarras}
+                setCodigoBarras={setCodigoBarras}
+                sku={sku}
+                setSku={setSku}
+              />
 
               <div className="field-premium full">
                 <label>Restrições</label>
@@ -651,37 +544,6 @@ onChange={(e) => setUnidadeMedida(e.target.value)}
                   <strong>Produto em destaque</strong>
                   <span>Marque para destacar no cardápio</span>
                 </div>
-
-              <div className="field-premium">
-  <label>Grupos do Construtor Universal</label>
-
-  <div className="chips-premium">
-    {gruposComponentes.map((grupo) => (
-      <label key={grupo._id}>
-        <input
-          type="checkbox"
-          checked={editGruposSelecionados.includes(grupo._id)}
-          onChange={(e) => {
-            if (e.target.checked) {
-              setEditGruposSelecionados([
-                ...editGruposSelecionados,
-                grupo._id,
-              ]);
-            } else {
-              setEditGruposSelecionados(
-                editGruposSelecionados.filter(
-                  (id) => id !== grupo._id
-                )
-              );
-            }
-          }}
-        />
-
-        {grupo.nome}
-      </label>
-    ))}
-  </div>
-</div>
 
                 <input
                   type="checkbox"
@@ -733,24 +595,6 @@ onChange={(e) => setUnidadeMedida(e.target.value)}
             </button>
           </div>
         </section>
-
-        <div className="field-premium">
-  <label>Código de Barras</label>
-  <input
-    placeholder="Ex.: 7891234567890"
-    value={codigoBarras}
-    onChange={(e) => setCodigoBarras(e.target.value)}
-  />
-</div>
-
-<div className="field-premium">
-  <label>SKU / Código Interno</label>
-  <input
-    placeholder="Ex.: BOLO-CHOC-001"
-    value={sku}
-    onChange={(e) => setSku(e.target.value)}
-  />
-</div>
 
         <section className="produtos-list-premium">
           <div className="list-header-premium">
