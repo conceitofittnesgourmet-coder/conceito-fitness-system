@@ -24,6 +24,9 @@ import CategoriasProduto from "../components/ProdutoForm/CategoriasProduto";
 import ConstrutorUniversalProduto from "../components/ProdutoForm/ConstrutorUniversalProduto";
 import CodigoBarrasProduto from "../components/ProdutoForm/CodigoBarrasProduto";
 import UnidadeVendaProduto from "../components/ProdutoForm/UnidadeVendaProduto";
+import DadosNutricionaisProduto from "../components/ProdutoForm/DadosNutricionaisProduto";
+import AlergenosProduto from "../components/ProdutoForm/AlergenosProduto";
+import SelosProduto from "../components/ProdutoForm/SelosProduto";
 
 const API_URL = "https://conceito-fitness-system.onrender.com";
 
@@ -72,6 +75,32 @@ function Produtos() {
   const [sku, setSku] = useState("");
   const [gruposComponentes, setGruposComponentes] = useState([]);
   const [gruposSelecionados, setGruposSelecionados] = useState([]);
+  const [informacoesNutricionais, setInformacoesNutricionais] = useState({
+  calorias: "",
+  proteinas: "",
+  carboidratos: "",
+  gorduras: "",
+  fibras: "",
+  sodio: "",
+});
+
+const [alergenos, setAlergenos] = useState({
+  contemLeite: false,
+  contemOvos: false,
+  contemSoja: false,
+  contemCastanhas: false,
+  contemAmendoim: false,
+  contemGluten: false,
+});
+
+const [selos, setSelos] = useState({
+  semGluten: false,
+  zeroLactose: false,
+  zeroAcucar: false,
+  lowCarb: false,
+  vegano: false,
+  fit: false,
+});
 
 
   const [busca, setBusca] = useState("");
@@ -101,6 +130,32 @@ function Produtos() {
   const [editCodigoBarras, setEditCodigoBarras] = useState("");
   const [editSku, setEditSku] = useState("");
   const [editGruposSelecionados, setEditGruposSelecionados] = useState([]);
+  const [editInformacoesNutricionais, setEditInformacoesNutricionais] = useState({
+  calorias: "",
+  proteinas: "",
+  carboidratos: "",
+  gorduras: "",
+  fibras: "",
+  sodio: "",
+});
+
+const [editAlergenos, setEditAlergenos] = useState({
+  contemLeite: false,
+  contemOvos: false,
+  contemSoja: false,
+  contemCastanhas: false,
+  contemAmendoim: false,
+  contemGluten: false,
+});
+
+const [editSelos, setEditSelos] = useState({
+  semGluten: false,
+  zeroLactose: false,
+  zeroAcucar: false,
+  lowCarb: false,
+  vegano: false,
+  fit: false,
+});
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
     accept: { "image/*": [] },
@@ -180,6 +235,9 @@ function Produtos() {
   "gruposComponentes",
   JSON.stringify(gruposSelecionados)
 );
+formData.append("informacoesNutricionais", JSON.stringify(informacoesNutricionais));
+formData.append("alergenos", JSON.stringify(alergenos));
+formData.append("selos", JSON.stringify(selos));
       
       
 
@@ -243,6 +301,32 @@ function Produtos() {
     typeof grupo === "string" ? grupo : grupo._id
   )
 );
+    setEditInformacoesNutricionais(produto.informacoesNutricionais || {
+  calorias: "",
+  proteinas: "",
+  carboidratos: "",
+  gorduras: "",
+  fibras: "",
+  sodio: "",
+});
+
+setEditAlergenos(produto.alergenos || {
+  contemLeite: false,
+  contemOvos: false,
+  contemSoja: false,
+  contemCastanhas: false,
+  contemAmendoim: false,
+  contemGluten: false,
+});
+
+setEditSelos(produto.selos || {
+  semGluten: false,
+  zeroLactose: false,
+  zeroAcucar: false,
+  lowCarb: false,
+  vegano: false,
+  fit: false,
+});
     setPreviewEdit(getImagemUrl(produto.imagens?.[0]));
     setEditImagem(null);
     setModalOpen(true);
@@ -275,6 +359,9 @@ function Produtos() {
   "gruposComponentes",
   JSON.stringify(editGruposSelecionados)
 );
+      formData.append("informacoesNutricionais", JSON.stringify(editInformacoesNutricionais));
+formData.append("alergenos", JSON.stringify(editAlergenos));
+formData.append("selos", JSON.stringify(editSelos));
 
       if (editImagem) {
         formData.append("imagens", editImagem);
@@ -317,6 +404,32 @@ function Produtos() {
     setSku("");
     setGruposSelecionados([]);
     setImagens([]);
+    setInformacoesNutricionais({
+  calorias: "",
+  proteinas: "",
+  carboidratos: "",
+  gorduras: "",
+  fibras: "",
+  sodio: "",
+});
+
+setAlergenos({
+  contemLeite: false,
+  contemOvos: false,
+  contemSoja: false,
+  contemCastanhas: false,
+  contemAmendoim: false,
+  contemGluten: false,
+});
+
+setSelos({
+  semGluten: false,
+  zeroLactose: false,
+  zeroAcucar: false,
+  lowCarb: false,
+  vegano: false,
+  fit: false,
+});
   }
 
   const produtosFiltrados = useMemo(() => {
@@ -440,6 +553,21 @@ const bateBusca =
   onChange={(e) =>
     setPreco(e.target.value.replace(",", "."))
   }
+/>
+
+<DadosNutricionaisProduto
+  dados={informacoesNutricionais}
+  setDados={setInformacoesNutricionais}
+/>
+
+<AlergenosProduto
+  alergenos={alergenos}
+  setAlergenos={setAlergenos}
+/>
+
+<SelosProduto
+  selos={selos}
+  setSelos={setSelos}
 />
                 </div>
                 <div className="field-premium">
@@ -864,6 +992,21 @@ const bateBusca =
               />
 
               {previewEdit && <img src={previewEdit} alt="" className="preview-image" />}
+
+                <DadosNutricionaisProduto
+  dados={editInformacoesNutricionais}
+  setDados={setEditInformacoesNutricionais}
+/>
+
+<AlergenosProduto
+  alergenos={editAlergenos}
+  setAlergenos={setEditAlergenos}
+/>
+
+<SelosProduto
+  selos={editSelos}
+  setSelos={setEditSelos}
+/>
 
               <div className="modal-buttons">
                 <button className="btn-save" onClick={salvarEdicao}>
