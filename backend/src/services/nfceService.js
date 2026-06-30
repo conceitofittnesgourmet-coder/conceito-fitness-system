@@ -193,18 +193,28 @@ function montarItensXml(produtos = [], ambiente) {
 }
 
 function montarXmlPagamento(pedido, valorTotal) {
-  const tPag = obterCodigoPagamento(pedido.pagamento || pedido.formaPagamento);
+  const forma = String(pedido.pagamento || pedido.formaPagamento || "")
+    .normalize("NFD")
+    .replace(/[\u0300-\u036f]/g, "")
+    .trim()
+    .toUpperCase();
 
-  const cardXml =
-    ["03", "04"].includes(tPag)
-      ? `
+  const tPag = obterCodigoPagamento(forma);
+
+  const precisaCard = ["03", "04"].includes(tPag);
+
+  const cardXml = precisaCard
+    ? `
         <card>
           <tpIntegra>2</tpIntegra>
+          <tBand>99</tBand>
+          <cAut>000000</cAut>
         </card>`
-      : "";
+    : "";
 
-console.log("PAGAMENTO RECEBIDO:", pedido.pagamento);
-console.log("TPAG GERADO:", tPag);
+  console.log("PAGAMENTO RECEBIDO:", pedido.pagamento || pedido.formaPagamento);
+  console.log("TPAG GERADO:", tPag);
+  console.log("CARD XML GERADO:", precisaCard ? "SIM" : "NAO");
 
   return `
     <pag>
