@@ -32,6 +32,8 @@ const nfceRoutes = require("./routes/nfceRoutes");
 const categoriaRoutes = require("./routes/categoriaRoutes");
 const grupoComponenteRoutes = require("./routes/grupoComponenteRoutes");
 const opcaoComponenteRoutes = require("./routes/opcaoComponenteRoutes");
+const materiaPrimaRoutes = require("./routes/materiaPrimaRoutes");
+const fichaTecnicaRoutes = require("./routes/fichaTecnicaRoutes");
 
 const app = express();
 
@@ -122,6 +124,8 @@ app.use("/api/fiscal-config", configuracaoFiscalRoutes);
 app.use("/api/nfce", nfceRoutes);
 app.use("/api/grupos-componentes", grupoComponenteRoutes);
 app.use("/api/opcoes-componentes", opcaoComponenteRoutes);
+app.use("/api/materias-primas", materiaPrimaRoutes);
+app.use("/api/fichas-tecnicas", fichaTecnicaRoutes);
 app.use(errorHandler);
 
 module.exports = app;
