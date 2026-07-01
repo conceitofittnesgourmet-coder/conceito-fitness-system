@@ -16,8 +16,11 @@ const AMBIENTE_HOMOLOGACAO = "homologacao";
 const CNPJ_PADRAO = "67199298000181";
 const IE_PADRAO = "9123591400";
 const MUNICIPIO_UMUARAMA = "4128104";
-const URL_QRCODE_PR = "http://www.fazenda.pr.gov.br/nfce/qrcode";
-const URL_CONSULTA_PR = "http://www.fazenda.pr.gov.br/nfce/consulta";
+const URL_QRCODE_PR =
+  "https://www.fazenda.pr.gov.br/nfce/qrcode";
+
+const URL_CONSULTA_PR =
+  "https://www.fazenda.pr.gov.br/nfce/consulta";
 
 function somenteNumeros(valor = "") {
   return String(valor || "").replace(/\D/g, "");
@@ -392,13 +395,14 @@ async function assinarNfce(nfceId) {
   ambiente: nfce.ambiente,
 });
 
-  const xmlAssinadoFinal = inserirInfNFeSupl(xmlAssinadoBase, qrCodeUrl);
+const xmlAssinadoFinal = inserirInfNFeSupl(xmlAssinadoBase, qrCodeUrl);
 
-  nfce.xml = xmlLimpo;
-  nfce.xmlAssinado = limparXmlParaSefaz(xmlAssinadoFinal);
-  nfce.qrCodeUrl = qrCodeUrl;
-  nfce.status = "assinada";
-  nfce.mensagemSefaz = "XML assinado com QR Code NFC-e. Próxima etapa: transmissão SEFAZ.";
+nfce.xml = xmlLimpo;
+nfce.xmlAssinado = limparXmlParaSefaz(xmlAssinadoFinal);
+nfce.qrCodeUrl = qrCodeUrl;
+nfce.status = "assinada";
+nfce.mensagemSefaz =
+  "XML assinado com QR Code NFC-e. Próxima etapa: transmissão SEFAZ.";
 
   await nfce.save();
   return nfce;

@@ -23,9 +23,9 @@ async function gerarDanfeNfceHtml(nfce) {
     : [];
 
   const qrConteudo =
-    nfce?.qrCodeUrl ||
-    nfce?.chaveAcesso ||
-    `NFC-e ${nfce?.numero || ""}`;
+  nfce?.qrCodeUrl ||
+  nfce?.chaveAcesso ||
+  `NFC-e ${nfce?.numero || ""}`;
 
   const qrCodeDataUrl = await QRCode.toDataURL(qrConteudo, {
     width: 220,
