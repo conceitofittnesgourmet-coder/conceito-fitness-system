@@ -17,10 +17,10 @@ const CNPJ_PADRAO = "67199298000181";
 const IE_PADRAO = "9123591400";
 const MUNICIPIO_UMUARAMA = "4128104";
 const URL_QRCODE_PR =
-  "https://www.fazenda.pr.gov.br/nfce/qrcode";
+  "http://www.fazenda.pr.gov.br/nfce/qrcode";
 
 const URL_CONSULTA_PR =
-  "https://www.fazenda.pr.gov.br/nfce/consulta";
+  "http://www.fazenda.pr.gov.br/nfce/consulta";
 
 function somenteNumeros(valor = "") {
   return String(valor || "").replace(/\D/g, "");
