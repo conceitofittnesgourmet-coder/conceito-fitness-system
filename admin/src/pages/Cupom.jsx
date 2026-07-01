@@ -8,15 +8,17 @@ export default function Cupom() {
 
   const [pedido, setPedido] = useState(null);
   const [empresa, setEmpresa] = useState(null);
+  const [nfce, setNfce] = useState(null);
 
   
   useEffect(() => {
     async function carregar() {
       try {
-        const [pedidoRes, empresaRes] = await Promise.all([
-          api.get(`/pedidos/${id}`),
-          api.get("/empresa"),
-        ]);
+        const [pedidoRes, empresaRes, nfceRes] = await Promise.all([
+  api.get(`/pedidos/${id}`),
+  api.get("/empresa"),
+  api.get("/nfce"),
+]);
 
         setPedido(
           pedidoRes.data.pedido || pedidoRes.data
@@ -40,6 +42,26 @@ export default function Cupom() {
   if (!pedido) {
     return <div>Carregando cupom...</div>;
   }
+
+  const listaNfce =
+  nfceRes.data.nfces ||
+  nfceRes.data.notas ||
+  nfceRes.data.nfces ||
+  nfceRes.data ||
+  [];
+
+const nfceDoPedido = Array.isArray(listaNfce)
+  ? listaNfce.find((nota) => {
+      const pedidoNota =
+        nota.pedido?._id ||
+        nota.pedido ||
+        nota.pedidoId;
+
+      return String(pedidoNota) === String(id);
+    })
+  : null;
+
+setNfce(nfceDoPedido || null);
 
   const produtos =
     pedido.produtos ||
@@ -77,7 +99,9 @@ return (
       <h1>Conceito Fitness Gourmet</h1>
 
 <p className="centro">
-CUPOM NÃO FISCAL
+{nfce?.status === "autorizada"
+  ? "DANFE NFC-e"
+  : "CUPOM NÃO FISCAL"}
 </p>
 
 <p className="centro">
@@ -201,6 +225,51 @@ CNPJ: 67.199.298/0001-81
       </div>
 
       <hr />
+
+      {nfce?.status === "autorizada" && (
+  <>
+    <hr />
+
+    <p className="centro">
+      <strong>NFC-e Nº:</strong> {nfce.numero}
+    </p>
+
+    <p className="centro">
+      <strong>Série:</strong> {nfce.serie}
+    </p>
+
+    <p className="centro">
+      <strong>Protocolo:</strong> {nfce.protocolo || "-"}
+    </p>
+
+    <p className="centro">
+      <strong>Chave de acesso:</strong>
+      <br />
+      {nfce.chaveAcesso}
+    </p>
+
+    {nfce.qrCodeUrl && (
+      <div className="centro">
+        <img
+          alt="QR Code NFC-e"
+          style={{
+            width: 180,
+            height: 180,
+            margin: "10px auto",
+            display: "block",
+          }}
+          src={`https://api.qrserver.com/v1/create-qr-code/?size=180x180&data=${encodeURIComponent(
+            nfce.qrCodeUrl
+          )}`}
+        />
+
+        <p>
+          Consulte pela chave de acesso ou pelo QR Code.
+        </p>
+      </div>
+    )}
+  </>
+)}
 
       <p className="cupom-footer">
         Obrigado pela preferência!<br />

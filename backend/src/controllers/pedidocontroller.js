@@ -5,7 +5,10 @@ const ContaReceber = require("../models/contareceber");
 const MovimentacaoFinanceira = require("../models/movimentacaofinanceira");
 const FichaTecnica = require("../models/fichatecnica");
 const MateriaPrima = require("../models/materiaprima");
-const { gerarNfceDoPedido } = require("../services/nfceService");
+const {
+  gerarNfceDoPedido,
+  transmitirNfce,
+} = require("../services/nfceService");
 const Nfce = require("../models/nfce");
 
 
@@ -318,11 +321,38 @@ if (global.io) {
   global.io.emit("novo-pedido", pedidoCriado);
   global.io.emit("produto-atualizado");
 }
+  
+// ===============================
+// NFC-E AUTOMÁTICA
+// ===============================
+let nfceAutomatica = null;
+
+try {
+  const nfceExistente = await Nfce.findOne({
+    pedido: pedidoCriado._id,
+  });
+
+  if (!nfceExistente) {
+    const nfceGerada = await gerarNfceDoPedido(pedidoCriado._id);
+    nfceAutomatica = await transmitirNfce(nfceGerada._id);
+  } else if (nfceExistente.status !== "autorizada") {
+    nfceAutomatica = await transmitirNfce(nfceExistente._id);
+  } else {
+    nfceAutomatica = nfceExistente;
+  }
+} catch (nfceError) {
+  console.log(
+    "ERRO NFC-E AUTOMATICA:",
+    nfceError.message
+  );
+}
 
 return res.status(201).json({
   success: true,
   pedido: pedidoCriado,
+  nfce: nfceAutomatica,
 });
+
   } catch (error) {
     console.log("ERRO CRIAR PEDIDO:", error);
 
