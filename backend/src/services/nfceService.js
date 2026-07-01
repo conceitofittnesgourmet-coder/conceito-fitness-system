@@ -201,7 +201,7 @@ function montarXmlPagamento(pedido, valorTotal) {
 
   const tPag = obterCodigoPagamento(forma);
 
-  const precisaCard = ["03", "04"].includes(tPag);
+  const precisaCard = ["03", "04", "17"].includes(tPag);
 
   const cardXml = precisaCard
     ? `
