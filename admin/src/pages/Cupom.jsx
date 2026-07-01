@@ -18,28 +18,14 @@ export default function Cupom() {
         const [pedidoRes, empresaRes, nfceRes] = await Promise.all([
           api.get(`/pedidos/${id}`),
           api.get("/empresa"),
-          api.get("/nfce"),
+          api.get(`/nfce/pedido/${id}`).catch(() => ({ data: null })),
         ]);
 
         const pedidoCarregado = pedidoRes.data.pedido || pedidoRes.data;
         const empresaCarregada = empresaRes.data.empresa || null;
 
-        const listaNfce =
-          nfceRes.data.nfces ||
-          nfceRes.data.notas ||
-          nfceRes.data ||
-          [];
-
-        const nfceDoPedido = Array.isArray(listaNfce)
-          ? listaNfce.find((nota) => {
-              const pedidoNota =
-                nota.pedido?._id ||
-                nota.pedido ||
-                nota.pedidoId;
-
-              return String(pedidoNota) === String(id);
-            })
-          : null;
+       const nfceDoPedido = nfceRes.data?.nfce || null;
+setNfce(nfceDoPedido);
 
         setPedido(pedidoCarregado);
         setEmpresa(empresaCarregada);
