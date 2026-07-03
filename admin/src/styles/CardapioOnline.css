@@ -1306,3 +1306,70 @@ height:52px;
 min-width:52px;
 }
 }
+
+/* ===========================
+   CONFIGURAÇÕES DO PRODUTO
+=========================== */
+
+.co-config-group {
+  margin-top: 24px;
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+  padding: 16px;
+  background: #fafafa;
+}
+
+.co-config-title h3 {
+  margin: 0;
+  font-size: 18px;
+  color: #111827;
+}
+
+.co-config-title p {
+  margin: 4px 0 14px;
+  font-size: 13px;
+  color: #64748b;
+}
+
+.co-config-options {
+  display: grid;
+  gap: 10px;
+}
+
+.co-config-options button {
+  width: 100%;
+  border: 1px solid #e5e7eb;
+  background: #fff;
+  color: #111827;
+  border-radius: 14px;
+  padding: 13px 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+  font-weight: 700;
+  cursor: pointer;
+}
+
+.co-config-options button.active {
+  border-color: #22c55e;
+  background: #ecfdf5;
+  color: #15803d;
+}
+
+.co-config-options strong {
+  color: #16a34a;
+}
+
+.co-cart-config {
+  display: block;
+  margin-top: 3px;
+  color: #cbd5e1;
+  font-size: 12px;
+  line-height: 1.35;
+}
+
+@media (max-width: 680px) {
+  .co-cart-config {
+    color: #64748b;
+  }
+}

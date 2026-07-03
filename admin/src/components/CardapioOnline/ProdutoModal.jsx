@@ -1,4 +1,4 @@
-import { useState } from "react";
+import { useMemo, useState } from "react";
 import {
   X,
   Plus,
@@ -10,6 +10,7 @@ import {
   Leaf,
   AlertTriangle,
 } from "lucide-react";
+import GrupoConfiguracao from "./GrupoConfiguracao";
 
 function moeda(valor) {
   return Number(valor || 0).toLocaleString("pt-BR", {
@@ -23,25 +24,42 @@ function ProdutoModal({
   imagem,
   quantidade,
   setQuantidade,
+  grupos = [],
+  opcoes = [],
   onFechar,
   onAdicionar,
 }) {
+  const [selecoes, setSelecoes] = useState({});
+
   if (!produto) return null;
 
   const imagensProduto = [
-  imagem,
-  ...(produto.imagens || [])
-    .map((img) => img?.url || img?.secure_url || img?.path || img)
-    .filter(Boolean),
-].filter(Boolean);
+    imagem,
+    ...(produto.imagens || [])
+      .map((img) => img?.url || img?.secure_url || img?.path || img)
+      .filter(Boolean),
+  ].filter(Boolean);
 
-const imagensUnicas = [...new Set(imagensProduto)];
-
-const [imagemAtiva, setImagemAtiva] = useState(imagensUnicas[0] || imagem);
+  const imagensUnicas = [...new Set(imagensProduto)];
+  const [imagemAtiva, setImagemAtiva] = useState(imagensUnicas[0] || imagem);
 
   const selos = produto.selos || {};
   const alergenos = produto.alergenos || {};
   const nutri = produto.informacoesNutricionais || {};
+
+  const gruposIds = (produto.gruposComponentes || []).map((g) =>
+    typeof g === "string" ? g : g._id
+  );
+
+  const gruposDoProduto = grupos.filter((g) => gruposIds.includes(g._id));
+
+  const adicionais = useMemo(() => {
+    return Object.values(selecoes)
+      .flat()
+      .reduce((acc, opcao) => acc + Number(opcao.precoAdicional || 0), 0);
+  }, [selecoes]);
+
+  const precoFinal = (Number(produto.preco || 0) + adicionais) * quantidade;
 
   const listaSelos = [
     ["semGluten", "Sem glúten"],
@@ -61,6 +79,24 @@ const [imagemAtiva, setImagemAtiva] = useState(imagensUnicas[0] || imagem);
     ["contemGluten", "Contém glúten"],
   ].filter(([campo]) => alergenos[campo]);
 
+  function confirmar() {
+    for (const grupo of gruposDoProduto) {
+      const minimo = Number(grupo.minimoEscolhas || 0);
+      const selecionadas = selecoes[grupo._id] || [];
+
+      if (grupo.obrigatorio && selecionadas.length < minimo) {
+        alert(`Escolha pelo menos ${minimo} opção(ões) em ${grupo.nome}.`);
+        return;
+      }
+    }
+
+    onAdicionar({
+      selecoes,
+      adicionais,
+      precoUnitario: Number(produto.preco || 0) + adicionais,
+    });
+  }
+
   return (
     <div className="co-modal-overlay">
       <div className="co-modal">
@@ -69,33 +105,32 @@ const [imagemAtiva, setImagemAtiva] = useState(imagensUnicas[0] || imagem);
         </button>
 
         <div className="co-modal-image">
-  <img src={imagemAtiva} alt={produto.nome} />
+          <img src={imagemAtiva} alt={produto.nome} />
 
-  {imagensUnicas.length > 1 && (
-    <div className="co-modal-thumbs">
-      {imagensUnicas.map((img, index) => (
-        <button
-          key={index}
-          className={imagemAtiva === img ? "active" : ""}
-          onClick={() => setImagemAtiva(img)}
-        >
-          <img src={img} alt={`${produto.nome} ${index + 1}`} />
-        </button>
-      ))}
-    </div>
-  )}
-</div>
+          {imagensUnicas.length > 1 && (
+            <div className="co-modal-thumbs">
+              {imagensUnicas.map((img, index) => (
+                <button
+                  key={index}
+                  className={imagemAtiva === img ? "active" : ""}
+                  onClick={() => setImagemAtiva(img)}
+                >
+                  <img src={img} alt={`${produto.nome} ${index + 1}`} />
+                </button>
+              ))}
+            </div>
+          )}
+        </div>
 
         <div className="co-modal-content">
           <h2>{produto.nome}</h2>
 
           <p className="co-modal-desc">
-            {produto.descricao || "Produto especial da Conceito Fitness Gourmet."}
+            {produto.descricao ||
+              "Produto especial da Conceito Fitness Gourmet."}
           </p>
 
-          <div className="co-modal-price">
-            {moeda(produto.preco)}
-          </div>
+          <div className="co-modal-price">{moeda(produto.preco)}</div>
 
           <div className="co-modal-meta">
             {produto.tempoPreparo && (
@@ -116,6 +151,30 @@ const [imagemAtiva, setImagemAtiva] = useState(imagensUnicas[0] || imagem);
               </span>
             )}
           </div>
+
+          {gruposDoProduto.map((grupo) => {
+            const opcoesGrupo = opcoes.filter((opcao) => {
+              const grupoOpcao = opcao.grupo?._id || opcao.grupo;
+              return String(grupoOpcao) === String(grupo._id);
+            });
+
+            if (opcoesGrupo.length === 0) return null;
+
+            return (
+              <GrupoConfiguracao
+                key={grupo._id}
+                grupo={grupo}
+                opcoes={opcoesGrupo}
+                selecionadas={selecoes[grupo._id] || []}
+                onChange={(novas) =>
+                  setSelecoes({
+                    ...selecoes,
+                    [grupo._id]: novas,
+                  })
+                }
+              />
+            );
+          })}
 
           {listaSelos.length > 0 && (
             <div className="co-modal-block">
@@ -196,8 +255,8 @@ const [imagemAtiva, setImagemAtiva] = useState(imagensUnicas[0] || imagem);
               </button>
             </div>
 
-            <button className="co-modal-add" onClick={onAdicionar}>
-              Adicionar {moeda(Number(produto.preco || 0) * quantidade)}
+            <button className="co-modal-add" onClick={confirmar}>
+              Adicionar {moeda(precoFinal)}
             </button>
           </div>
         </div>

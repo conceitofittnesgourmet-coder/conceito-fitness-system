@@ -43,7 +43,8 @@ function CardapioOnline() {
   referencia: "",
   observacao: "",
 });
-
+const [gruposComponentes, setGruposComponentes] = useState([]);
+const [opcoesComponentes, setOpcoesComponentes] = useState([]);
 
   const destaquesRef = useRef(null);
 const combosRef = useRef(null);
@@ -94,6 +95,14 @@ setProdutos(lista);
       socket.off("produto-deletado", carregarProdutos);
     };
   }, []);
+
+  const [gruposRes, opcoesRes] = await Promise.all([
+  api.get("/grupos-componentes"),
+  api.get("/opcoes-componentes"),
+]);
+
+setGruposComponentes(gruposRes.data.grupos || []);
+setOpcoesComponentes(opcoesRes.data.opcoes || []);
 
   function abrirProduto(produto) {
   setProdutoSelecionado(produto);
@@ -176,31 +185,50 @@ setProdutos(lista);
   return corrigirUrlImagem(imagemValida);
 }
 
-  function adicionarProduto(produto) {
-    const id = produto._id || produto.id;
-    const existe = carrinho.find((item) => item.id === id);
+  function adicionarProduto(produto, configuracao = {}) {
+  const id = produto._id || produto.id;
 
-    if (existe) {
-      setCarrinho(
-        carrinho.map((item) =>
-          item.id === id
-            ? { ...item, quantidade: item.quantidade + 1 }
-            : item
-        )
-      );
-    } else {
-      setCarrinho([
-        ...carrinho,
-        {
-          id,
-          nome: produto.nome,
-          preco: Number(produto.preco || 0),
-          imagem: getImagemProduto(produto),
-          quantidade: 1,
-        },
-      ]);
-    }
+  const selecoes = configuracao.selecoes || {};
+  const precoUnitario =
+    configuracao.precoUnitario !== undefined
+      ? Number(configuracao.precoUnitario)
+      : Number(produto.preco || 0);
+
+  const quantidade = Number(configuracao.quantidade || 1);
+
+  const resumoConfig = Object.values(selecoes)
+    .flat()
+    .map((opcao) => opcao.nome)
+    .join(", ");
+
+  const chaveCarrinho = `${id}-${resumoConfig}`;
+
+  const existe = carrinho.find((item) => item.chaveCarrinho === chaveCarrinho);
+
+  if (existe) {
+    setCarrinho(
+      carrinho.map((item) =>
+        item.chaveCarrinho === chaveCarrinho
+          ? { ...item, quantidade: item.quantidade + quantidade }
+          : item
+      )
+    );
+  } else {
+    setCarrinho([
+      ...carrinho,
+      {
+        id,
+        chaveCarrinho,
+        nome: produto.nome,
+        configuracao: resumoConfig,
+        selecoes,
+        preco: precoUnitario,
+        imagem: getImagemProduto(produto),
+        quantidade,
+      },
+    ]);
   }
+}
 
   function alterarQuantidade(id, quantidade) {
     if (quantidade <= 0) {
@@ -306,13 +334,17 @@ if (
 }
 
     const itens = carrinho
-      .map(
-        (item) =>
-          `• ${item.nome} x${item.quantidade} - R$ ${(
-            item.preco * item.quantidade
-          ).toFixed(2)}`
-      )
-      .join("\n");
+  .map(
+    (item) =>
+      `• ${item.nome} x${item.quantidade} - R$ ${(
+        item.preco * item.quantidade
+      ).toFixed(2)}${
+        item.configuracao
+          ? `\n   Opções: ${item.configuracao}`
+          : ""
+      }`
+  )
+  .join("\n");
 
     const mensagem = `
 Olá! Quero fazer um pedido pelo cardápio online da Conceito Fitness Gourmet.
@@ -630,6 +662,9 @@ Seu carrinho está esperando por algo delicioso ☕
 
                   <div>
                     <strong>{item.nome}</strong>
+                    {item.configuracao && (
+  <small className="co-cart-config">{item.configuracao}</small>
+)}
                     <span>R$ {item.preco.toFixed(2)}</span>
 
                     <div className="co-qty">
@@ -875,13 +910,18 @@ Seu carrinho está esperando por algo delicioso ☕
           quantidade={quantidadeModal}
           setQuantidade={setQuantidadeModal}
           onFechar={() => setProdutoSelecionado(null)}
-          onAdicionar={() => {
-            for (let i = 0; i < quantidadeModal; i++) {
-              adicionarProduto(produtoSelecionado);
-            }
+          grupos={gruposComponentes}
+opcoes={opcoesComponentes}
+onAdicionar={({ selecoes, adicionais, precoUnitario }) => {
+  adicionarProduto(produtoSelecionado, {
+    quantidade: quantidadeModal,
+    selecoes,
+    adicionais,
+    precoUnitario,
+  });
 
-            setProdutoSelecionado(null);
-          }}
+  setProdutoSelecionado(null);
+}}
         />
       )}
     </div>
