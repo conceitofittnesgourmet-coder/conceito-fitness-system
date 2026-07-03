@@ -1,3 +1,4 @@
+import { useState } from "react";
 import {
   X,
   Plus,
@@ -26,6 +27,17 @@ function ProdutoModal({
   onAdicionar,
 }) {
   if (!produto) return null;
+
+  const imagensProduto = [
+  imagem,
+  ...(produto.imagens || [])
+    .map((img) => img?.url || img?.secure_url || img?.path || img)
+    .filter(Boolean),
+].filter(Boolean);
+
+const imagensUnicas = [...new Set(imagensProduto)];
+
+const [imagemAtiva, setImagemAtiva] = useState(imagensUnicas[0] || imagem);
 
   const selos = produto.selos || {};
   const alergenos = produto.alergenos || {};
@@ -57,8 +69,22 @@ function ProdutoModal({
         </button>
 
         <div className="co-modal-image">
-          <img src={imagem} alt={produto.nome} />
-        </div>
+  <img src={imagemAtiva} alt={produto.nome} />
+
+  {imagensUnicas.length > 1 && (
+    <div className="co-modal-thumbs">
+      {imagensUnicas.map((img, index) => (
+        <button
+          key={index}
+          className={imagemAtiva === img ? "active" : ""}
+          onClick={() => setImagemAtiva(img)}
+        >
+          <img src={img} alt={`${produto.nome} ${index + 1}`} />
+        </button>
+      ))}
+    </div>
+  )}
+</div>
 
         <div className="co-modal-content">
           <h2>{produto.nome}</h2>
