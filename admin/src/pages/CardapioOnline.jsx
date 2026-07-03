@@ -21,6 +21,7 @@ import {
 import api from "../services/api";
 import socket from "../services/socket";
 import "../styles/CardapioOnline.css";
+import ProdutoModal from "../components/CardapioOnline/ProdutoModal";
 
 function CardapioOnline() {
   const WHATSAPP_LOJA = "5544991288775";
@@ -32,7 +33,8 @@ function CardapioOnline() {
   const [calculandoFrete, setCalculandoFrete] = useState(false);
   const [frete, setFrete] = useState(0);
   const [distanciaKm, setDistanciaKm] = useState(null);
-
+  const [produtoSelecionado, setProdutoSelecionado] = useState(null);
+  const [quantidadeModal, setQuantidadeModal] = useState(1);
   const [cliente, setCliente] = useState({
   nome: "",
   telefone: "",
@@ -41,6 +43,7 @@ function CardapioOnline() {
   referencia: "",
   observacao: "",
 });
+
 
   const destaquesRef = useRef(null);
 const combosRef = useRef(null);
@@ -91,6 +94,11 @@ setProdutos(lista);
       socket.off("produto-deletado", carregarProdutos);
     };
   }, []);
+
+  function abrirProduto(produto) {
+  setProdutoSelecionado(produto);
+  setQuantidadeModal(1);
+}
 
   function corrigirUrlImagem(valor) {
   const backendURL = "https://conceito-fitness-system.onrender.com";
@@ -350,6 +358,7 @@ Aguardo confirmação.
     e.currentTarget.src = "/sem-imagem.png";
   }}
 />
+
         </div>
 
         <div className="co-product-body">
@@ -381,7 +390,7 @@ Aguardo confirmação.
 
             <button
               disabled={Number(produto.estoque || 0) <= 0}
-              onClick={() => adicionarProduto(produto)}
+              onClick={() => abrirProduto(produto)}
             >
               <Plus size={18} />
             </button>
@@ -858,8 +867,24 @@ Seu carrinho está esperando por algo delicioso ☕
           <span>Atendimento com excelência</span>
         </div>
       </footer>
+            
+      {produtoSelecionado && (
+        <ProdutoModal
+          produto={produtoSelecionado}
+          imagem={getImagemProduto(produtoSelecionado)}
+          quantidade={quantidadeModal}
+          setQuantidade={setQuantidadeModal}
+          onFechar={() => setProdutoSelecionado(null)}
+          onAdicionar={() => {
+            for (let i = 0; i < quantidadeModal; i++) {
+              adicionarProduto(produtoSelecionado);
+            }
+
+            setProdutoSelecionado(null);
+          }}
+        />
+      )}
     </div>
   );
 }
-
 export default CardapioOnline;
