@@ -24,11 +24,57 @@ function atualizarStatusVencimento(conta) {
 // ===============================
 exports.resumoFinanceiro = async (req, res) => {
   try {
-    const contasPagar = await ContaPagar.find();
-    const contasReceber = await ContaReceber.find();
-    const movimentacoes = await MovimentacaoFinanceira.find().sort({
-      data: -1,
-    });
+    const {
+  inicio,
+  fim,
+  busca = "",
+  formaPagamento = "",
+  tipo = "",
+} = req.query;
+
+const filtroData = {};
+
+if (inicio || fim) {
+  filtroData.data = {};
+
+  if (inicio) {
+    filtroData.data.$gte = new Date(`${inicio}T00:00:00`);
+  }
+
+  if (fim) {
+    filtroData.data.$lte = new Date(`${fim}T23:59:59`);
+  }
+}
+
+const filtroBusca = busca
+  ? {
+      $or: [
+        { descricao: { $regex: busca, $options: "i" } },
+        { categoria: { $regex: busca, $options: "i" } },
+        { formaPagamento: { $regex: busca, $options: "i" } },
+      ],
+    }
+  : {};
+
+const filtroMovimentacoes = {
+  ...filtroData,
+  ...filtroBusca,
+};
+
+if (formaPagamento) {
+  filtroMovimentacoes.formaPagamento = formaPagamento;
+}
+
+if (tipo) {
+  filtroMovimentacoes.tipo = tipo;
+}
+
+const contasPagar = await ContaPagar.find().sort({ vencimento: 1 });
+const contasReceber = await ContaReceber.find().sort({ vencimento: 1 });
+
+const movimentacoes = await MovimentacaoFinanceira.find(filtroMovimentacoes)
+  .sort({ data: -1 })
+  .limit(500);
 
     const pagarAtualizadas = contasPagar.map(atualizarStatusVencimento);
     const receberAtualizadas = contasReceber.map(atualizarStatusVencimento);
@@ -66,6 +112,21 @@ exports.resumoFinanceiro = async (req, res) => {
       .reduce((acc, m) => acc + Number(m.valor || 0), 0);
 
     const saldo = entradas - saidas;
+    const entradasPorForma = movimentacoes
+  .filter((m) => m.tipo === "entrada")
+  .reduce((acc, mov) => {
+    const forma = mov.formaPagamento || "Não informado";
+    acc[forma] = (acc[forma] || 0) + Number(mov.valor || 0);
+    return acc;
+  }, {});
+
+const saidasPorForma = movimentacoes
+  .filter((m) => m.tipo === "saida")
+  .reduce((acc, mov) => {
+    const forma = mov.formaPagamento || "Não informado";
+    acc[forma] = (acc[forma] || 0) + Number(mov.valor || 0);
+    return acc;
+  }, {});
 
     return res.json({
       success: true,
@@ -79,6 +140,8 @@ exports.resumoFinanceiro = async (req, res) => {
         entradas,
         saidas,
         saldo,
+        entradasPorForma,
+        saidasPorForma,
         lucroEstimado: totalRecebido - totalPago,
         quantidadeContasPagar: contasPagar.length,
         quantidadeContasReceber: contasReceber.length,

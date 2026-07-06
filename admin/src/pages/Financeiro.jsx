@@ -16,6 +16,18 @@ import {
 function Financeiro() {
   const [dados, setDados] = useState(null);
   const [loading, setLoading] = useState(true);
+  const hoje = new Date().toISOString().slice(0, 10);
+const inicioMes = new Date(new Date().getFullYear(), new Date().getMonth(), 1)
+  .toISOString()
+  .slice(0, 10);
+
+const [filtros, setFiltros] = useState({
+  inicio: inicioMes,
+  fim: hoje,
+  busca: "",
+  formaPagamento: "",
+  tipo: "",
+});
 
   const [novaPagar, setNovaPagar] = useState({
     descricao: "",
@@ -32,17 +44,28 @@ function Financeiro() {
     vencimento: "",
   });
 
-  async function carregarFinanceiro() {
-    try {
-      const response = await api.get("/financeiro");
-      setDados(response.data);
-    } catch (error) {
-      console.log("Erro financeiro:", error);
-      alert("Erro ao carregar financeiro.");
-    } finally {
-      setLoading(false);
-    }
+ async function carregarFinanceiro() {
+  try {
+    setLoading(true);
+
+    const params = new URLSearchParams();
+
+    if (filtros.inicio) params.append("inicio", filtros.inicio);
+    if (filtros.fim) params.append("fim", filtros.fim);
+    if (filtros.busca) params.append("busca", filtros.busca);
+    if (filtros.formaPagamento) params.append("formaPagamento", filtros.formaPagamento);
+    if (filtros.tipo) params.append("tipo", filtros.tipo);
+
+    const response = await api.get(`/financeiro?${params.toString()}`);
+
+    setDados(response.data);
+  } catch (error) {
+    console.log("Erro financeiro:", error);
+    alert("Erro ao carregar financeiro.");
+  } finally {
+    setLoading(false);
   }
+}
 
   useEffect(() => {
     carregarFinanceiro();
@@ -146,6 +169,54 @@ function Financeiro() {
             <p>Contas a pagar, receber, fluxo de caixa e movimentações reais.</p>
           </div>
         </section>
+
+        <section className="financeiro-card" style={{ marginBottom: 20 }}>
+  <h2>Filtros do Financeiro</h2>
+
+  <div style={{ display: "grid", gridTemplateColumns: "repeat(5, 1fr)", gap: 12 }}>
+    <input
+      type="date"
+      value={filtros.inicio}
+      onChange={(e) => setFiltros({ ...filtros, inicio: e.target.value })}
+    />
+
+    <input
+      type="date"
+      value={filtros.fim}
+      onChange={(e) => setFiltros({ ...filtros, fim: e.target.value })}
+    />
+
+    <input
+      placeholder="Buscar descrição/categoria"
+      value={filtros.busca}
+      onChange={(e) => setFiltros({ ...filtros, busca: e.target.value })}
+    />
+
+    <select
+      value={filtros.formaPagamento}
+      onChange={(e) => setFiltros({ ...filtros, formaPagamento: e.target.value })}
+    >
+      <option value="">Todas as formas</option>
+      <option value="PIX">PIX</option>
+      <option value="DINHEIRO">Dinheiro</option>
+      <option value="CREDITO">Crédito</option>
+      <option value="DEBITO">Débito</option>
+    </select>
+
+    <select
+      value={filtros.tipo}
+      onChange={(e) => setFiltros({ ...filtros, tipo: e.target.value })}
+    >
+      <option value="">Entradas e saídas</option>
+      <option value="entrada">Entradas</option>
+      <option value="saida">Saídas</option>
+    </select>
+  </div>
+
+  <button style={{ marginTop: 12 }} onClick={carregarFinanceiro}>
+    Aplicar Filtros
+  </button>
+</section>
 
         <section className="financeiro-kpis">
           <div className="financeiro-kpi green">
