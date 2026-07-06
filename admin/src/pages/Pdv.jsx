@@ -81,7 +81,14 @@ export default function Pdv() {
   const [categoriaAtiva, setCategoriaAtiva] = useState("Todos");
   const [produtoPesoModal, setProdutoPesoModal] = useState(null);
   const [quantidadePeso, setQuantidadePeso] = useState("1");
-
+  const [pagamentos, setPagamentos] = useState([
+    {
+        id: crypto.randomUUID(),
+        forma: "DINHEIRO",
+        valor: ""
+    }
+]);
+  
   async function carregarProdutos() {
     try {
       setLoadingProdutos(true);
@@ -385,6 +392,43 @@ function limparPedido() {
   atualizarCarrinhoComanda([]);
 } 
 
+function adicionarPagamento() {
+  if (pagamentos.length >= 5) {
+    alert("Máximo de 5 formas de pagamento.");
+    return;
+  }
+
+  setPagamentos((lista) => [
+    ...lista,
+    {
+      id: crypto.randomUUID(),
+      forma: "PIX",
+      valor: "",
+    },
+  ]);
+}
+
+function removerPagamento(id) {
+  if (pagamentos.length === 1) return;
+
+  setPagamentos((lista) =>
+    lista.filter((p) => p.id !== id)
+  );
+}
+
+function atualizarPagamento(id, campo, valor) {
+  setPagamentos((lista) =>
+    lista.map((p) =>
+      p.id === id
+        ? {
+            ...p,
+            [campo]: valor,
+          }
+        : p
+    )
+  );
+}
+
   function moeda(valor) {
   return Number(valor || 0).toLocaleString("pt-BR", {
     style: "currency",
@@ -427,12 +471,26 @@ const produtosFiltrados = produtos.filter((produto) => {
   return passaBusca && passaCategoria;
 });
 
-  const troco =
-  pagamento === "DINHEIRO"
-    ? Math.max(
-        0,
-        Number(trocoPara || 0) - totalPedido
-      )
+  const totalPago = pagamentos.reduce(
+  (acc, p) => acc + Number(p.valor || 0),
+  0
+);
+
+const restante = Math.max(
+  0,
+  Number(totalPedido || 0) - totalPago
+);
+
+const dinheiroRecebido = pagamentos
+  .filter((p) => p.forma === "DINHEIRO")
+  .reduce(
+    (acc, p) => acc + Number(p.valor || 0),
+    0
+  );
+
+const troco =
+  dinheiroRecebido > Number(totalPedido || 0)
+    ? dinheiroRecebido - Number(totalPedido || 0)
     : 0;
 
  async function calcularFretePDV() {
@@ -477,6 +535,16 @@ if (!caixaAberto) {
       return;
     }
 
+    if (restante > 0) {
+  alert("Ainda existe valor pendente de pagamento.");
+  return;
+}
+
+if (pagamentos.some((p) => Number(p.valor || 0) <= 0)) {
+  alert("Todos os pagamentos precisam possuir um valor.");
+  return;
+}
+
     const novoPedido = {
       cliente,
 
@@ -511,7 +579,12 @@ troco: Number(troco || 0),
 
       status: "pendente",
 
-      pagamento,
+      pagamento: pagamentos[0]?.forma || "PIX",
+
+pagamentos: pagamentos.map((p) => ({
+  forma: p.forma,
+  valor: Number(p.valor || 0),
+})),
 
       produtos: cart.map((item) => ({
   produtoId: item.produtoId,
@@ -579,6 +652,13 @@ if (desejaImprimir) {
     setReferenciaEntrega("");
     setMotivoDesconto("");
     setTrocoPara("");
+    setPagamentos([
+  {
+    id: crypto.randomUUID(),
+    forma: "DINHEIRO",
+    valor: "",
+  },
+]);
 
   } catch (error) {
     console.log(error);
@@ -1039,64 +1119,131 @@ if (desejaImprimir) {
               </div>
             </div>
 
-            <div className="pagamento-title">Forma de Pagamento</div>
+            <div className="pagamento-title">
+  Pagamentos
+</div>
 
-            <div className="payment-grid">
+<div className="pagamentos-box">
 
-              {pagamento === "DINHEIRO" && (
-  <div className="pdv-ajuste-item">
-    <label>Troco para</label>
+  {pagamentos.map((pagamentoItem) => (
 
-    <input
-      type="number"
-      min="0"
-      value={trocoPara}
-      onChange={(e) => setTrocoPara(e.target.value)}
-      placeholder="Valor recebido"
-    />
+    <div
+      key={pagamentoItem.id}
+      className="pagamento-item"
+    >
 
-    <small>
-      Troco: {moeda(troco)}
-    </small>
+      <select
+        value={pagamentoItem.forma}
+        onChange={(e) =>
+          atualizarPagamento(
+            pagamentoItem.id,
+            "forma",
+            e.target.value
+          )
+        }
+      >
+
+        <option value="DINHEIRO">
+          Dinheiro
+        </option>
+
+        <option value="PIX">
+          PIX
+        </option>
+
+        <option value="CREDITO">
+          Cartão Crédito
+        </option>
+
+        <option value="DEBITO">
+          Cartão Débito
+        </option>
+
+      </select>
+
+      <input
+        type="number"
+        step="0.01"
+        value={pagamentoItem.valor}
+        placeholder="0,00"
+        onChange={(e) =>
+          atualizarPagamento(
+            pagamentoItem.id,
+            "valor",
+            e.target.value
+          )
+        }
+      />
+
+      <button
+        type="button"
+        onClick={() =>
+          removerPagamento(
+            pagamentoItem.id
+          )
+        }
+      >
+        ×
+      </button>
+
+    </div>
+
+  ))}
+
+</div>
+
+<button
+  type="button"
+  className="btn-adicionar-pagamento"
+  onClick={adicionarPagamento}
+>
+  + Adicionar pagamento
+</button>
+
+<div className="resumo-pagamento">
+
+  <p>
+    <span>Total</span>
+    <strong>
+      {moeda(totalPedido)}
+    </strong>
+  </p>
+
+  <p>
+    <span>Pago</span>
+    <strong>
+      {moeda(totalPago)}
+    </strong>
+  </p>
+
+  <p>
+    <span>Restante</span>
+    <strong>
+      {moeda(restante)}
+    </strong>
+  </p>
+
+  {troco > 0 && (
+    <p>
+      <span>Troco</span>
+      <strong>
+        {moeda(troco)}
+      </strong>
+    </p>
+  )}
+
+  {restante === 0 && totalPago > 0 && (
+  <div className="pagamento-ok">
+    ✅ Pagamento completo
   </div>
 )}
 
-              <button
-                className={pagamento === "PIX" ? "active" : ""}
-                onClick={() => setPagamento("PIX")}
-              >
-                <QrCode />
-                PIX
-              </button>
-
-              <button
-                className={pagamento === "CREDITO" ? "active" : ""}
-                onClick={() => setPagamento("CREDITO")}
-              >
-                <CreditCard />
-                Cartão Crédito
-              </button>
-
-              <button
-                className={pagamento === "DEBITO" ? "active" : ""}
-                onClick={() => setPagamento("DEBITO")}
-              >
-                <CreditCard />
-                Cartão Débito
-              </button>
-
-              <button
-                className={pagamento === "DINHEIRO" ? "active" : ""}
-                onClick={() => setPagamento("DINHEIRO")}
-              >
-                <Wallet />
-                Dinheiro
-              </button>
-            </div>
+</div>
 
             <button
   className="finalizar-pedido"
   onClick={finalizarPedido}
+  disabled={restante > 0}
 >
   Finalizar Pedido
   <ArrowRight size={22} />

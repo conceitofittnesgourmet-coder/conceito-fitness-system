@@ -70,6 +70,18 @@ exports.criarPedido = async (req, res) => {
   try {
    const { cliente, telefone, cpfNota, produtos, total } = req.body || {};
 
+const pagamentosRecebidos = Array.isArray(req.body.pagamentos)
+  ? req.body.pagamentos
+      .map((p) => ({
+        forma: String(p.forma || "").toUpperCase(),
+        valor: Number(p.valor || 0),
+      }))
+      .filter((p) => p.forma && p.valor > 0)
+  : [];
+
+const pagamentoPrincipal =
+  pagamentosRecebidos[0]?.forma || req.body.pagamento || "PIX";
+
     if (!cliente) {
       return res.status(400).json({
         success: false,
@@ -135,8 +147,8 @@ complementoEntrega:
   referenciaEntrega:
     req.body.referenciaEntrega || "",
 
-  pagamento:
-    req.body.pagamento || "PIX",
+  pagamento: pagamentoPrincipal,
+pagamentos: pagamentosRecebidos,
 
   tipo:
     req.body.tipo || "balcao",
@@ -156,17 +168,22 @@ complementoEntrega:
 // FINANCEIRO AUTOMÁTICO
 // ===============================
 try {
-  const formaPagamento = req.body.pagamento || "PIX";
   const valorPedido = Number(total || 0);
 
+const pagamentosFinanceiro =
+  pagamentosRecebidos.length > 0
+    ? pagamentosRecebidos
+    : [{ forma: pagamentoPrincipal, valor: valorPedido }];
+
+  for (const pagamentoItem of pagamentosFinanceiro) {
   const contaReceber = await ContaReceber.create({
-    descricao: `Pedido #${pedidoCriado._id.toString().slice(-6)}`,
+    descricao: `Pedido #${pedidoCriado._id.toString().slice(-6)} - ${pagamentoItem.forma}`,
     cliente: cliente || "Cliente",
-    valor: valorPedido,
+    valor: Number(pagamentoItem.valor || 0),
     vencimento: new Date(),
     dataRecebimento: new Date(),
     status: "recebida",
-    formaRecebimento: formaPagamento,
+    formaRecebimento: pagamentoItem.forma,
     pedido: pedidoCriado._id,
     observacao: "Gerado automaticamente pelo pedido.",
     empresa: dadosPedido.empresa,
@@ -175,15 +192,16 @@ try {
   await MovimentacaoFinanceira.create({
     tipo: "entrada",
     origem: "pedido",
-    descricao: `Venda: Pedido #${pedidoCriado._id.toString().slice(-6)}`,
+    descricao: `Venda: Pedido #${pedidoCriado._id.toString().slice(-6)} - ${pagamentoItem.forma}`,
     categoria: "Vendas",
-    valor: valorPedido,
-    formaPagamento,
+    valor: Number(pagamentoItem.valor || 0),
+    formaPagamento: pagamentoItem.forma,
     pedido: pedidoCriado._id,
     contaReceber: contaReceber._id,
     observacao: "Entrada automática gerada pelo pedido.",
     empresa: dadosPedido.empresa,
   });
+}
 } catch (financeiroError) {
   console.log(
     "ERRO AO GERAR FINANCEIRO DO PEDIDO:",

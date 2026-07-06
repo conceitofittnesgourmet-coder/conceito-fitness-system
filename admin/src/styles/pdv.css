@@ -1112,3 +1112,75 @@ display:flex;
 justify-content:space-between;
 margin:6px 0;
 }
+
+.pagamentos-box {
+  display: flex;
+  flex-direction: column;
+  gap: 10px;
+  margin-top: 12px;
+}
+
+.pagamento-item {
+  display: grid;
+  grid-template-columns: 1.4fr 1fr 38px;
+  gap: 8px;
+  align-items: center;
+}
+
+.pagamento-item select,
+.pagamento-item input {
+  height: 42px;
+  border-radius: 10px;
+  border: 1px solid #ddd;
+  padding: 0 10px;
+}
+
+.pagamento-item button {
+  height: 42px;
+  border: none;
+  border-radius: 10px;
+  background: #ef4444;
+  color: white;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.btn-adicionar-pagamento {
+  width: 100%;
+  margin-top: 12px;
+  padding: 12px;
+  border: none;
+  border-radius: 12px;
+  background: #16a34a;
+  color: white;
+  font-weight: 900;
+  cursor: pointer;
+}
+
+.resumo-pagamento {
+  margin-top: 14px;
+  background: #f8fafc;
+  border-radius: 14px;
+  padding: 14px;
+}
+
+.resumo-pagamento p {
+  display: flex;
+  justify-content: space-between;
+  margin: 8px 0;
+}
+
+.pagamento-ok {
+  margin-top: 12px;
+  padding: 10px;
+  background: #dcfce7;
+  color: #166534;
+  border-radius: 10px;
+  text-align: center;
+  font-weight: 900;
+}
+
+.finalizar-pedido:disabled {
+  opacity: 0.45;
+  cursor: not-allowed;
+}

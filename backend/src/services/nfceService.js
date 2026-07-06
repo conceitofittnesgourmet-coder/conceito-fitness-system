@@ -196,36 +196,49 @@ function montarItensXml(produtos = [], ambiente) {
 }
 
 function montarXmlPagamento(pedido, valorTotal) {
-  const forma = String(pedido.pagamento || pedido.formaPagamento || "")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .trim()
-    .toUpperCase();
+  const pagamentos = Array.isArray(pedido.pagamentos) && pedido.pagamentos.length > 0
+    ? pedido.pagamentos
+    : [
+        {
+          forma: pedido.pagamento || pedido.formaPagamento || "PIX",
+          valor: valorTotal,
+        },
+      ];
 
-  const tPag = obterCodigoPagamento(forma);
+  const detPagXml = pagamentos
+    .map((pagamentoItem) => {
+      const forma = String(pagamentoItem.forma || "")
+        .normalize("NFD")
+        .replace(/[\u0300-\u036f]/g, "")
+        .trim()
+        .toUpperCase();
 
-  const precisaCard = ["03", "04", "17"].includes(tPag);
+      const tPag = obterCodigoPagamento(forma);
+      const valor = Number(pagamentoItem.valor || 0);
 
-  const cardXml = precisaCard
-    ? `
+      const precisaCard = ["03", "04", "17"].includes(tPag);
+
+      const cardXml = precisaCard
+        ? `
         <card>
           <tpIntegra>2</tpIntegra>
           <tBand>99</tBand>
           <cAut>000000</cAut>
         </card>`
-    : "";
+        : "";
 
-  console.log("PAGAMENTO RECEBIDO:", pedido.pagamento || pedido.formaPagamento);
-  console.log("TPAG GERADO:", tPag);
-  console.log("CARD XML GERADO:", precisaCard ? "SIM" : "NAO");
+      return `
+      <detPag>
+        <tPag>${tPag}</tPag>
+        <vPag>${valor.toFixed(2)}</vPag>
+        ${cardXml}
+      </detPag>`;
+    })
+    .join("");
 
   return `
     <pag>
-      <detPag>
-        <tPag>${tPag}</tPag>
-        <vPag>${valorTotal.toFixed(2)}</vPag>
-        ${cardXml}
-      </detPag>
+      ${detPagXml}
     </pag>`;
 }
 

@@ -69,40 +69,25 @@ function filtrarCategoria(cat) {
 }
 
   async function carregarProdutos() {
-    try {
-      const response = await api.get("/produtos");
-      const lista = response.data.produtos || [];
+  try {
+    const [produtosRes, gruposRes, opcoesRes] = await Promise.all([
+      api.get("/produtos"),
+      api.get("/grupos-componentes"),
+      api.get("/opcoes-componentes"),
+    ]);
 
-console.log("PRODUTOS CARDAPIO:", lista);
-console.log("PRODUTO COMPLETO:", JSON.stringify(lista[0], null, 2));
+    const lista = produtosRes.data.produtos || [];
 
-setProdutos(lista);
-    } catch (error) {
-      console.log("Erro ao carregar cardápio online:", error);
-    }
+    console.log("PRODUTOS CARDAPIO:", lista);
+    console.log("PRODUTO COMPLETO:", JSON.stringify(lista[0], null, 2));
+
+    setProdutos(lista);
+    setGruposComponentes(gruposRes.data.grupos || []);
+    setOpcoesComponentes(opcoesRes.data.opcoes || []);
+  } catch (error) {
+    console.log("Erro ao carregar cardápio online:", error);
   }
-
-  useEffect(() => {
-    carregarProdutos();
-
-    socket.on("produto-criado", carregarProdutos);
-    socket.on("produto-atualizado", carregarProdutos);
-    socket.on("produto-deletado", carregarProdutos);
-
-    return () => {
-      socket.off("produto-criado", carregarProdutos);
-      socket.off("produto-atualizado", carregarProdutos);
-      socket.off("produto-deletado", carregarProdutos);
-    };
-  }, []);
-
-  const [gruposRes, opcoesRes] = await Promise.all([
-  api.get("/grupos-componentes"),
-  api.get("/opcoes-componentes"),
-]);
-
-setGruposComponentes(gruposRes.data.grupos || []);
-setOpcoesComponentes(opcoesRes.data.opcoes || []);
+}
 
   function abrirProduto(produto) {
   setProdutoSelecionado(produto);
