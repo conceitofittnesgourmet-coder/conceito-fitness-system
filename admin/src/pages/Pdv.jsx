@@ -246,7 +246,7 @@ function resumoComanda(id) {
   return;
 }
 
-  function confirmarProdutoPeso() {
+function confirmarProdutoPeso() {
   if (!produtoPesoModal) return;
 
   const produto = produtoPesoModal;
@@ -261,6 +261,7 @@ function resumoComanda(id) {
     return;
   }
 
+  
   const existe = cart.find((item) => item.id === id);
   const precoUnitario = Number(produto.preco || 0);
 
