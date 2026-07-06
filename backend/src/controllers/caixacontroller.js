@@ -172,33 +172,40 @@ exports.resumoCaixa = async (req, res) => {
     const inicio = caixa?.abertoEm || new Date(new Date().setHours(0, 0, 0, 0));
 
     const pedidos = await Pedido.find({
-  createdAt: {
-    $gte: inicio,
-  },
-  status: {
-    $ne: "cancelado",
-  },
-}).sort({
-  createdAt: -1,
-});
+      createdAt: {
+        $gte: inicio,
+      },
+      status: {
+        $ne: "cancelado",
+      },
+    }).sort({
+      createdAt: -1,
+    });
+
+    function somarPorForma(forma) {
+      return pedidos.reduce((acc, pedido) => {
+        if (Array.isArray(pedido.pagamentos) && pedido.pagamentos.length > 0) {
+          const totalForma = pedido.pagamentos
+            .filter((p) => String(p.forma || "").toUpperCase() === forma)
+            .reduce((soma, p) => soma + Number(p.valor || 0), 0);
+
+          return acc + totalForma;
+        }
+
+        if (String(pedido.pagamento || "").toUpperCase() === forma) {
+          return acc + Number(pedido.total || 0);
+        }
+
+        return acc;
+      }, 0);
+    }
 
     const total = pedidos.reduce((acc, p) => acc + Number(p.total || 0), 0);
 
-    const pix = pedidos
-      .filter((p) => p.pagamento === "PIX")
-      .reduce((acc, p) => acc + Number(p.total || 0), 0);
-
-    const credito = pedidos
-      .filter((p) => p.pagamento === "CREDITO")
-      .reduce((acc, p) => acc + Number(p.total || 0), 0);
-
-    const debito = pedidos
-      .filter((p) => p.pagamento === "DEBITO")
-      .reduce((acc, p) => acc + Number(p.total || 0), 0);
-
-    const dinheiro = pedidos
-      .filter((p) => p.pagamento === "DINHEIRO")
-      .reduce((acc, p) => acc + Number(p.total || 0), 0);
+    const pix = somarPorForma("PIX");
+    const credito = somarPorForma("CREDITO");
+    const debito = somarPorForma("DEBITO");
+    const dinheiro = somarPorForma("DINHEIRO");
 
     const totalSangrias =
       caixa?.sangrias?.reduce((acc, s) => acc + Number(s.valor || 0), 0) || 0;
@@ -225,7 +232,7 @@ exports.resumoCaixa = async (req, res) => {
           : 0,
         totalSangrias,
         totalSuprimentos,
-        saldoAtual: saldoInicial + total + totalSuprimentos - totalSangrias,
+        saldoAtual: saldoInicial + dinheiro + totalSuprimentos - totalSangrias,
       },
     });
   } catch (error) {

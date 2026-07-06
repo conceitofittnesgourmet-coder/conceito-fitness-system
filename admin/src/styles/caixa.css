@@ -118,3 +118,25 @@
     grid-template-columns: repeat(2, 1fr);
   }
 }
+
+.caixa-erro-box {
+  margin: 16px 0;
+  padding: 14px 16px;
+  border-radius: 14px;
+  background: #fef2f2;
+  border: 1px solid #fecaca;
+  color: #991b1b;
+  display: grid;
+  gap: 6px;
+}
+
+.caixa-erro-box button {
+  width: fit-content;
+  border: 0;
+  border-radius: 10px;
+  background: #991b1b;
+  color: #fff;
+  padding: 8px 14px;
+  font-weight: 800;
+  cursor: pointer;
+}

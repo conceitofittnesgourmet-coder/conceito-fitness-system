@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useEffect, useMemo, useRef, useState } from "react";
 import AdminLayout from "../layouts/AdminLayout";
 import api from "../services/api";
 import socket from "../services/socket";
@@ -48,39 +48,48 @@ function Caixa() {
   const [conferenciaCredito, setConferenciaCredito] = useState("");
   const [conferenciaDebito, setConferenciaDebito] = useState("");
   const [conferenciaDinheiro, setConferenciaDinheiro] = useState("");
+  const [erroCaixa, setErroCaixa] = useState("");
+  const carregandoRef = useRef(false);
 
   const caixaAberto = caixa?.status === "aberto";
 
   async function carregarCaixa() {
-    try {
-      setCarregando(true);
+  if (carregandoRef.current) return;
 
-      const response = await api.get("/caixa/resumo");
+  try {
+    carregandoRef.current = true;
+    setCarregando(true);
+    setErroCaixa("");
 
-      setCaixa(response.data.caixa || null);
-      setPedidos(response.data.pedidos || []);
-      setResumoApi(response.data.resumo || null);
-      const historicoResponse =
-  await api.get("/caixa/historico");
+    const [resumoResponse, historicoResponse] = await Promise.all([
+      api.get("/caixa/resumo"),
+      api.get("/caixa/historico").catch(() => ({ data: { caixas: [] } })),
+    ]);
 
-setHistoricoCaixas(
-  historicoResponse.data.caixas || []
-);
+    setCaixa(resumoResponse.data.caixa || null);
+    setPedidos(resumoResponse.data.pedidos || []);
+    setResumoApi(resumoResponse.data.resumo || null);
+    setHistoricoCaixas(historicoResponse.data.caixas || []);
 
-      if (response.data.caixa?.saldoInicial !== undefined) {
-        setSaldoInicial(Number(response.data.caixa.saldoInicial || 0));
-      }
-
-      localStorage.setItem(
-        "caixaAberto",
-        response.data.caixa?.status === "aberto" ? "true" : "false"
-      );
-    } catch (error) {
-      console.log("Erro ao carregar caixa:", error);
-    } finally {
-      setCarregando(false);
+    if (resumoResponse.data.caixa?.saldoInicial !== undefined) {
+      setSaldoInicial(Number(resumoResponse.data.caixa.saldoInicial || 0));
     }
+
+    localStorage.setItem(
+      "caixaAberto",
+      resumoResponse.data.caixa?.status === "aberto" ? "true" : "false"
+    );
+  } catch (error) {
+    console.log("Erro ao carregar caixa:", error);
+    setErroCaixa(
+      error.response?.data?.message ||
+        "Não foi possível carregar o caixa. Clique em atualizar."
+    );
+  } finally {
+    carregandoRef.current = false;
+    setCarregando(false);
   }
+}
 
   useEffect(() => {
     carregarCaixa();
@@ -339,6 +348,15 @@ ${conteudo}
   return (
     <AdminLayout title="Caixa" subtitle="Controle profissional do caixa diário">
       <div className="caixa-pro-page">
+      {erroCaixa && (
+  <div className="caixa-erro-box">
+    <strong>Erro ao carregar caixa</strong>
+    <span>{erroCaixa}</span>
+    <button type="button" onClick={carregarCaixa}>
+      Atualizar
+    </button>
+  </div>
+)}
         <section className="caixa-pro-top">
           <div className="caixa-pro-title">
             <button className="caixa-menu-btn">☰</button>
