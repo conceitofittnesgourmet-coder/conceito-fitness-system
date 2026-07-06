@@ -82,11 +82,11 @@ export default function Pdv() {
   const [produtoPesoModal, setProdutoPesoModal] = useState(null);
   const [quantidadePeso, setQuantidadePeso] = useState("1");
   const [pagamentos, setPagamentos] = useState([
-    {
-        id: crypto.randomUUID(),
-        forma: "DINHEIRO",
-        valor: ""
-    }
+  {
+    id: crypto.randomUUID(),
+    forma: "PIX",
+    valor: "",
+  },
 ]);
   
   async function carregarProdutos() {
@@ -535,12 +535,27 @@ if (!caixaAberto) {
       return;
     }
 
-    if (restante > 0) {
+    const pagamentosFinalizados =
+  pagamentos.length === 1 && Number(pagamentos[0].valor || 0) <= 0
+    ? [
+        {
+          ...pagamentos[0],
+          valor: totalPedido,
+        },
+      ]
+    : pagamentos;
+
+const totalPagoFinal = pagamentosFinalizados.reduce(
+  (acc, p) => acc + Number(p.valor || 0),
+  0
+);
+
+if (totalPagoFinal < totalPedido) {
   alert("Ainda existe valor pendente de pagamento.");
   return;
 }
 
-if (pagamentos.some((p) => Number(p.valor || 0) <= 0)) {
+if (pagamentosFinalizados.some((p) => Number(p.valor || 0) <= 0)) {
   alert("Todos os pagamentos precisam possuir um valor.");
   return;
 }
@@ -579,9 +594,9 @@ troco: Number(troco || 0),
 
       status: "pendente",
 
-      pagamento: pagamentos[0]?.forma || "PIX",
+      pagamento: pagamentosFinalizados[0]?.forma || "PIX",
 
-pagamentos: pagamentos.map((p) => ({
+pagamentos: pagamentosFinalizados.map((p) => ({
   forma: p.forma,
   valor: Number(p.valor || 0),
 })),
@@ -655,7 +670,7 @@ if (desejaImprimir) {
     setPagamentos([
   {
     id: crypto.randomUUID(),
-    forma: "DINHEIRO",
+    forma: "PIX",
     valor: "",
   },
 ]);
@@ -1240,10 +1255,12 @@ if (desejaImprimir) {
 
 </div>
 
-            <button
+           <button
   className="finalizar-pedido"
   onClick={finalizarPedido}
-  disabled={restante > 0}
+  disabled={
+    pagamentos.length > 1 && restante > 0
+  }
 >
   Finalizar Pedido
   <ArrowRight size={22} />
