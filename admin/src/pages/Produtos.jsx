@@ -108,6 +108,7 @@ const [selos, setSelos] = useState({
 
   const [modalOpen, setModalOpen] = useState(false);
   const [produtoEditando, setProdutoEditando] = useState(null);
+  const [abaCadastro, setAbaCadastro] = useState("basico");
 
   const [editNome, setEditNome] = useState("");
   const [editCategoria, setEditCategoria] = useState("");
@@ -498,6 +499,28 @@ const bateBusca =
             <FaBoxOpen />
             <h2>Cadastro de Produto</h2>
           </div>
+
+          <div className="produto-tabs">
+  <button className={abaCadastro === "basico" ? "active" : ""} onClick={() => setAbaCadastro("basico")} type="button">
+    1. Básico
+  </button>
+
+  <button className={abaCadastro === "venda" ? "active" : ""} onClick={() => setAbaCadastro("venda")} type="button">
+    2. Venda
+  </button>
+
+  <button className={abaCadastro === "cardapio" ? "active" : ""} onClick={() => setAbaCadastro("cardapio")} type="button">
+    3. Cardápio
+  </button>
+
+  <button className={abaCadastro === "nutricional" ? "active" : ""} onClick={() => setAbaCadastro("nutricional")} type="button">
+    4. Nutricional
+  </button>
+
+  <button className={abaCadastro === "imagem" ? "active" : ""} onClick={() => setAbaCadastro("imagem")} type="button">
+    5. Imagem
+  </button>
+</div>
 
           <div className="form-row-premium">
             <div className="field-premium">
