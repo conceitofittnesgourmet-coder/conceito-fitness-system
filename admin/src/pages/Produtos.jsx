@@ -109,6 +109,7 @@ const [selos, setSelos] = useState({
   const [modalOpen, setModalOpen] = useState(false);
   const [produtoEditando, setProdutoEditando] = useState(null);
   const [abaCadastro, setAbaCadastro] = useState("basico");
+  const [tipoWizard, setTipoWizard] = useState("simples");
 
   const [editNome, setEditNome] = useState("");
   const [editCategoria, setEditCategoria] = useState("");
@@ -499,6 +500,64 @@ const bateBusca =
             <FaBoxOpen />
             <h2>Cadastro de Produto</h2>
           </div>
+
+          <div className="produto-wizard">
+  <div className="produto-wizard-header">
+    <div>
+      <span>Assistente de Cadastro</span>
+      <h3>Que tipo de produto você está cadastrando?</h3>
+      <p>
+        O sistema vai organizar os campos conforme o tipo escolhido.
+      </p>
+    </div>
+  </div>
+
+  <div className="produto-wizard-grid">
+    {[
+      ["simples", "📦", "Produto simples"],
+      ["bolo", "🎂", "Bolo / Naked Cake"],
+      ["torta", "🥧", "Torta"],
+      ["cafe", "☕", "Café / Bebida"],
+      ["combo", "🥪", "Combo"],
+      ["kit", "🎁", "Kit"],
+      ["cesta", "🧺", "Cesta"],
+      ["peso", "⚖️", "Produto por peso"],
+    ].map(([id, emoji, label]) => (
+      <button
+        key={id}
+        type="button"
+        className={tipoWizard === id ? "active" : ""}
+        onClick={() => {
+          setTipoWizard(id);
+
+          if (id === "peso") {
+            setUnidadeMedida("KG");
+            setVendaPorPeso(true);
+            setPermiteFracionado(true);
+            setAbaCadastro("venda");
+          }
+
+          if (["bolo", "torta", "combo", "kit", "cesta"].includes(id)) {
+            setTipoProduto("producao");
+            setAbaCadastro("cardapio");
+          }
+
+          if (id === "cafe") {
+            setUnidadeMedida("UN");
+            setAbaCadastro("basico");
+          }
+
+          if (id === "simples") {
+            setAbaCadastro("basico");
+          }
+        }}
+      >
+        <strong>{emoji}</strong>
+        <span>{label}</span>
+      </button>
+    ))}
+  </div>
+</div>
 
           <div className="produto-tabs">
   <button className={abaCadastro === "basico" ? "active" : ""} onClick={() => setAbaCadastro("basico")} type="button">
