@@ -107,3 +107,23 @@
   color: white;
   border-color: transparent;
 }
+
+.produto-aba-card {
+  background: rgba(15, 23, 42, 0.72);
+  border: 1px solid rgba(148, 163, 184, 0.16);
+  border-radius: 24px;
+  padding: 22px;
+  margin-bottom: 22px;
+}
+
+.imagem-grid-produto {
+  display: grid;
+  grid-template-columns: 1fr 1fr;
+  gap: 18px;
+}
+
+@media (max-width: 900px) {
+  .imagem-grid-produto {
+    grid-template-columns: 1fr;
+  }
+}

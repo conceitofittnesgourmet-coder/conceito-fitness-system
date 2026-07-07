@@ -522,215 +522,225 @@ const bateBusca =
   </button>
 </div>
 
-          <div className="form-row-premium">
-            <div className="field-premium">
-              <label>Nome do produto *</label>
-              <input
-                placeholder="Ex.: Bolo de Cacau 100%"
-                value={nome}
-                onChange={(e) => setNome(e.target.value)}
-              />
-            </div>
-          </div>
+          {abaCadastro === "basico" && (
+  <div className="produto-aba-card">
+    <div className="form-row-premium">
+      <div className="field-premium">
+        <label>Nome do produto *</label>
+        <input
+          placeholder="Ex.: Bolo de Cacau 100%"
+          value={nome}
+          onChange={(e) => setNome(e.target.value)}
+        />
+      </div>
+    </div>
 
-          <CategoriasProduto
-            categoria={categoria}
-            setCategoria={setCategoria}
-            categorias={categorias}
-            setCategorias={setCategorias}
-            categoriasDisponiveis={categoriasDisponiveis}
+    <CategoriasProduto
+      categoria={categoria}
+      setCategoria={setCategoria}
+      categorias={categorias}
+      setCategorias={setCategorias}
+      categoriasDisponiveis={categoriasDisponiveis}
+    />
+
+    <div className="field-premium full">
+      <label>Descrição do produto</label>
+      <textarea
+        placeholder="Descreva os ingredientes, benefícios e diferenciais..."
+        value={descricao}
+        onChange={(e) => setDescricao(e.target.value)}
+      />
+    </div>
+  </div>
+)}
+
+{abaCadastro === "venda" && (
+  <div className="produto-aba-card">
+    <div className="premium-box">
+      <h3>
+        <FaInfoCircle />
+        Venda, preço e estoque
+      </h3>
+
+      <div className="mini-grid">
+        <div className="field-premium">
+          <label>Preço *</label>
+          <input
+            type="number"
+            step="0.01"
+            min="0"
+            inputMode="decimal"
+            placeholder="Ex: 15.90"
+            value={preco}
+            onChange={(e) => setPreco(e.target.value.replace(",", "."))}
           />
+        </div>
 
-          <ConstrutorUniversalProduto
-            gruposComponentes={gruposComponentes}
-            gruposSelecionados={gruposSelecionados}
-            setGruposSelecionados={setGruposSelecionados}
+        <div className="field-premium">
+          <label>Custo Produção</label>
+          <input
+            type="number"
+            step="0.01"
+            min="0"
+            value={custo}
+            onChange={(e) => setCusto(e.target.value.replace(",", "."))}
           />
+        </div>
 
-          <div className="field-premium full">
-            <label>Descrição do produto</label>
-            <textarea
-              placeholder="Descreva os ingredientes, benefícios e diferenciais..."
-              value={descricao}
-              onChange={(e) => setDescricao(e.target.value)}
-            />
-          </div>
+        <div className="field-premium">
+          <label>Estoque *</label>
+          <input
+            placeholder="0"
+            value={estoque}
+            onChange={(e) => setEstoque(e.target.value)}
+          />
+        </div>
 
-          <div className="form-blocks-premium">
-            <div className="premium-box">
-              <h3>
-                <FaInfoCircle />
-                Informações principais
-              </h3>
+        <div className="field-premium">
+          <label>Peso / porção</label>
+          <input
+            placeholder="Ex.: 120g"
+            value={peso}
+            onChange={(e) => setPeso(e.target.value)}
+          />
+        </div>
+      </div>
 
-              <div className="mini-grid">
-                <div className="field-premium">
-                  <label>Preço *</label>
-                <input
-  type="number"
-  step="0.01"
-  min="0"
-  inputMode="decimal"
-  placeholder="Ex: 15.90"
-  value={preco}
-  onChange={(e) =>
-    setPreco(e.target.value.replace(",", "."))
-  }
-/>
+      <UnidadeVendaProduto
+        unidadeMedida={unidadeMedida}
+        setUnidadeMedida={setUnidadeMedida}
+        vendaPorPeso={vendaPorPeso}
+        setVendaPorPeso={setVendaPorPeso}
+        permiteFracionado={permiteFracionado}
+        setPermiteFracionado={setPermiteFracionado}
+      />
 
-<DadosNutricionaisProduto
-  dados={informacoesNutricionais}
-  setDados={setInformacoesNutricionais}
-/>
+      <CodigoBarrasProduto
+        codigoBarras={codigoBarras}
+        setCodigoBarras={setCodigoBarras}
+        sku={sku}
+        setSku={setSku}
+      />
+    </div>
+  </div>
+)}
 
-<AlergenosProduto
-  alergenos={alergenos}
-  setAlergenos={setAlergenos}
-/>
+{abaCadastro === "cardapio" && (
+  <div className="produto-aba-card">
+    <div className="premium-box">
+      <h3>
+        <FaStar />
+        Cardápio Online e Montagem
+      </h3>
 
-<SelosProduto
-  selos={selos}
-  setSelos={setSelos}
-/>
-                </div>
-                <div className="field-premium">
-  <label>Custo Produção</label>
+      <label className="premium-switch">
+        <div>
+          <strong>Produto em destaque</strong>
+          <span>Marque para destacar no cardápio</span>
+        </div>
 
-  <input
-    type="number"
-    step="0.01"
-    min="0"
-    value={custo}
-    onChange={(e) =>
-      setCusto(e.target.value.replace(",", "."))
-    }
-  />
-</div>
+        <input
+          type="checkbox"
+          checked={destaque}
+          onChange={(e) => setDestaque(e.target.checked)}
+        />
+      </label>
 
-<div className="field-premium">
-  <label>Tipo Produto</label>
+      <div className="field-premium">
+        <label>Tipo Produto</label>
+        <select
+          value={tipoProduto}
+          onChange={(e) => setTipoProduto(e.target.value)}
+        >
+          <option value="producao">Produção Própria</option>
+          <option value="revenda">Revenda</option>
+          <option value="insumo">Insumo</option>
+        </select>
+      </div>
 
-  <select
-    value={tipoProduto}
-    onChange={(e) =>
-      setTipoProduto(e.target.value)
-    }
-  >
-    <option value="producao">
-      Produção Própria
-    </option>
+      <div className="field-premium">
+        <label>Tempo de preparo</label>
+        <input
+          placeholder="0 min"
+          value={tempoPreparo}
+          onChange={(e) => setTempoPreparo(e.target.value)}
+        />
+      </div>
 
-    <option value="revenda">
-      Revenda
-    </option>
+      <div className="field-premium full">
+        <label>Restrições</label>
+        <input
+          placeholder="Ex.: Sem glúten, Sem lactose"
+          value={restricoes}
+          onChange={(e) => setRestricoes(e.target.value)}
+        />
+      </div>
 
-    <option value="insumo">
-      Insumo
-    </option>
-  </select>
-</div>
+      <ConstrutorUniversalProduto
+        gruposComponentes={gruposComponentes}
+        gruposSelecionados={gruposSelecionados}
+        setGruposSelecionados={setGruposSelecionados}
+      />
+    </div>
+  </div>
+)}
 
-                <div className="field-premium">
-                  <label>Estoque *</label>
-                  <input
-                    placeholder="0"
-                    value={estoque}
-                    onChange={(e) => setEstoque(e.target.value)}
-                  />
-                </div>
+{abaCadastro === "nutricional" && (
+  <div className="produto-aba-card">
+    <DadosNutricionaisProduto
+      dados={informacoesNutricionais}
+      setDados={setInformacoesNutricionais}
+    />
 
-                <div className="field-premium">
-                  <label>Tempo de preparo</label>
-                  <input
-                    placeholder="0 min"
-                    value={tempoPreparo}
-                    onChange={(e) => setTempoPreparo(e.target.value)}
-                  />
-                </div>
+    <AlergenosProduto
+      alergenos={alergenos}
+      setAlergenos={setAlergenos}
+    />
 
-                <div className="field-premium">
-                  <label>Peso / porção</label>
-                  <input
-                    placeholder="Ex.: 120g"
-                    value={peso}
-                    onChange={(e) => setPeso(e.target.value)}
-                  />
-                </div>
-              </div>
+    <SelosProduto
+      selos={selos}
+      setSelos={setSelos}
+    />
+  </div>
+)}
 
-              <UnidadeVendaProduto
-                unidadeMedida={unidadeMedida}
-                setUnidadeMedida={setUnidadeMedida}
-                vendaPorPeso={vendaPorPeso}
-                setVendaPorPeso={setVendaPorPeso}
-                permiteFracionado={permiteFracionado}
-                setPermiteFracionado={setPermiteFracionado}
-              />
+{abaCadastro === "imagem" && (
+  <div className="produto-aba-card imagem-grid-produto">
+    <div className="premium-box">
+      <h3>
+        <FaCloudUploadAlt />
+        Imagens do Produto
+      </h3>
 
-              <CodigoBarrasProduto
-                codigoBarras={codigoBarras}
-                setCodigoBarras={setCodigoBarras}
-                sku={sku}
-                setSku={setSku}
-              />
+      <div
+        {...getRootProps()}
+        className={`upload-premium ${isDragActive ? "active" : ""}`}
+      >
+        <input {...getInputProps()} />
+        <FaCloudUploadAlt />
+        <strong>Clique ou arraste a imagem aqui</strong>
+        <span>PNG, JPG até 5MB</span>
+      </div>
+    </div>
 
-              <div className="field-premium full">
-                <label>Restrições</label>
-                <input
-                  placeholder="Ex.: Sem glúten, Sem lactose"
-                  value={restricoes}
-                  onChange={(e) => setRestricoes(e.target.value)}
-                />
-              </div>
-            </div>
+    <div className="premium-box preview-premium">
+      <h3>
+        <FaImage />
+        Prévia da imagem
+      </h3>
 
-            <div className="premium-box">
-              <h3>
-                <FaStar />
-                Destaque e imagem
-              </h3>
-
-              <label className="premium-switch">
-                <div>
-                  <strong>Produto em destaque</strong>
-                  <span>Marque para destacar no cardápio</span>
-                </div>
-
-                <input
-                  type="checkbox"
-                  checked={destaque}
-                  onChange={(e) => setDestaque(e.target.checked)}
-                />
-              </label>
-
-              <div
-                {...getRootProps()}
-                className={`upload-premium ${isDragActive ? "active" : ""}`}
-              >
-                <input {...getInputProps()} />
-                <FaCloudUploadAlt />
-                <strong>Clique ou arraste a imagem aqui</strong>
-                <span>PNG, JPG até 5MB</span>
-              </div>
-            </div>
-
-            <div className="premium-box preview-premium">
-              <h3>
-                <FaImage />
-                Prévia da imagem
-              </h3>
-
-              {previewCadastro ? (
-                <img src={previewCadastro} alt="Prévia" />
-              ) : (
-                <div className="empty-preview">
-                  <FaImage />
-                  <strong>Nenhuma imagem</strong>
-                  <span>A imagem do produto aparecerá aqui</span>
-                </div>
-              )}
-            </div>
-          </div>
+      {previewCadastro ? (
+        <img src={previewCadastro} alt="Prévia" />
+      ) : (
+        <div className="empty-preview">
+          <FaImage />
+          <strong>Nenhuma imagem</strong>
+          <span>A imagem do produto aparecerá aqui</span>
+        </div>
+      )}
+    </div>
+  </div>
+)}
 
           <div className="form-actions-premium">
             <button className="clear-btn-premium" onClick={limparFormulario}>
