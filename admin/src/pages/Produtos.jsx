@@ -110,6 +110,56 @@ const [selos, setSelos] = useState({
   const [produtoEditando, setProdutoEditando] = useState(null);
   const [abaCadastro, setAbaCadastro] = useState("basico");
   const [tipoWizard, setTipoWizard] = useState("simples");
+  const templatesProduto = {
+  simples: [],
+
+  bolo: [
+    "Tamanho",
+    "Massa",
+    "Recheio",
+    "Cobertura",
+    "Decoração",
+    "Adicionais",
+  ],
+
+  torta: [
+    "Tamanho",
+    "Massa",
+    "Recheio",
+    "Cobertura",
+  ],
+
+  cafe: [
+    "Tamanho",
+    "Leite",
+    "Temperatura",
+    "Calda",
+    "Extras",
+  ],
+
+  combo: [
+    "Itens",
+    "Bebidas",
+    "Sobremesas",
+  ],
+
+  kit: [
+    "Produtos",
+    "Embalagem",
+    "Cartão",
+  ],
+
+  cesta: [
+    "Produtos",
+    "Embalagem",
+    "Mensagem",
+    "Laço",
+  ],
+
+  peso: [
+    "Peso",
+  ],
+};
 
   const [editNome, setEditNome] = useState("");
   const [editCategoria, setEditCategoria] = useState("");
@@ -529,6 +579,32 @@ const bateBusca =
         className={tipoWizard === id ? "active" : ""}
         onClick={() => {
           setTipoWizard(id);
+
+          {templatesProduto[tipoWizard]?.length > 0 && (
+  <div className="template-preview">
+
+    <h3>
+      Template Inteligente
+    </h3>
+
+    <p>
+      Este tipo de produto normalmente utiliza:
+    </p>
+
+    <div className="template-chips">
+
+      {templatesProduto[tipoWizard].map((item) => (
+
+        <span key={item}>
+          ✓ {item}
+        </span>
+
+      ))}
+
+    </div>
+
+  </div>
+)}
 
           if (id === "peso") {
             setUnidadeMedida("KG");

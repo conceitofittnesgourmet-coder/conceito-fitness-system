@@ -340,3 +340,59 @@
   color: #cbd5e1;
   line-height: 1.45;
 }
+
+.template-preview{
+
+margin-bottom:25px;
+
+padding:22px;
+
+border-radius:20px;
+
+background:rgba(34,197,94,.08);
+
+border:1px solid rgba(34,197,94,.22);
+
+}
+
+.template-preview h3{
+
+margin-bottom:8px;
+
+color:#22c55e;
+
+}
+
+.template-preview p{
+
+color:#94a3b8;
+
+margin-bottom:16px;
+
+}
+
+.template-chips{
+
+display:flex;
+
+flex-wrap:wrap;
+
+gap:10px;
+
+}
+
+.template-chips span{
+
+padding:10px 16px;
+
+border-radius:999px;
+
+background:#22c55e;
+
+color:white;
+
+font-weight:700;
+
+font-size:14px;
+
+}
