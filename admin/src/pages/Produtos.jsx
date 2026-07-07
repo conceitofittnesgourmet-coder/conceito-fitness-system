@@ -674,6 +674,25 @@ const bateBusca =
         setPermiteFracionado={setPermiteFracionado}
       />
 
+      {tipoWizard === "peso" && (
+  <div className="wizard-context-box">
+    <strong>⚖️ Produto por peso/fracionado</strong>
+    <p>
+      Esse produto será vendido por quantidade decimal no PDV, como 1,250 kg,
+      0,500 kg ou outra fração.
+    </p>
+  </div>
+)}
+
+{["bolo", "torta"].includes(tipoWizard) && (
+  <div className="wizard-context-box">
+    <strong>🎂 Produto com peso/porção</strong>
+    <p>
+      Informe o peso comercial, como 250g, 500g, 1kg ou tamanho personalizado.
+    </p>
+  </div>
+)}
+
       <CodigoBarrasProduto
         codigoBarras={codigoBarras}
         setCodigoBarras={setCodigoBarras}
@@ -735,11 +754,41 @@ const bateBusca =
         />
       </div>
 
-      <ConstrutorUniversalProduto
-        gruposComponentes={gruposComponentes}
-        gruposSelecionados={gruposSelecionados}
-        setGruposSelecionados={setGruposSelecionados}
-      />
+      <div className="wizard-context-box">
+  <strong>
+    {tipoWizard === "bolo" && "🎂 Configuração recomendada para bolos"}
+    {tipoWizard === "torta" && "🥧 Configuração recomendada para tortas"}
+    {tipoWizard === "cafe" && "☕ Configuração recomendada para cafés e bebidas"}
+    {tipoWizard === "combo" && "🥪 Configuração recomendada para combos"}
+    {tipoWizard === "kit" && "🎁 Configuração recomendada para kits"}
+    {tipoWizard === "cesta" && "🧺 Configuração recomendada para cestas"}
+    {tipoWizard === "peso" && "⚖️ Configuração recomendada para produto por peso"}
+    {tipoWizard === "simples" && "📦 Produto simples"}
+  </strong>
+
+  <p>
+    {["bolo", "torta"].includes(tipoWizard) &&
+      "Use grupos como massa, recheio, cobertura, decoração, tamanho e adicionais."}
+
+    {tipoWizard === "cafe" &&
+      "Use grupos como tamanho, tipo de leite, temperatura, caldas, chantilly e adicionais."}
+
+    {["combo", "kit", "cesta"].includes(tipoWizard) &&
+      "Use grupos para selecionar itens, embalagens, cartões, adicionais e personalizações."}
+
+    {tipoWizard === "peso" &&
+      "Configure unidade em KG, venda fracionada e peso mínimo/máximo quando necessário."}
+
+    {tipoWizard === "simples" &&
+      "Este produto pode ser vendido diretamente, sem montagem obrigatória."}
+  </p>
+</div>
+
+<ConstrutorUniversalProduto
+  gruposComponentes={gruposComponentes}
+  gruposSelecionados={gruposSelecionados}
+  setGruposSelecionados={setGruposSelecionados}
+/>
     </div>
   </div>
 )}
