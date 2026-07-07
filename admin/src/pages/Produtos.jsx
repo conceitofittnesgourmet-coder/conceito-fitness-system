@@ -20,13 +20,18 @@ import toast from "react-hot-toast";
 import AdminLayout from "../layouts/AdminLayout";
 import socket from "../services/socket";
 import api from "../services/api";
-import CategoriasProduto from "../components/ProdutoForm/CategoriasProduto";
-import ConstrutorUniversalProduto from "../components/ProdutoForm/ConstrutorUniversalProduto";
-import CodigoBarrasProduto from "../components/ProdutoForm/CodigoBarrasProduto";
-import UnidadeVendaProduto from "../components/ProdutoForm/UnidadeVendaProduto";
+
 import DadosNutricionaisProduto from "../components/ProdutoForm/DadosNutricionaisProduto";
 import AlergenosProduto from "../components/ProdutoForm/AlergenosProduto";
 import SelosProduto from "../components/ProdutoForm/SelosProduto";
+import WizardProduto from "../components/ProdutoForm/WizardProduto";
+import TemplatePreview from "../components/ProdutoForm/TemplatePreview";
+import ProdutoTabs from "../components/ProdutoForm/ProdutoTabs";
+import ProdutoBasico from "../components/ProdutoForm/ProdutoBasico";
+import ProdutoVenda from "../components/ProdutoForm/ProdutoVenda";
+import ProdutoCardapio from "../components/ProdutoForm/ProdutoCardapio";
+import ProdutoNutricional from "../components/ProdutoForm/ProdutoNutricional";
+import ProdutoImagem from "../components/ProdutoForm/ProdutoImagem";
 
 const API_URL = "https://conceito-fitness-system.onrender.com";
 
@@ -551,381 +556,105 @@ const bateBusca =
             <h2>Cadastro de Produto</h2>
           </div>
 
-          <div className="produto-wizard">
-  <div className="produto-wizard-header">
-    <div>
-      <span>Assistente de Cadastro</span>
-      <h3>Que tipo de produto você está cadastrando?</h3>
-      <p>
-        O sistema vai organizar os campos conforme o tipo escolhido.
-      </p>
-    </div>
-  </div>
+          <WizardProduto
+  tipoWizard={tipoWizard}
+  setTipoWizard={setTipoWizard}
+  templatesProduto={templatesProduto}
+  gruposComponentes={gruposComponentes}
+  setGruposSelecionados={setGruposSelecionados}
+  setUnidadeMedida={setUnidadeMedida}
+  setVendaPorPeso={setVendaPorPeso}
+  setPermiteFracionado={setPermiteFracionado}
+  setTipoProduto={setTipoProduto}
+  setAbaCadastro={setAbaCadastro}
+/>
 
-  <div className="produto-wizard-grid">
-    {[
-      ["simples", "📦", "Produto simples"],
-      ["bolo", "🎂", "Bolo / Naked Cake"],
-      ["torta", "🥧", "Torta"],
-      ["cafe", "☕", "Café / Bebida"],
-      ["combo", "🥪", "Combo"],
-      ["kit", "🎁", "Kit"],
-      ["cesta", "🧺", "Cesta"],
-      ["peso", "⚖️", "Produto por peso"],
-    ].map(([id, emoji, label]) => (
-      <button
-        key={id}
-        type="button"
-        className={tipoWizard === id ? "active" : ""}
-        onClick={() => {
-          setTipoWizard(id);
+<TemplatePreview
+  tipoWizard={tipoWizard}
+  templatesProduto={templatesProduto}
+  gruposSelecionados={gruposSelecionados}
+/>
 
-          {templatesProduto[tipoWizard]?.length > 0 && (
-  <div className="template-preview">
+<ProdutoTabs
+  abaCadastro={abaCadastro}
+  setAbaCadastro={setAbaCadastro}
+/>
 
-    <h3>
-      Template Inteligente
-    </h3>
-
-    <p>
-      Este tipo de produto normalmente utiliza:
-    </p>
-
-    <div className="template-chips">
-
-      {templatesProduto[tipoWizard].map((item) => (
-
-        <span key={item}>
-          ✓ {item}
-        </span>
-
-      ))}
-
-    </div>
-
-  </div>
-)}
-
-          if (id === "peso") {
-            setUnidadeMedida("KG");
-            setVendaPorPeso(true);
-            setPermiteFracionado(true);
-            setAbaCadastro("venda");
-          }
-
-          if (["bolo", "torta", "combo", "kit", "cesta"].includes(id)) {
-            setTipoProduto("producao");
-            setAbaCadastro("cardapio");
-          }
-
-          if (id === "cafe") {
-            setUnidadeMedida("UN");
-            setAbaCadastro("basico");
-          }
-
-          if (id === "simples") {
-            setAbaCadastro("basico");
-          }
-        }}
-      >
-        <strong>{emoji}</strong>
-        <span>{label}</span>
-      </button>
-    ))}
-  </div>
-</div>
-
-          <div className="produto-tabs">
-  <button className={abaCadastro === "basico" ? "active" : ""} onClick={() => setAbaCadastro("basico")} type="button">
-    1. Básico
-  </button>
-
-  <button className={abaCadastro === "venda" ? "active" : ""} onClick={() => setAbaCadastro("venda")} type="button">
-    2. Venda
-  </button>
-
-  <button className={abaCadastro === "cardapio" ? "active" : ""} onClick={() => setAbaCadastro("cardapio")} type="button">
-    3. Cardápio
-  </button>
-
-  <button className={abaCadastro === "nutricional" ? "active" : ""} onClick={() => setAbaCadastro("nutricional")} type="button">
-    4. Nutricional
-  </button>
-
-  <button className={abaCadastro === "imagem" ? "active" : ""} onClick={() => setAbaCadastro("imagem")} type="button">
-    5. Imagem
-  </button>
-</div>
-
-          {abaCadastro === "basico" && (
-  <div className="produto-aba-card">
-    <div className="form-row-premium">
-      <div className="field-premium">
-        <label>Nome do produto *</label>
-        <input
-          placeholder="Ex.: Bolo de Cacau 100%"
-          value={nome}
-          onChange={(e) => setNome(e.target.value)}
-        />
-      </div>
-    </div>
-
-    <CategoriasProduto
-      categoria={categoria}
-      setCategoria={setCategoria}
-      categorias={categorias}
-      setCategorias={setCategorias}
-      categoriasDisponiveis={categoriasDisponiveis}
-    />
-
-    <div className="field-premium full">
-      <label>Descrição do produto</label>
-      <textarea
-        placeholder="Descreva os ingredientes, benefícios e diferenciais..."
-        value={descricao}
-        onChange={(e) => setDescricao(e.target.value)}
-      />
-    </div>
-  </div>
+{abaCadastro === "basico" && (
+  <ProdutoBasico
+    nome={nome}
+    setNome={setNome}
+    categoria={categoria}
+    setCategoria={setCategoria}
+    categorias={categorias}
+    setCategorias={setCategorias}
+    categoriasDisponiveis={categoriasDisponiveis}
+    descricao={descricao}
+    setDescricao={setDescricao}
+  />
 )}
 
 {abaCadastro === "venda" && (
-  <div className="produto-aba-card">
-    <div className="premium-box">
-      <h3>
-        <FaInfoCircle />
-        Venda, preço e estoque
-      </h3>
-
-      <div className="mini-grid">
-        <div className="field-premium">
-          <label>Preço *</label>
-          <input
-            type="number"
-            step="0.01"
-            min="0"
-            inputMode="decimal"
-            placeholder="Ex: 15.90"
-            value={preco}
-            onChange={(e) => setPreco(e.target.value.replace(",", "."))}
-          />
-        </div>
-
-        <div className="field-premium">
-          <label>Custo Produção</label>
-          <input
-            type="number"
-            step="0.01"
-            min="0"
-            value={custo}
-            onChange={(e) => setCusto(e.target.value.replace(",", "."))}
-          />
-        </div>
-
-        <div className="field-premium">
-          <label>Estoque *</label>
-          <input
-            placeholder="0"
-            value={estoque}
-            onChange={(e) => setEstoque(e.target.value)}
-          />
-        </div>
-
-        <div className="field-premium">
-          <label>Peso / porção</label>
-          <input
-            placeholder="Ex.: 120g"
-            value={peso}
-            onChange={(e) => setPeso(e.target.value)}
-          />
-        </div>
-      </div>
-
-      <UnidadeVendaProduto
-        unidadeMedida={unidadeMedida}
-        setUnidadeMedida={setUnidadeMedida}
-        vendaPorPeso={vendaPorPeso}
-        setVendaPorPeso={setVendaPorPeso}
-        permiteFracionado={permiteFracionado}
-        setPermiteFracionado={setPermiteFracionado}
-      />
-
-      {tipoWizard === "peso" && (
-  <div className="wizard-context-box">
-    <strong>⚖️ Produto por peso/fracionado</strong>
-    <p>
-      Esse produto será vendido por quantidade decimal no PDV, como 1,250 kg,
-      0,500 kg ou outra fração.
-    </p>
-  </div>
-)}
-
-{["bolo", "torta"].includes(tipoWizard) && (
-  <div className="wizard-context-box">
-    <strong>🎂 Produto com peso/porção</strong>
-    <p>
-      Informe o peso comercial, como 250g, 500g, 1kg ou tamanho personalizado.
-    </p>
-  </div>
-)}
-
-      <CodigoBarrasProduto
-        codigoBarras={codigoBarras}
-        setCodigoBarras={setCodigoBarras}
-        sku={sku}
-        setSku={setSku}
-      />
-    </div>
-  </div>
+  <ProdutoVenda
+    tipoWizard={tipoWizard}
+    preco={preco}
+    setPreco={setPreco}
+    custo={custo}
+    setCusto={setCusto}
+    estoque={estoque}
+    setEstoque={setEstoque}
+    peso={peso}
+    setPeso={setPeso}
+    unidadeMedida={unidadeMedida}
+    setUnidadeMedida={setUnidadeMedida}
+    vendaPorPeso={vendaPorPeso}
+    setVendaPorPeso={setVendaPorPeso}
+    permiteFracionado={permiteFracionado}
+    setPermiteFracionado={setPermiteFracionado}
+    codigoBarras={codigoBarras}
+    setCodigoBarras={setCodigoBarras}
+    sku={sku}
+    setSku={setSku}
+  />
 )}
 
 {abaCadastro === "cardapio" && (
-  <div className="produto-aba-card">
-    <div className="premium-box">
-      <h3>
-        <FaStar />
-        Cardápio Online e Montagem
-      </h3>
-
-      <label className="premium-switch">
-        <div>
-          <strong>Produto em destaque</strong>
-          <span>Marque para destacar no cardápio</span>
-        </div>
-
-        <input
-          type="checkbox"
-          checked={destaque}
-          onChange={(e) => setDestaque(e.target.checked)}
-        />
-      </label>
-
-      <div className="field-premium">
-        <label>Tipo Produto</label>
-        <select
-          value={tipoProduto}
-          onChange={(e) => setTipoProduto(e.target.value)}
-        >
-          <option value="producao">Produção Própria</option>
-          <option value="revenda">Revenda</option>
-          <option value="insumo">Insumo</option>
-        </select>
-      </div>
-
-      <div className="field-premium">
-        <label>Tempo de preparo</label>
-        <input
-          placeholder="0 min"
-          value={tempoPreparo}
-          onChange={(e) => setTempoPreparo(e.target.value)}
-        />
-      </div>
-
-      <div className="field-premium full">
-        <label>Restrições</label>
-        <input
-          placeholder="Ex.: Sem glúten, Sem lactose"
-          value={restricoes}
-          onChange={(e) => setRestricoes(e.target.value)}
-        />
-      </div>
-
-      <div className="wizard-context-box">
-  <strong>
-    {tipoWizard === "bolo" && "🎂 Configuração recomendada para bolos"}
-    {tipoWizard === "torta" && "🥧 Configuração recomendada para tortas"}
-    {tipoWizard === "cafe" && "☕ Configuração recomendada para cafés e bebidas"}
-    {tipoWizard === "combo" && "🥪 Configuração recomendada para combos"}
-    {tipoWizard === "kit" && "🎁 Configuração recomendada para kits"}
-    {tipoWizard === "cesta" && "🧺 Configuração recomendada para cestas"}
-    {tipoWizard === "peso" && "⚖️ Configuração recomendada para produto por peso"}
-    {tipoWizard === "simples" && "📦 Produto simples"}
-  </strong>
-
-  <p>
-    {["bolo", "torta"].includes(tipoWizard) &&
-      "Use grupos como massa, recheio, cobertura, decoração, tamanho e adicionais."}
-
-    {tipoWizard === "cafe" &&
-      "Use grupos como tamanho, tipo de leite, temperatura, caldas, chantilly e adicionais."}
-
-    {["combo", "kit", "cesta"].includes(tipoWizard) &&
-      "Use grupos para selecionar itens, embalagens, cartões, adicionais e personalizações."}
-
-    {tipoWizard === "peso" &&
-      "Configure unidade em KG, venda fracionada e peso mínimo/máximo quando necessário."}
-
-    {tipoWizard === "simples" &&
-      "Este produto pode ser vendido diretamente, sem montagem obrigatória."}
-  </p>
-</div>
-
-<ConstrutorUniversalProduto
-  gruposComponentes={gruposComponentes}
-  gruposSelecionados={gruposSelecionados}
-  setGruposSelecionados={setGruposSelecionados}
-/>
-    </div>
-  </div>
+  <ProdutoCardapio
+    tipoWizard={tipoWizard}
+    destaque={destaque}
+    setDestaque={setDestaque}
+    tipoProduto={tipoProduto}
+    setTipoProduto={setTipoProduto}
+    tempoPreparo={tempoPreparo}
+    setTempoPreparo={setTempoPreparo}
+    restricoes={restricoes}
+    setRestricoes={setRestricoes}
+    gruposComponentes={gruposComponentes}
+    gruposSelecionados={gruposSelecionados}
+    setGruposSelecionados={setGruposSelecionados}
+  />
 )}
 
 {abaCadastro === "nutricional" && (
-  <div className="produto-aba-card">
-    <DadosNutricionaisProduto
-      dados={informacoesNutricionais}
-      setDados={setInformacoesNutricionais}
-    />
-
-    <AlergenosProduto
-      alergenos={alergenos}
-      setAlergenos={setAlergenos}
-    />
-
-    <SelosProduto
-      selos={selos}
-      setSelos={setSelos}
-    />
-  </div>
+  <ProdutoNutricional
+    informacoesNutricionais={informacoesNutricionais}
+    setInformacoesNutricionais={setInformacoesNutricionais}
+    alergenos={alergenos}
+    setAlergenos={setAlergenos}
+    selos={selos}
+    setSelos={setSelos}
+  />
 )}
 
 {abaCadastro === "imagem" && (
-  <div className="produto-aba-card imagem-grid-produto">
-    <div className="premium-box">
-      <h3>
-        <FaCloudUploadAlt />
-        Imagens do Produto
-      </h3>
-
-      <div
-        {...getRootProps()}
-        className={`upload-premium ${isDragActive ? "active" : ""}`}
-      >
-        <input {...getInputProps()} />
-        <FaCloudUploadAlt />
-        <strong>Clique ou arraste a imagem aqui</strong>
-        <span>PNG, JPG até 5MB</span>
-      </div>
-    </div>
-
-    <div className="premium-box preview-premium">
-      <h3>
-        <FaImage />
-        Prévia da imagem
-      </h3>
-
-      {previewCadastro ? (
-        <img src={previewCadastro} alt="Prévia" />
-      ) : (
-        <div className="empty-preview">
-          <FaImage />
-          <strong>Nenhuma imagem</strong>
-          <span>A imagem do produto aparecerá aqui</span>
-        </div>
-      )}
-    </div>
-  </div>
+  <ProdutoImagem
+    getRootProps={getRootProps}
+    getInputProps={getInputProps}
+    isDragActive={isDragActive}
+    previewCadastro={previewCadastro}
+  />
 )}
-
+          
           <div className="form-actions-premium">
             <button className="clear-btn-premium" onClick={limparFormulario}>
               Limpar
@@ -1210,7 +939,7 @@ const bateBusca =
 
               {previewEdit && <img src={previewEdit} alt="" className="preview-image" />}
 
-                <DadosNutricionaisProduto
+              <DadosNutricionaisProduto
   dados={editInformacoesNutricionais}
   setDados={setEditInformacoesNutricionais}
 />
