@@ -18,6 +18,7 @@ import api from "../services/api";
 import socket from "../services/socket";
 import "../styles/pdv.css";
 import AdminLayout from "../layouts/AdminLayout";
+import ProdutoConfigModal from "../components/PDVConfiguravel/ProdutoConfigModal";
 
 const COMANDAS_INICIAIS = [
   { id: "balcao", nome: "Balcão", tipo: "balcao" },
@@ -82,12 +83,13 @@ export default function Pdv() {
   const [produtoPesoModal, setProdutoPesoModal] = useState(null);
   const [quantidadePeso, setQuantidadePeso] = useState("1");
   const [pagamentos, setPagamentos] = useState([
-  {
+   {
     id: crypto.randomUUID(),
     forma: "PIX",
     valor: "",
   },
 ]);
+const [produtoConfigModal, setProdutoConfigModal] = useState(null);
   
   async function carregarProdutos() {
     try {
@@ -231,7 +233,16 @@ function resumoComanda(id) {
   });
 }
 
- function adicionarProduto(produto) {
+function adicionarProduto(produto) {
+  if (produto.gruposComponentes && produto.gruposComponentes.length > 0) {
+    setProdutoConfigModal(produto);
+    return;
+  }
+
+  adicionarProdutoSemConfiguracao(produto);
+}
+
+ function adicionarProdutoSemConfiguracao(produto) {
   const id = produto._id || produto.id;
 
   const vendaPorPeso = Boolean(produto.vendaPorPeso);
@@ -244,6 +255,71 @@ function resumoComanda(id) {
   setProdutoPesoModal(produto);
   setQuantidadePeso("1");
   return;
+}
+
+
+  const existe = cart.find((item) => item.id === id);
+
+  const precoUnitario = Number(produto.preco || 0);
+
+  const produtoFormatado = {
+    id,
+    produtoId: produto._id || produto.id,
+    nome: produto.nome,
+    preco: precoUnitario,
+    precoUnitario,
+    unidadeMedida,
+    vendaPorPeso,
+    permiteFracionado,
+    quantidade: quantidadeInicial,
+    subtotal: precoUnitario * quantidadeInicial,
+    imagem: getImagemProduto(produto),
+    configuracoes: produto.configuracoes || [],
+  };
+
+  if (existe) {
+    atualizarCarrinhoComanda(
+      cart.map((item) =>
+        item.id === id
+          ? {
+              ...item,
+              quantidade:
+                Number(item.quantidade || 0) + quantidadeInicial,
+              subtotal:
+                Number(item.preco || 0) *
+                (Number(item.quantidade || 0) + quantidadeInicial),
+            }
+          : item
+      )
+    );
+  } else {
+    atualizarCarrinhoComanda([...cart, produtoFormatado]);
+  }
+}
+ 
+  function confirmarProdutoConfigurado({
+  produto,
+  escolhas,
+  precoFinal,
+  adicionais,
+}) {
+
+  const novoProduto = {
+    ...produto,
+
+    preco: precoFinal,
+
+    precoOriginal: produto.preco,
+
+    adicionais,
+
+    configuracoes: escolhas,
+  };
+
+  setProdutoConfigModal(null);
+
+  adicionarProdutoSemConfiguracao(novoProduto);
+
 }
 
 function confirmarProdutoPeso() {
@@ -301,44 +377,6 @@ function confirmarProdutoPeso() {
 
   setProdutoPesoModal(null);
   setQuantidadePeso("1");
-}
-
-  const existe = cart.find((item) => item.id === id);
-
-  const precoUnitario = Number(produto.preco || 0);
-
-  const produtoFormatado = {
-    id,
-    produtoId: produto._id || produto.id,
-    nome: produto.nome,
-    preco: precoUnitario,
-    precoUnitario,
-    unidadeMedida,
-    vendaPorPeso,
-    permiteFracionado,
-    quantidade: quantidadeInicial,
-    subtotal: precoUnitario * quantidadeInicial,
-    imagem: getImagemProduto(produto),
-  };
-
-  if (existe) {
-    atualizarCarrinhoComanda(
-      cart.map((item) =>
-        item.id === id
-          ? {
-              ...item,
-              quantidade:
-                Number(item.quantidade || 0) + quantidadeInicial,
-              subtotal:
-                Number(item.preco || 0) *
-                (Number(item.quantidade || 0) + quantidadeInicial),
-            }
-          : item
-      )
-    );
-  } else {
-    atualizarCarrinhoComanda([...cart, produtoFormatado]);
-  }
 }
 
   function removerProduto(id) {
@@ -616,6 +654,7 @@ pagamentos: pagamentosFinalizados.map((p) => ({
       ? Number(item.subtotal || 0)
       : Number(item.preco || 0) * Number(item.quantidade || 1),
   imagem: item.imagem,
+  configuracoes: item.configuracoes || [],
 })),
 
     subtotal: subtotalPedido,
@@ -1319,6 +1358,7 @@ if (desejaImprimir) {
         </strong>
       </p>
 
+      
       <input
         type="text"
         inputMode="decimal"
@@ -1333,7 +1373,10 @@ if (desejaImprimir) {
           Number(produtoPesoModal.preco || 0) *
             Number(String(quantidadePeso || 0).replace(",", "."))
         )}
+        
       </h3>
+
+        
 
       <div className="modal-buttons">
         <button className="btn-save" onClick={confirmarProdutoPeso}>
@@ -1347,12 +1390,21 @@ if (desejaImprimir) {
             setQuantidadePeso("1");
           }}
         >
+          
           Cancelar
         </button>
       </div>
     </div>
   </div>
 )}  
+
+{produtoConfigModal && (
+  <ProdutoConfigModal
+    produto={produtoConfigModal}
+    onClose={() => setProdutoConfigModal(null)}
+    onConfirmar={confirmarProdutoConfigurado}
+  />
+)}
 
           </div>
         </AdminLayout>

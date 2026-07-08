@@ -45,7 +45,7 @@ const pedidoSchema =
 
 
 
-      produtos: [
+ produtos: [
   {
     produtoId: {
       type: mongoose.Schema.Types.ObjectId,
@@ -53,22 +53,27 @@ const pedidoSchema =
     },
 
     senha: Number,
-
     nome: String,
-
     quantidade: Number,
-
     preco: Number,
-
+    precoUnitario: Number,
+    unidadeMedida: String,
+    vendaPorPeso: Boolean,
+    permiteFracionado: Boolean,
     subtotal: Number,
-
     imagem: String,
-  }
+
+    configuracoes: [
+      {
+        grupoId: String,
+        grupo: String,
+        opcaoId: String,
+        opcao: String,
+        valor: Number,
+      },
+    ],
+  },
 ],
-
-
-
-
 
       total: {
 

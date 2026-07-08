@@ -1184,3 +1184,164 @@ margin:6px 0;
   opacity: 0.45;
   cursor: not-allowed;
 }
+
+.pdv-config-modal {
+  max-width: 1100px;
+  width: 96%;
+  max-height: 92vh;
+  overflow-y: auto;
+}
+
+.pdv-config-modal-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 18px;
+  align-items: flex-start;
+  margin-bottom: 18px;
+}
+
+.pdv-config-modal-header h2 {
+  margin: 0;
+}
+
+.pdv-config-modal-header p {
+  color: #64748b;
+  margin-top: 4px;
+}
+
+.pdv-config-modal-header button {
+  border: 0;
+  background: #ef4444;
+  color: white;
+  width: 36px;
+  height: 36px;
+  border-radius: 999px;
+  font-size: 22px;
+  cursor: pointer;
+}
+
+.pdv-config-engine {
+  display: grid;
+  grid-template-columns: 1fr 320px;
+  gap: 20px;
+}
+
+.pdv-config-lista {
+  display: grid;
+  gap: 16px;
+}
+
+.pdv-config-grupo {
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+  padding: 16px;
+  background: #fff;
+}
+
+.pdv-config-grupo-header {
+  display: flex;
+  justify-content: space-between;
+  gap: 12px;
+  margin-bottom: 14px;
+}
+
+.pdv-config-grupo-header h3 {
+  margin: 0;
+  color: #0f172a;
+}
+
+.pdv-config-grupo-header p {
+  color: #64748b;
+  margin-top: 4px;
+}
+
+.pdv-config-opcoes {
+  display: grid;
+  grid-template-columns: repeat(auto-fit, minmax(160px, 1fr));
+  gap: 10px;
+}
+
+.pdv-config-opcao {
+  border: 1px solid #d1d5db;
+  background: #f8fafc;
+  border-radius: 14px;
+  padding: 12px;
+  display: grid;
+  gap: 4px;
+  text-align: left;
+  cursor: pointer;
+}
+
+.pdv-config-opcao.active {
+  border-color: #22c55e;
+  background: #dcfce7;
+}
+
+.pdv-config-opcao span {
+  font-weight: 800;
+  color: #0f172a;
+}
+
+.pdv-config-opcao strong {
+  color: #16a34a;
+}
+
+.pdv-config-resumo {
+  position: sticky;
+  top: 0;
+  height: fit-content;
+  border: 1px solid #e5e7eb;
+  border-radius: 18px;
+  padding: 16px;
+  background: #f8fafc;
+}
+
+.pdv-config-resumo h3 {
+  margin: 0 0 10px;
+}
+
+.pdv-config-escolhas {
+  display: grid;
+  gap: 8px;
+  margin: 14px 0;
+}
+
+.pdv-config-escolhas div {
+  display: flex;
+  justify-content: space-between;
+  gap: 8px;
+  background: white;
+  padding: 10px;
+  border-radius: 12px;
+}
+
+.pdv-config-total {
+  border-top: 1px solid #e5e7eb;
+  padding-top: 14px;
+  display: flex;
+  justify-content: space-between;
+  align-items: center;
+}
+
+.pdv-config-total strong {
+  font-size: 22px;
+  color: #16a34a;
+}
+
+.pdv-config-empty,
+.pdv-config-loading {
+  padding: 16px;
+  border-radius: 14px;
+  background: #f1f5f9;
+  color: #64748b;
+}
+
+@media (max-width: 900px) {
+  .pdv-config-engine {
+    grid-template-columns: 1fr;
+  }
+
+  .pdv-config-resumo {
+    position: static;
+  }
+}
