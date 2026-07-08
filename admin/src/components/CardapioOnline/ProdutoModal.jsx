@@ -11,6 +11,11 @@ import {
   AlertTriangle,
 } from "lucide-react";
 import GrupoConfiguracao from "./GrupoConfiguracao";
+import {
+  obterGruposDoProduto,
+  calcularAdicionais,
+  validarGruposObrigatorios,
+} from "../ConfiguradorUniversal/configuradorUtils";
 
 function moeda(valor) {
   return Number(valor || 0).toLocaleString("pt-BR", {
@@ -47,17 +52,13 @@ function ProdutoModal({
   const alergenos = produto.alergenos || {};
   const nutri = produto.informacoesNutricionais || {};
 
-  const gruposIds = (produto.gruposComponentes || []).map((g) =>
-    typeof g === "string" ? g : g._id
-  );
-
-  const gruposDoProduto = grupos.filter((g) => gruposIds.includes(g._id));
+  const gruposDoProduto = obterGruposDoProduto(produto, grupos).filter(
+  (grupo) => grupo.mostrarCardapio
+);
 
   const adicionais = useMemo(() => {
-    return Object.values(selecoes)
-      .flat()
-      .reduce((acc, opcao) => acc + Number(opcao.precoAdicional || 0), 0);
-  }, [selecoes]);
+  return calcularAdicionais(selecoes);
+}, [selecoes]);
 
   const precoFinal = (Number(produto.preco || 0) + adicionais) * quantidade;
 
@@ -80,22 +81,22 @@ function ProdutoModal({
   ].filter(([campo]) => alergenos[campo]);
 
   function confirmar() {
-    for (const grupo of gruposDoProduto) {
-      const minimo = Number(grupo.minimoEscolhas || 0);
-      const selecionadas = selecoes[grupo._id] || [];
+  const validacao = validarGruposObrigatorios(
+    gruposDoProduto,
+    selecoes
+  );
 
-      if (grupo.obrigatorio && selecionadas.length < minimo) {
-        alert(`Escolha pelo menos ${minimo} opção(ões) em ${grupo.nome}.`);
-        return;
-      }
-    }
-
-    onAdicionar({
-      selecoes,
-      adicionais,
-      precoUnitario: Number(produto.preco || 0) + adicionais,
-    });
+  if (!validacao.valido) {
+    alert(validacao.mensagem);
+    return;
   }
+
+  onAdicionar({
+    selecoes,
+    adicionais,
+    precoUnitario: Number(produto.preco || 0) + adicionais,
+  });
+}
 
   return (
     <div className="co-modal-overlay">
