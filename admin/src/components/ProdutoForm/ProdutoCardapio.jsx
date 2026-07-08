@@ -1,5 +1,6 @@
 import { FaStar } from "react-icons/fa";
 import ConstrutorUniversalProduto from "./ConstrutorUniversalProduto";
+import ProdutoConfigEngine from "../ProdutoConfig/ProdutoConfigEngine";
 
 function ProdutoCardapio({
   tipoWizard,
@@ -14,6 +15,8 @@ function ProdutoCardapio({
   gruposComponentes,
   gruposSelecionados,
   setGruposSelecionados,
+  configuracaoGrupos,
+  setConfiguracaoGrupos,
 }) {
   return (
     <div className="produto-aba-card">
@@ -103,6 +106,12 @@ function ProdutoCardapio({
           gruposSelecionados={gruposSelecionados}
           setGruposSelecionados={setGruposSelecionados}
         />
+        <ProdutoConfigEngine
+  gruposComponentes={gruposComponentes}
+  gruposSelecionados={gruposSelecionados}
+  configuracaoGrupos={configuracaoGrupos}
+  setConfiguracaoGrupos={setConfiguracaoGrupos}
+/>
       </div>
     </div>
   );

@@ -32,6 +32,7 @@ import ProdutoVenda from "../components/ProdutoForm/ProdutoVenda";
 import ProdutoCardapio from "../components/ProdutoForm/ProdutoCardapio";
 import ProdutoNutricional from "../components/ProdutoForm/ProdutoNutricional";
 import ProdutoImagem from "../components/ProdutoForm/ProdutoImagem";
+import ProdutoConfigEngine from "../components/ProdutoConfig/ProdutoConfigEngine";
 
 const API_URL = "https://conceito-fitness-system.onrender.com";
 
@@ -80,6 +81,7 @@ function Produtos() {
   const [sku, setSku] = useState("");
   const [gruposComponentes, setGruposComponentes] = useState([]);
   const [gruposSelecionados, setGruposSelecionados] = useState([]);
+  const [configuracaoGrupos, setConfiguracaoGrupos] = useState([]);
   const [informacoesNutricionais, setInformacoesNutricionais] = useState({
   calorias: "",
   proteinas: "",
@@ -620,19 +622,21 @@ const bateBusca =
 
 {abaCadastro === "cardapio" && (
   <ProdutoCardapio
-    tipoWizard={tipoWizard}
-    destaque={destaque}
-    setDestaque={setDestaque}
-    tipoProduto={tipoProduto}
-    setTipoProduto={setTipoProduto}
-    tempoPreparo={tempoPreparo}
-    setTempoPreparo={setTempoPreparo}
-    restricoes={restricoes}
-    setRestricoes={setRestricoes}
-    gruposComponentes={gruposComponentes}
-    gruposSelecionados={gruposSelecionados}
-    setGruposSelecionados={setGruposSelecionados}
-  />
+  tipoWizard={tipoWizard}
+  destaque={destaque}
+  setDestaque={setDestaque}
+  tipoProduto={tipoProduto}
+  setTipoProduto={setTipoProduto}
+  tempoPreparo={tempoPreparo}
+  setTempoPreparo={setTempoPreparo}
+  restricoes={restricoes}
+  setRestricoes={setRestricoes}
+  gruposComponentes={gruposComponentes}
+  gruposSelecionados={gruposSelecionados}
+  setGruposSelecionados={setGruposSelecionados}
+  configuracaoGrupos={configuracaoGrupos}
+  setConfiguracaoGrupos={setConfiguracaoGrupos}
+/>
 )}
 
 {abaCadastro === "nutricional" && (
