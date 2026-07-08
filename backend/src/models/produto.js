@@ -124,6 +124,35 @@ gruposComponentes: [
   },
 ],
 
+configuracaoGrupos: [
+  {
+    grupoId: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "GrupoComponente",
+    },
+
+    nome: { type: String, default: "" },
+    tipo: { type: String, default: "personalizado" },
+
+    obrigatorio: { type: Boolean, default: false },
+    minimoEscolhas: { type: Number, default: 0 },
+    maximoEscolhas: { type: Number, default: 1 },
+    ordem: { type: Number, default: 0 },
+
+    mostrarPDV: { type: Boolean, default: true },
+    mostrarCardapio: { type: Boolean, default: true },
+    mostrarPWA: { type: Boolean, default: true },
+
+    regraPreco: {
+      type: String,
+      enum: ["sem_alteracao", "somar", "substituir", "percentual"],
+      default: "sem_alteracao",
+    },
+
+    valorPreco: { type: Number, default: 0 },
+  },
+],
+
 configuravel: {
   type: Boolean,
   default: false,

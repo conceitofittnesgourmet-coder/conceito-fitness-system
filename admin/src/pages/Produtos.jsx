@@ -294,6 +294,10 @@ const [editSelos, setEditSelos] = useState({
   "gruposComponentes",
   JSON.stringify(gruposSelecionados)
 );
+formData.append(
+  "configuracaoGrupos",
+  JSON.stringify(configuracaoGrupos)
+);
 formData.append("informacoesNutricionais", JSON.stringify(informacoesNutricionais));
 formData.append("alergenos", JSON.stringify(alergenos));
 formData.append("selos", JSON.stringify(selos));
@@ -360,6 +364,8 @@ formData.append("selos", JSON.stringify(selos));
     typeof grupo === "string" ? grupo : grupo._id
   )
 );
+
+    setConfiguracaoGrupos(produto.configuracaoGrupos || []);
     setEditInformacoesNutricionais(produto.informacoesNutricionais || {
   calorias: "",
   proteinas: "",
@@ -418,6 +424,11 @@ setEditSelos(produto.selos || {
   "gruposComponentes",
   JSON.stringify(editGruposSelecionados)
 );
+
+formData.append(
+  "configuracaoGrupos",
+  JSON.stringify(configuracaoGrupos)
+);
       formData.append("informacoesNutricionais", JSON.stringify(editInformacoesNutricionais));
 formData.append("alergenos", JSON.stringify(editAlergenos));
 formData.append("selos", JSON.stringify(editSelos));
@@ -462,6 +473,7 @@ formData.append("selos", JSON.stringify(editSelos));
     setCodigoBarras("");
     setSku("");
     setGruposSelecionados([]);
+    setConfiguracaoGrupos([]);
     setImagens([]);
     setInformacoesNutricionais({
   calorias: "",

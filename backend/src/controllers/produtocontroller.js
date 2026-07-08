@@ -135,6 +135,10 @@ selos: req.body.selos
 gruposComponentes: req.body.gruposComponentes
   ? JSON.parse(req.body.gruposComponentes)
   : [],
+
+  configuracaoGrupos: req.body.configuracaoGrupos
+  ? JSON.parse(req.body.configuracaoGrupos)
+  : [],
   configuravel:
   req.body.configuravel === "true" ||
   req.body.configuravel === true,
@@ -415,6 +419,12 @@ if (req.body.permiteMontagemCliente !== undefined) {
 if (req.body.gruposComponentes !== undefined) {
   dadosAtualizados.gruposComponentes = req.body.gruposComponentes
     ? JSON.parse(req.body.gruposComponentes)
+    : [];
+}
+
+if (req.body.configuracaoGrupos !== undefined) {
+  dadosAtualizados.configuracaoGrupos = req.body.configuracaoGrupos
+    ? JSON.parse(req.body.configuracaoGrupos)
     : [];
 }
 
