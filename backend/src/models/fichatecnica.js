@@ -1,41 +1,117 @@
 const mongoose = require("mongoose");
 
+const itemIngredienteSchema = new mongoose.Schema(
+  {
+    materiaPrima: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "MateriaPrima",
+      required: true,
+    },
+
+    quantidade: {
+      type: Number,
+      required: true,
+      min: 0,
+    },
+
+    unidade: {
+      type: String,
+      default: "unidade",
+    },
+
+    custo: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+  },
+  {
+    _id: true,
+  }
+);
+
+const variacaoFichaSchema = new mongoose.Schema(
+  {
+    grupoComponente: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "GrupoComponente",
+      required: true,
+    },
+
+    opcaoComponente: {
+      type: mongoose.Schema.Types.ObjectId,
+      ref: "OpcaoComponente",
+      required: true,
+    },
+
+    nomeGrupo: {
+      type: String,
+      default: "",
+    },
+
+    nomeOpcao: {
+      type: String,
+      default: "",
+    },
+
+    itens: {
+      type: [itemIngredienteSchema],
+      default: [],
+    },
+
+    custoTotal: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+
+    ativa: {
+      type: Boolean,
+      default: true,
+    },
+  },
+  {
+    _id: true,
+  }
+);
+
 const fichaTecnicaSchema = new mongoose.Schema(
   {
     produto: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Produto",
       required: true,
+      index: true,
     },
 
-    itens: [
-      {
-        materiaPrima: {
-          type: mongoose.Schema.Types.ObjectId,
-          ref: "MateriaPrima",
-          required: true,
-        },
+    // Ingredientes usados sempre, independentemente das escolhas.
+    itens: {
+      type: [itemIngredienteSchema],
+      default: [],
+    },
 
-        quantidade: {
-          type: Number,
-          required: true,
-        },
+    // Ingredientes usados somente quando determinada opção for escolhida.
+    variacoes: {
+      type: [variacaoFichaSchema],
+      default: [],
+    },
 
-        unidade: {
-          type: String,
-          default: "unidade",
-        },
+    custoBase: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
 
-        custo: {
-          type: Number,
-          default: 0,
-        },
-      },
-    ],
+    custoVariacoes: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
 
     custoTotal: {
       type: Number,
       default: 0,
+      min: 0,
     },
 
     observacao: {
@@ -48,7 +124,16 @@ const fichaTecnicaSchema = new mongoose.Schema(
       default: true,
     },
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+  }
 );
 
-module.exports = mongoose.model("FichaTecnica", fichaTecnicaSchema);
+fichaTecnicaSchema.index({
+  produto: 1,
+  ativa: 1,
+});
+
+module.exports =
+  mongoose.models.FichaTecnica ||
+  mongoose.model("FichaTecnica", fichaTecnicaSchema);

@@ -3,13 +3,14 @@ const Pedido = require("../models/pedido");
 const Cliente = require("../models/cliente");
 const ContaReceber = require("../models/contareceber");
 const MovimentacaoFinanceira = require("../models/movimentacaofinanceira");
-const FichaTecnica = require("../models/fichatecnica");
-const MateriaPrima = require("../models/materiaprima");
 const {
   gerarNfceDoPedido,
   transmitirNfce,
 } = require("../services/nfceService");
 const Nfce = require("../models/nfce");
+const {
+  consumirFichaDoItemPedido,
+} = require("../services/fichaTecnicaService");
 
 
 // LISTAR
@@ -298,35 +299,16 @@ for (const item of pedidoCriado.produtos || []) {
     }
 
      // ==========================
-// BAIXA DE INSUMOS
+// BAIXA INTELIGENTE DE INSUMOS
 // ==========================
+const resultadoFicha =
+  await consumirFichaDoItemPedido(item);
 
-const ficha = await FichaTecnica.findOne({
-  produto: produto._id,
-  ativa: true,
-}).populate("itens.materiaPrima");
-
-if (ficha) {
-  for (const ingrediente of ficha.itens) {
-
-    const materia = ingrediente.materiaPrima;
-
-    if (!materia) continue;
-
-    const consumo =
-      Number(ingrediente.quantidade || 0) *
-      Number(item.quantidade || 1);
-
-    await MateriaPrima.findByIdAndUpdate(
-      materia._id,
-      {
-        $inc: {
-          estoqueAtual: -consumo,
-        },
-      }
-    );
-  }
-}
+console.log(
+  `CMV DO ITEM ${item.nome}:`,
+  resultadoFicha.custoTotal
+);
+ 
   } catch (error) {
     console.log(
       `ERRO ATUALIZAR ESTOQUE PRODUTO ${item.produtoId}:`,

@@ -163,31 +163,58 @@ numeroPedido: {
 
 
 
-      status: {
+  status: {
+  type: String,
 
-        type: String,
+  enum: [
+    "pendente",
+    "producao",
+    "pronto",
+    "entregue",
+    "cancelado"
+  ],
 
-        enum: [
-  "pendente",
-  "producao",
-  "pronto",
-  "entregue",
-  "cancelado"
-],
+  default: "pendente"
+},
 
-        default: "pendente"
+statusProducao: {
+  type: String,
+  enum: [
+    "aguardando",
+    "producao",
+    "pronto",
+    "entregue",
+  ],
+  default: "aguardando",
+},
 
-      }
+tempoPrevisto: {
+  type: Number,
+  default: 18,
+},
 
-    },
-
+checklist: {
+  type: [
     {
+      nome: String,
+      concluido: {
+        type: Boolean,
+        default: false,
+      },
+    },
+  ],
+  default: [],
+},
 
-      timestamps: true
+},
 
-    }
+{
 
-  );
+  timestamps: true
+
+}
+
+);
 
 
 
