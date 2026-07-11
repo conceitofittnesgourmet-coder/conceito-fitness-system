@@ -69,6 +69,8 @@ import Financeiro from "./pages/Financeiro";
 
 import Producao from "./pages/Producao";
 
+import FichaTecnica from "./pages/FichaTecnica";
+
 import Analise from "./pages/Analise";
 
 import Pdv from "./pages/Pdv";
@@ -530,6 +532,15 @@ function App() {
   element={
     <PrivateRoute>
       <Producao />
+    </PrivateRoute>
+  }
+/>
+
+<Route
+  path="/ficha-tecnica"
+  element={
+    <PrivateRoute>
+      <FichaTecnica />
     </PrivateRoute>
   }
 />

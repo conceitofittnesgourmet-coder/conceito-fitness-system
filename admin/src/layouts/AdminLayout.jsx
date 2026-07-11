@@ -14,6 +14,7 @@ import {
   FaSignOutAlt,
   FaStore,
 FaIndustry,
+FaClipboardList,
 FaFileAlt,
 FaFileInvoice, 
 FaTruckLoading,
@@ -81,6 +82,13 @@ function AdminLayout({
   path: "/producao",
   icon: <FaIndustry />
 },
+
+{
+  label: "Ficha Técnica",
+  path: "/ficha-tecnica",
+  icon: <FaClipboardList />
+},
+
 {
   label: "Compras",
   path: "/compras",
