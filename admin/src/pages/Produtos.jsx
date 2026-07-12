@@ -26,7 +26,7 @@ import AlergenosProduto from "../components/ProdutoForm/AlergenosProduto";
 import SelosProduto from "../components/ProdutoForm/SelosProduto";
 import WizardProduto from "../components/ProdutoForm/WizardProduto";
 import TemplatePreview from "../components/ProdutoForm/TemplatePreview";
-import ProdutoTabs from "../components/ProdutoForm/ProdutoTabs";
+import ProdutoStepper from "../components/ProdutoForm/ProdutoStepper";
 import ProdutoBasico from "../components/ProdutoForm/ProdutoBasico";
 import ProdutoVenda from "../components/ProdutoForm/ProdutoVenda";
 import ProdutoCardapio from "../components/ProdutoForm/ProdutoCardapio";
@@ -543,6 +543,61 @@ const bateBusca =
     };
   }, []);
 
+  const etapasConcluidas = useMemo(() => {
+  const concluidas = [];
+
+  if (nome.trim() && categoria) {
+    concluidas.push("basico");
+  }
+
+  if (
+    String(preco).trim() !== "" &&
+    String(estoque).trim() !== ""
+  ) {
+    concluidas.push("venda");
+  }
+
+  if (
+    tipoProduto ||
+    destaque ||
+    gruposSelecionados.length > 0
+  ) {
+    concluidas.push("cardapio");
+  }
+
+  const temNutricional = Object.values(
+    informacoesNutricionais
+  ).some((valor) => String(valor || "").trim() !== "");
+
+  const temSelos = Object.values(selos).some(Boolean);
+  const temAlergenos = Object.values(alergenos).some(Boolean);
+
+  if (temNutricional || temSelos || temAlergenos) {
+    concluidas.push("nutricional");
+  }
+
+  if (imagens.length > 0) {
+    concluidas.push("midia");
+  }
+
+  return concluidas;
+}, [
+  nome,
+  categoria,
+  preco,
+  estoque,
+  tipoProduto,
+  destaque,
+  gruposSelecionados,
+  informacoesNutricionais,
+  selos,
+  alergenos,
+  imagens,
+]);
+
+const progressoCadastro =
+  (etapasConcluidas.length / 8) * 100;
+
   return (
     <AdminLayout title="Produtos" subtitle="Gerencie seu catálogo gourmet">
       <div className="produtos-premium-page">
@@ -589,9 +644,11 @@ const bateBusca =
   gruposSelecionados={gruposSelecionados}
 />
 
-<ProdutoTabs
+<ProdutoStepper
   abaCadastro={abaCadastro}
   setAbaCadastro={setAbaCadastro}
+  progresso={progressoCadastro}
+  etapasConcluidas={etapasConcluidas}
 />
 
 {abaCadastro === "basico" && (
@@ -662,7 +719,7 @@ const bateBusca =
   />
 )}
 
-{abaCadastro === "imagem" && (
+{abaCadastro === "midia" && (
   <ProdutoImagem
     getRootProps={getRootProps}
     getInputProps={getInputProps}
