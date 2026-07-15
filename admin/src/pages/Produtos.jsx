@@ -31,10 +31,40 @@ import ProdutoBasico from "../components/ProdutoForm/ProdutoBasico";
 import ProdutoVenda from "../components/ProdutoForm/ProdutoVenda";
 import ProdutoCardapio from "../components/ProdutoForm/ProdutoCardapio";
 import ProdutoNutricional from "../components/ProdutoForm/ProdutoNutricional";
+import ProdutoFiscal from "../components/ProdutoForm/ProdutoFiscal";
 import ProdutoImagem from "../components/ProdutoForm/ProdutoImagem";
 import ProdutoConfigEngine from "../components/ProdutoConfig/ProdutoConfigEngine";
 
 const API_URL = "https://conceito-fitness-system.onrender.com";
+
+const DADOS_FISCAIS_INICIAIS = {
+  ncm: "",
+  cest: "",
+  origemMercadoria: "0",
+  codigoBeneficioFiscal: "",
+  cfopInterno: "5102",
+  cfopInterestadual: "6102",
+  csosn: "102",
+  cstIcms: "",
+  aliquotaIcms: "",
+  aliquotaFcp: "",
+  cstPis: "99",
+  aliquotaPis: "",
+  cstCofins: "99",
+  aliquotaCofins: "",
+  cstIpi: "",
+  aliquotaIpi: "",
+  gtin: "",
+  gtinTributavel: "",
+  unidadeComercial: "UN",
+  unidadeTributavel: "UN",
+  cstIbsCbs: "",
+  cClassTrib: "",
+  aliquotaIbs: "",
+  aliquotaCbs: "",
+  produtoTributavel: true,
+  emitirNfce: true,
+};
 
 function getImagemUrl(imagem) {
   if (!imagem) return null;
@@ -109,6 +139,13 @@ const [selos, setSelos] = useState({
   fit: false,
 });
 
+const [dadosFiscais, setDadosFiscais] = useState({
+  ...DADOS_FISCAIS_INICIAIS,
+});
+
+const [editDadosFiscais, setEditDadosFiscais] = useState({
+  ...DADOS_FISCAIS_INICIAIS,
+});
 
   const [busca, setBusca] = useState("");
   const [filtro, setFiltro] = useState("todos");
@@ -301,6 +338,10 @@ formData.append(
 formData.append("informacoesNutricionais", JSON.stringify(informacoesNutricionais));
 formData.append("alergenos", JSON.stringify(alergenos));
 formData.append("selos", JSON.stringify(selos));
+formData.append(
+  "dadosFiscais",
+  JSON.stringify(dadosFiscais)
+);
       
       
 
@@ -392,6 +433,12 @@ setEditSelos(produto.selos || {
   vegano: false,
   fit: false,
 });
+
+setEditDadosFiscais({
+  ...DADOS_FISCAIS_INICIAIS,
+  ...(produto.dadosFiscais || {}),
+});
+
     setPreviewEdit(getImagemUrl(produto.imagens?.[0]));
     setEditImagem(null);
     setModalOpen(true);
@@ -432,6 +479,10 @@ formData.append(
       formData.append("informacoesNutricionais", JSON.stringify(editInformacoesNutricionais));
 formData.append("alergenos", JSON.stringify(editAlergenos));
 formData.append("selos", JSON.stringify(editSelos));
+formData.append(
+  "dadosFiscais",
+  JSON.stringify(editDadosFiscais)
+);
 
       if (editImagem) {
         formData.append("imagens", editImagem);
@@ -502,6 +553,10 @@ setSelos({
   fit: false,
 });
   }
+
+  setDadosFiscais({
+  ...DADOS_FISCAIS_INICIAIS,
+});
 
   const produtosFiltrados = useMemo(() => {
     return produtos.filter((produto) => {
@@ -576,6 +631,15 @@ const bateBusca =
     concluidas.push("nutricional");
   }
 
+  if (
+  String(dadosFiscais.ncm || "").length === 8 &&
+  dadosFiscais.cfopInterno &&
+  dadosFiscais.origemMercadoria !== "" &&
+  (dadosFiscais.csosn || dadosFiscais.cstIcms)
+) {
+  concluidas.push("fiscal");
+}
+
   if (imagens.length > 0) {
     concluidas.push("midia");
   }
@@ -592,8 +656,9 @@ const bateBusca =
   informacoesNutricionais,
   selos,
   alergenos,
+  dadosFiscais,
   imagens,
-]);
+  ]);
 
 const progressoCadastro =
   (etapasConcluidas.length / 8) * 100;
@@ -716,6 +781,13 @@ const progressoCadastro =
     setAlergenos={setAlergenos}
     selos={selos}
     setSelos={setSelos}
+  />
+)}
+
+{abaCadastro === "fiscal" && (
+  <ProdutoFiscal
+    dadosFiscais={dadosFiscais}
+    setDadosFiscais={setDadosFiscais}
   />
 )}
 

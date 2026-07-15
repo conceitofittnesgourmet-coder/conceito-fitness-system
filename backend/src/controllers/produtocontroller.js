@@ -116,6 +116,9 @@ const produto = await Produto.create({
   destaque: destaque === "true" || destaque === true,
   codigoBarras: req.body.codigoBarras || "",
 sku: req.body.sku || "",
+dadosFiscais: req.body.dadosFiscais
+  ? JSON.parse(req.body.dadosFiscais)
+  : {},
 produtoComposto: req.body.produtoComposto === "true" || req.body.produtoComposto === true,
 tipoComposicao: req.body.tipoComposicao || "simples",
 itensComposicao: req.body.itensComposicao
@@ -393,6 +396,13 @@ if (req.body.codigoBarras !== undefined) {
 
 if (req.body.sku !== undefined) {
   dadosAtualizados.sku = req.body.sku;
+}
+
+if (req.body.dadosFiscais !== undefined) {
+  dadosAtualizados.dadosFiscais =
+    req.body.dadosFiscais
+      ? JSON.parse(req.body.dadosFiscais)
+      : {};
 }
 
 if (req.body.produtoComposto !== undefined) {
