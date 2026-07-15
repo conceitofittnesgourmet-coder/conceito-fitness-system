@@ -226,6 +226,7 @@ const [editDadosFiscais, setEditDadosFiscais] = useState({
   const [editCodigoBarras, setEditCodigoBarras] = useState("");
   const [editSku, setEditSku] = useState("");
   const [editGruposSelecionados, setEditGruposSelecionados] = useState([]);
+  const [editConfiguracaoGrupos, setEditConfiguracaoGrupos] = useState([]);
   const [editInformacoesNutricionais, setEditInformacoesNutricionais] = useState({
   calorias: "",
   proteinas: "",
@@ -406,7 +407,7 @@ formData.append(
   )
 );
 
-    setConfiguracaoGrupos(produto.configuracaoGrupos || []);
+    setEditConfiguracaoGrupos(produto.configuracaoGrupos || []);
     setEditInformacoesNutricionais(produto.informacoesNutricionais || {
   calorias: "",
   proteinas: "",
@@ -474,8 +475,9 @@ setEditDadosFiscais({
 
 formData.append(
   "configuracaoGrupos",
-  JSON.stringify(configuracaoGrupos)
+  JSON.stringify(editConfiguracaoGrupos)
 );
+
       formData.append("informacoesNutricionais", JSON.stringify(editInformacoesNutricionais));
 formData.append("alergenos", JSON.stringify(editAlergenos));
 formData.append("selos", JSON.stringify(editSelos));
@@ -1084,6 +1086,14 @@ const progressoCadastro =
               />
 
               {previewEdit && <img src={previewEdit} alt="" className="preview-image" />}
+
+              <ProdutoConfigEngine
+  gruposComponentes={gruposComponentes}
+  gruposSelecionados={editGruposSelecionados}
+  setGruposSelecionados={setEditGruposSelecionados}
+  configuracaoGrupos={editConfiguracaoGrupos}
+  setConfiguracaoGrupos={setEditConfiguracaoGrupos}
+/>
 
               <DadosNutricionaisProduto
   dados={editInformacoesNutricionais}
