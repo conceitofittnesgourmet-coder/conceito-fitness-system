@@ -552,12 +552,13 @@ setSelos({
   vegano: false,
   fit: false,
 });
-  }
 
-  setDadosFiscais({
+ setDadosFiscais({
   ...DADOS_FISCAIS_INICIAIS,
 });
+  }
 
+ 
   const produtosFiltrados = useMemo(() => {
     return produtos.filter((produto) => {
       const termo = busca.toLowerCase();
