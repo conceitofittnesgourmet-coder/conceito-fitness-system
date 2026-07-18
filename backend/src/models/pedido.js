@@ -63,6 +63,164 @@ const pedidoSchema =
     subtotal: Number,
     imagem: String,
 
+    categoria: {
+  type: String,
+  default: "",
+},
+
+sku: {
+  type: String,
+  default: "",
+},
+
+codigoBarras: {
+  type: String,
+  default: "",
+},
+
+custoNaVenda: {
+  type: Number,
+  default: 0,
+},
+
+precoOriginal: {
+  type: Number,
+  default: 0,
+},
+
+dadosFiscais: {
+  ncm: {
+    type: String,
+    default: "",
+  },
+
+  cest: {
+    type: String,
+    default: "",
+  },
+
+  origemMercadoria: {
+    type: String,
+    default: "0",
+  },
+
+  codigoBeneficioFiscal: {
+    type: String,
+    default: "",
+  },
+
+  cfopInterno: {
+    type: String,
+    default: "5102",
+  },
+
+  cfopInterestadual: {
+    type: String,
+    default: "6102",
+  },
+
+  csosn: {
+    type: String,
+    default: "102",
+  },
+
+  cstIcms: {
+    type: String,
+    default: "",
+  },
+
+  aliquotaIcms: {
+    type: Number,
+    default: 0,
+  },
+
+  aliquotaFcp: {
+    type: Number,
+    default: 0,
+  },
+
+  cstPis: {
+    type: String,
+    default: "99",
+  },
+
+  aliquotaPis: {
+    type: Number,
+    default: 0,
+  },
+
+  cstCofins: {
+    type: String,
+    default: "99",
+  },
+
+  aliquotaCofins: {
+    type: Number,
+    default: 0,
+  },
+
+  cstIpi: {
+    type: String,
+    default: "",
+  },
+
+  aliquotaIpi: {
+    type: Number,
+    default: 0,
+  },
+
+  gtin: {
+    type: String,
+    default: "",
+  },
+
+  gtinTributavel: {
+    type: String,
+    default: "",
+  },
+
+  unidadeComercial: {
+    type: String,
+    default: "UN",
+  },
+
+  unidadeTributavel: {
+    type: String,
+    default: "UN",
+  },
+
+  cstIbsCbs: {
+    type: String,
+    default: "",
+  },
+
+  cClassTrib: {
+    type: String,
+    default: "",
+  },
+
+  aliquotaIbs: {
+    type: Number,
+    default: 0,
+  },
+
+  aliquotaCbs: {
+    type: Number,
+    default: 0,
+  },
+
+  produtoTributavel: {
+    type: Boolean,
+    default: true,
+  },
+
+  emitirNfce: {
+    type: Boolean,
+    default: true,
+  },
+},
+
+
     configuracoes: [
       {
         grupoId: String,

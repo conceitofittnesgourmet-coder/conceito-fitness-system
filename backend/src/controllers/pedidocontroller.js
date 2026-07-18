@@ -106,6 +106,82 @@ const proximoNumero =
     ? ultimoPedido.numeroPedido + 1
     : 1;
 
+    // ===============================
+// SNAPSHOT DOS PRODUTOS
+// ===============================
+
+const produtosSnapshot = [];
+
+for (const item of produtos) {
+
+  const produtoBanco = await Produto.findById(item.produtoId).lean();
+
+  if (!produtoBanco) {
+    return res.status(404).json({
+      success: false,
+      message: `Produto não encontrado: ${item.nome}`,
+    });
+  }
+
+  produtosSnapshot.push({
+
+    produtoId: produtoBanco._id,
+
+    nome: produtoBanco.nome,
+
+    categoria: produtoBanco.categoria || "",
+
+    sku: produtoBanco.sku || "",
+
+    codigoBarras: produtoBanco.codigoBarras || "",
+
+    quantidade: Number(item.quantidade || 1),
+
+    preco: Number(item.preco || 0),
+
+    precoUnitario: Number(item.precoUnitario || item.preco || 0),
+
+    precoOriginal: Number(produtoBanco.preco || 0),
+
+    custoNaVenda: Number(produtoBanco.custo || 0),
+
+    subtotal: Number(item.subtotal || 0),
+
+    unidadeMedida:
+      item.unidadeMedida ||
+      produtoBanco.unidadeMedida ||
+      "UN",
+
+    vendaPorPeso:
+      Boolean(item.vendaPorPeso),
+
+    permiteFracionado:
+      Boolean(item.permiteFracionado),
+
+    imagem:
+      item.imagem ||
+      produtoBanco.imagem ||
+      "",
+
+    configuracoes:
+      item.configuracoes || [],
+
+    dadosNutricionais:
+      produtoBanco.informacoesNutricionais || {},
+
+    selos:
+      produtoBanco.selos || [],
+
+    gruposComponentes:
+      produtoBanco.gruposComponentes || [],
+
+    dadosFiscais:
+      produtoBanco.dadosFiscais || {},
+
+  });
+
+}
+
     const dadosPedido = {
   numeroPedido: proximoNumero,
 
@@ -114,7 +190,7 @@ const proximoNumero =
 
   cpfNota: cpfNota || "",
 
-  produtos,
+  produtos: produtosSnapshot,
 
   total: Number(total || 0),
 
