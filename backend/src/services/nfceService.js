@@ -752,13 +752,30 @@ async function gerarNfceDoPedido(pedidoId) {
     throw new Error("Não é permitido emitir NFC-e para pedido cancelado.");
   }
 
-  const config =
-    (await ConfiguracaoFiscal.findOne()) ||
-    (await ConfiguracaoFiscal.create({}));
+  // Reserva o próximo número de NFC-e de forma atômica
+let config = await ConfiguracaoFiscal.findOneAndUpdate(
+  {},
+  {
+    $inc: { proximoNumeroNfce: 1 },
+    $setOnInsert: {
+      ambiente: "homologacao",
+      serieNfce: 1,
+      proximoNumeroNfce: 2
+    }
+  },
+  {
+    new: false,          // devolve o documento ANTES do incremento
+    upsert: true
+  }
+);
 
-  const numero = Number(config.proximoNumeroNfce || 1);
-  const serie = Number(config.serieNfce || SERIE_PADRAO);
-  const ambiente = getAmbiente(config);
+if (!config) {
+  throw new Error("Não foi possível reservar a numeração da NFC-e.");
+}
+
+const numero = Number(config.proximoNumeroNfce || 1);
+const serie = Number(config.serieNfce || SERIE_PADRAO);
+const ambiente = getAmbiente(config);
 
   const chaveDados = gerarChaveAcesso({
     cnpj: getEmpresaCnpj(),
@@ -787,9 +804,7 @@ async function gerarNfceDoPedido(pedidoId) {
     qrCodeUrl: "",
   });
 
-  config.proximoNumeroNfce = numero + 1;
-  await config.save();
-
+  
   return nfce;
 }
 
