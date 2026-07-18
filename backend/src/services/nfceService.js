@@ -840,31 +840,93 @@ nfce.mensagemSefaz =
 async function transmitirNfce(nfceId) {
   let nfce = await Nfce.findById(nfceId);
 
-  if (!nfce) throw new Error("NFC-e não encontrada.");
-  nfce = await assinarNfce(nfceId);
+  if (!nfce) {
+    throw new Error("NFC-e não encontrada.");
+  }
+
+  // Impede retransmissão de documento já autorizado
+  if (nfce.status === "autorizada" || nfce.cStat === "100") {
+    throw new Error(
+      "Esta NFC-e já foi autorizada pela SEFAZ e não pode ser retransmitida."
+    );
+  }
+
+  // Impede transmissão de documento cancelado
+  if (nfce.status === "cancelada" || nfce.cStat === "101") {
+    throw new Error(
+      "Esta NFC-e está cancelada e não pode ser retransmitida."
+    );
+  }
+
+  // Impede repetição de uma nota que já retornou duplicidade
+  if (nfce.cStat === "204") {
+    throw new Error(
+      "Esta NFC-e já existe na base da SEFAZ. Consulte a situação da nota em vez de retransmiti-la."
+    );
+  }
+
+  // Duplicidade com diferença na chave de acesso
+  if (nfce.cStat === "539") {
+    throw new Error(
+      "A numeração desta NFC-e já foi utilizada com outra chave de acesso. Não retransmita este documento."
+    );
+  }
+
+  /*
+   * Assina somente quando ainda não houver XML assinado.
+   * Uma NFC-e já assinada mantém exatamente o mesmo XML,
+   * chave, DigestValue e QR Code.
+   */
+  if (!nfce.xmlAssinado) {
+    nfce = await assinarNfce(nfceId);
+  }
+
+  if (!nfce.xmlAssinado) {
+    throw new Error(
+      "Não foi possível obter o XML assinado da NFC-e."
+    );
+  }
 
   const idLote = String(nfce.numero).padStart(15, "0");
-  const retorno = await transmitirNfceParaSefaz(nfce.xmlAssinado, idLote);
 
-  nfce.cStat = retorno.cStat || "";
-  nfce.recibo = retorno.nRec || "";
-  nfce.protocolo = retorno.nProt || "";
-  nfce.mensagemSefaz = retorno.xMotivo || "Retorno SEFAZ recebido.";
+  const retorno = await transmitirNfceParaSefaz(
+    nfce.xmlAssinado,
+    idLote
+  );
 
-  if (retorno.cStat === "100") {
+  nfce.cStat = String(retorno.cStat || "");
+  nfce.recibo = retorno.nRec || nfce.recibo || "";
+  nfce.protocolo = retorno.nProt || nfce.protocolo || "";
+  nfce.mensagemSefaz =
+    retorno.xMotivo || "Retorno SEFAZ recebido.";
+
+  if (nfce.cStat === "100") {
     nfce.status = "autorizada";
-    nfce.protocolo = retorno.nProt || "";
-    nfce.dataAutorizacao = retorno.dhRecbto ? new Date(retorno.dhRecbto) : new Date();
-  } else if (["103", "104", "105"].includes(retorno.cStat) || retorno.nRec) {
+    nfce.dataAutorizacao = retorno.dhRecbto
+      ? new Date(retorno.dhRecbto)
+      : new Date();
+  } else if (
+    ["103", "104", "105"].includes(nfce.cStat) ||
+    retorno.nRec
+  ) {
+    /*
+     * 103: lote recebido
+     * 104: lote processado, mas o serviço ainda precisa analisar
+     *      o protocolo interno retornado
+     * 105: lote em processamento
+     */
     nfce.status = "assinada";
-  } else if (["108", "109"].includes(retorno.cStat)) {
+  } else if (["108", "109"].includes(nfce.cStat)) {
     nfce.status = "assinada";
-    nfce.mensagemSefaz = retorno.xMotivo || "SEFAZ temporariamente indisponível. Tente novamente.";
+    nfce.mensagemSefaz =
+      retorno.xMotivo ||
+      "SEFAZ temporariamente indisponível. Tente novamente mais tarde.";
   } else {
     nfce.status = "rejeitada";
   }
 
   await nfce.save();
+
   return nfce;
 }
 

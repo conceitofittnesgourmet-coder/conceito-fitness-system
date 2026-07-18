@@ -172,32 +172,20 @@ exports.assinarUltima = async (req, res) => {
 
 exports.transmitirPorId = async (req, res) => {
   try {
-
-    let nfce = await Nfce.findById(req.params.id);
-
-    if (!nfce) {
-      return res.status(404).json({
-        success: false,
-        message: "NFC-e não encontrada."
-      });
-    }
-
-    if (!nfce.xmlAssinado) {
-      nfce = await assinarNfce(req.params.id);
-    }
-
-    nfce = await transmitirNfce(req.params.id);
+    const nfce = await transmitirNfce(req.params.id);
 
     return res.json({
       success: true,
-      message: "Transmissão enviada para SEFAZ.",
+      message:
+        nfce.status === "autorizada"
+          ? "NFC-e autorizada pela SEFAZ."
+          : "Transmissão processada pela SEFAZ.",
       nfce,
     });
-
   } catch (error) {
     console.log("ERRO TRANSMITIR NFCE:", error);
 
-    return res.status(500).json({
+    return res.status(400).json({
       success: false,
       message: error.message,
     });

@@ -15,7 +15,6 @@ router.post("/assinar/:id", controller.assinarPorId);
 router.post("/emitir/:pedidoId", controller.emitirPorPedido);
 
 router.post("/transmitir/:id", controller.transmitirPorId);
-router.get("/transmitir/:id", controller.transmitirPorId);
 
 router.get("/consultar/:id", controller.consultarPorId);
 router.post("/consultar/:id", controller.consultarPorId);
