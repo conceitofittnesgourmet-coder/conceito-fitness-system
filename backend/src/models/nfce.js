@@ -99,5 +99,17 @@ dataAutorizacao: {
   { timestamps: true }
 );
 
+nfceSchema.index(
+  {
+    ambiente: 1,
+    serie: 1,
+    numero: 1,
+  },
+  {
+    unique: true,
+    name: "UK_NFCE_NUMERO_SERIE_AMBIENTE",
+  }
+);
+
 module.exports =
   mongoose.models.Nfce || mongoose.model("Nfce", nfceSchema);
