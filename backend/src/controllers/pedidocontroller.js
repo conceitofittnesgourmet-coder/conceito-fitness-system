@@ -442,11 +442,21 @@ return res.status(201).json({
 // ATUALIZAR STATUS
 exports.atualizarStatus = async (req, res) => {
   try {
+    const novoStatus = String(req.body.status || "")
+      .trim()
+      .toLowerCase();
+
+    if (!novoStatus) {
+      return res.status(400).json({
+        success: false,
+        message: "O novo status do pedido é obrigatório.",
+      });
+    }
 
     const pedido = await Pedido.findByIdAndUpdate(
       req.params.id,
       {
-        status: req.body.status,
+        status: novoStatus,
       },
       {
         new: true,
@@ -457,45 +467,62 @@ exports.atualizarStatus = async (req, res) => {
     if (!pedido) {
       return res.status(404).json({
         success: false,
-        message: "Pedido não encontrado",
+        message: "Pedido não encontrado.",
       });
     }
 
-    if (req.body.status === "entregue") {
+    let nfce = null;
+    let erroFiscal = null;
 
-      const nfceExistente = await Nfce.findOne({
-        pedido: pedido._id,
-      });
+    /*
+     * O PDV utiliza "finalizado".
+     * Mantemos "entregue" por compatibilidade com pedidos antigos
+     * ou outros fluxos do sistema.
+     */
+    const deveGerarNfce = ["finalizado", "entregue"].includes(
+      novoStatus
+    );
 
-      if (!nfceExistente) {
-        try {
-          await gerarNfceDoPedido(pedido._id);
-        } catch (nfceError) {
-          console.log(
-            "ERRO GERAR NFC-E AUTOMATICA:",
-            nfceError.message
-          );
+    if (deveGerarNfce) {
+      try {
+        const nfceExistente = await Nfce.findOne({
+          pedido: pedido._id,
+        });
+
+        if (nfceExistente) {
+          nfce = nfceExistente;
+        } else {
+          nfce = await gerarNfceDoPedido(pedido._id);
         }
+      } catch (nfceError) {
+        erroFiscal = nfceError.message;
+
+        console.log(
+          "ERRO GERAR NFC-E AO FINALIZAR PEDIDO:",
+          nfceError
+        );
       }
     }
 
     if (global.io) {
-      global.io.emit(
-        "pedido-atualizado",
-        pedido
-      );
+      global.io.emit("pedido-atualizado", pedido);
+
+      if (nfce) {
+        global.io.emit("nfce-atualizada", nfce);
+      }
     }
 
     return res.json({
       success: true,
       pedido,
+      nfce,
+      fiscal: {
+        gerada: Boolean(nfce),
+        erro: erroFiscal,
+      },
     });
-
   } catch (error) {
-    console.log(
-      "ERRO ATUALIZAR STATUS:",
-      error
-    );
+    console.log("ERRO ATUALIZAR STATUS:", error);
 
     return res.status(500).json({
       success: false,
@@ -503,6 +530,7 @@ exports.atualizarStatus = async (req, res) => {
     });
   }
 };
+
 
 exports.cancelarPedido = async (req, res) => {
   try {
