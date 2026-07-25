@@ -439,3 +439,19 @@
   font-weight: 900;
   cursor: pointer;
 }
+
+.btn-fiscal.cancelar {
+  background: #b42318;
+  color: #ffffff;
+  border: 1px solid #b42318;
+}
+
+.btn-fiscal.cancelar:hover:not(:disabled) {
+  background: #912018;
+  border-color: #912018;
+}
+
+.btn-fiscal.cancelar:disabled {
+  opacity: 0.55;
+  cursor: not-allowed;
+}

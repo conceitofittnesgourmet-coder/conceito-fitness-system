@@ -386,6 +386,81 @@ ${xml}
   }
 }
 
+async function cancelarNfceEmitida(nfce) {
+  try {
+    if (!nfce?._id) {
+      alert("NFC-e não encontrada.");
+      return;
+    }
+
+    if (nfce.status === "cancelada") {
+      alert("Esta NFC-e já está cancelada.");
+      return;
+    }
+
+    if (nfce.status !== "autorizada") {
+      alert(
+        "Somente uma NFC-e autorizada pode ser cancelada."
+      );
+      return;
+    }
+
+    const justificativa = window.prompt(
+      "Informe a justificativa do cancelamento.\n\n" +
+        "A justificativa deve possuir pelo menos 15 caracteres."
+    );
+
+    if (justificativa === null) {
+      return;
+    }
+
+    const justificativaLimpa = justificativa.trim();
+
+    if (justificativaLimpa.length < 15) {
+      alert(
+        "A justificativa deve possuir pelo menos 15 caracteres."
+      );
+      return;
+    }
+
+    const confirmar = window.confirm(
+      `Confirma o cancelamento da NFC-e nº ${nfce.numero}?\n\n` +
+        `Justificativa: ${justificativaLimpa}\n\n` +
+        "Esta operação será enviada à SEFAZ."
+    );
+
+    if (!confirmar) {
+      return;
+    }
+
+    setCarregandoNfce(true);
+
+    const response = await api.post(
+      `/nfce/cancelar/${nfce._id}`,
+      {
+        justificativa: justificativaLimpa,
+      }
+    );
+
+    alert(
+      response.data.message ||
+        "Cancelamento processado com sucesso."
+    );
+
+    await buscarUltimaNfce();
+  } catch (error) {
+    console.error("Erro ao cancelar NFC-e:", error);
+
+    alert(
+      error.response?.data?.message ||
+        error.message ||
+        "Não foi possível cancelar a NFC-e."
+    );
+  } finally {
+    setCarregandoNfce(false);
+  }
+}
+
   async function cancelarNota(id) {
     if (!window.confirm("Deseja cancelar esta nota no sistema?")) return;
 
@@ -667,6 +742,27 @@ ${xml}
 >
   DANFE
 </button>
+
+{nfce.status === "autorizada" && (
+  <button
+    className="btn-fiscal cancelar"
+    onClick={() => cancelarNfceEmitida(nfce)}
+    disabled={carregandoNfce}
+    title="Cancelar NFC-e na SEFAZ"
+  >
+    Cancelar
+  </button>
+)}
+
+{nfce.status === "cancelada" && (
+  <button
+    className="btn-fiscal cancelar"
+    disabled
+    title="Esta NFC-e já foi cancelada"
+  >
+    Cancelada
+  </button>
+)}
 
             </td>
           </tr>
