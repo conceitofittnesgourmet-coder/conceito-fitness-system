@@ -1,526 +1,758 @@
-const axios = require("axios");
-const https = require("https");
+const {
+  enviarMensagemSefaz,
+  removerDeclaracaoXml,
+  validarXml,
+  somenteNumeros,
+  extrairTag,
+  extrairBloco,
+} = require("./soapService");
 
-/*
- * Cliente de comunicação com os Web Services da SEFAZ/PR.
- *
- * Serviços preparados:
- * - autorização de NFC-e;
- * - consulta de recibo;
- * - consulta por chave;
- * - recepção de eventos;
- * - cancelamento;
- * - inutilização;
- * - consulta de status.
- *
- * ATENÇÃO:
- * Este serviço trabalha com NFC-e modelo 65.
- */
-
+const UF_PR = "41";
 const VERSAO_NFE = "4.00";
-const CODIGO_UF_PARANA = "41";
+const MODELO_NFCE = "65";
+
+const NAMESPACE_NFE =
+  "http://www.portalfiscal.inf.br/nfe";
+
+const NAMESPACES_WSDL = {
+  autorizacao:
+    "http://www.portalfiscal.inf.br/nfe/wsdl/NFeAutorizacao4",
+
+  retornoAutorizacao:
+    "http://www.portalfiscal.inf.br/nfe/wsdl/NFeRetAutorizacao4",
+
+  consultaProtocolo:
+    "http://www.portalfiscal.inf.br/nfe/wsdl/NFeConsultaProtocolo4",
+
+  statusServico:
+    "http://www.portalfiscal.inf.br/nfe/wsdl/NFeStatusServico4",
+};
 
 /**
- * Retorna o ambiente fiscal utilizado pelo sistema.
+ * Normaliza o ambiente fiscal utilizado pela NFC-e.
  *
  * Valores aceitos:
  * - homologacao
+ * - homologação
+ * - 2
  * - producao
+ * - produção
+ * - 1
  */
-function obterAmbienteFiscal() {
-  const ambiente = String(
-    process.env.NFCE_AMBIENTE || "homologacao"
+function normalizarAmbiente(
+  ambiente = process.env.NFCE_AMBIENTE
+) {
+  const valor = String(
+    ambiente || "homologacao"
   )
     .trim()
     .toLowerCase();
 
-  if (!["homologacao", "producao"].includes(ambiente)) {
-    throw new Error(
-      `NFCE_AMBIENTE inválido: "${ambiente}". Use "homologacao" ou "producao".`
-    );
+  if (
+    ["producao", "produção", "1"].includes(valor)
+  ) {
+    return "producao";
   }
 
-  return ambiente;
+  if (
+    [
+      "homologacao",
+      "homologação",
+      "2",
+      "",
+    ].includes(valor)
+  ) {
+    return "homologacao";
+  }
+
+  throw new Error(
+    `NFCE_AMBIENTE inválido: "${ambiente}". ` +
+      'Use "homologacao" ou "producao".'
+  );
 }
 
 /**
- * Retorna o código do ambiente esperado pela SEFAZ.
+ * Retorna o código do ambiente utilizado pela SEFAZ.
  *
  * 1 = produção
  * 2 = homologação
  */
-function obterTpAmb() {
-  return obterAmbienteFiscal() === "producao"
+function obterTpAmb(ambiente) {
+  return normalizarAmbiente(ambiente) ===
+    "producao"
     ? "1"
     : "2";
 }
 
 /**
- * Retorna todas as URLs oficiais da NFC-e no Paraná.
+ * Retorna as URLs dos serviços da NFC-e no Paraná.
+ *
+ * As URLs podem ser sobrescritas por variáveis
+ * de ambiente quando necessário.
  */
-function urlsSefaz() {
-  const ambiente = obterAmbienteFiscal();
+function obterUrlsSefaz(
+  ambiente = process.env.NFCE_AMBIENTE
+) {
+  const ambienteNormalizado =
+    normalizarAmbiente(ambiente);
 
-  if (ambiente === "producao") {
+  if (ambienteNormalizado === "producao") {
     return {
       autorizacao:
+        process.env
+          .NFCE_URL_AUTORIZACAO_PRODUCAO ||
         "https://nfce.sefa.pr.gov.br/nfce/NFeAutorizacao4",
 
-      retorno:
+      retornoAutorizacao:
+        process.env
+          .NFCE_URL_RETORNO_AUTORIZACAO_PRODUCAO ||
         "https://nfce.sefa.pr.gov.br/nfce/NFeRetAutorizacao4",
 
       consultaProtocolo:
+        process.env
+          .NFCE_URL_CONSULTA_PROTOCOLO_PRODUCAO ||
         "https://nfce.sefa.pr.gov.br/nfce/NFeConsultaProtocolo4",
 
-      inutilizacao:
-        "https://nfce.sefa.pr.gov.br/nfce/NFeInutilizacao4",
-
       statusServico:
+        process.env
+          .NFCE_URL_STATUS_SERVICO_PRODUCAO ||
         "https://nfce.sefa.pr.gov.br/nfce/NFeStatusServico4",
-
-      recepcaoEvento:
-        "https://nfce.sefa.pr.gov.br/nfce/NFeRecepcaoEvento4",
     };
   }
 
   return {
     autorizacao:
+      process.env
+        .NFCE_URL_AUTORIZACAO_HOMOLOGACAO ||
       "https://homologacao.nfce.sefa.pr.gov.br/nfce/NFeAutorizacao4",
 
-    retorno:
+    retornoAutorizacao:
+      process.env
+        .NFCE_URL_RETORNO_AUTORIZACAO_HOMOLOGACAO ||
       "https://homologacao.nfce.sefa.pr.gov.br/nfce/NFeRetAutorizacao4",
 
     consultaProtocolo:
+      process.env
+        .NFCE_URL_CONSULTA_PROTOCOLO_HOMOLOGACAO ||
       "https://homologacao.nfce.sefa.pr.gov.br/nfce/NFeConsultaProtocolo4",
 
-    inutilizacao:
-      "https://homologacao.nfce.sefa.pr.gov.br/nfce/NFeInutilizacao4",
-
     statusServico:
+      process.env
+        .NFCE_URL_STATUS_SERVICO_HOMOLOGACAO ||
       "https://homologacao.nfce.sefa.pr.gov.br/nfce/NFeStatusServico4",
-
-    recepcaoEvento:
-      "https://homologacao.nfce.sefa.pr.gov.br/nfce/NFeRecepcaoEvento4",
   };
 }
 
 /**
- * Cria o agente HTTPS utilizando o certificado A1.
- *
- * As variáveis esperadas são:
- *
- * CERTIFICADO_PFX_BASE64
- * CERTIFICADO_SENHA
+ * Retorna o XML fiscal presente na resposta SOAP.
  */
-function criarHttpsAgent() {
-  const pfxBase64 =
-    process.env.CERTIFICADO_PFX_BASE64;
-
-  const senha =
-    process.env.CERTIFICADO_SENHA;
-
-  if (!pfxBase64) {
-    throw new Error(
-      "CERTIFICADO_PFX_BASE64 não configurado."
-    );
-  }
-
-  if (!senha) {
-    throw new Error(
-      "CERTIFICADO_SENHA não configurada."
-    );
-  }
-
-  return new https.Agent({
-    pfx: Buffer.from(pfxBase64, "base64"),
-    passphrase: senha,
-
-    /*
-     * Mantido como false para preservar o funcionamento
-     * atual da comunicação já validada no projeto.
-     *
-     * Posteriormente poderemos instalar corretamente
-     * a cadeia de certificados da SEFAZ e alterar para true.
-     */
-    rejectUnauthorized: false,
-  });
-}
-
-/**
- * Remove a declaração XML e espaços entre tags.
- *
- * Isso é necessário antes de inserir um XML dentro
- * de outro envelope SOAP.
- */
-function removerDeclaracaoXml(xml = "") {
-  return String(xml || "")
-    .replace(/^\uFEFF/, "")
-    .replace(/<\?xml[^>]*\?>/gi, "")
-    .replace(/>\s+</g, "><")
-    .trim();
-}
-
-/**
- * Escapa caracteres especiais para uso em XML.
- */
-function escaparXml(valor = "") {
-  return String(valor ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&apos;");
-}
-
-/**
- * Remove espaços e caracteres de formatação de números.
- */
-function somenteNumeros(valor = "") {
-  return String(valor ?? "")
-    .replace(/\D/g, "");
-}
-
-/**
- * Confere se uma string XML foi informada.
- */
-function validarXml(xml, descricao = "XML") {
-  if (!xml || !String(xml).trim()) {
-    throw new Error(
-      `${descricao} não informado.`
-    );
-  }
-
-  const xmlLimpo = removerDeclaracaoXml(xml);
-
-  if (
-    !xmlLimpo.startsWith("<") ||
-    !xmlLimpo.endsWith(">")
-  ) {
-    throw new Error(
-      `${descricao} inválido ou incompleto.`
-    );
-  }
-
-  return xmlLimpo;
-}
-
-/**
- * Extrai o conteúdo de uma tag XML.
- *
- * Também reconhece tags com prefixos SOAP, por exemplo:
- *
- * <soap:cStat>100</soap:cStat>
- */
-function extrairTag(xml, tag) {
-  if (!xml || !tag) {
-    return "";
-  }
-
-  const nomeTag = String(tag)
-    .replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-
-  const regex = new RegExp(
-    `<(?:[\\w-]+:)?${nomeTag}(?:\\s[^>]*)?>([\\s\\S]*?)<\\/(?:[\\w-]+:)?${nomeTag}>`,
-    "i"
+function obterXmlFiscal(resposta = {}) {
+  return (
+    String(
+      resposta.xmlConteudo || ""
+    ).trim() ||
+    String(
+      resposta.xmlSoap || ""
+    ).trim()
   );
-
-  const match = String(xml).match(regex);
-
-  return match
-    ? String(match[1]).trim()
-    : "";
 }
 
 /**
- * Extrai uma tag XML inteira, incluindo abertura
- * e fechamento.
+ * Extrai os dados presentes dentro de protNFe/infProt.
  */
-function extrairBloco(xml, tag) {
-  if (!xml || !tag) {
-    return "";
-  }
+function extrairDadosProtocolo(xml = "") {
+  const blocoProtNFe =
+    extrairBloco(xml, "protNFe");
 
-  const nomeTag = String(tag)
-    .replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
+  const blocoInfProt =
+    extrairBloco(
+      blocoProtNFe || xml,
+      "infProt"
+    ) ||
+    blocoProtNFe ||
+    xml;
 
-  const regex = new RegExp(
-    `<(?:[\\w-]+:)?${nomeTag}(?:\\s[^>]*)?>[\\s\\S]*?<\\/(?:[\\w-]+:)?${nomeTag}>`,
-    "i"
-  );
+  return {
+    tpAmb:
+      extrairTag(blocoInfProt, "tpAmb"),
 
-  const match = String(xml).match(regex);
+    verAplic:
+      extrairTag(blocoInfProt, "verAplic"),
 
-  return match
-    ? String(match[0]).trim()
-    : "";
+    chNFe:
+      extrairTag(blocoInfProt, "chNFe"),
+
+    dhRecbto:
+      extrairTag(blocoInfProt, "dhRecbto"),
+
+    nProt:
+      extrairTag(blocoInfProt, "nProt"),
+
+    digVal:
+      extrairTag(blocoInfProt, "digVal"),
+
+    cStat:
+      extrairTag(blocoInfProt, "cStat"),
+
+    xMotivo:
+      extrairTag(blocoInfProt, "xMotivo"),
+  };
 }
 
 /**
- * Extrai todos os blocos de determinada tag.
- *
- * Será importante para os eventos, pois a SEFAZ pode
- * devolver mais de um retEvento no mesmo lote.
+ * Interpreta o retorno da autorização
+ * ou da consulta de recibo.
  */
-function extrairTodosBlocos(xml, tag) {
-  if (!xml || !tag) {
-    return [];
-  }
-
-  const nomeTag = String(tag)
-    .replace(/[.*+?^${}()|[\]\\]/g, "\\$&");
-
-  const regex = new RegExp(
-    `<(?:[\\w-]+:)?${nomeTag}(?:\\s[^>]*)?>[\\s\\S]*?<\\/(?:[\\w-]+:)?${nomeTag}>`,
-    "gi"
-  );
-
-  return String(xml).match(regex) || [];
-}
-
-/**
- * Decodifica entidades XML mais comuns.
- */
-function decodificarXml(valor = "") {
-  return String(valor || "")
-    .replace(/&lt;/g, "<")
-    .replace(/&gt;/g, ">")
-    .replace(/&quot;/g, "\"")
-    .replace(/&apos;/g, "'")
-    .replace(/&amp;/g, "&");
-}
-
-/**
- * Extrai o XML efetivo retornado dentro do SOAP.
- *
- * Alguns serviços devolvem o documento diretamente.
- * Outros podem devolvê-lo codificado como texto.
- */
-function extrairConteudoSoap(xmlSoap = "") {
-  const resposta = String(xmlSoap || "").trim();
-
-  if (!resposta) {
-    return "";
-  }
-
-  const tagsPossiveis = [
-    "nfeResultMsg",
-    "nfeDadosMsgResult",
-    "NFeAutorizacao4Result",
-    "NFeRetAutorizacao4Result",
-    "NFeConsultaProtocolo4Result",
-    "NFeRecepcaoEvento4Result",
-    "NFeInutilizacao4Result",
-    "NFeStatusServico4Result",
-  ];
-
-  for (const tag of tagsPossiveis) {
-    const conteudo = extrairTag(resposta, tag);
-
-    if (conteudo) {
-      return decodificarXml(conteudo).trim();
-    }
-  }
-
-  /*
-   * Caso não exista um invólucro de resultado reconhecido,
-   * devolvemos a resposta completa.
-   */
-  return resposta;
-}
-
-/**
- * Monta um envelope SOAP 1.2 genérico.
- *
- * @param {string} namespaceWsdl Namespace do Web Service.
- * @param {string} xmlMensagem XML fiscal enviado dentro de nfeDadosMsg.
- */
-function montarEnvelopeSoap(
-  namespaceWsdl,
-  xmlMensagem
+function interpretarRetornoAutorizacao(
+  resposta = {}
 ) {
-  if (!namespaceWsdl) {
+  const xml = obterXmlFiscal(resposta);
+
+  if (!xml) {
     throw new Error(
-      "Namespace do Web Service não informado."
+      "A SEFAZ retornou uma resposta vazia " +
+        "na autorização da NFC-e."
     );
   }
 
-  const mensagemLimpa = validarXml(
-    xmlMensagem,
-    "Mensagem XML da SEFAZ"
+  const protocolo =
+    extrairDadosProtocolo(xml);
+
+  const cStatLote =
+    extrairTag(xml, "cStat");
+
+  const xMotivoLote =
+    extrairTag(xml, "xMotivo");
+
+  const nRec =
+    extrairTag(xml, "nRec");
+
+  const tMed =
+    extrairTag(xml, "tMed");
+
+  return {
+    cStat:
+      protocolo.cStat ||
+      cStatLote ||
+      "",
+
+    xMotivo:
+      protocolo.xMotivo ||
+      xMotivoLote ||
+      "Retorno da SEFAZ recebido.",
+
+    cStatLote:
+      cStatLote || "",
+
+    xMotivoLote:
+      xMotivoLote || "",
+
+    nRec:
+      nRec || "",
+
+    tMed:
+      tMed || "",
+
+    ...protocolo,
+
+    xmlRetorno:
+      xml,
+
+    xmlSoap:
+      resposta.xmlSoap || "",
+  };
+}
+
+/**
+ * Monta o lote de autorização enviNFe.
+ */
+function montarEnviNFe(
+  xmlNfceAssinado,
+  idLote
+) {
+  const xmlLimpo = validarXml(
+    xmlNfceAssinado,
+    "XML assinado da NFC-e"
   );
+
+  if (!/<NFe\b/i.test(xmlLimpo)) {
+    throw new Error(
+      "O XML informado não contém " +
+        "o elemento NFe."
+    );
+  }
+
+  if (!/<Signature\b/i.test(xmlLimpo)) {
+    throw new Error(
+      "O XML da NFC-e não contém " +
+        "assinatura digital."
+    );
+  }
+
+  const lote = somenteNumeros(idLote);
+
+  if (!lote || lote.length > 15) {
+    throw new Error(
+      "O identificador do lote deve conter " +
+        "entre 1 e 15 dígitos."
+    );
+  }
 
   return (
     '<?xml version="1.0" encoding="UTF-8"?>' +
-    '<soap12:Envelope ' +
-    'xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" ' +
-    'xmlns:xsd="http://www.w3.org/2001/XMLSchema" ' +
-    'xmlns:soap12="http://www.w3.org/2003/05/soap-envelope">' +
-    "<soap12:Body>" +
-    `<nfeDadosMsg xmlns="${namespaceWsdl}">` +
-    mensagemLimpa +
-    "</nfeDadosMsg>" +
-    "</soap12:Body>" +
-    "</soap12:Envelope>"
+    `<enviNFe xmlns="${NAMESPACE_NFE}" ` +
+    `versao="${VERSAO_NFE}">` +
+    `<idLote>${lote.padStart(
+      15,
+      "0"
+    )}</idLote>` +
+    "<indSinc>1</indSinc>" +
+    removerDeclaracaoXml(xmlLimpo) +
+    "</enviNFe>"
   );
 }
 
 /**
- * Converte diferentes tipos de retorno do Axios
- * para texto XML.
+ * Transmite uma NFC-e assinada para a SEFAZ/PR.
  */
-function normalizarRespostaAxios(data) {
-  if (typeof data === "string") {
-    return data;
+async function transmitirNfceParaSefaz(
+  xmlNfceAssinado,
+  idLote,
+  ambiente = process.env.NFCE_AMBIENTE
+) {
+  const ambienteNormalizado =
+    normalizarAmbiente(ambiente);
+
+  const urls =
+    obterUrlsSefaz(
+      ambienteNormalizado
+    );
+
+  const xmlMensagem =
+    montarEnviNFe(
+      xmlNfceAssinado,
+      idLote
+    );
+
+  const resposta =
+    await enviarMensagemSefaz({
+      url:
+        urls.autorizacao,
+
+      namespaceWsdl:
+        NAMESPACES_WSDL.autorizacao,
+
+      xmlMensagem,
+
+      nomeServico:
+        "Autorização da NFC-e",
+
+      timeout:
+        60000,
+    });
+
+  return {
+    ...interpretarRetornoAutorizacao(
+      resposta
+    ),
+
+    ambiente:
+      ambienteNormalizado,
+
+    idLote:
+      somenteNumeros(
+        idLote
+      ).padStart(15, "0"),
+
+    xmlLote:
+      xmlMensagem,
+  };
+}
+
+/**
+ * Valida o número do recibo retornado pela SEFAZ.
+ */
+function validarNumeroRecibo(
+  numeroRecibo
+) {
+  const recibo =
+    somenteNumeros(numeroRecibo);
+
+  if (!recibo) {
+    throw new Error(
+      "Número do recibo da NFC-e " +
+        "não informado."
+    );
   }
 
-  if (Buffer.isBuffer(data)) {
-    return data.toString("utf8");
+  if (recibo.length > 15) {
+    throw new Error(
+      "Número do recibo da NFC-e inválido."
+    );
+  }
+
+  return recibo;
+}
+
+/**
+ * Monta o XML de consulta do recibo.
+ */
+function montarConsReciNFe(
+  numeroRecibo,
+  ambiente
+) {
+  const recibo =
+    validarNumeroRecibo(
+      numeroRecibo
+    );
+
+  return (
+    '<?xml version="1.0" encoding="UTF-8"?>' +
+    `<consReciNFe ` +
+    `xmlns="${NAMESPACE_NFE}" ` +
+    `versao="${VERSAO_NFE}">` +
+    `<tpAmb>${obterTpAmb(
+      ambiente
+    )}</tpAmb>` +
+    `<nRec>${recibo}</nRec>` +
+    "</consReciNFe>"
+  );
+}
+
+/**
+ * Consulta o resultado de um recibo
+ * de autorização da NFC-e.
+ */
+async function consultarReciboSefaz(
+  numeroRecibo,
+  ambiente = process.env.NFCE_AMBIENTE
+) {
+  const ambienteNormalizado =
+    normalizarAmbiente(ambiente);
+
+  const urls =
+    obterUrlsSefaz(
+      ambienteNormalizado
+    );
+
+  const xmlMensagem =
+    montarConsReciNFe(
+      numeroRecibo,
+      ambienteNormalizado
+    );
+
+  const resposta =
+    await enviarMensagemSefaz({
+      url:
+        urls.retornoAutorizacao,
+
+      namespaceWsdl:
+        NAMESPACES_WSDL
+          .retornoAutorizacao,
+
+      xmlMensagem,
+
+      nomeServico:
+        "Consulta do recibo da NFC-e",
+
+      timeout:
+        60000,
+    });
+
+  return {
+    ...interpretarRetornoAutorizacao(
+      resposta
+    ),
+
+    ambiente:
+      ambienteNormalizado,
+
+    nRec:
+      extrairTag(
+        obterXmlFiscal(resposta),
+        "nRec"
+      ) ||
+      validarNumeroRecibo(
+        numeroRecibo
+      ),
+  };
+}
+
+/**
+ * Valida uma chave de acesso de NFC-e do Paraná.
+ */
+function validarChaveAcesso(
+  chaveAcesso
+) {
+  const chave =
+    somenteNumeros(chaveAcesso);
+
+  if (chave.length !== 44) {
+    throw new Error(
+      "A chave de acesso deve possuir " +
+        "exatamente 44 dígitos."
+    );
+  }
+
+  if (chave.slice(0, 2) !== UF_PR) {
+    throw new Error(
+      "A chave de acesso informada " +
+        "não pertence ao Paraná."
+    );
   }
 
   if (
-    data !== null &&
-    typeof data === "object"
+    chave.slice(20, 22) !==
+    MODELO_NFCE
   ) {
-    return JSON.stringify(data);
+    throw new Error(
+      "A chave de acesso informada " +
+        "não pertence a uma NFC-e " +
+        "modelo 65."
+    );
   }
 
-  return String(data || "");
+  return chave;
 }
 
 /**
- * Realiza o POST HTTPS para a SEFAZ.
+ * Monta o XML de consulta da NFC-e por chave.
  */
-async function postSefaz(
-  url,
-  envelope,
-  nomeServico = "SEFAZ"
+function montarConsSitNFe(
+  chaveAcesso,
+  ambiente
 ) {
-  if (!url) {
-    throw new Error(
-      `URL não configurada para o serviço ${nomeServico}.`
+  const chave =
+    validarChaveAcesso(
+      chaveAcesso
     );
-  }
 
-  const xmlEnvelope = validarXml(
-    envelope,
-    `Envelope SOAP de ${nomeServico}`
+  return (
+    '<?xml version="1.0" encoding="UTF-8"?>' +
+    `<consSitNFe ` +
+    `xmlns="${NAMESPACE_NFE}" ` +
+    `versao="${VERSAO_NFE}">` +
+    `<tpAmb>${obterTpAmb(
+      ambiente
+    )}</tpAmb>` +
+    "<xServ>CONSULTAR</xServ>" +
+    `<chNFe>${chave}</chNFe>` +
+    "</consSitNFe>"
   );
-
-  const agent = criarHttpsAgent();
-
-  try {
-    const response = await axios.post(
-      url,
-      xmlEnvelope,
-      {
-        httpsAgent: agent,
-        timeout: 60000,
-
-        /*
-         * Impede que o Axios tente converter XML em JSON.
-         */
-        responseType: "text",
-
-        transformResponse: [
-          (data) => data,
-        ],
-
-        maxContentLength: Infinity,
-        maxBodyLength: Infinity,
-
-        headers: {
-          "Content-Type":
-            "application/soap+xml; charset=utf-8",
-
-          Accept:
-            "application/soap+xml, application/xml, text/xml, */*",
-
-          "User-Agent":
-            "Conceito-Fitness-Gourmet-NFCe/1.0",
-        },
-
-        validateStatus(status) {
-          return status >= 200 && status < 500;
-        },
-      }
-    );
-
-    const xmlResposta = normalizarRespostaAxios(
-      response.data
-    );
-
-    if (response.status < 200 || response.status >= 300) {
-      const motivoSoap =
-        extrairTag(xmlResposta, "Text") ||
-        extrairTag(xmlResposta, "faultstring") ||
-        extrairTag(xmlResposta, "xMotivo");
-
-      throw new Error(
-        `${nomeServico} retornou HTTP ${response.status}` +
-        `${motivoSoap ? `: ${motivoSoap}` : "."}`
-      );
-    }
-
-    if (!xmlResposta.trim()) {
-      throw new Error(
-        `${nomeServico} retornou uma resposta vazia.`
-      );
-    }
-
-    const falhaSoap =
-      extrairTag(xmlResposta, "faultstring") ||
-      extrairTag(xmlResposta, "Text");
-
-    if (
-      falhaSoap &&
-      /fault|erro|error|falha|invalid/i.test(
-        xmlResposta
-      )
-    ) {
-      throw new Error(
-        `${nomeServico} recusou a requisição: ${falhaSoap}`
-      );
-    }
-
-    return xmlResposta;
-  } catch (error) {
-    if (
-      error &&
-      error.message &&
-      error.message.includes(nomeServico)
-    ) {
-      throw error;
-    }
-
-    if (error?.code === "ECONNABORTED") {
-      throw new Error(
-        `${nomeServico}: tempo limite de 60 segundos excedido.`
-      );
-    }
-
-    if (error?.response) {
-      const status = error.response.status;
-
-      const respostaErro =
-        normalizarRespostaAxios(
-          error.response.data
-        );
-
-      const motivo =
-        extrairTag(respostaErro, "Text") ||
-        extrairTag(respostaErro, "faultstring") ||
-        extrairTag(respostaErro, "xMotivo");
-
-      throw new Error(
-        `${nomeServico}: erro HTTP ${status}` +
-        `${motivo ? ` — ${motivo}` : "."}`
-      );
-    }
-
-    throw new Error(
-      `${nomeServico}: ${error?.message || "falha desconhecida na comunicação."}`
-    );
-  }
 }
 
-// CONTINUA NA PARTE 2
+/**
+ * Consulta uma NFC-e diretamente pela chave.
+ */
+async function consultarNfcePorChave(
+  chaveAcesso,
+  ambiente = process.env.NFCE_AMBIENTE
+) {
+  const ambienteNormalizado =
+    normalizarAmbiente(ambiente);
+
+  const urls =
+    obterUrlsSefaz(
+      ambienteNormalizado
+    );
+
+  const xmlMensagem =
+    montarConsSitNFe(
+      chaveAcesso,
+      ambienteNormalizado
+    );
+
+  const resposta =
+    await enviarMensagemSefaz({
+      url:
+        urls.consultaProtocolo,
+
+      namespaceWsdl:
+        NAMESPACES_WSDL
+          .consultaProtocolo,
+
+      xmlMensagem,
+
+      nomeServico:
+        "Consulta da NFC-e por chave",
+
+      timeout:
+        60000,
+    });
+
+  const xml =
+    obterXmlFiscal(resposta);
+
+  const protocolo =
+    extrairDadosProtocolo(xml);
+
+  const cStatConsulta =
+    extrairTag(xml, "cStat");
+
+  const xMotivoConsulta =
+    extrairTag(xml, "xMotivo");
+
+  return {
+    cStat:
+      protocolo.cStat ||
+      cStatConsulta ||
+      "",
+
+    xMotivo:
+      protocolo.xMotivo ||
+      xMotivoConsulta ||
+      "Consulta da NFC-e concluída.",
+
+    cStatConsulta:
+      cStatConsulta || "",
+
+    xMotivoConsulta:
+      xMotivoConsulta || "",
+
+    ...protocolo,
+
+    ambiente:
+      ambienteNormalizado,
+
+    chaveAcesso:
+      validarChaveAcesso(
+        chaveAcesso
+      ),
+
+    xmlRetorno:
+      xml,
+
+    xmlSoap:
+      resposta.xmlSoap || "",
+  };
+}
+
+/**
+ * Monta o XML de consulta do status
+ * dos serviços da NFC-e.
+ */
+function montarConsStatServ(
+  ambiente
+) {
+  return (
+    '<?xml version="1.0" encoding="UTF-8"?>' +
+    `<consStatServ ` +
+    `xmlns="${NAMESPACE_NFE}" ` +
+    `versao="${VERSAO_NFE}">` +
+    `<tpAmb>${obterTpAmb(
+      ambiente
+    )}</tpAmb>` +
+    `<cUF>${UF_PR}</cUF>` +
+    "<xServ>STATUS</xServ>" +
+    "</consStatServ>"
+  );
+}
+
+/**
+ * Consulta o status do serviço NFC-e da SEFAZ/PR.
+ */
+async function consultarStatusServico(
+  ambiente = process.env.NFCE_AMBIENTE
+) {
+  const ambienteNormalizado =
+    normalizarAmbiente(ambiente);
+
+  const urls =
+    obterUrlsSefaz(
+      ambienteNormalizado
+    );
+
+  const resposta =
+    await enviarMensagemSefaz({
+      url:
+        urls.statusServico,
+
+      namespaceWsdl:
+        NAMESPACES_WSDL
+          .statusServico,
+
+      xmlMensagem:
+        montarConsStatServ(
+          ambienteNormalizado
+        ),
+
+      nomeServico:
+        "Status do serviço NFC-e",
+
+      timeout:
+        30000,
+    });
+
+  const xml =
+    obterXmlFiscal(resposta);
+
+  return {
+    tpAmb:
+      extrairTag(xml, "tpAmb"),
+
+    verAplic:
+      extrairTag(xml, "verAplic"),
+
+    cStat:
+      extrairTag(xml, "cStat"),
+
+    xMotivo:
+      extrairTag(
+        xml,
+        "xMotivo"
+      ) ||
+      "Consulta de status concluída.",
+
+    cUF:
+      extrairTag(xml, "cUF"),
+
+    dhRecbto:
+      extrairTag(xml, "dhRecbto"),
+
+    tMed:
+      extrairTag(xml, "tMed"),
+
+    dhRetorno:
+      extrairTag(xml, "dhRetorno"),
+
+    xObs:
+      extrairTag(xml, "xObs"),
+
+    ambiente:
+      ambienteNormalizado,
+
+    xmlRetorno:
+      xml,
+
+    xmlSoap:
+      resposta.xmlSoap || "",
+  };
+}
+
+module.exports = {
+  UF_PR,
+  VERSAO_NFE,
+  MODELO_NFCE,
+  NAMESPACES_WSDL,
+
+  normalizarAmbiente,
+  obterTpAmb,
+  obterUrlsSefaz,
+
+  extrairDadosProtocolo,
+  interpretarRetornoAutorizacao,
+
+  montarEnviNFe,
+  transmitirNfceParaSefaz,
+
+  validarNumeroRecibo,
+  montarConsReciNFe,
+  consultarReciboSefaz,
+
+  validarChaveAcesso,
+  montarConsSitNFe,
+  consultarNfcePorChave,
+
+  montarConsStatServ,
+  consultarStatusServico,
+};
