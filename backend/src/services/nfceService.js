@@ -9,6 +9,11 @@ const {
   consultarReciboSefaz,
 } = require("./sefazPrService");
 
+const {
+  cancelarNfceNaSefaz,
+  validarJustificativa,
+} = require("./sefazEventoService");
+
 const UF_PR = "41";
 const MODELO_NFCE = "65";
 const SERIE_PADRAO = 1;
@@ -970,10 +975,209 @@ async function consultarRetornoNfce(nfceId) {
   return nfce;
 }
 
+/**
+ * Converte uma data retornada pela SEFAZ em Date.
+ *
+ * Quando a data estiver vazia ou inválida,
+ * retorna undefined para evitar salvar Invalid Date
+ * no MongoDB.
+ */
+function converterDataSefaz(valor) {
+  if (!valor) {
+    return undefined;
+  }
+
+  const data = new Date(valor);
+
+  if (Number.isNaN(data.getTime())) {
+    return undefined;
+  }
+
+  return data;
+}
+
+/**
+ * Cancela uma NFC-e autorizada na SEFAZ.
+ *
+ * O fluxo executado é:
+ *
+ * 1. localiza a NFC-e;
+ * 2. valida o estado atual;
+ * 3. valida chave, protocolo e justificativa;
+ * 4. transmite o evento de cancelamento;
+ * 5. salva todos os XMLs e protocolos;
+ * 6. altera o status para cancelada quando confirmado.
+ */
+async function cancelarNfce(nfceId, justificativa) {
+  if (!nfceId) {
+    throw new Error(
+      "O identificador da NFC-e não foi informado."
+    );
+  }
+
+  const nfce = await Nfce.findById(nfceId);
+
+  if (!nfce) {
+    throw new Error("NFC-e não encontrada.");
+  }
+
+  /*
+   * Se já estiver cancelada, não enviamos outro evento
+   * desnecessariamente para a SEFAZ.
+   */
+  if (nfce.status === "cancelada") {
+    throw new Error(
+      "Esta NFC-e já está cancelada."
+    );
+  }
+
+  if (nfce.status !== "autorizada") {
+    throw new Error(
+      `Somente uma NFC-e autorizada pode ser cancelada. ` +
+        `Status atual: ${nfce.status || "não informado"}.`
+    );
+  }
+
+  if (!nfce.chaveAcesso) {
+    throw new Error(
+      "A chave de acesso da NFC-e não foi encontrada."
+    );
+  }
+
+  if (!nfce.protocolo) {
+    throw new Error(
+      "O protocolo de autorização da NFC-e não foi encontrado."
+    );
+  }
+
+  const justificativaValidada =
+    validarJustificativa(justificativa);
+
+  const dataEvento = new Date();
+
+  const retorno =
+    await cancelarNfceNaSefaz({
+      chaveAcesso: nfce.chaveAcesso,
+      protocolo: nfce.protocolo,
+      justificativa:
+        justificativaValidada,
+      ambiente:
+        nfce.ambiente ||
+        process.env.NFCE_AMBIENTE ||
+        "homologacao",
+      sequenciaEvento: 1,
+      dataEvento,
+    });
+
+  /*
+   * Persistimos o retorno mesmo quando a SEFAZ rejeitar
+   * o evento. Isso mantém um histórico técnico completo
+   * para auditoria e diagnóstico.
+   */
+  nfce.cancelamento = {
+    justificativa:
+      justificativaValidada,
+
+    protocolo:
+      retorno.protocoloEvento || "",
+
+    cStat:
+      retorno.cStatEvento ||
+      retorno.cStat ||
+      "",
+
+    xMotivo:
+      retorno.xMotivoEvento ||
+      retorno.xMotivo ||
+      "",
+
+    dataEvento,
+
+    dataRegistro:
+      converterDataSefaz(
+        retorno.dataRegistro
+      ),
+
+    sequenciaEvento:
+      Number(
+        retorno.sequenciaEvento || 1
+      ),
+
+    tipoEvento:
+      retorno.tipoEvento ||
+      "110111",
+
+    eventoDuplicado:
+      Boolean(
+        retorno.eventoDuplicado
+      ),
+
+    xmlEvento:
+      retorno.xmlEvento || "",
+
+    xmlEventoAssinado:
+      retorno.xmlEventoAssinado || "",
+
+    xmlLote:
+      retorno.xmlLote || "",
+
+    xmlRetorno:
+      retorno.xmlRetorno || "",
+
+    xmlSoap:
+      retorno.xmlSoap || "",
+  };
+
+  /*
+   * O evento é considerado concluído quando:
+   *
+   * - a SEFAZ confirmar o cancelamento; ou
+   * - informar que o mesmo evento já havia sido registrado.
+   *
+   * Um evento duplicado significa que o cancelamento
+   * anterior já foi recebido pela SEFAZ.
+   */
+  const cancelamentoConcluido =
+    Boolean(
+      retorno.cancelamentoConfirmado
+    ) ||
+    Boolean(
+      retorno.eventoDuplicado
+    );
+
+  if (cancelamentoConcluido) {
+    nfce.status = "cancelada";
+
+    nfce.mensagemSefaz =
+      retorno.xMotivoEvento ||
+      retorno.xMotivo ||
+      "Cancelamento da NFC-e confirmado pela SEFAZ.";
+  } else {
+    nfce.mensagemSefaz =
+      retorno.xMotivoEvento ||
+      retorno.xMotivo ||
+      "A SEFAZ não confirmou o cancelamento da NFC-e.";
+  }
+
+  await nfce.save();
+
+  /*
+   * Não alteramos automaticamente pedido.status para
+   * "cancelado" nesta etapa.
+   *
+   * Cancelar fiscalmente uma nota e cancelar comercialmente
+   * um pedido são operações diferentes. Essa atualização
+   * será controlada posteriormente pelo controller/fluxo
+   * do pedido para evitar cancelamento indevido.
+   */
+  return nfce;
+}
+
 module.exports = {
   gerarNfceDoPedido,
   assinarNfce,
   transmitirNfce,
   consultarRetornoNfce,
+  cancelarNfce,
 };
 

@@ -6,6 +6,7 @@ const nfceSchema = new mongoose.Schema(
       type: mongoose.Schema.Types.ObjectId,
       ref: "Pedido",
       required: true,
+      index: true,
     },
 
     numero: {
@@ -32,6 +33,7 @@ const nfceSchema = new mongoose.Schema(
     chaveAcesso: {
       type: String,
       default: "",
+      index: true,
     },
 
     cpfNota: {
@@ -44,15 +46,21 @@ const nfceSchema = new mongoose.Schema(
       default: 0,
     },
 
+    /*
+     * XML original da NFC-e antes da assinatura.
+     */
     xml: {
       type: String,
       default: "",
     },
 
+    /*
+     * XML da NFC-e assinado com o certificado A1.
+     */
     xmlAssinado: {
-  type: String,
-  default: "",
-},
+      type: String,
+      default: "",
+    },
 
     status: {
       type: String,
@@ -65,26 +73,30 @@ const nfceSchema = new mongoose.Schema(
         "erro",
       ],
       default: "gerada",
+      index: true,
     },
 
+    /*
+     * Dados da autorização da NFC-e.
+     */
     protocolo: {
       type: String,
       default: "",
     },
 
     recibo: {
-  type: String,
-  default: "",
-},
+      type: String,
+      default: "",
+    },
 
-cStat: {
-  type: String,
-  default: "",
-},
+    cStat: {
+      type: String,
+      default: "",
+    },
 
-dataAutorizacao: {
-  type: Date,
-},
+    dataAutorizacao: {
+      type: Date,
+    },
 
     mensagemSefaz: {
       type: String,
@@ -95,21 +107,114 @@ dataAutorizacao: {
       type: String,
       default: "",
     },
+
+    /*
+     * Dados do cancelamento da NFC-e.
+     */
+    cancelamento: {
+      justificativa: {
+        type: String,
+        default: "",
+      },
+
+      protocolo: {
+        type: String,
+        default: "",
+      },
+
+      cStat: {
+        type: String,
+        default: "",
+      },
+
+      xMotivo: {
+        type: String,
+        default: "",
+      },
+
+      dataEvento: {
+        type: Date,
+      },
+
+      dataRegistro: {
+        type: Date,
+      },
+
+      sequenciaEvento: {
+        type: Number,
+        default: 1,
+      },
+
+      tipoEvento: {
+        type: String,
+        default: "",
+      },
+
+      eventoDuplicado: {
+        type: Boolean,
+        default: false,
+      },
+
+      xmlEvento: {
+        type: String,
+        default: "",
+      },
+
+      xmlEventoAssinado: {
+        type: String,
+        default: "",
+      },
+
+      xmlLote: {
+        type: String,
+        default: "",
+      },
+
+      xmlRetorno: {
+        type: String,
+        default: "",
+      },
+
+      xmlSoap: {
+        type: String,
+        default: "",
+      },
+    },
   },
-  { timestamps: true }
+  {
+    timestamps: true,
+  }
 );
 
+/*
+ * Impede a criação acidental de duas NFC-e
+ * para o mesmo pedido.
+ */
+nfceSchema.index(
+  {
+    pedido: 1,
+  },
+  {
+    unique: true,
+  }
+);
+
+/*
+ * Evita duplicidade de número e série
+ * dentro do mesmo ambiente fiscal.
+ */
 nfceSchema.index(
   {
     ambiente: 1,
+    modelo: 1,
     serie: 1,
     numero: 1,
   },
   {
     unique: true,
-    name: "UK_NFCE_NUMERO_SERIE_AMBIENTE",
   }
 );
 
 module.exports =
-  mongoose.models.Nfce || mongoose.model("Nfce", nfceSchema);
+  mongoose.models.Nfce ||
+  mongoose.model("Nfce", nfceSchema);

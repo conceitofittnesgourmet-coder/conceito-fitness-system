@@ -5,6 +5,7 @@ const {
   assinarNfce,
   transmitirNfce,
   consultarRetornoNfce,
+  cancelarNfce,
 } = require("../services/nfceService");
 const { gerarDanfeNfceHtml } = require("../services/danfeNfceService");
 
@@ -208,6 +209,84 @@ exports.consultarPorId = async (req, res) => {
       success: false,
       message: error.message,
     });
+  }
+};
+
+/**
+ * Cancela uma NFC-e autorizada na SEFAZ.
+ *
+ * Corpo esperado:
+ *
+ * {
+ *   "justificativa": "Cancelamento solicitado por erro no pedido."
+ * }
+ */
+exports.cancelarPorId = async (req, res) => {
+  try {
+    const justificativa = String(
+      req.body?.justificativa || ""
+    ).trim();
+
+    if (!justificativa) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "A justificativa do cancelamento é obrigatória.",
+      });
+    }
+
+    const nfce = await cancelarNfce(
+      req.params.id,
+      justificativa
+    );
+
+    return res.json({
+      success: true,
+      message:
+        nfce.mensagemSefaz ||
+        "Cancelamento da NFC-e processado.",
+      nfce,
+    });
+  } catch (error) {
+    console.log(
+      "ERRO CANCELAR NFCE:",
+      error
+    );
+
+    /*
+     * Erros de validação retornam 400.
+     *
+     * Erros inesperados de comunicação ou banco
+     * continuam retornando 500.
+     */
+    const mensagensValidacao = [
+      "não foi informado",
+      "não encontrada",
+      "já está cancelada",
+      "somente uma NFC-e autorizada",
+      "chave de acesso",
+      "protocolo de autorização",
+      "justificativa",
+    ];
+
+    const mensagem = String(
+      error?.message ||
+      "Erro ao cancelar a NFC-e."
+    );
+
+    const erroValidacao =
+      mensagensValidacao.some((texto) =>
+        mensagem
+          .toLowerCase()
+          .includes(texto.toLowerCase())
+      );
+
+    return res
+      .status(erroValidacao ? 400 : 500)
+      .json({
+        success: false,
+        message: mensagem,
+      });
   }
 };
 
