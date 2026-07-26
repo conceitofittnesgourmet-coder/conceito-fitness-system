@@ -1,11 +1,13 @@
 import { FaStar } from "react-icons/fa";
 import ConstrutorUniversalProduto from "./ConstrutorUniversalProduto";
 import ProdutoConfigEngine from "../ProdutoConfig/ProdutoConfigEngine";
+import PublicacaoOnlineProduto from "./PublicacaoOnlineProduto";
 
 function ProdutoCardapio({
   tipoWizard,
-  destaque,
-  setDestaque,
+  publicacao,
+  setPublicacao,
+  preco,
   tipoProduto,
   setTipoProduto,
   tempoPreparo,
@@ -26,18 +28,11 @@ function ProdutoCardapio({
           Cardápio Online e Montagem
         </h3>
 
-        <label className="premium-switch">
-          <div>
-            <strong>Produto em destaque</strong>
-            <span>Marque para destacar no cardápio</span>
-          </div>
-
-          <input
-            type="checkbox"
-            checked={destaque}
-            onChange={(e) => setDestaque(e.target.checked)}
-          />
-        </label>
+        <PublicacaoOnlineProduto
+  publicacao={publicacao}
+  setPublicacao={setPublicacao}
+  preco={preco}
+/>
 
         <div className="field-premium">
           <label>Tipo Produto</label>

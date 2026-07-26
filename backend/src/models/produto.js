@@ -397,178 +397,275 @@ tipoProduto: {
       default: true,
     },
 
+    // PUBLICAÇÃO DIGITAL
+    // Mantém os campos legados e adiciona a estrutura avançada.
     publicacao: {
-  pdv: {
-    type: Boolean,
-    default: true,
-  },
+      publicado: {
+        type: Boolean,
+        default: true,
+      },
 
-  cardapioOnline: {
-    type: Boolean,
-    default: true,
-  },
+      // Campos legados — preservados para compatibilidade.
+      pdv: {
+        type: Boolean,
+        default: true,
+      },
+      cardapioOnline: {
+        type: Boolean,
+        default: true,
+      },
+      whatsapp: {
+        type: Boolean,
+        default: true,
+      },
+      ifood: {
+        type: Boolean,
+        default: false,
+      },
+      aiqfome: {
+        type: Boolean,
+        default: false,
+      },
+      destaque: {
+        type: Boolean,
+        default: false,
+      },
+      novidade: {
+        type: Boolean,
+        default: false,
+      },
+      maisVendido: {
+        type: Boolean,
+        default: false,
+      },
+      promocao: {
+        type: Boolean,
+        default: false,
+      },
+      exclusivoClube: {
+        type: Boolean,
+        default: false,
+      },
+      ordem: {
+        type: Number,
+        default: 0,
+      },
 
-  whatsapp: {
-    type: Boolean,
-    default: true,
-  },
+      // Estrutura nova.
+      canais: {
+        pdv: { type: Boolean, default: true },
+        cardapio: { type: Boolean, default: true },
+        site: { type: Boolean, default: true },
+        whatsapp: { type: Boolean, default: true },
+        ifood: { type: Boolean, default: false },
+        aiqfome: { type: Boolean, default: false },
+      },
 
-  ifood: {
-    type: Boolean,
-    default: false,
-  },
+      destaques: {
+        destaque: { type: Boolean, default: false },
+        novidade: { type: Boolean, default: false },
+        maisVendido: { type: Boolean, default: false },
+        exclusivoClube: { type: Boolean, default: false },
+        ultimasUnidades: { type: Boolean, default: false },
+        lancamento: { type: Boolean, default: false },
+      },
 
-  aiqfome: {
-    type: Boolean,
-    default: false,
-  },
+      prioridadeExibicao: {
+        type: Number,
+        default: 0,
+      },
 
-  destaque: {
-    type: Boolean,
-    default: false,
-  },
+      promocaoDetalhada: {
+        ativa: { type: Boolean, default: false },
+        tipo: {
+          type: String,
+          enum: ["preco_fixo", "percentual", "valor_fixo"],
+          default: "preco_fixo",
+        },
+        precoOriginal: { type: Number, default: 0 },
+        precoPromocional: { type: Number, default: 0 },
+        desconto: { type: Number, default: 0 },
+        inicio: { type: Date, default: null },
+        fim: { type: Date, default: null },
+        cupom: { type: String, default: "", trim: true },
+        exclusivaClube: { type: Boolean, default: false },
+        prioridade: { type: Number, default: 0 },
+      },
 
-  novidade: {
-    type: Boolean,
-    default: false,
-  },
-
-  maisVendido: {
-    type: Boolean,
-    default: false,
-  },
-
-  promocao: {
-    type: Boolean,
-    default: false,
-  },
-
-  exclusivoClube: {
-    type: Boolean,
-    default: false,
-  },
-
-  ordem: {
-    type: Number,
-    default: 0,
-  },
-},
-
-disponibilidade: {
-  disponivel: {
-    type: Boolean,
-    default: true,
-  },
-
-  ocultarQuandoIndisponivel: {
-    type: Boolean,
-    default: false,
-  },
-
-  motivoIndisponibilidade: {
-    type: String,
-    default: "",
-    trim: true,
-  },
-
-  pausadoAte: {
-    type: Date,
-    default: null,
-  },
-
-  diasSemana: {
-    type: [Number],
-    default: [],
-  },
-
-  horarioInicio: {
-    type: String,
-    default: "",
-  },
-
-  horarioFim: {
-    type: String,
-    default: "",
-  },
-
-  limiteDiario: {
-    type: Number,
-    default: 0,
-  },
-
-  quantidadeVendidaHoje: {
-    type: Number,
-    default: 0,
-  },
-
-  dataControleDiario: {
-    type: Date,
-    default: null,
-  },
-},
-
-precoPromocional: {
-  type: Number,
-  default: 0,
-},
-
-promocaoInicio: {
-  type: Date,
-  default: null,
-},
-
-promocaoFim: {
-  type: Date,
-  default: null,
-},
-
-integracoes: {
-  ifood: {
-    produtoExternoId: {
-      type: String,
-      default: "",
+      cicloVida: {
+        dataLancamento: { type: Date, default: null },
+        dataExpiracao: { type: Date, default: null },
+        ocultarAntesLancamento: { type: Boolean, default: true },
+        ocultarAposExpiracao: { type: Boolean, default: true },
+      },
     },
 
-    statusSincronizacao: {
-      type: String,
-      enum: ["nao_configurado", "pendente", "sincronizado", "erro"],
-      default: "nao_configurado",
+    disponibilidade: {
+      disponivel: { type: Boolean, default: true },
+      ocultarQuandoIndisponivel: { type: Boolean, default: false },
+      motivoIndisponibilidade: { type: String, default: "", trim: true },
+      pausadoAte: { type: Date, default: null },
+      diasSemana: { type: [Number], default: [] },
+      horarioInicio: { type: String, default: "" },
+      horarioFim: { type: String, default: "" },
+      limiteDiario: { type: Number, default: 0 },
+      quantidadeVendidaHoje: { type: Number, default: 0 },
+      dataControleDiario: { type: Date, default: null },
+
+      controlarPorHorario: { type: Boolean, default: false },
+      controlarPorEstoque: { type: Boolean, default: true },
+      estoqueMinimoDisponivel: { type: Number, default: 1 },
+
+      lojas: [
+        {
+          lojaId: {
+            type: mongoose.Schema.Types.ObjectId,
+            ref: "Empresa",
+            default: null,
+          },
+          nome: { type: String, default: "" },
+          disponivel: { type: Boolean, default: true },
+          precoExclusivo: { type: Number, default: null },
+          estoqueExclusivo: { type: Number, default: null },
+        },
+      ],
     },
 
-    ultimaSincronizacao: {
-      type: Date,
-      default: null,
+    // Campos promocionais legados — mantidos durante a migração.
+    precoPromocional: { type: Number, default: 0 },
+    promocaoInicio: { type: Date, default: null },
+    promocaoFim: { type: Date, default: null },
+
+    marketing: {
+      campanhasSazonais: [
+        {
+          campanhaId: { type: mongoose.Schema.Types.ObjectId, default: null },
+          nome: { type: String, default: "", trim: true },
+          ativa: { type: Boolean, default: true },
+          inicio: { type: Date, default: null },
+          fim: { type: Date, default: null },
+          precoPromocional: { type: Number, default: 0 },
+          descontoTipo: {
+            type: String,
+            enum: ["nenhum", "percentual", "valor_fixo", "preco_fixo"],
+            default: "nenhum",
+          },
+          descontoValor: { type: Number, default: 0 },
+          prioridade: { type: Number, default: 0 },
+          canais: { type: [String], default: [] },
+          etiquetas: { type: [String], default: [] },
+        },
+      ],
+
+      etiquetasAutomaticas: {
+        novo: {
+          habilitado: { type: Boolean, default: true },
+          dias: { type: Number, default: 30 },
+        },
+        maisVendido: {
+          habilitado: { type: Boolean, default: true },
+          quantidadeMinima: { type: Number, default: 20 },
+          periodoDias: { type: Number, default: 30 },
+        },
+        ultimasUnidades: {
+          habilitado: { type: Boolean, default: true },
+          estoqueMaximo: { type: Number, default: 5 },
+        },
+      },
+
+      seo: {
+        titulo: { type: String, default: "", trim: true },
+        descricao: { type: String, default: "", trim: true },
+        palavrasChave: { type: [String], default: [] },
+        slug: { type: String, default: "", trim: true },
+        canonical: { type: String, default: "", trim: true },
+        indexar: { type: Boolean, default: true },
+        imagemOG: { type: String, default: "", trim: true },
+      },
     },
 
-    mensagemErro: {
-      type: String,
-      default: "",
-    },
-  },
-
-  aiqfome: {
-    produtoExternoId: {
-      type: String,
-      default: "",
-    },
-
-    statusSincronizacao: {
-      type: String,
-      enum: ["nao_configurado", "pendente", "sincronizado", "erro"],
-      default: "nao_configurado",
+    recomendacoes: {
+      produtosRelacionados: [
+        { type: mongoose.Schema.Types.ObjectId, ref: "Produto" },
+      ],
+      vendaCruzada: [
+        { type: mongoose.Schema.Types.ObjectId, ref: "Produto" },
+      ],
+      combinaCom: [
+        { type: mongoose.Schema.Types.ObjectId, ref: "Produto" },
+      ],
+      upsell: [
+        { type: mongoose.Schema.Types.ObjectId, ref: "Produto" },
+      ],
     },
 
-    ultimaSincronizacao: {
-      type: Date,
-      default: null,
+    combosAutomaticos: {
+      habilitado: { type: Boolean, default: false },
+      grupos: [
+        {
+          nome: { type: String, default: "", trim: true },
+          quantidadeMinima: { type: Number, default: 1 },
+          quantidadeMaxima: { type: Number, default: 1 },
+          produtos: [
+            { type: mongoose.Schema.Types.ObjectId, ref: "Produto" },
+          ],
+          descontoTipo: {
+            type: String,
+            enum: ["nenhum", "percentual", "valor_fixo"],
+            default: "nenhum",
+          },
+          descontoValor: { type: Number, default: 0 },
+          ativo: { type: Boolean, default: true },
+        },
+      ],
     },
 
-    mensagemErro: {
-      type: String,
-      default: "",
+    analytics: {
+      visualizacoes: { type: Number, default: 0 },
+      favoritos: { type: Number, default: 0 },
+      adicionadosCarrinho: { type: Number, default: 0 },
+      vendas: { type: Number, default: 0 },
+      faturamento: { type: Number, default: 0 },
+      ticketMedio: { type: Number, default: 0 },
+      conversao: { type: Number, default: 0 },
+      ultimaVenda: { type: Date, default: null },
+      ultimaVisualizacao: { type: Date, default: null },
+      ranking: { type: Number, default: 0 },
     },
-  },
-},
+
+    integracoes: {
+      ifood: {
+        habilitado: { type: Boolean, default: false },
+        produtoExternoId: { type: String, default: "" },
+        categoriaExterna: { type: String, default: "" },
+        sincronizarPreco: { type: Boolean, default: true },
+        sincronizarEstoque: { type: Boolean, default: true },
+        sincronizarDisponibilidade: { type: Boolean, default: true },
+        statusSincronizacao: {
+          type: String,
+          enum: ["nao_configurado", "pendente", "sincronizado", "erro"],
+          default: "nao_configurado",
+        },
+        ultimaSincronizacao: { type: Date, default: null },
+        mensagemErro: { type: String, default: "" },
+      },
+
+      aiqfome: {
+        habilitado: { type: Boolean, default: false },
+        produtoExternoId: { type: String, default: "" },
+        categoriaExterna: { type: String, default: "" },
+        sincronizarPreco: { type: Boolean, default: true },
+        sincronizarEstoque: { type: Boolean, default: true },
+        sincronizarDisponibilidade: { type: Boolean, default: true },
+        statusSincronizacao: {
+          type: String,
+          enum: ["nao_configurado", "pendente", "sincronizado", "erro"],
+          default: "nao_configurado",
+        },
+        ultimaSincronizacao: { type: Date, default: null },
+        mensagemErro: { type: String, default: "" },
+      },
+    },
 
     imagens: [
       {

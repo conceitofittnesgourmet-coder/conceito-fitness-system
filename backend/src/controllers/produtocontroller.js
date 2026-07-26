@@ -1,263 +1,51 @@
 const cloudinary = require("../config/cloudinary");
 const fs = require("fs-extra");
-const generateSlug = require("../utils/generateslug");
 const Produto = require("../models/produto");
-
-function parseJsonSeguro(valor, padrao = {}) {
-  if (valor === undefined || valor === null || valor === "") {
-    return padrao;
-  }
-
-  if (typeof valor === "object") {
-    return valor;
-  }
-
-  try {
-    return JSON.parse(valor);
-  } catch (error) {
-    return padrao;
-  }
-}
-
-function parseBoolean(valor, padrao = false) {
-  if (valor === undefined || valor === null || valor === "") {
-    return padrao;
-  }
-
-  if (typeof valor === "boolean") {
-    return valor;
-  }
-
-  return String(valor).toLowerCase() === "true";
-}
-
-function parseNumero(valor, padrao = 0) {
-  if (valor === undefined || valor === null || valor === "") {
-    return padrao;
-  }
-
-  const numero = Number(String(valor).replace(",", "."));
-
-  return Number.isNaN(numero) ? padrao : numero;
-}
-
-function promocaoEstaAtiva(produto) {
-  if (!produto?.publicacao?.promocao) {
-    return false;
-  }
-
-  const agora = new Date();
-
-  if (
-    produto.promocaoInicio &&
-    agora < new Date(produto.promocaoInicio)
-  ) {
-    return false;
-  }
-
-  if (
-    produto.promocaoFim &&
-    agora > new Date(produto.promocaoFim)
-  ) {
-    return false;
-  }
-
-  return Number(produto.precoPromocional || 0) > 0;
-}
-
-function verificarDisponibilidadeProduto(produto) {
-  if (!produto.ativo) {
-    return {
-      disponivel: false,
-      motivo: "Produto inativo",
-    };
-  }
-
-  const configuracao = produto.disponibilidade || {};
-
-  if (configuracao.disponivel === false) {
-    return {
-      disponivel: false,
-      motivo:
-        configuracao.motivoIndisponibilidade ||
-        "Indisponível no momento",
-    };
-  }
-
-  const agora = new Date();
-
-  if (
-    configuracao.pausadoAte &&
-    agora < new Date(configuracao.pausadoAte)
-  ) {
-    return {
-      disponivel: false,
-      motivo:
-        configuracao.motivoIndisponibilidade ||
-        "Produto temporariamente pausado",
-    };
-  }
-
-  const diasSemana = configuracao.diasSemana || [];
-
-  if (
-    diasSemana.length > 0 &&
-    !diasSemana.includes(agora.getDay())
-  ) {
-    return {
-      disponivel: false,
-      motivo: "Produto indisponível hoje",
-    };
-  }
-
-  const horarioAtual = agora.toTimeString().slice(0, 5);
-
-  if (
-    configuracao.horarioInicio &&
-    horarioAtual < configuracao.horarioInicio
-  ) {
-    return {
-      disponivel: false,
-      motivo: `Disponível a partir das ${configuracao.horarioInicio}`,
-    };
-  }
-
-  if (
-    configuracao.horarioFim &&
-    horarioAtual > configuracao.horarioFim
-  ) {
-    return {
-      disponivel: false,
-      motivo: "Horário de venda encerrado",
-    };
-  }
-
-  if (
-    Number(configuracao.limiteDiario || 0) > 0 &&
-    Number(configuracao.quantidadeVendidaHoje || 0) >=
-      Number(configuracao.limiteDiario)
-  ) {
-    return {
-      disponivel: false,
-      motivo: "Limite diário atingido",
-    };
-  }
-
-  if (Number(produto.estoque || 0) <= 0) {
-    return {
-      disponivel: false,
-      motivo: "Produto esgotado",
-    };
-  }
-
-  return {
-    disponivel: true,
-    motivo: "",
-  };
-}
-
-function formatarProdutoPublico(produto) {
-  const produtoObj =
-    typeof produto.toObject === "function"
-      ? produto.toObject()
-      : produto;
-
-  const disponibilidade =
-    verificarDisponibilidadeProduto(produtoObj);
-
-  const promocaoAtiva =
-    promocaoEstaAtiva(produtoObj);
-
-  const imagem =
-    produtoObj.imagem ||
-    produtoObj.foto ||
-    produtoObj.image ||
-    produtoObj.imagens?.[0]?.url ||
-    produtoObj.imagens?.[0] ||
-    "";
-
-  return {
-    ...produtoObj,
-
-    imagem,
-
-    precoOriginal: Number(produtoObj.preco || 0),
-
-    precoExibicao: promocaoAtiva
-      ? Number(produtoObj.precoPromocional || 0)
-      : Number(produtoObj.preco || 0),
-
-    promocaoAtiva,
-
-    disponivel: disponibilidade.disponivel,
-
-    motivoIndisponibilidade: disponibilidade.motivo,
-
-    estoque: Number(produtoObj.estoque || 0),
-
-    destaque: Boolean(
-      produtoObj.publicacao?.destaque ||
-      produtoObj.destaque
-    ),
-  };
-}
+const ProdutoService = require("../services/ProdutoService");
 
 async function uploadImagens(files = []) {
   const imagens = [];
-
   for (const file of files) {
     try {
-      const resultado = await cloudinary.uploader.upload(
-        file.path,
-        {
-          folder: "conceito-fitness/produtos",
-        }
-      );
-
+      const resultado = await cloudinary.uploader.upload(file.path, {
+        folder: "conceito-fitness/produtos",
+      });
       imagens.push({
         url: resultado.secure_url,
         public_id: resultado.public_id,
         filename: file.filename,
       });
-
-      await fs.remove(file.path);
-    } catch (error) {
-      console.log(
-        "ERRO CLOUDINARY:",
-        error.message
-      );
+    } finally {
+      if (file.path) await fs.remove(file.path).catch(() => {});
     }
   }
-
   return imagens;
 }
 
-// CRIAR PRODUTO
-const criarProduto = async (req, res) => {
-    console.log("================================");
-console.log("BODY PRODUTO:");
-console.log(req.body);
-console.log("CUSTO RECEBIDO:", req.body.custo);
-console.log("================================");
-console.log("FILES:", req.files);
-  try {
-   const {
-  nome,
-  preco,
-  estoque,
-  descricao,
-  categoria,
-  categorias,
-  unidadeMedida,
-  vendaPorPeso,
-  permiteFracionado,
-  tempoPreparo,
-  restricoes,
-  peso,
-  destaque
-} = req.body || {};
+async function removerImagensCloudinary(imagens = []) {
+  for (const imagem of imagens) {
+    if (!imagem?.public_id) continue;
+    try {
+      await cloudinary.uploader.destroy(imagem.public_id);
+    } catch (error) {
+      console.error("Erro ao remover imagem do Cloudinary:", error.message);
+    }
+  }
+}
 
-    if (!nome || !preco || !estoque) {
+function responderErro(res, error, contexto) {
+  console.error(contexto, error);
+  const status = error?.name === "ValidationError" ? 400 : 500;
+  return res.status(status).json({
+    success: false,
+    message: error.message || "Erro interno do servidor",
+  });
+}
+
+const criarProduto = async (req, res) => {
+  try {
+    const { nome, preco, estoque } = req.body || {};
+    if (!nome || preco === undefined || preco === null || preco === "" || estoque === undefined || estoque === null || estoque === "") {
       return res.status(400).json({
         success: false,
         message: "Nome, preço e estoque são obrigatórios",
@@ -265,814 +53,270 @@ console.log("FILES:", req.files);
     }
 
     const imagens = await uploadImagens(req.files || []);
+    const produto = await ProdutoService.criarProduto(req.body, imagens);
 
-    const precoVenda = Number(
-  String(preco).replace(",", ".")
-);
-
-const categoriasArray =
-  categorias
-    ? categorias
-        .split(",")
-        .map((c) => c.trim())
-        .filter(Boolean)
-    : [];
-
-const custoProduto = Number(
-  String(req.body.custo || 0).replace(",", ".")
-);
-
-const lucro = precoVenda - custoProduto;
-
-const margem =
-  precoVenda > 0
-    ? Number(
-        ((lucro / precoVenda) * 100).toFixed(2)
-      )
-    : 0;
-
-    console.log("BODY PRODUTO:");
-console.log(req.body);
-
-const produto = await Produto.create({
-  ...req.body,
-  nome,
-  descricao: descricao || "",
-  categoria: categoria || "Gourmet",
-  categorias: categoriasArray,
-  preco: precoVenda,
-  custo: custoProduto,
-  lucro,
-  margem,
-  tipoProduto: req.body.tipoProduto || "producao",
-  estoque: Number(estoque),
-  tempoPreparo: Number(tempoPreparo || 0),
-  restricoes: restricoes || "",
-  peso: peso || "",
-  unidadeMedida: unidadeMedida || "UN",
-  vendaPorPeso: vendaPorPeso === "true" || vendaPorPeso === true,
-  permiteFracionado: permiteFracionado === "true" || permiteFracionado === true,
-  destaque: destaque === "true" || destaque === true,
-  codigoBarras: req.body.codigoBarras || "",
-sku: req.body.sku || "",
-dadosFiscais: parseJsonSeguro(
-  req.body.dadosFiscais,
-  {}
-),
-produtoComposto: req.body.produtoComposto === "true" || req.body.produtoComposto === true,
-tipoComposicao: req.body.tipoComposicao || "simples",
-itensComposicao: parseJsonSeguro(req.body.itensComposicao),
-  informacoesNutricionais: parseJsonSeguro(req.body.informacoesNutricionais, {}),
-
-alergenos: parseJsonSeguro(req.body.alergenos),
-
-selos: parseJsonSeguro(req.body.selos, {}),
-
-gruposComponentes: parseJsonSeguro(req.body.gruposComponentes),
-
-  configuracaoGrupos: parseJsonSeguro(req.body.configuracaoGrupos),
-  configuravel:
-  req.body.configuravel === "true" ||
-  req.body.configuravel === true,
-
-permiteObservacao:
-  req.body.permiteObservacao === "true" ||
-  req.body.permiteObservacao === true,
-
-quantidadeMinima:
-  Number(req.body.quantidadeMinima || 1),
-
-quantidadeMaxima:
-  Number(req.body.quantidadeMaxima || 1),  
-permiteMontagemCliente:
-  req.body.permiteMontagemCliente === "true" ||
-  req.body.permiteMontagemCliente === true,
-
-ativo: parseBoolean(req.body.ativo, true),
-
-publicacao: parseJsonSeguro(
-  req.body.publicacao,
-  {
-    pdv: true,
-    cardapioOnline: true,
-    whatsapp: true,
-    ifood: false,
-    aiqfome: false,
-    destaque: parseBoolean(destaque, false),
-    novidade: false,
-    maisVendido: false,
-    promocao: false,
-    exclusivoClube: false,
-    ordem: 0,
-  }
-),
-
-disponibilidade: parseJsonSeguro(
-  req.body.disponibilidade,
-  {
-    disponivel: true,
-    ocultarQuandoIndisponivel: false,
-    motivoIndisponibilidade: "",
-    pausadoAte: null,
-    diasSemana: [],
-    horarioInicio: "",
-    horarioFim: "",
-    limiteDiario: 0,
-    quantidadeVendidaHoje: 0,
-    dataControleDiario: null,
-  }
-),
-
-precoPromocional: parseNumero(
-  req.body.precoPromocional,
-  0
-),
-
-promocaoInicio:
-  req.body.promocaoInicio || null,
-
-promocaoFim:
-  req.body.promocaoFim || null,
-
-integracoes: parseJsonSeguro(
-  req.body.integracoes,
-  {}
-),
-
-  slug: generateSlug(nome),
-  imagens,
-});
-
-    if (global.io) {
-      global.io.emit("produto-criado", produto);
-    }
-
+    if (global.io) global.io.emit("produto-criado", produto);
     return res.status(201).json({
       success: true,
       message: "Produto criado com sucesso",
       produto,
     });
   } catch (error) {
-    console.log("ERRO CRIAR PRODUTO:", error);
-
-    
-    return res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+    return responderErro(res, error, "ERRO CRIAR PRODUTO:");
   }
 };
 
-
-// LISTAR PRODUTOS
 const listarProdutos = async (req, res) => {
   try {
     const { search, destaque, ativo, page = 1, limit = 9999 } = req.query;
-
     const filtro = {};
-
-    if (search) {
-      filtro.nome = {
-        $regex: search,
-        $options: "i",
-      };
-    }
-
+    if (search) filtro.nome = { $regex: search, $options: "i" };
     if (destaque !== undefined) {
-      filtro.destaque = destaque === "true";
+      const valor = destaque === "true";
+      filtro.$or = [
+        { destaque: valor },
+        { "publicacao.destaque": valor },
+        { "publicacao.destaques.destaque": valor },
+      ];
     }
+    if (ativo !== undefined) filtro.ativo = ativo === "true";
 
-    if (ativo !== undefined) {
-      filtro.ativo = ativo === "true";
-    }
-
-    const skip = (Number(page) - 1) * Number(limit);
-
-    const produtos = await Produto.find(filtro)
-      .sort({ createdAt: -1 })
-      .skip(skip)
-      .limit(Number(limit));
-
-      const produtosFormatados = produtos.map((produto) => {
-  const produtoObj = produto.toObject();
-
-  return {
-    ...produtoObj,
-
-    imagem:
-      produtoObj.imagem ||
-      produtoObj.foto ||
-      produtoObj.image ||
-      (produtoObj.imagens &&
-      produtoObj.imagens.length > 0
-        ? produtoObj.imagens[0].url || produtoObj.imagens[0]
-        : ""),
-
-    estoque: Number(produtoObj.estoque || 0),
-
-    preco: Number(produtoObj.preco || 0),
-
-    destaque: Boolean(produtoObj.destaque),
-  };
-});
-
-    const total = await Produto.countDocuments(filtro);
+    const pagina = Math.max(1, Number(page) || 1);
+    const limite = Math.min(10000, Math.max(1, Number(limit) || 9999));
+    const [produtos, total] = await Promise.all([
+      Produto.find(filtro).sort({ createdAt: -1 }).skip((pagina - 1) * limite).limit(limite),
+      Produto.countDocuments(filtro),
+    ]);
 
     return res.status(200).json({
       success: true,
       total,
-      page: Number(page),
-      pages: Math.ceil(total / Number(limit)),
-      produtos: produtosFormatados,
+      page: pagina,
+      pages: Math.ceil(total / limite),
+      produtos: produtos.map(ProdutoService.formatarProdutoPublico),
     });
   } catch (error) {
-    console.log("ERRO LISTAR PRODUTOS:", error);
-
-    return res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+    return responderErro(res, error, "ERRO LISTAR PRODUTOS:");
   }
 };
 
 const listarProdutosCardapio = async (req, res) => {
   try {
-    const {
-      search,
-      categoria,
-      destaque,
-      novidade,
-      promocao,
-      exclusivoClube,
-    } = req.query;
-
-    const filtro = {
-      ativo: true,
-      "publicacao.cardapioOnline": {
-        $ne: false,
+    const { search, categoria, destaque, novidade, promocao, exclusivoClube } = req.query;
+    const condicoes = [
+      { ativo: true },
+      {
+        $or: [
+          { "publicacao.canais.cardapio": { $ne: false } },
+          { "publicacao.cardapioOnline": { $ne: false } },
+        ],
       },
-    };
+    ];
 
     if (search) {
-      filtro.$or = [
-        {
-          nome: {
-            $regex: search,
-            $options: "i",
-          },
-        },
-        {
-          descricao: {
-            $regex: search,
-            $options: "i",
-          },
-        },
-      ];
+      condicoes.push({
+        $or: [
+          { nome: { $regex: search, $options: "i" } },
+          { descricao: { $regex: search, $options: "i" } },
+        ],
+      });
     }
-
     if (categoria) {
-      filtro.$or = [
-        {
-          categoria: {
-            $regex: `^${categoria}$`,
-            $options: "i",
-          },
-        },
-        {
-          categorias: {
-            $elemMatch: {
-              $regex: `^${categoria}$`,
-              $options: "i",
-            },
-          },
-        },
-      ];
+      const regex = { $regex: `^${categoria.replace(/[.*+?^${}()|[\]\\]/g, "\\$&")}$`, $options: "i" };
+      condicoes.push({ $or: [{ categoria: regex }, { categorias: { $elemMatch: regex } }] });
     }
-
     if (destaque === "true") {
-      filtro.$or = [
-        {
-          "publicacao.destaque": true,
-        },
-        {
-          destaque: true,
-        },
-      ];
+      condicoes.push({
+        $or: [
+          { "publicacao.destaques.destaque": true },
+          { "publicacao.destaque": true },
+          { destaque: true },
+        ],
+      });
     }
-
     if (novidade === "true") {
-      filtro["publicacao.novidade"] = true;
+      condicoes.push({
+        $or: [
+          { "publicacao.destaques.novidade": true },
+          { "publicacao.novidade": true },
+        ],
+      });
     }
-
     if (promocao === "true") {
-      filtro["publicacao.promocao"] = true;
+      condicoes.push({
+        $or: [
+          { "publicacao.promocaoDetalhada.ativa": true },
+          { "publicacao.promocao": true },
+        ],
+      });
     }
-
     if (exclusivoClube === "true") {
-      filtro["publicacao.exclusivoClube"] = true;
+      condicoes.push({
+        $or: [
+          { "publicacao.destaques.exclusivoClube": true },
+          { "publicacao.exclusivoClube": true },
+        ],
+      });
     }
 
-    const produtos = await Produto.find(filtro).sort({
+    const produtos = await Produto.find({ $and: condicoes }).sort({
+      "publicacao.prioridadeExibicao": 1,
       "publicacao.ordem": 1,
       destaque: -1,
       createdAt: -1,
     });
 
     const produtosFormatados = produtos
-      .map(formatarProdutoPublico)
-      .filter((produto) => {
-        if (
-          produto.disponivel === false &&
-          produto.disponibilidade
-            ?.ocultarQuandoIndisponivel === true
-        ) {
-          return false;
-        }
-
-        return true;
-      });
+      .map(ProdutoService.formatarProdutoPublico)
+      .filter((produto) => !(
+        produto.disponivel === false &&
+        produto.disponibilidade?.ocultarQuandoIndisponivel === true
+      ));
 
     const categoriasMap = new Map();
-
-    produtosFormatados.forEach((produto) => {
-      const categoriasProduto = [
-        produto.categoria,
-        ...(produto.categorias || []),
-      ].filter(Boolean);
-
-      categoriasProduto.forEach((nomeCategoria) => {
-        const chave = String(nomeCategoria)
-          .trim()
-          .toLowerCase();
-
-        if (!categoriasMap.has(chave)) {
-          categoriasMap.set(
-            chave,
-            String(nomeCategoria).trim()
-          );
-        }
-      });
-    });
+    for (const produto of produtosFormatados) {
+      for (const nome of [produto.categoria, ...(produto.categorias || [])].filter(Boolean)) {
+        const chave = String(nome).trim().toLowerCase();
+        if (!categoriasMap.has(chave)) categoriasMap.set(chave, String(nome).trim());
+      }
+    }
 
     return res.status(200).json({
       success: true,
       total: produtosFormatados.length,
-      categorias: Array.from(
-        categoriasMap.values()
-      ).sort((a, b) =>
-        a.localeCompare(b, "pt-BR")
-      ),
+      categorias: Array.from(categoriasMap.values()).sort((a, b) => a.localeCompare(b, "pt-BR")),
       produtos: produtosFormatados,
     });
   } catch (error) {
-    console.log(
-      "ERRO LISTAR CARDÁPIO:",
-      error
-    );
-
-    return res.status(500).json({
-      success: false,
-      message:
-        error.message ||
-        "Erro ao carregar o cardápio",
-    });
+    return responderErro(res, error, "ERRO LISTAR CARDÁPIO:");
   }
 };
 
-// BUSCAR PRODUTO
 const buscarProduto = async (req, res) => {
   try {
     const produto = await Produto.findById(req.params.id);
-
-    if (!produto) {
-      return res.status(404).json({
-        success: false,
-        message: "Produto não encontrado",
-      });
-    }
-
-    return res.status(200).json({
-      success: true,
-      produto,
-    });
+    if (!produto) return res.status(404).json({ success: false, message: "Produto não encontrado" });
+    return res.status(200).json({ success: true, produto });
   } catch (error) {
-    console.log("ERRO BUSCAR PRODUTO:", error);
-
-    return res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+    return responderErro(res, error, "ERRO BUSCAR PRODUTO:");
   }
 };
 
-// ATUALIZAR PRODUTO
 const atualizarProduto = async (req, res) => {
   try {
     const produto = await Produto.findById(req.params.id);
+    if (!produto) return res.status(404).json({ success: false, message: "Produto não encontrado" });
 
-    if (!produto) {
-      return res.status(404).json({
-        success: false,
-        message: "Produto não encontrado",
-      });
-    }
+    let novasImagens;
+    const imagensAntigas = produto.imagens || [];
+    if (req.files?.length) novasImagens = await uploadImagens(req.files);
 
-    let imagens = produto.imagens || [];
-
-    if (req.files && req.files.length > 0) {
-      if (produto.imagens?.length > 0) {
-        for (const imagem of produto.imagens) {
-          if (imagem.public_id) {
-            await cloudinary.uploader.destroy(imagem.public_id);
-          }
-        }
-      }
-
-      imagens = await uploadImagens(req.files);
-    }
-
-    const dadosAtualizados = {
-      ...req.body,
-      imagens,
-    };
-
-    if (req.body?.nome) {
-      dadosAtualizados.slug = generateSlug(req.body.nome);
-    }
-
-    if (
-  req.body?.preco !== undefined &&
-  req.body?.preco !== null &&
-  String(req.body.preco).trim() !== ""
-) {
-  const precoConvertido = Number(
-    String(req.body.preco).replace(",", ".")
-  );
-
-  if (!Number.isNaN(precoConvertido)) {
-    dadosAtualizados.preco = precoConvertido;
-  }
-} else {
-  delete dadosAtualizados.preco;
-}
-
-    if (
-  req.body?.estoque !== undefined &&
-  req.body?.estoque !== null &&
-  String(req.body.estoque).trim() !== ""
-) {
-  const estoqueConvertido = Number(
-    String(req.body.estoque).replace(",", ".")
-  );
-
-  if (!Number.isNaN(estoqueConvertido)) {
-    dadosAtualizados.estoque = estoqueConvertido;
-  }
-} else {
-  delete dadosAtualizados.estoque;
-}
-
-const precoAtual =
-  dadosAtualizados.preco ??
-  produto.preco ??
-  0;
-
-const custoAtual =
-  Number(
-    dadosAtualizados.custo ??
-    produto.custo ??
-    0
-  );
-
-dadosAtualizados.custo =
-  custoAtual;
-
-dadosAtualizados.lucro =
-  precoAtual - custoAtual;
-
-dadosAtualizados.margem =
-  precoAtual > 0
-    ? Number(
-        (
-          ((precoAtual - custoAtual) /
-            precoAtual) *
-          100
-        ).toFixed(2)
-      )
-    : 0;
-
-    if (req.body.unidadeMedida) {
-  dadosAtualizados.unidadeMedida = req.body.unidadeMedida;
-}
-
-if (req.body.vendaPorPeso !== undefined) {
-  dadosAtualizados.vendaPorPeso =
-    req.body.vendaPorPeso === "true" || req.body.vendaPorPeso === true;
-}
-
-if (req.body.permiteFracionado !== undefined) {
-  dadosAtualizados.permiteFracionado =
-    req.body.permiteFracionado === "true" || req.body.permiteFracionado === true;
-}
-
-if (req.body.codigoBarras !== undefined) {
-  dadosAtualizados.codigoBarras = req.body.codigoBarras;
-}
-
-if (req.body.sku !== undefined) {
-  dadosAtualizados.sku = req.body.sku;
-}
-
-if (req.body.dadosFiscais !== undefined) {
-  dadosAtualizados.dadosFiscais =
-    req.body.dadosFiscais
-      ? JSON.parse(req.body.dadosFiscais)
-      : {};
-}
-
-if (req.body.produtoComposto !== undefined) {
-  dadosAtualizados.produtoComposto =
-    req.body.produtoComposto === "true" || req.body.produtoComposto === true;
-}
-
-if (req.body.tipoComposicao !== undefined) {
-  dadosAtualizados.tipoComposicao = req.body.tipoComposicao || "simples";
-}
-
-if (req.body.itensComposicao !== undefined) {
-  dadosAtualizados.itensComposicao = req.body.itensComposicao
-    ? JSON.parse(req.body.itensComposicao)
-    : [];
-}
-
-if (req.body.permiteMontagemCliente !== undefined) {
-  dadosAtualizados.permiteMontagemCliente =
-    req.body.permiteMontagemCliente === "true" ||
-    req.body.permiteMontagemCliente === true;
-}
-
-if (req.body.gruposComponentes !== undefined) {
-  dadosAtualizados.gruposComponentes = req.body.gruposComponentes
-    ? JSON.parse(req.body.gruposComponentes)
-    : [];
-}
-
-if (req.body.configuracaoGrupos !== undefined) {
-  dadosAtualizados.configuracaoGrupos = req.body.configuracaoGrupos
-    ? JSON.parse(req.body.configuracaoGrupos)
-    : [];
-}
-
-if (req.body.configuravel !== undefined) {
-  dadosAtualizados.configuravel =
-    req.body.configuravel === "true" ||
-    req.body.configuravel === true;
-}
-
-if (req.body.permiteObservacao !== undefined) {
-  dadosAtualizados.permiteObservacao =
-    req.body.permiteObservacao === "true" ||
-    req.body.permiteObservacao === true;
-}
-
-if (req.body.quantidadeMinima !== undefined) {
-  dadosAtualizados.quantidadeMinima =
-    Number(req.body.quantidadeMinima);
-}
-
-if (req.body.quantidadeMaxima !== undefined) {
-  dadosAtualizados.quantidadeMaxima =
-    Number(req.body.quantidadeMaxima);
-}
-
-if (req.body.informacoesNutricionais !== undefined) {
-  dadosAtualizados.informacoesNutricionais =
-    req.body.informacoesNutricionais
-      ? JSON.parse(req.body.informacoesNutricionais)
-      : {};
-}
-
-if (req.body.alergenos !== undefined) {
-  dadosAtualizados.alergenos = req.body.alergenos
-    ? JSON.parse(req.body.alergenos)
-    : {};
-}
-
-if (req.body.selos !== undefined) {
-  dadosAtualizados.selos = req.body.selos
-    ? JSON.parse(req.body.selos)
-    : {};
-}
-
-    const produtoAtualizado = await Produto.findByIdAndUpdate(
-      req.params.id,
-      dadosAtualizados,
-      {
-        new: true,
-        runValidators: true,
-      }
+    const produtoAtualizado = await ProdutoService.atualizarProduto(
+      produto,
+      req.body || {},
+      novasImagens
     );
 
-    if (global.io) {
-      global.io.emit("produto-atualizado", produtoAtualizado);
-    }
+    if (novasImagens) await removerImagensCloudinary(imagensAntigas);
+    if (global.io) global.io.emit("produto-atualizado", produtoAtualizado);
 
-        return res.status(200).json({
+    return res.status(200).json({
       success: true,
       message: "Produto atualizado com sucesso",
       produto: produtoAtualizado,
     });
   } catch (error) {
-    console.log("ERRO ATUALIZAR PRODUTO:", error);
-
-    return res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+    return responderErro(res, error, "ERRO ATUALIZAR PRODUTO:");
   }
 };
 
-const atualizarPublicacaoProduto = async (
-  req,
-  res
-) => {
-  try {
-    const produto = await Produto.findById(
-      req.params.id
-    );
-
-    if (!produto) {
-      return res.status(404).json({
-        success: false,
-        message: "Produto não encontrado",
-      });
-    }
-
-    const {
-      ativo,
-      canal,
-      publicado,
-      disponivel,
-      destaque,
-      novidade,
-      maisVendido,
-      promocao,
-      exclusivoClube,
-      ordem,
-      motivoIndisponibilidade,
-      pausadoAte,
-    } = req.body || {};
-
-    if (ativo !== undefined) {
-      produto.ativo = parseBoolean(
-        ativo,
-        produto.ativo
-      );
-    }
-
-    if (!produto.publicacao) {
-      produto.publicacao = {};
-    }
-
-    const canaisPermitidos = [
-      "pdv",
-      "cardapioOnline",
-      "whatsapp",
-      "ifood",
-      "aiqfome",
-    ];
-
-    if (
-      canal &&
-      canaisPermitidos.includes(canal) &&
-      publicado !== undefined
-    ) {
-      produto.publicacao[canal] =
-        parseBoolean(publicado);
-    }
-
-    if (destaque !== undefined) {
-      produto.publicacao.destaque =
-        parseBoolean(destaque);
-    }
-
-    if (novidade !== undefined) {
-      produto.publicacao.novidade =
-        parseBoolean(novidade);
-    }
-
-    if (maisVendido !== undefined) {
-      produto.publicacao.maisVendido =
-        parseBoolean(maisVendido);
-    }
-
-    if (promocao !== undefined) {
-      produto.publicacao.promocao =
-        parseBoolean(promocao);
-    }
-
-    if (exclusivoClube !== undefined) {
-      produto.publicacao.exclusivoClube =
-        parseBoolean(exclusivoClube);
-    }
-
-    if (ordem !== undefined) {
-      produto.publicacao.ordem =
-        parseNumero(ordem, 0);
-    }
-
-    if (!produto.disponibilidade) {
-      produto.disponibilidade = {};
-    }
-
-    if (disponivel !== undefined) {
-      produto.disponibilidade.disponivel =
-        parseBoolean(disponivel);
-    }
-
-    if (
-      motivoIndisponibilidade !== undefined
-    ) {
-      produto.disponibilidade
-        .motivoIndisponibilidade =
-        motivoIndisponibilidade || "";
-    }
-
-    if (pausadoAte !== undefined) {
-      produto.disponibilidade.pausadoAte =
-        pausadoAte || null;
-    }
-
-    produto.markModified("publicacao");
-    produto.markModified("disponibilidade");
-
-    await produto.save();
-
-    if (global.io) {
-      global.io.emit(
-        "produto-publicacao-atualizada",
-        produto
-      );
-    }
-
-    return res.status(200).json({
-      success: true,
-      message:
-        "Publicação do produto atualizada",
-      produto,
-    });
-  } catch (error) {
-    console.log(
-      "ERRO ATUALIZAR PUBLICAÇÃO:",
-      error
-    );
-
-    return res.status(500).json({
-      success: false,
-      message:
-        error.message ||
-        "Erro ao atualizar publicação",
-    });
-  }
-};
-
-// DELETAR PRODUTO
-const deletarProduto = async (req, res) => {
+const atualizarPublicacaoProduto = async (req, res) => {
   try {
     const produto = await Produto.findById(req.params.id);
+    if (!produto) return res.status(404).json({ success: false, message: "Produto não encontrado" });
 
-    if (!produto) {
-      return res.status(404).json({
-        success: false,
-        message: "Produto não encontrado",
-      });
-    }
-
-    if (produto.imagens?.length > 0) {
-      for (const imagem of produto.imagens) {
-        if (imagem.public_id) {
-          await cloudinary.uploader.destroy(imagem.public_id);
-        }
+    const body = { ...req.body };
+    if (body.canal && body.publicado !== undefined) {
+      const mapaCanais = {
+        pdv: "pdv",
+        cardapioOnline: "cardapio",
+        cardapio: "cardapio",
+        whatsapp: "whatsapp",
+        ifood: "ifood",
+        aiqfome: "aiqfome",
+        site: "site",
+      };
+      const canal = mapaCanais[body.canal];
+      if (canal) {
+        const atual = produto.publicacao?.toObject?.() || produto.publicacao || {};
+        body.publicacao = {
+          ...atual,
+          canais: {
+            ...(atual.canais || {}),
+            [canal]: ProdutoService.parseBoolean(body.publicado),
+          },
+        };
       }
     }
 
-    await Produto.findByIdAndDelete(req.params.id);
-
-    if (global.io) {
-      global.io.emit("produto-deletado", req.params.id);
+    const publicacaoRecebida = ProdutoService.parseJsonSeguro(body.publicacao, {});
+    for (const campo of ["destaque", "novidade", "maisVendido", "exclusivoClube"]) {
+      if (body[campo] !== undefined) {
+        publicacaoRecebida[campo] = ProdutoService.parseBoolean(body[campo]);
+        publicacaoRecebida.destaques = {
+          ...(publicacaoRecebida.destaques || {}),
+          [campo]: ProdutoService.parseBoolean(body[campo]),
+        };
+      }
     }
+    if (body.promocao !== undefined) {
+      publicacaoRecebida.promocao = ProdutoService.parseBoolean(body.promocao);
+      publicacaoRecebida.promocaoDetalhada = {
+        ...(publicacaoRecebida.promocaoDetalhada || {}),
+        ativa: ProdutoService.parseBoolean(body.promocao),
+      };
+    }
+    if (body.ordem !== undefined) {
+      publicacaoRecebida.ordem = ProdutoService.parseNumero(body.ordem, 0);
+      publicacaoRecebida.prioridadeExibicao = ProdutoService.parseNumero(body.ordem, 0);
+    }
+
+    const disponibilidadeRecebida = ProdutoService.parseJsonSeguro(body.disponibilidade, {});
+    if (body.disponivel !== undefined) disponibilidadeRecebida.disponivel = ProdutoService.parseBoolean(body.disponivel);
+    if (body.motivoIndisponibilidade !== undefined) disponibilidadeRecebida.motivoIndisponibilidade = body.motivoIndisponibilidade || "";
+    if (body.pausadoAte !== undefined) disponibilidadeRecebida.pausadoAte = body.pausadoAte || null;
+
+    const dados = {
+      publicacao: publicacaoRecebida,
+      disponibilidade: disponibilidadeRecebida,
+    };
+    if (body.ativo !== undefined) dados.ativo = body.ativo;
+
+    const produtoAtualizado = await ProdutoService.atualizarProduto(produto, dados);
+    if (global.io) global.io.emit("produto-publicacao-atualizada", produtoAtualizado);
 
     return res.status(200).json({
       success: true,
-      message: "Produto deletado com sucesso",
+      message: "Publicação do produto atualizada",
+      produto: produtoAtualizado,
     });
   } catch (error) {
-    console.log("ERRO DELETAR PRODUTO:", error);
+    return responderErro(res, error, "ERRO ATUALIZAR PUBLICAÇÃO:");
+  }
+};
 
-    return res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+const deletarProduto = async (req, res) => {
+  try {
+    const produto = await Produto.findById(req.params.id);
+    if (!produto) return res.status(404).json({ success: false, message: "Produto não encontrado" });
+
+    await removerImagensCloudinary(produto.imagens || []);
+    await produto.deleteOne();
+    if (global.io) global.io.emit("produto-deletado", req.params.id);
+
+    return res.status(200).json({ success: true, message: "Produto deletado com sucesso" });
+  } catch (error) {
+    return responderErro(res, error, "ERRO DELETAR PRODUTO:");
   }
 };
 

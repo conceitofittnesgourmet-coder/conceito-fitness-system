@@ -34,6 +34,7 @@ import ProdutoNutricional from "../components/ProdutoForm/ProdutoNutricional";
 import ProdutoFiscal from "../components/ProdutoForm/ProdutoFiscal";
 import ProdutoImagem from "../components/ProdutoForm/ProdutoImagem";
 import ProdutoConfigEngine from "../components/ProdutoConfig/ProdutoConfigEngine";
+import PublicacaoOnlineProduto from "../components/ProdutoForm/PublicacaoOnlineProduto";
 
 const API_URL = "https://conceito-fitness-system.onrender.com";
 
@@ -64,6 +65,51 @@ const DADOS_FISCAIS_INICIAIS = {
   aliquotaCbs: "",
   produtoTributavel: true,
   emitirNfce: true,
+};
+
+const PUBLICACAO_INICIAL = {
+  publicado: true,
+
+  destaque: false,
+  novidade: false,
+  maisVendido: false,
+  exclusivoClube: false,
+
+  disponivel: true,
+  motivoIndisponibilidade: "",
+
+  ordem: 0,
+
+  canais: {
+    cardapio: true,
+    site: true,
+    whatsapp: true,
+    pdv: true,
+    ifood: false,
+    aiqfome: false,
+  },
+
+  promocao: {
+    ativa: false,
+    precoOriginal: "",
+    precoPromocional: "",
+    inicio: "",
+    fim: "",
+  },
+
+  horarioLimitado: false,
+  horarioInicio: "",
+  horarioFim: "",
+
+  diasDisponiveis: {
+    segunda: true,
+    terca: true,
+    quarta: true,
+    quinta: true,
+    sexta: true,
+    sabado: true,
+    domingo: true,
+  },
 };
 
 function getImagemUrl(imagem) {
@@ -104,7 +150,9 @@ function Produtos() {
   const [unidadeMedida, setUnidadeMedida] = useState("UN");
   const [vendaPorPeso, setVendaPorPeso] = useState(false);
   const [permiteFracionado, setPermiteFracionado] = useState(false);
-  const [destaque, setDestaque] = useState(false);
+  const [publicacao, setPublicacao] = useState({
+  ...PUBLICACAO_INICIAL,
+});
   const [imagens, setImagens] = useState([]);
   const [loading, setLoading] = useState(false);
   const [codigoBarras, setCodigoBarras] = useState("");
@@ -219,7 +267,9 @@ const [editDadosFiscais, setEditDadosFiscais] = useState({
   const [editUnidadeMedida, setEditUnidadeMedida] = useState("UN");
   const [editVendaPorPeso, setEditVendaPorPeso] = useState(false);
   const [editPermiteFracionado, setEditPermiteFracionado] = useState(false);
-  const [editDestaque, setEditDestaque] = useState(false);
+  const [editPublicacao, setEditPublicacao] = useState({
+  ...PUBLICACAO_INICIAL,
+});
   const [editImagem, setEditImagem] = useState(null);
   const [previewEdit, setPreviewEdit] = useState(null);
   const [loadingEditar, setLoadingEditar] = useState(false);
@@ -325,7 +375,19 @@ const [editSelos, setEditSelos] = useState({
       formData.append("unidadeMedida", unidadeMedida);
       formData.append("vendaPorPeso", vendaPorPeso);
       formData.append("permiteFracionado", permiteFracionado);
-      formData.append("destaque", destaque);
+      formData.append(
+  "publicacao",
+  JSON.stringify(publicacao)
+);
+
+/*
+ * Mantido temporariamente para compatibilidade com
+ * listagens e versões anteriores do backend.
+ */
+formData.append(
+  "destaque",
+  Boolean(publicacao.destaque)
+);
       formData.append("codigoBarras", codigoBarras);
       formData.append("sku", sku);
       formData.append(
@@ -398,7 +460,29 @@ formData.append(
     setEditUnidadeMedida(produto.unidadeMedida || "UN");
     setEditVendaPorPeso(Boolean(produto.vendaPorPeso));
     setEditPermiteFracionado(Boolean(produto.permiteFracionado));
-    setEditDestaque(Boolean(produto.destaque));
+    setEditPublicacao({
+  ...PUBLICACAO_INICIAL,
+  ...(produto.publicacao || {}),
+
+  destaque:
+    produto.publicacao?.destaque ??
+    Boolean(produto.destaque),
+
+  canais: {
+    ...PUBLICACAO_INICIAL.canais,
+    ...(produto.publicacao?.canais || {}),
+  },
+
+  promocao: {
+    ...PUBLICACAO_INICIAL.promocao,
+    ...(produto.publicacao?.promocao || {}),
+  },
+
+  diasDisponiveis: {
+    ...PUBLICACAO_INICIAL.diasDisponiveis,
+    ...(produto.publicacao?.diasDisponiveis || {}),
+  },
+});
     setEditCodigoBarras(produto.codigoBarras || "");
     setEditSku(produto.sku || "");
     setEditGruposSelecionados(
@@ -465,13 +549,25 @@ setEditDadosFiscais({
       formData.append("unidadeMedida", editUnidadeMedida);
       formData.append("vendaPorPeso", editVendaPorPeso);
       formData.append("permiteFracionado", editPermiteFracionado);
-      formData.append("destaque", editDestaque);
+      formData.append(
+  "publicacao",
+  JSON.stringify(editPublicacao)
+);
+
+/*
+ * Compatibilidade temporária com o campo antigo.
+ */
+formData.append(
+  "destaque",
+  Boolean(editPublicacao.destaque)
+);
       formData.append("codigoBarras", editCodigoBarras);
       formData.append("sku", editSku);
       formData.append(
   "gruposComponentes",
   JSON.stringify(editGruposSelecionados)
 );
+
 
 formData.append(
   "configuracaoGrupos",
@@ -522,7 +618,18 @@ formData.append(
     setUnidadeMedida("UN");
     setVendaPorPeso(false);
     setPermiteFracionado(false);
-    setDestaque(false);
+    setPublicacao({
+  ...PUBLICACAO_INICIAL,
+  canais: {
+    ...PUBLICACAO_INICIAL.canais,
+  },
+  promocao: {
+    ...PUBLICACAO_INICIAL.promocao,
+  },
+  diasDisponiveis: {
+    ...PUBLICACAO_INICIAL.diasDisponiveis,
+  },
+});
     setCodigoBarras("");
     setSku("");
     setGruposSelecionados([]);
@@ -578,7 +685,12 @@ const bateBusca =
 
       if (!bateBusca) return false;
 
-      if (filtro === "destaques") return produto.destaque;
+      if (filtro === "destaques") {
+  return Boolean(
+    produto.publicacao?.destaque ??
+    produto.destaque
+  );
+}
       if (filtro === "estoque-baixo") return Number(produto.estoque || 0) <= 5;
 
       return true;
@@ -616,12 +728,13 @@ const bateBusca =
   }
 
   if (
-    tipoProduto ||
-    destaque ||
-    gruposSelecionados.length > 0
-  ) {
-    concluidas.push("cardapio");
-  }
+  tipoProduto ||
+  publicacao.publicado ||
+  publicacao.destaque ||
+  gruposSelecionados.length > 0
+) {
+  concluidas.push("cardapio");
+}
 
   const temNutricional = Object.values(
     informacoesNutricionais
@@ -654,7 +767,7 @@ const bateBusca =
   preco,
   estoque,
   tipoProduto,
-  destaque,
+  publicacao,
   gruposSelecionados,
   informacoesNutricionais,
   selos,
@@ -760,8 +873,9 @@ const progressoCadastro =
 {abaCadastro === "cardapio" && (
   <ProdutoCardapio
   tipoWizard={tipoWizard}
-  destaque={destaque}
-  setDestaque={setDestaque}
+  publicacao={publicacao}
+  setPublicacao={setPublicacao}
+  preco={preco}
   tipoProduto={tipoProduto}
   setTipoProduto={setTipoProduto}
   tempoPreparo={tempoPreparo}
@@ -871,9 +985,14 @@ const progressoCadastro =
                       </div>
                     )}
 
-                    {produto.destaque && (
-                      <span className="destaque-badge">Destaque</span>
-                    )}
+                    {Boolean(
+  produto.publicacao?.destaque ??
+  produto.destaque
+) && (
+  <span className="destaque-badge">
+    Destaque
+  </span>
+)}
                   </div>
 
                   <div className="produto-body-premium">
@@ -1066,14 +1185,11 @@ const progressoCadastro =
   onChange={(e) => setEditSku(e.target.value)}
 />
 
-              <label className="checkbox-label">
-                <input
-                  type="checkbox"
-                  checked={editDestaque}
-                  onChange={(e) => setEditDestaque(e.target.checked)}
-                />
-                Produto em destaque
-              </label>
+              <PublicacaoOnlineProduto
+  publicacao={editPublicacao}
+  setPublicacao={setEditPublicacao}
+  preco={editPreco}
+/>
 
               <input
                 type="file"
