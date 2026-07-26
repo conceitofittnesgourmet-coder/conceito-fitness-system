@@ -397,6 +397,179 @@ tipoProduto: {
       default: true,
     },
 
+    publicacao: {
+  pdv: {
+    type: Boolean,
+    default: true,
+  },
+
+  cardapioOnline: {
+    type: Boolean,
+    default: true,
+  },
+
+  whatsapp: {
+    type: Boolean,
+    default: true,
+  },
+
+  ifood: {
+    type: Boolean,
+    default: false,
+  },
+
+  aiqfome: {
+    type: Boolean,
+    default: false,
+  },
+
+  destaque: {
+    type: Boolean,
+    default: false,
+  },
+
+  novidade: {
+    type: Boolean,
+    default: false,
+  },
+
+  maisVendido: {
+    type: Boolean,
+    default: false,
+  },
+
+  promocao: {
+    type: Boolean,
+    default: false,
+  },
+
+  exclusivoClube: {
+    type: Boolean,
+    default: false,
+  },
+
+  ordem: {
+    type: Number,
+    default: 0,
+  },
+},
+
+disponibilidade: {
+  disponivel: {
+    type: Boolean,
+    default: true,
+  },
+
+  ocultarQuandoIndisponivel: {
+    type: Boolean,
+    default: false,
+  },
+
+  motivoIndisponibilidade: {
+    type: String,
+    default: "",
+    trim: true,
+  },
+
+  pausadoAte: {
+    type: Date,
+    default: null,
+  },
+
+  diasSemana: {
+    type: [Number],
+    default: [],
+  },
+
+  horarioInicio: {
+    type: String,
+    default: "",
+  },
+
+  horarioFim: {
+    type: String,
+    default: "",
+  },
+
+  limiteDiario: {
+    type: Number,
+    default: 0,
+  },
+
+  quantidadeVendidaHoje: {
+    type: Number,
+    default: 0,
+  },
+
+  dataControleDiario: {
+    type: Date,
+    default: null,
+  },
+},
+
+precoPromocional: {
+  type: Number,
+  default: 0,
+},
+
+promocaoInicio: {
+  type: Date,
+  default: null,
+},
+
+promocaoFim: {
+  type: Date,
+  default: null,
+},
+
+integracoes: {
+  ifood: {
+    produtoExternoId: {
+      type: String,
+      default: "",
+    },
+
+    statusSincronizacao: {
+      type: String,
+      enum: ["nao_configurado", "pendente", "sincronizado", "erro"],
+      default: "nao_configurado",
+    },
+
+    ultimaSincronizacao: {
+      type: Date,
+      default: null,
+    },
+
+    mensagemErro: {
+      type: String,
+      default: "",
+    },
+  },
+
+  aiqfome: {
+    produtoExternoId: {
+      type: String,
+      default: "",
+    },
+
+    statusSincronizacao: {
+      type: String,
+      enum: ["nao_configurado", "pendente", "sincronizado", "erro"],
+      default: "nao_configurado",
+    },
+
+    ultimaSincronizacao: {
+      type: Date,
+      default: null,
+    },
+
+    mensagemErro: {
+      type: String,
+      default: "",
+    },
+  },
+},
+
     imagens: [
       {
         url: String,

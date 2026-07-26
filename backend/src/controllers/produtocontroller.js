@@ -3,6 +3,205 @@ const fs = require("fs-extra");
 const generateSlug = require("../utils/generateslug");
 const Produto = require("../models/produto");
 
+function parseJsonSeguro(valor, padrao = {}) {
+  if (valor === undefined || valor === null || valor === "") {
+    return padrao;
+  }
+
+  if (typeof valor === "object") {
+    return valor;
+  }
+
+  try {
+    return JSON.parse(valor);
+  } catch (error) {
+    return padrao;
+  }
+}
+
+function parseBoolean(valor, padrao = false) {
+  if (valor === undefined || valor === null || valor === "") {
+    return padrao;
+  }
+
+  if (typeof valor === "boolean") {
+    return valor;
+  }
+
+  return String(valor).toLowerCase() === "true";
+}
+
+function parseNumero(valor, padrao = 0) {
+  if (valor === undefined || valor === null || valor === "") {
+    return padrao;
+  }
+
+  const numero = Number(String(valor).replace(",", "."));
+
+  return Number.isNaN(numero) ? padrao : numero;
+}
+
+function promocaoEstaAtiva(produto) {
+  if (!produto?.publicacao?.promocao) {
+    return false;
+  }
+
+  const agora = new Date();
+
+  if (
+    produto.promocaoInicio &&
+    agora < new Date(produto.promocaoInicio)
+  ) {
+    return false;
+  }
+
+  if (
+    produto.promocaoFim &&
+    agora > new Date(produto.promocaoFim)
+  ) {
+    return false;
+  }
+
+  return Number(produto.precoPromocional || 0) > 0;
+}
+
+function verificarDisponibilidadeProduto(produto) {
+  if (!produto.ativo) {
+    return {
+      disponivel: false,
+      motivo: "Produto inativo",
+    };
+  }
+
+  const configuracao = produto.disponibilidade || {};
+
+  if (configuracao.disponivel === false) {
+    return {
+      disponivel: false,
+      motivo:
+        configuracao.motivoIndisponibilidade ||
+        "Indisponível no momento",
+    };
+  }
+
+  const agora = new Date();
+
+  if (
+    configuracao.pausadoAte &&
+    agora < new Date(configuracao.pausadoAte)
+  ) {
+    return {
+      disponivel: false,
+      motivo:
+        configuracao.motivoIndisponibilidade ||
+        "Produto temporariamente pausado",
+    };
+  }
+
+  const diasSemana = configuracao.diasSemana || [];
+
+  if (
+    diasSemana.length > 0 &&
+    !diasSemana.includes(agora.getDay())
+  ) {
+    return {
+      disponivel: false,
+      motivo: "Produto indisponível hoje",
+    };
+  }
+
+  const horarioAtual = agora.toTimeString().slice(0, 5);
+
+  if (
+    configuracao.horarioInicio &&
+    horarioAtual < configuracao.horarioInicio
+  ) {
+    return {
+      disponivel: false,
+      motivo: `Disponível a partir das ${configuracao.horarioInicio}`,
+    };
+  }
+
+  if (
+    configuracao.horarioFim &&
+    horarioAtual > configuracao.horarioFim
+  ) {
+    return {
+      disponivel: false,
+      motivo: "Horário de venda encerrado",
+    };
+  }
+
+  if (
+    Number(configuracao.limiteDiario || 0) > 0 &&
+    Number(configuracao.quantidadeVendidaHoje || 0) >=
+      Number(configuracao.limiteDiario)
+  ) {
+    return {
+      disponivel: false,
+      motivo: "Limite diário atingido",
+    };
+  }
+
+  if (Number(produto.estoque || 0) <= 0) {
+    return {
+      disponivel: false,
+      motivo: "Produto esgotado",
+    };
+  }
+
+  return {
+    disponivel: true,
+    motivo: "",
+  };
+}
+
+function formatarProdutoPublico(produto) {
+  const produtoObj =
+    typeof produto.toObject === "function"
+      ? produto.toObject()
+      : produto;
+
+  const disponibilidade =
+    verificarDisponibilidadeProduto(produtoObj);
+
+  const promocaoAtiva =
+    promocaoEstaAtiva(produtoObj);
+
+  const imagem =
+    produtoObj.imagem ||
+    produtoObj.foto ||
+    produtoObj.image ||
+    produtoObj.imagens?.[0]?.url ||
+    produtoObj.imagens?.[0] ||
+    "";
+
+  return {
+    ...produtoObj,
+
+    imagem,
+
+    precoOriginal: Number(produtoObj.preco || 0),
+
+    precoExibicao: promocaoAtiva
+      ? Number(produtoObj.precoPromocional || 0)
+      : Number(produtoObj.preco || 0),
+
+    promocaoAtiva,
+
+    disponivel: disponibilidade.disponivel,
+
+    motivoIndisponibilidade: disponibilidade.motivo,
+
+    estoque: Number(produtoObj.estoque || 0),
+
+    destaque: Boolean(
+      produtoObj.publicacao?.destaque ||
+      produtoObj.destaque
+    ),
+  };
+}
+
 async function uploadImagens(files = []) {
   const imagens = [];
 
@@ -116,32 +315,22 @@ const produto = await Produto.create({
   destaque: destaque === "true" || destaque === true,
   codigoBarras: req.body.codigoBarras || "",
 sku: req.body.sku || "",
-dadosFiscais: req.body.dadosFiscais
-  ? JSON.parse(req.body.dadosFiscais)
-  : {},
+dadosFiscais: parseJsonSeguro(
+  req.body.dadosFiscais,
+  {}
+),
 produtoComposto: req.body.produtoComposto === "true" || req.body.produtoComposto === true,
 tipoComposicao: req.body.tipoComposicao || "simples",
-itensComposicao: req.body.itensComposicao
-  ? JSON.parse(req.body.itensComposicao)
-  : [],
-  informacoesNutricionais: req.body.informacoesNutricionais
-  ? JSON.parse(req.body.informacoesNutricionais)
-  : {},
+itensComposicao: parseJsonSeguro(req.body.itensComposicao),
+  informacoesNutricionais: parseJsonSeguro(req.body.informacoesNutricionais, {}),
 
-alergenos: req.body.alergenos
-  ? JSON.parse(req.body.alergenos)
-  : {},
+alergenos: parseJsonSeguro(req.body.alergenos),
 
-selos: req.body.selos
-  ? JSON.parse(req.body.selos)
-  : {},
-gruposComponentes: req.body.gruposComponentes
-  ? JSON.parse(req.body.gruposComponentes)
-  : [],
+selos: parseJsonSeguro(req.body.selos, {}),
 
-  configuracaoGrupos: req.body.configuracaoGrupos
-  ? JSON.parse(req.body.configuracaoGrupos)
-  : [],
+gruposComponentes: parseJsonSeguro(req.body.gruposComponentes),
+
+  configuracaoGrupos: parseJsonSeguro(req.body.configuracaoGrupos),
   configuravel:
   req.body.configuravel === "true" ||
   req.body.configuravel === true,
@@ -158,6 +347,58 @@ quantidadeMaxima:
 permiteMontagemCliente:
   req.body.permiteMontagemCliente === "true" ||
   req.body.permiteMontagemCliente === true,
+
+ativo: parseBoolean(req.body.ativo, true),
+
+publicacao: parseJsonSeguro(
+  req.body.publicacao,
+  {
+    pdv: true,
+    cardapioOnline: true,
+    whatsapp: true,
+    ifood: false,
+    aiqfome: false,
+    destaque: parseBoolean(destaque, false),
+    novidade: false,
+    maisVendido: false,
+    promocao: false,
+    exclusivoClube: false,
+    ordem: 0,
+  }
+),
+
+disponibilidade: parseJsonSeguro(
+  req.body.disponibilidade,
+  {
+    disponivel: true,
+    ocultarQuandoIndisponivel: false,
+    motivoIndisponibilidade: "",
+    pausadoAte: null,
+    diasSemana: [],
+    horarioInicio: "",
+    horarioFim: "",
+    limiteDiario: 0,
+    quantidadeVendidaHoje: 0,
+    dataControleDiario: null,
+  }
+),
+
+precoPromocional: parseNumero(
+  req.body.precoPromocional,
+  0
+),
+
+promocaoInicio:
+  req.body.promocaoInicio || null,
+
+promocaoFim:
+  req.body.promocaoFim || null,
+
+integracoes: parseJsonSeguro(
+  req.body.integracoes,
+  {}
+),
+
   slug: generateSlug(nome),
   imagens,
 });
@@ -250,6 +491,150 @@ const listarProdutos = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: error.message,
+    });
+  }
+};
+
+const listarProdutosCardapio = async (req, res) => {
+  try {
+    const {
+      search,
+      categoria,
+      destaque,
+      novidade,
+      promocao,
+      exclusivoClube,
+    } = req.query;
+
+    const filtro = {
+      ativo: true,
+      "publicacao.cardapioOnline": {
+        $ne: false,
+      },
+    };
+
+    if (search) {
+      filtro.$or = [
+        {
+          nome: {
+            $regex: search,
+            $options: "i",
+          },
+        },
+        {
+          descricao: {
+            $regex: search,
+            $options: "i",
+          },
+        },
+      ];
+    }
+
+    if (categoria) {
+      filtro.$or = [
+        {
+          categoria: {
+            $regex: `^${categoria}$`,
+            $options: "i",
+          },
+        },
+        {
+          categorias: {
+            $elemMatch: {
+              $regex: `^${categoria}$`,
+              $options: "i",
+            },
+          },
+        },
+      ];
+    }
+
+    if (destaque === "true") {
+      filtro.$or = [
+        {
+          "publicacao.destaque": true,
+        },
+        {
+          destaque: true,
+        },
+      ];
+    }
+
+    if (novidade === "true") {
+      filtro["publicacao.novidade"] = true;
+    }
+
+    if (promocao === "true") {
+      filtro["publicacao.promocao"] = true;
+    }
+
+    if (exclusivoClube === "true") {
+      filtro["publicacao.exclusivoClube"] = true;
+    }
+
+    const produtos = await Produto.find(filtro).sort({
+      "publicacao.ordem": 1,
+      destaque: -1,
+      createdAt: -1,
+    });
+
+    const produtosFormatados = produtos
+      .map(formatarProdutoPublico)
+      .filter((produto) => {
+        if (
+          produto.disponivel === false &&
+          produto.disponibilidade
+            ?.ocultarQuandoIndisponivel === true
+        ) {
+          return false;
+        }
+
+        return true;
+      });
+
+    const categoriasMap = new Map();
+
+    produtosFormatados.forEach((produto) => {
+      const categoriasProduto = [
+        produto.categoria,
+        ...(produto.categorias || []),
+      ].filter(Boolean);
+
+      categoriasProduto.forEach((nomeCategoria) => {
+        const chave = String(nomeCategoria)
+          .trim()
+          .toLowerCase();
+
+        if (!categoriasMap.has(chave)) {
+          categoriasMap.set(
+            chave,
+            String(nomeCategoria).trim()
+          );
+        }
+      });
+    });
+
+    return res.status(200).json({
+      success: true,
+      total: produtosFormatados.length,
+      categorias: Array.from(
+        categoriasMap.values()
+      ).sort((a, b) =>
+        a.localeCompare(b, "pt-BR")
+      ),
+      produtos: produtosFormatados,
+    });
+  } catch (error) {
+    console.log(
+      "ERRO LISTAR CARDÁPIO:",
+      error
+    );
+
+    return res.status(500).json({
+      success: false,
+      message:
+        error.message ||
+        "Erro ao carregar o cardápio",
     });
   }
 };
@@ -507,6 +892,150 @@ if (req.body.selos !== undefined) {
   }
 };
 
+const atualizarPublicacaoProduto = async (
+  req,
+  res
+) => {
+  try {
+    const produto = await Produto.findById(
+      req.params.id
+    );
+
+    if (!produto) {
+      return res.status(404).json({
+        success: false,
+        message: "Produto não encontrado",
+      });
+    }
+
+    const {
+      ativo,
+      canal,
+      publicado,
+      disponivel,
+      destaque,
+      novidade,
+      maisVendido,
+      promocao,
+      exclusivoClube,
+      ordem,
+      motivoIndisponibilidade,
+      pausadoAte,
+    } = req.body || {};
+
+    if (ativo !== undefined) {
+      produto.ativo = parseBoolean(
+        ativo,
+        produto.ativo
+      );
+    }
+
+    if (!produto.publicacao) {
+      produto.publicacao = {};
+    }
+
+    const canaisPermitidos = [
+      "pdv",
+      "cardapioOnline",
+      "whatsapp",
+      "ifood",
+      "aiqfome",
+    ];
+
+    if (
+      canal &&
+      canaisPermitidos.includes(canal) &&
+      publicado !== undefined
+    ) {
+      produto.publicacao[canal] =
+        parseBoolean(publicado);
+    }
+
+    if (destaque !== undefined) {
+      produto.publicacao.destaque =
+        parseBoolean(destaque);
+    }
+
+    if (novidade !== undefined) {
+      produto.publicacao.novidade =
+        parseBoolean(novidade);
+    }
+
+    if (maisVendido !== undefined) {
+      produto.publicacao.maisVendido =
+        parseBoolean(maisVendido);
+    }
+
+    if (promocao !== undefined) {
+      produto.publicacao.promocao =
+        parseBoolean(promocao);
+    }
+
+    if (exclusivoClube !== undefined) {
+      produto.publicacao.exclusivoClube =
+        parseBoolean(exclusivoClube);
+    }
+
+    if (ordem !== undefined) {
+      produto.publicacao.ordem =
+        parseNumero(ordem, 0);
+    }
+
+    if (!produto.disponibilidade) {
+      produto.disponibilidade = {};
+    }
+
+    if (disponivel !== undefined) {
+      produto.disponibilidade.disponivel =
+        parseBoolean(disponivel);
+    }
+
+    if (
+      motivoIndisponibilidade !== undefined
+    ) {
+      produto.disponibilidade
+        .motivoIndisponibilidade =
+        motivoIndisponibilidade || "";
+    }
+
+    if (pausadoAte !== undefined) {
+      produto.disponibilidade.pausadoAte =
+        pausadoAte || null;
+    }
+
+    produto.markModified("publicacao");
+    produto.markModified("disponibilidade");
+
+    await produto.save();
+
+    if (global.io) {
+      global.io.emit(
+        "produto-publicacao-atualizada",
+        produto
+      );
+    }
+
+    return res.status(200).json({
+      success: true,
+      message:
+        "Publicação do produto atualizada",
+      produto,
+    });
+  } catch (error) {
+    console.log(
+      "ERRO ATUALIZAR PUBLICAÇÃO:",
+      error
+    );
+
+    return res.status(500).json({
+      success: false,
+      message:
+        error.message ||
+        "Erro ao atualizar publicação",
+    });
+  }
+};
+
 // DELETAR PRODUTO
 const deletarProduto = async (req, res) => {
   try {
@@ -550,7 +1079,9 @@ const deletarProduto = async (req, res) => {
 module.exports = {
   criarProduto,
   listarProdutos,
+  listarProdutosCardapio,
   buscarProduto,
   atualizarProduto,
+  atualizarPublicacaoProduto,
   deletarProduto,
 };

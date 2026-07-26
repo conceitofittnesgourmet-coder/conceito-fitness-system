@@ -9,8 +9,11 @@ const authMiddleware = require("../middlewares/authmiddleware");
 
 const {
   listarProdutos,
+  listarProdutosCardapio,
+  buscarProduto,
   criarProduto,
   atualizarProduto,
+  atualizarPublicacaoProduto,
   deletarProduto,
 } = require("../controllers/produtocontroller");
 
@@ -57,12 +60,31 @@ const upload = multer({
 // LISTAR PRODUTOS — PÚBLICO
 router.get("/", listarProdutos);
 
+// CARDÁPIO ONLINE — PÚBLICO
+router.get(
+  "/cardapio",
+  listarProdutosCardapio
+);
+
 // CRIAR — PROTEGIDO
 router.post(
   "/",
   authMiddleware,
   upload.array("imagens", 10),
   criarProduto
+);
+
+// PUBLICAÇÃO E DISPONIBILIDADE — PROTEGIDO
+router.patch(
+  "/:id/publicacao",
+  authMiddleware,
+  atualizarPublicacaoProduto
+);
+
+// BUSCAR PRODUTO POR ID — PÚBLICO
+router.get(
+  "/:id",
+  buscarProduto
 );
 
 // EDITAR — PROTEGIDO

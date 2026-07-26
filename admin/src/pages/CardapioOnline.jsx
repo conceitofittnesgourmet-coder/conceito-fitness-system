@@ -27,6 +27,7 @@ function CardapioOnline() {
   const WHATSAPP_LOJA = "5544991288775";
 
   const [produtos, setProdutos] = useState([]);
+  const [categorias, setCategorias] = useState(["Todos"]);
   const [carrinho, setCarrinho] = useState([]);
   const [busca, setBusca] = useState("");
   const [categoria, setCategoria] = useState("Todos");
@@ -71,7 +72,7 @@ function filtrarCategoria(cat) {
   async function carregarProdutos() {
   try {
     const [produtosRes, gruposRes, opcoesRes] = await Promise.all([
-      api.get("/produtos"),
+      api.get("/produtos/cardapio"),
       api.get("/grupos-componentes"),
       api.get("/opcoes-componentes"),
     ]);
@@ -82,6 +83,10 @@ function filtrarCategoria(cat) {
     console.log("PRODUTO COMPLETO:", JSON.stringify(lista[0], null, 2));
 
     setProdutos(lista);
+    setCategorias([
+    "Todos",
+    ...(produtosRes.data.categorias || [])
+]);
     setGruposComponentes(gruposRes.data.grupos || []);
     setOpcoesComponentes(opcoesRes.data.opcoes || []);
   } catch (error) {
@@ -177,7 +182,11 @@ function filtrarCategoria(cat) {
   const precoUnitario =
     configuracao.precoUnitario !== undefined
       ? Number(configuracao.precoUnitario)
-      : Number(produto.preco || 0);
+      : Number(
+      produto.precoExibicao ??
+      produto.preco ??
+      0
+);
 
   const quantidade = Number(configuracao.quantidade || 1);
 
@@ -227,18 +236,7 @@ function filtrarCategoria(cat) {
       )
     );
   }
-
-  const categorias = [
-  "Todos",
-  ...Array.from(
-    new Set(
-      produtos
-        .map((produto) => produto.categoria)
-        .filter(Boolean)
-    )
-  ),
-];
-
+  
   const produtosFiltrados = produtos.filter((produto) => {
     const matchBusca = produto.nome
       ?.toLowerCase()
@@ -252,9 +250,26 @@ function filtrarCategoria(cat) {
     return matchBusca && matchCategoria && produto.ativo !== false;
   });
 
-  const destaques = produtosFiltrados.slice(0, 3);
-  const combos = produtosFiltrados.slice(3, 6);
-  const novidades = produtosFiltrados.slice(0, 5);
+  const destaques = produtosFiltrados.filter(
+    p =>
+        p.publicacao?.destaque === true ||
+        p.destaque === true
+);
+  const combos = produtosFiltrados.filter(produto => {
+
+    const categorias = [
+        produto.categoria,
+        ...(produto.categorias || [])
+    ];
+
+    return categorias.some(c =>
+        String(c).toUpperCase().includes("COMBO")
+    );
+
+});
+  const novidades = produtosFiltrados.filter(
+    p => p.publicacao?.novidade === true
+);
 
   const subtotal = carrinho.reduce(
   (acc, item) => acc + item.preco * item.quantidade,
@@ -403,10 +418,43 @@ Aguardo confirmação.
           </div>
 
           <div className="co-product-footer">
-            <strong>R$ {Number(produto.preco || 0).toFixed(2)}</strong>
+            <>
+    {produto.promocaoAtiva && (
+
+        <small className="preco-antigo">
+
+            R$ {Number(produto.precoOriginal || 0)
+                .toFixed(2)}
+
+        </small>
+
+    )}
+
+    {!produto.disponivel &&
+produto.motivoIndisponibilidade && (
+
+    <small className="produto-indisponivel">
+
+        {produto.motivoIndisponibilidade}
+
+    </small>
+
+)}
+
+    <strong>
+
+        R$ {Number(
+            produto.precoExibicao ??
+            produto.preco ??
+            0
+        ).toFixed(2)}
+
+    </strong>
+
+</>
 
             <button
-              disabled={Number(produto.estoque || 0) <= 0}
+              disabled={!produto.disponivel}
               onClick={() => abrirProduto(produto)}
             >
               <Plus size={18} />
@@ -617,7 +665,15 @@ Aguardo confirmação.
 />
 
                     <strong>{produto.nome}</strong>
-                  <small>R$ {Number(produto.preco || 0).toFixed(2)}</small>
+                  <small>R$ {Number(
+
+    produto.precoExibicao ??
+
+    produto.preco ??
+
+    0
+
+).toFixed(2)}</small>
                 </div>
               ))}
             </div>
