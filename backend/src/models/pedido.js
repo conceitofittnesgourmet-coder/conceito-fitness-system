@@ -351,6 +351,29 @@ tempoPrevisto: {
   default: 18,
 },
 
+inicioProducao: {
+  type: Date,
+  default: null,
+},
+
+fimProducao: {
+  type: Date,
+  default: null,
+},
+
+tempoReal: {
+  type: Number,
+  default: 0,
+  min: 0,
+},
+
+prioridadeProducao: {
+  type: Number,
+  default: 0,
+  min: 0,
+  max: 10,
+},
+
 checklist: {
   type: [
     {

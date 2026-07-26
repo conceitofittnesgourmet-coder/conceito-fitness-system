@@ -1,302 +1,158 @@
-const MateriaPrima = require("../models/materiaprima");
-const FichaTecnica = require("../models/fichatecnica");
-const Produto = require("../models/produto");
+const ProducaoService = require("../services/ProducaoService");
 
-// ===============================
-// MATÉRIA-PRIMA
-// ===============================
+function responderErro(res, error, contexto) {
+  console.error(contexto, error);
 
-exports.listarMateriasPrimas = async (req, res) => {
+  return res.status(error.statusCode || 500).json({
+    success: false,
+    message: error.message || "Erro interno no módulo de produção.",
+  });
+}
+
+function emitirAtualizacao(req, pedido, evento = "producao-atualizada") {
+  const io = req.app.get("io") || global.io;
+
+  if (!io) return;
+
+  io.emit(evento, pedido);
+  io.emit("pedido-atualizado", pedido);
+}
+
+exports.listarFila = async (req, res) => {
   try {
-    const materias = await MateriaPrima.find({ ativo: true }).sort({
-      nome: 1,
+    const pedidos = await ProducaoService.listarFila({
+      empresa: req.usuario?.empresa,
+      status: req.query.status,
+      limite: req.query.limite,
+      incluirEntregues:
+        String(req.query.incluirEntregues || "").toLowerCase() ===
+        "true",
     });
 
-    const alertas = materias.filter(
-      (item) => Number(item.estoqueAtual || 0) <= Number(item.estoqueMinimo || 0)
+    return res.json({
+      success: true,
+      total: pedidos.length,
+      pedidos,
+    });
+  } catch (error) {
+    return responderErro(
+      res,
+      error,
+      "ERRO LISTAR FILA DE PRODUÇÃO:"
     );
+  }
+};
+
+exports.resumo = async (req, res) => {
+  try {
+    const resumo = await ProducaoService.buscarResumo({
+      empresa: req.usuario?.empresa,
+    });
 
     return res.json({
       success: true,
-      materias,
-      alertas,
+      resumo,
     });
   } catch (error) {
-    console.log("ERRO LISTAR MATÉRIAS:", error);
-
-    return res.status(500).json({
-      success: false,
-      message: error.message,
-    });
-  }
-};
-
-exports.criarMateriaPrima = async (req, res) => {
-  try {
-    const {
-      nome,
-      categoria,
-      unidade,
-      estoqueAtual,
-      estoqueMinimo,
-      custoUnitario,
-      fornecedor,
-    } = req.body || {};
-
-    if (!nome) {
-      return res.status(400).json({
-        success: false,
-        message: "Nome da matéria-prima é obrigatório.",
-      });
-    }
-
-    const materia = await MateriaPrima.create({
-      nome,
-      categoria: categoria || "Insumos",
-      unidade: unidade || "unidade",
-      estoqueAtual: Number(estoqueAtual || 0),
-      estoqueMinimo: Number(estoqueMinimo || 0),
-      custoUnitario: Number(custoUnitario || 0),
-      fornecedor: fornecedor || "",
-    });
-
-    return res.status(201).json({
-      success: true,
-      materia,
-    });
-  } catch (error) {
-    console.log("ERRO CRIAR MATÉRIA:", error);
-
-    return res.status(500).json({
-      success: false,
-      message: error.message,
-    });
-  }
-};
-
-exports.atualizarMateriaPrima = async (req, res) => {
-  try {
-    const materia = await MateriaPrima.findByIdAndUpdate(
-      req.params.id,
-      req.body,
-      {
-        new: true,
-        runValidators: true,
-      }
+    return responderErro(
+      res,
+      error,
+      "ERRO RESUMO DE PRODUÇÃO:"
     );
-
-    if (!materia) {
-      return res.status(404).json({
-        success: false,
-        message: "Matéria-prima não encontrada.",
-      });
-    }
-
-    return res.json({
-      success: true,
-      materia,
-    });
-  } catch (error) {
-    console.log("ERRO ATUALIZAR MATÉRIA:", error);
-
-    return res.status(500).json({
-      success: false,
-      message: error.message,
-    });
   }
 };
 
-exports.deletarMateriaPrima = async (req, res) => {
+exports.buscarPedido = async (req, res) => {
   try {
-    const materia = await MateriaPrima.findByIdAndUpdate(
-      req.params.id,
-      { ativo: false },
-      { new: true }
+    const pedido =
+      await ProducaoService.buscarPedidoProducao({
+        pedidoId: req.params.id,
+        empresa: req.usuario?.empresa,
+      });
+
+    return res.json({
+      success: true,
+      pedido,
+    });
+  } catch (error) {
+    return responderErro(
+      res,
+      error,
+      "ERRO BUSCAR PEDIDO DA PRODUÇÃO:"
     );
-
-    return res.json({
-      success: true,
-      materia,
-    });
-  } catch (error) {
-    console.log("ERRO DELETAR MATÉRIA:", error);
-
-    return res.status(500).json({
-      success: false,
-      message: error.message,
-    });
   }
 };
 
-// ===============================
-// FICHA TÉCNICA
-// ===============================
-
-exports.listarFichasTecnicas = async (req, res) => {
+exports.atualizarStatus = async (req, res) => {
   try {
-    const fichas = await FichaTecnica.find({ ativa: true })
-      .populate("produto")
-      .populate("itens.materiaPrima")
-      .sort({ createdAt: -1 });
+    const pedido = await ProducaoService.atualizarStatus({
+      pedidoId: req.params.id,
+      empresa: req.usuario?.empresa,
+      novoStatus: req.body?.status,
+    });
+
+    emitirAtualizacao(req, pedido);
 
     return res.json({
       success: true,
-      fichas,
+      message: "Status da produção atualizado com sucesso.",
+      pedido,
     });
   } catch (error) {
-    console.log("ERRO LISTAR FICHAS:", error);
-
-    return res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+    return responderErro(
+      res,
+      error,
+      "ERRO ATUALIZAR STATUS DA PRODUÇÃO:"
+    );
   }
 };
 
-exports.criarFichaTecnica = async (req, res) => {
+exports.atualizarChecklist = async (req, res) => {
   try {
-    const { produto, itens, observacao } = req.body || {};
-
-    if (!produto) {
-      return res.status(400).json({
-        success: false,
-        message: "Produto é obrigatório.",
-      });
-    }
-
-    if (!itens || !Array.isArray(itens) || itens.length === 0) {
-      return res.status(400).json({
-        success: false,
-        message: "A ficha precisa ter pelo menos um item.",
-      });
-    }
-
-    let custoTotal = 0;
-    const itensCalculados = [];
-
-    for (const item of itens) {
-      const materia = await MateriaPrima.findById(item.materiaPrima);
-
-      if (!materia) continue;
-
-      const quantidade = Number(item.quantidade || 0);
-      const custo = quantidade * Number(materia.custoUnitario || 0);
-
-      custoTotal += custo;
-
-      itensCalculados.push({
-        materiaPrima: materia._id,
-        quantidade,
-        unidade: item.unidade || materia.unidade,
-        custo,
-      });
-    }
-
-    const ficha = await FichaTecnica.create({
-      produto,
-      itens: itensCalculados,
-      custoTotal,
-      observacao: observacao || "",
-    });
-
-    const produtoAtualizado = await Produto.findById(produto);
-
-    if (produtoAtualizado) {
-      produtoAtualizado.custo = custoTotal;
-      produtoAtualizado.lucro = Number(produtoAtualizado.preco || 0) - custoTotal;
-      produtoAtualizado.margem =
-        Number(produtoAtualizado.preco || 0) > 0
-          ? Number(
-              (
-                (produtoAtualizado.lucro / Number(produtoAtualizado.preco || 0)) *
-                100
-              ).toFixed(2)
-            )
-          : 0;
-
-      await produtoAtualizado.save();
-    }
-
-    return res.status(201).json({
-      success: true,
-      ficha,
-    });
-  } catch (error) {
-    console.log("ERRO CRIAR FICHA:", error);
-
-    return res.status(500).json({
-      success: false,
-      message: error.message,
-    });
-  }
-};
-
-// ===============================
-// PRODUÇÃO
-// ===============================
-
-exports.produzirProduto = async (req, res) => {
-  try {
-    const { produtoId, quantidadeProduzida } = req.body || {};
-
-    if (!produtoId || !quantidadeProduzida) {
-      return res.status(400).json({
-        success: false,
-        message: "Produto e quantidade produzida são obrigatórios.",
-      });
-    }
-
-    const ficha = await FichaTecnica.findOne({
-      produto: produtoId,
-      ativa: true,
-    }).populate("itens.materiaPrima");
-
-    if (!ficha) {
-      return res.status(404).json({
-        success: false,
-        message: "Ficha técnica não encontrada para este produto.",
-      });
-    }
-
-    const quantidade = Number(quantidadeProduzida || 1);
-
-    for (const item of ficha.itens) {
-      const materia = await MateriaPrima.findById(item.materiaPrima._id);
-
-      if (!materia) continue;
-
-      const baixa = Number(item.quantidade || 0) * quantidade;
-
-      materia.estoqueAtual = Number(materia.estoqueAtual || 0) - baixa;
-
-      await materia.save();
-    }
-
-    const produto = await Produto.findById(produtoId);
-
-    if (produto) {
-      produto.estoque = Number(produto.estoque || 0) + quantidade;
-
-      produto.movimentacoes.push({
-        tipo: "producao",
-        quantidade,
-        motivo: "Produção via ficha técnica",
+    const pedido =
+      await ProducaoService.atualizarChecklist({
+        pedidoId: req.params.id,
+        empresa: req.usuario?.empresa,
+        checklist: req.body?.checklist,
       });
 
-      await produto.save();
-    }
+    emitirAtualizacao(req, pedido);
 
     return res.json({
       success: true,
-      message: "Produção registrada com sucesso.",
-      produto,
+      message: "Checklist atualizado com sucesso.",
+      pedido,
     });
   } catch (error) {
-    console.log("ERRO PRODUZIR PRODUTO:", error);
+    return responderErro(
+      res,
+      error,
+      "ERRO ATUALIZAR CHECKLIST DA PRODUÇÃO:"
+    );
+  }
+};
 
-    return res.status(500).json({
-      success: false,
-      message: error.message,
+exports.atualizarPrioridade = async (req, res) => {
+  try {
+    const pedido =
+      await ProducaoService.atualizarPrioridade({
+        pedidoId: req.params.id,
+        empresa: req.usuario?.empresa,
+        prioridade: req.body?.prioridade,
+      });
+
+    emitirAtualizacao(req, pedido);
+
+    return res.json({
+      success: true,
+      message: "Prioridade atualizada com sucesso.",
+      pedido,
     });
+  } catch (error) {
+    return responderErro(
+      res,
+      error,
+      "ERRO ATUALIZAR PRIORIDADE DA PRODUÇÃO:"
+    );
   }
 };

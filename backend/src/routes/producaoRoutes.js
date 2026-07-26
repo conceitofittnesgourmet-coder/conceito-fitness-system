@@ -1,16 +1,28 @@
 const express = require("express");
+
 const router = express.Router();
 
-const producaoController = require("../controllers/producaocontroller");
+const producaoController = require("../controllers/producaoController");
 
-router.get("/materias-primas", producaoController.listarMateriasPrimas);
-router.post("/materias-primas", producaoController.criarMateriaPrima);
-router.put("/materias-primas/:id", producaoController.atualizarMateriaPrima);
-router.delete("/materias-primas/:id", producaoController.deletarMateriaPrima);
+router.get("/", producaoController.listarFila);
 
-router.get("/fichas-tecnicas", producaoController.listarFichasTecnicas);
-router.post("/fichas-tecnicas", producaoController.criarFichaTecnica);
+router.get("/resumo", producaoController.resumo);
 
-router.post("/produzir", producaoController.produzirProduto);
+router.get("/:id", producaoController.buscarPedido);
+
+router.put(
+  "/:id/status",
+  producaoController.atualizarStatus
+);
+
+router.put(
+  "/:id/checklist",
+  producaoController.atualizarChecklist
+);
+
+router.put(
+  "/:id/prioridade",
+  producaoController.atualizarPrioridade
+);
 
 module.exports = router;
