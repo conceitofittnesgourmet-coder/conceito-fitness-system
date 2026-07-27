@@ -1,545 +1,370 @@
-import { useEffect, useMemo, useState } from "react";
+import { useCallback, useEffect, useMemo, useState } from "react";
+import toast from "react-hot-toast";
 import {
+  FaBell,
   FaCheck,
+  FaClipboardCheck,
   FaClock,
+  FaExclamationTriangle,
   FaFire,
-  FaPrint,
-  FaSyncAlt,
+  FaRedo,
+  FaStopwatch,
+  FaTimes,
+  FaTv,
   FaUtensils,
 } from "react-icons/fa";
 
 import AdminLayout from "../layouts/AdminLayout";
-import socket from "../services/socket";
 import api from "../services/api";
-import "../styles/cozinha.css";
+import socket from "../services/socket";
 
 const COLUNAS = [
-  {
-    id: "pendente",
-    titulo: "Aguardando",
-    descricao: "Pedidos aguardando início",
-  },
-  {
-    id: "producao",
-    titulo: "Em produção",
-    descricao: "Pedidos sendo preparados",
-  },
-  {
-    id: "pronto",
-    titulo: "Prontos",
-    descricao: "Aguardando retirada ou entrega",
-  },
+  { chave: "aguardando", titulo: "Aguardando", icone: <FaClock />, statusAceitos: ["aguardando", "pendente", "novo"] },
+  { chave: "producao", titulo: "Em produção", icone: <FaFire />, statusAceitos: ["producao", "em_producao", "preparando"] },
+  { chave: "pronto", titulo: "Prontos", icone: <FaCheck />, statusAceitos: ["pronto", "finalizado"] },
+  { chave: "entregue", titulo: "Entregues", icone: <FaClipboardCheck />, statusAceitos: ["entregue", "retirado"] },
 ];
+
+const CHECKLIST_PADRAO = [
+  "Conferir itens do pedido",
+  "Separar embalagem",
+  "Preparar produtos",
+  "Conferir montagem",
+  "Liberar pedido",
+];
+
+function normalizarStatus(status) {
+  const valor = String(status || "aguardando").toLowerCase().trim();
+  return COLUNAS.find((item) => item.statusAceitos.includes(valor))?.chave || "aguardando";
+}
+
+function extrairPedidos(payload) {
+  if (Array.isArray(payload)) return payload;
+  return payload?.pedidos || payload?.fila || payload?.data?.pedidos || payload?.data?.fila || [];
+}
+
+function numeroPedido(pedido) {
+  return pedido.numero || pedido.codigo || pedido.numeroPedido || pedido._id?.slice(-6).toUpperCase() || "------";
+}
+
+function nomeCliente(pedido) {
+  if (typeof pedido.cliente === "string") return pedido.cliente;
+  return pedido.cliente?.nome || pedido.nomeCliente || pedido.consumidor?.nome || "Cliente não informado";
+}
+
+function itensPedido(pedido) {
+  return pedido.produtos || pedido.itens || pedido.items || [];
+}
+
+function nomeProduto(item) {
+  return item.nome || item.produto?.nome || item.descricao || "Produto";
+}
+
+function quantidadeProduto(item) {
+  return Number(item.quantidade || item.qtd || 1);
+}
+
+function dataReferencia(pedido) {
+  return pedido.inicioProducao || pedido.iniciadoEm || pedido.updatedAt || pedido.createdAt || new Date().toISOString();
+}
+
+function formatarHora(data) {
+  const valor = new Date(data);
+  if (Number.isNaN(valor.getTime())) return "--:--";
+  return valor.toLocaleTimeString("pt-BR", { hour: "2-digit", minute: "2-digit" });
+}
+
+function segundosDecorridos(data) {
+  const inicio = new Date(data).getTime();
+  if (Number.isNaN(inicio)) return 0;
+  return Math.max(0, Math.floor((Date.now() - inicio) / 1000));
+}
+
+function formatarCronometro(totalSegundos) {
+  const horas = Math.floor(totalSegundos / 3600);
+  const minutos = Math.floor((totalSegundos % 3600) / 60);
+  const segundos = totalSegundos % 60;
+  const partes = horas > 0 ? [horas, minutos, segundos] : [minutos, segundos];
+  return partes.map((valor) => String(valor).padStart(2, "0")).join(":");
+}
+
+function classeTempo(segundos, tempoPrevistoMinutos) {
+  const previsto = Number(tempoPrevistoMinutos || 15) * 60;
+  if (segundos >= previsto) return "tempo-atrasado";
+  if (segundos >= previsto * 0.7) return "tempo-atencao";
+  return "tempo-normal";
+}
+
+function checklistPedido(pedido) {
+  const original = Array.isArray(pedido.checklist) ? pedido.checklist : [];
+  if (!original.length) {
+    return CHECKLIST_PADRAO.map((descricao, index) => ({ id: `padrao-${index}`, descricao, concluido: false }));
+  }
+  return original.map((item, index) => {
+    if (typeof item === "string") return { id: `item-${index}`, descricao: item, concluido: false };
+    return {
+      ...item,
+      id: item._id || item.id || `item-${index}`,
+      descricao: item.descricao || item.nome || item.titulo || `Etapa ${index + 1}`,
+      concluido: Boolean(item.concluido || item.feito || item.checked),
+    };
+  });
+}
+
+function proximoStatus(statusAtual) {
+  const atual = normalizarStatus(statusAtual);
+  if (atual === "aguardando") return "producao";
+  if (atual === "producao") return "pronto";
+  if (atual === "pronto") return "entregue";
+  return null;
+}
+
+function textoAcao(statusAtual) {
+  const atual = normalizarStatus(statusAtual);
+  if (atual === "aguardando") return "Iniciar preparo";
+  if (atual === "producao") return "Marcar como pronto";
+  if (atual === "pronto") return "Entregar pedido";
+  return "Concluído";
+}
+
+function PedidoCard({ pedido, agora, atualizando, onAlterarStatus, onAlternarChecklist, onAlternarPrioridade, onDragStart }) {
+  const status = normalizarStatus(pedido.statusProducao || pedido.status);
+  const referencia = dataReferencia(pedido);
+  const segundos = segundosDecorridos(referencia);
+  const checklist = checklistPedido(pedido);
+  const concluidos = checklist.filter((item) => item.concluido).length;
+  const progresso = checklist.length ? Math.round((concluidos / checklist.length) * 100) : 0;
+  const prioridade = pedido.prioridade === true || pedido.prioridade === "alta" || pedido.prioridade === "urgente";
+  const proximo = proximoStatus(status);
+  void agora;
+
+  return (
+    <article className={`cozinha-pedido-card ${prioridade ? "prioridade" : ""}`} draggable onDragStart={(event) => onDragStart(event, pedido)}>
+      <div className="cozinha-card-topo">
+        <div>
+          <span className="cozinha-numero">#{numeroPedido(pedido)}</span>
+          <h3>{nomeCliente(pedido)}</h3>
+        </div>
+        <button type="button" className={`cozinha-prioridade-btn ${prioridade ? "ativa" : ""}`} title={prioridade ? "Remover prioridade" : "Marcar como prioridade"} onClick={() => onAlternarPrioridade(pedido, !prioridade)} disabled={atualizando}>
+          <FaExclamationTriangle />
+        </button>
+      </div>
+
+      <div className="cozinha-meta">
+        <span><FaClock /> Pedido às {formatarHora(pedido.createdAt || referencia)}</span>
+        <strong className={`cozinha-cronometro ${classeTempo(segundos, pedido.tempoPrevisto)}`}><FaStopwatch />{formatarCronometro(segundos)}</strong>
+      </div>
+
+      <div className="cozinha-itens">
+        {itensPedido(pedido).map((item, index) => (
+          <div className="cozinha-item" key={item._id || `${nomeProduto(item)}-${index}`}>
+            <strong>{quantidadeProduto(item)}x</strong><span>{nomeProduto(item)}</span>
+          </div>
+        ))}
+        {itensPedido(pedido).length === 0 && <p className="cozinha-sem-itens">Itens não informados.</p>}
+      </div>
+
+      {(pedido.observacao || pedido.observacoes || pedido.nota) && (
+        <div className="cozinha-observacao"><strong>Observação:</strong> {pedido.observacao || pedido.observacoes || pedido.nota}</div>
+      )}
+
+      <div className="cozinha-checklist">
+        <div className="cozinha-checklist-cabecalho"><span>Checklist</span><strong>{concluidos}/{checklist.length}</strong></div>
+        <div className="cozinha-progresso"><span style={{ width: `${progresso}%` }} /></div>
+        {checklist.map((item, index) => (
+          <label className="cozinha-check-item" key={item.id}>
+            <input type="checkbox" checked={item.concluido} disabled={atualizando} onChange={() => onAlternarChecklist(pedido, checklist, index)} />
+            <span>{item.descricao}</span>
+          </label>
+        ))}
+      </div>
+
+      <div className="cozinha-card-acoes">
+        {proximo ? (
+          <button type="button" className={`cozinha-acao-principal acao-${status}`} onClick={() => onAlterarStatus(pedido, proximo)} disabled={atualizando}>
+            {atualizando ? "Atualizando..." : textoAcao(status)}
+          </button>
+        ) : (
+          <button type="button" className="cozinha-acao-concluida" disabled><FaCheck /> Pedido concluído</button>
+        )}
+      </div>
+    </article>
+  );
+}
 
 function Cozinha() {
   const [pedidos, setPedidos] = useState([]);
+  const [resumo, setResumo] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [erro, setErro] = useState("");
+  const [atualizandoId, setAtualizandoId] = useState("");
+  const [modoTv, setModoTv] = useState(false);
   const [agora, setAgora] = useState(Date.now());
-  const [atualizandoId, setAtualizandoId] = useState(null);
+  const [arrastandoId, setArrastandoId] = useState("");
 
-  async function carregarPedidos({ silencioso = false } = {}) {
+  const carregarFila = useCallback(async ({ silencioso = false } = {}) => {
+    if (!silencioso) setLoading(true);
     try {
-      if (!silencioso) {
-        setLoading(true);
-      }
-
-      const response = await api.get("/pedidos");
-      setPedidos(response.data.pedidos || []);
+      setErro("");
+      const [filaResposta, resumoResposta] = await Promise.allSettled([
+        api.get("/producao/fila"),
+        api.get("/producao/resumo"),
+      ]);
+      if (filaResposta.status === "rejected") throw filaResposta.reason;
+      setPedidos(extrairPedidos(filaResposta.value.data));
+      if (resumoResposta.status === "fulfilled") setResumo(resumoResposta.value.data?.resumo || resumoResposta.value.data);
     } catch (error) {
-      console.log("Erro ao carregar pedidos da cozinha:", error);
-
-      if (!silencioso) {
-        alert("Não foi possível carregar os pedidos da cozinha.");
-      }
+      console.error("Erro ao carregar painel de produção:", error);
+      setErro(error?.response?.data?.message || "Não foi possível carregar a fila de produção.");
+      if (!silencioso) toast.error("Erro ao carregar a cozinha");
     } finally {
-      if (!silencioso) {
-        setLoading(false);
-      }
+      if (!silencioso) setLoading(false);
     }
-  }
-
-  async function atualizarStatus(id, status) {
-    try {
-      setAtualizandoId(id);
-
-      await api.put(`/pedidos/${id}/status`, {
-        status,
-      });
-
-      setPedidos((listaAtual) =>
-        listaAtual.map((pedido) =>
-          pedido._id === id
-            ? {
-                ...pedido,
-                status,
-              }
-            : pedido
-        )
-      );
-    } catch (error) {
-      console.log("Erro ao atualizar status do pedido:", error);
-
-      alert(
-        error.response?.data?.message ||
-          "Não foi possível atualizar o status do pedido."
-      );
-    } finally {
-      setAtualizandoId(null);
-    }
-  }
+  }, []);
 
   useEffect(() => {
-    carregarPedidos();
-
-    function receberNovoPedido(pedido) {
-      setPedidos((listaAtual) => {
-        const jaExiste = listaAtual.some((item) => item._id === pedido._id);
-
-        if (jaExiste) {
-          return listaAtual;
-        }
-
-        return [pedido, ...listaAtual];
-      });
-
-      try {
-        const audio = new Audio("/sounds/novo-pedido.mp3");
-        audio.play().catch(() => {});
-      } catch (error) {
-        console.log("Não foi possível tocar o alerta:", error);
-      }
-    }
-
-    function atualizarPedidoSocket(pedidoAtualizado) {
-      if (!pedidoAtualizado?._id) {
-        carregarPedidos({ silencioso: true });
-        return;
-      }
-
-      setPedidos((listaAtual) => {
-        const existe = listaAtual.some(
-          (pedido) => pedido._id === pedidoAtualizado._id
-        );
-
-        if (!existe) {
-          return [pedidoAtualizado, ...listaAtual];
-        }
-
-        return listaAtual.map((pedido) =>
-          pedido._id === pedidoAtualizado._id
-            ? {
-                ...pedido,
-                ...pedidoAtualizado,
-              }
-            : pedido
-        );
-      });
-    }
-
-    socket.on("novo_pedido", receberNovoPedido);
-    socket.on("novo-pedido", receberNovoPedido);
-    socket.on("pedido-atualizado", atualizarPedidoSocket);
-
+    carregarFila();
+    const intervalo = window.setInterval(() => setAgora(Date.now()), 1000);
+    const atualizarEmTempoReal = () => carregarFila({ silencioso: true });
+    const eventos = ["novo-pedido", "pedido-atualizado", "producao-atualizada", "fila-producao-atualizada"];
+    eventos.forEach((evento) => socket.on(evento, atualizarEmTempoReal));
     return () => {
-      socket.off("novo_pedido", receberNovoPedido);
-      socket.off("novo-pedido", receberNovoPedido);
-      socket.off("pedido-atualizado", atualizarPedidoSocket);
+      window.clearInterval(intervalo);
+      eventos.forEach((evento) => socket.off(evento, atualizarEmTempoReal));
     };
-  }, []);
+  }, [carregarFila]);
 
   useEffect(() => {
-    const intervalo = window.setInterval(() => {
-      setAgora(Date.now());
-    }, 30000);
+    if (!modoTv) return undefined;
+    const sairComEsc = (event) => { if (event.key === "Escape") setModoTv(false); };
+    window.addEventListener("keydown", sairComEsc);
+    return () => window.removeEventListener("keydown", sairComEsc);
+  }, [modoTv]);
 
-    return () => window.clearInterval(intervalo);
-  }, []);
+  const pedidosPorColuna = useMemo(() => COLUNAS.reduce((resultado, coluna) => {
+    resultado[coluna.chave] = pedidos.filter((pedido) => normalizarStatus(pedido.statusProducao || pedido.status) === coluna.chave);
+    return resultado;
+  }, {}), [pedidos]);
 
-  const pedidosAtivos = useMemo(() => {
-    return pedidos
-      .filter(
-        (pedido) =>
-          pedido.status !== "entregue" && pedido.status !== "cancelado"
-      )
-      .sort((a, b) => new Date(a.createdAt) - new Date(b.createdAt));
-  }, [pedidos]);
+  const metricas = useMemo(() => ({
+    total: pedidos.length,
+    aguardando: pedidosPorColuna.aguardando?.length || 0,
+    producao: pedidosPorColuna.producao?.length || 0,
+    prontos: pedidosPorColuna.pronto?.length || 0,
+    atrasados: pedidos.filter((pedido) => normalizarStatus(pedido.statusProducao || pedido.status) !== "entregue" && segundosDecorridos(dataReferencia(pedido)) >= Number(pedido.tempoPrevisto || 15) * 60).length,
+  }), [pedidos, pedidosPorColuna, agora]);
 
-  function pedidosDaColuna(status) {
-    return pedidosAtivos.filter((pedido) => {
-      const statusPedido = pedido.status || "pendente";
-
-      if (status === "pendente") {
-        return statusPedido === "pendente";
-      }
-
-      return statusPedido === status;
-    });
+  async function alterarStatus(pedido, status) {
+    if (!pedido?._id) return;
+    setAtualizandoId(pedido._id);
+    try {
+      await api.put(`/producao/${pedido._id}/status`, { status });
+      setPedidos((atuais) => atuais.map((item) => item._id === pedido._id ? {
+        ...item,
+        status,
+        statusProducao: status,
+        ...(status === "producao" && !item.inicioProducao ? { inicioProducao: new Date().toISOString() } : {}),
+      } : item));
+      toast.success(status === "producao" ? "Preparo iniciado" : status === "pronto" ? "Pedido marcado como pronto" : "Pedido entregue");
+    } catch (error) {
+      console.error(error);
+      toast.error(error?.response?.data?.message || "Erro ao atualizar o status");
+      carregarFila({ silencioso: true });
+    } finally { setAtualizandoId(""); }
   }
 
-  function tempoPedido(data) {
-    if (!data) return 0;
-
-    const criado = new Date(data).getTime();
-
-    if (Number.isNaN(criado)) return 0;
-
-    return Math.max(0, Math.floor((agora - criado) / 60000));
+  async function alternarChecklist(pedido, checklist, indice) {
+    if (!pedido?._id) return;
+    const atualizado = checklist.map((item, index) => index === indice ? { ...item, concluido: !item.concluido } : item);
+    setAtualizandoId(pedido._id);
+    try {
+      await api.put(`/producao/${pedido._id}/checklist`, { checklist: atualizado });
+      setPedidos((atuais) => atuais.map((item) => item._id === pedido._id ? { ...item, checklist: atualizado } : item));
+    } catch (error) {
+      console.error(error);
+      toast.error(error?.response?.data?.message || "Erro ao atualizar o checklist");
+      carregarFila({ silencioso: true });
+    } finally { setAtualizandoId(""); }
   }
 
-  function imprimirPedido(pedido) {
-    const configuracoesProdutos = (pedido.produtos || [])
-      .map((produto) => {
-        const configuracoes = (produto.configuracoes || [])
-          .map(
-            (config) =>
-              `<li><strong>${config.grupo || "Opção"}:</strong> ${
-                config.opcao || "-"
-              }</li>`
-          )
-          .join("");
-
-        return `
-          <section class="produto">
-            <h3>${Number(produto.quantidade || 1)}x ${produto.nome || "Produto"}</h3>
-
-            ${
-              configuracoes
-                ? `<ul>${configuracoes}</ul>`
-                : "<p>Sem configurações adicionais.</p>"
-            }
-          </section>
-        `;
-      })
-      .join("");
-
-    const janela = window.open("", "_blank", "width=720,height=900");
-
-    if (!janela) {
-      alert("O navegador bloqueou a janela de impressão.");
-      return;
-    }
-
-    janela.document.write(`
-      <!DOCTYPE html>
-      <html lang="pt-BR">
-        <head>
-          <meta charset="UTF-8" />
-          <title>Produção - Pedido ${pedido.numeroPedido || ""}</title>
-
-          <style>
-            body {
-              font-family: Arial, sans-serif;
-              padding: 24px;
-              color: #111;
-            }
-
-            h1, h2, h3, p {
-              margin: 0;
-            }
-
-            .cabecalho {
-              border-bottom: 2px solid #111;
-              padding-bottom: 14px;
-              margin-bottom: 20px;
-            }
-
-            .cabecalho h1 {
-              font-size: 26px;
-            }
-
-            .cabecalho p {
-              margin-top: 6px;
-            }
-
-            .produto {
-              border-bottom: 1px dashed #777;
-              padding: 16px 0;
-            }
-
-            .produto h3 {
-              font-size: 20px;
-              margin-bottom: 10px;
-            }
-
-            ul {
-              margin: 0;
-              padding-left: 22px;
-            }
-
-            li {
-              margin-bottom: 6px;
-            }
-
-            .observacao {
-              margin-top: 20px;
-              padding: 14px;
-              border: 2px solid #111;
-            }
-
-            @media print {
-              button {
-                display: none;
-              }
-            }
-          </style>
-        </head>
-
-        <body>
-          <div class="cabecalho">
-            <h1>Pedido #${
-              pedido.numeroPedido || pedido._id?.slice(-6) || "-"
-            }</h1>
-
-            <p><strong>Cliente:</strong> ${pedido.cliente || "Cliente"}</p>
-            <p><strong>Tipo:</strong> ${pedido.tipo || "Balcão"}</p>
-            <p><strong>Mesa:</strong> ${pedido.mesa || "-"}</p>
-          </div>
-
-          ${configuracoesProdutos}
-
-          ${
-            pedido.observacao
-              ? `<div class="observacao"><strong>Observação:</strong><br />${pedido.observacao}</div>`
-              : ""
-          }
-
-          <script>
-            window.onload = function () {
-              window.print();
-            };
-          </script>
-        </body>
-      </html>
-    `);
-
-    janela.document.close();
+  async function alternarPrioridade(pedido, prioridade) {
+    if (!pedido?._id) return;
+    setAtualizandoId(pedido._id);
+    try {
+      await api.put(`/producao/${pedido._id}/prioridade`, { prioridade: prioridade ? "alta" : "normal" });
+      setPedidos((atuais) => atuais.map((item) => item._id === pedido._id ? { ...item, prioridade: prioridade ? "alta" : "normal" } : item));
+      toast.success(prioridade ? "Pedido priorizado" : "Prioridade removida");
+    } catch (error) {
+      console.error(error);
+      toast.error(error?.response?.data?.message || "Erro ao atualizar a prioridade");
+      carregarFila({ silencioso: true });
+    } finally { setAtualizandoId(""); }
   }
 
-  function proximaAcao(pedido) {
-    if (pedido.status === "pendente") {
-      return {
-        label: "Iniciar produção",
-        status: "producao",
-        icon: <FaFire />,
-      };
-    }
-
-    if (pedido.status === "producao") {
-      return {
-        label: "Marcar como pronto",
-        status: "pronto",
-        icon: <FaCheck />,
-      };
-    }
-
-    if (pedido.status === "pronto") {
-      return {
-        label: "Entregar pedido",
-        status: "entregue",
-        icon: <FaCheck />,
-      };
-    }
-
-    return null;
+  function iniciarArraste(event, pedido) {
+    setArrastandoId(pedido._id);
+    event.dataTransfer.effectAllowed = "move";
+    event.dataTransfer.setData("text/plain", pedido._id);
   }
 
-  return (
-    <AdminLayout
-      title="Cozinha"
-      subtitle="Pedidos e produção em tempo real"
-    >
-      <div className="cozinha-page">
-        <section className="cozinha-hero">
-          <div>
-            <span>Central da cozinha</span>
-            <h1>Produção ao vivo</h1>
-            <p>
-              Acompanhe pedidos, configurações, tempo de preparo e andamento da
-              operação.
-            </p>
-          </div>
+  async function soltarNaColuna(event, status) {
+    event.preventDefault();
+    const pedidoId = event.dataTransfer.getData("text/plain") || arrastandoId;
+    setArrastandoId("");
+    const pedido = pedidos.find((item) => item._id === pedidoId);
+    if (!pedido || normalizarStatus(pedido.statusProducao || pedido.status) === status) return;
+    await alterarStatus(pedido, status);
+  }
 
-          <div className="cozinha-hero-actions">
-            <div className="cozinha-resumo">
-              <strong>{pedidosAtivos.length}</strong>
-              <span>pedidos ativos</span>
-            </div>
+  const conteudo = (
+    <div className={`cozinha-premium-page ${modoTv ? "modo-tv" : ""}`}>
+      <section className="cozinha-hero">
+        <div>
+          <span className="cozinha-eyebrow">Conceito Fitness Gourmet</span>
+          <h1>Painel da Cozinha</h1>
+          <p>Acompanhe o preparo dos pedidos, prioridades e tempo de produção em tempo real.</p>
+        </div>
+        <div className="cozinha-hero-acoes">
+          <div className="cozinha-online"><span /> Atualização em tempo real</div>
+          <button type="button" className="cozinha-botao-secundario" onClick={() => carregarFila()}><FaRedo /> Atualizar</button>
+          <button type="button" className="cozinha-botao-tv" onClick={() => setModoTv((atual) => !atual)}>{modoTv ? <FaTimes /> : <FaTv />}{modoTv ? "Sair do modo TV" : "Modo TV"}</button>
+        </div>
+      </section>
 
-            <button
-              type="button"
-              onClick={() => carregarPedidos()}
-              disabled={loading}
-            >
-              <FaSyncAlt className={loading ? "girando" : ""} />
-              Atualizar
-            </button>
-          </div>
+      <section className="cozinha-kpis">
+        <div className="cozinha-kpi total"><FaUtensils /><span>Na fila</span><strong>{resumo?.total ?? metricas.total}</strong><p>Pedidos monitorados</p></div>
+        <div className="cozinha-kpi aguardando"><FaClock /><span>Aguardando</span><strong>{resumo?.aguardando ?? metricas.aguardando}</strong><p>Aguardando início</p></div>
+        <div className="cozinha-kpi producao"><FaFire /><span>Em produção</span><strong>{resumo?.producao ?? metricas.producao}</strong><p>Em preparo agora</p></div>
+        <div className="cozinha-kpi pronto"><FaCheck /><span>Prontos</span><strong>{resumo?.prontos ?? metricas.prontos}</strong><p>Aguardando entrega</p></div>
+        <div className="cozinha-kpi atrasado"><FaBell /><span>Atrasados</span><strong>{resumo?.atrasados ?? metricas.atrasados}</strong><p>Acima do previsto</p></div>
+      </section>
+
+      {erro && <section className="cozinha-erro"><FaExclamationTriangle /><div><strong>Falha ao carregar a produção</strong><p>{erro}</p></div><button type="button" onClick={() => carregarFila()}>Tentar novamente</button></section>}
+
+      {loading ? (
+        <section className="cozinha-loading"><div className="loading-spinner" /><p>Carregando a fila de produção...</p></section>
+      ) : (
+        <section className="cozinha-kanban">
+          {COLUNAS.map((coluna) => {
+            const lista = pedidosPorColuna[coluna.chave] || [];
+            return (
+              <div className={`cozinha-coluna coluna-${coluna.chave}`} key={coluna.chave} onDragOver={(event) => event.preventDefault()} onDrop={(event) => soltarNaColuna(event, coluna.chave)}>
+                <header className="cozinha-coluna-header"><div>{coluna.icone}<h2>{coluna.titulo}</h2></div><strong>{lista.length}</strong></header>
+                <div className="cozinha-coluna-conteudo">
+                  {lista.map((pedido) => <PedidoCard key={pedido._id} pedido={pedido} agora={agora} atualizando={atualizandoId === pedido._id} onAlterarStatus={alterarStatus} onAlternarChecklist={alternarChecklist} onAlternarPrioridade={alternarPrioridade} onDragStart={iniciarArraste} />)}
+                  {lista.length === 0 && <div className="cozinha-coluna-vazia">{coluna.icone}<p>Nenhum pedido nesta etapa.</p></div>}
+                </div>
+              </div>
+            );
+          })}
         </section>
-
-        {loading ? (
-          <div className="cozinha-loading">
-            Carregando pedidos da cozinha...
-          </div>
-        ) : (
-          <div className="cozinha-kanban">
-            {COLUNAS.map((coluna) => {
-              const pedidosColuna = pedidosDaColuna(coluna.id);
-
-              return (
-                <section className="cozinha-coluna" key={coluna.id}>
-                  <header className="cozinha-coluna-header">
-                    <div>
-                      <h2>{coluna.titulo}</h2>
-                      <p>{coluna.descricao}</p>
-                    </div>
-
-                    <strong>{pedidosColuna.length}</strong>
-                  </header>
-
-                  <div className="cozinha-coluna-lista">
-                    {pedidosColuna.length === 0 && (
-                      <div className="cozinha-coluna-vazia">
-                        <FaUtensils />
-                        <span>Nenhum pedido nesta etapa.</span>
-                      </div>
-                    )}
-
-                    {pedidosColuna.map((pedido) => {
-                      const minutos = tempoPedido(pedido.createdAt);
-                      const tempoPrevisto = Number(
-                        pedido.tempoPrevisto || 18
-                      );
-                      const atrasado = minutos > tempoPrevisto;
-                      const acao = proximaAcao(pedido);
-
-                      return (
-                        <article
-                          className={`cozinha-pedido-card ${
-                            atrasado ? "atrasado" : ""
-                          }`}
-                          key={pedido._id}
-                        >
-                          <div className="cozinha-pedido-top">
-                            <div>
-                              <span>
-                                Pedido #
-                                {pedido.numeroPedido ||
-                                  pedido._id?.slice(-6)}
-                              </span>
-
-                              <h3>{pedido.cliente || "Cliente"}</h3>
-
-                              <small>
-                                {pedido.tipo || "balcao"}
-                                {pedido.mesa ? ` · Mesa ${pedido.mesa}` : ""}
-                              </small>
-                            </div>
-
-                            <div
-                              className={`cozinha-tempo ${
-                                atrasado ? "atrasado" : ""
-                              }`}
-                            >
-                              <FaClock />
-                              <strong>{minutos} min</strong>
-                              <span>Previsto: {tempoPrevisto} min</span>
-                            </div>
-                          </div>
-
-                          <div className="cozinha-produtos">
-                            {(pedido.produtos || []).map(
-                              (produto, produtoIndex) => (
-                                <div
-                                  className="cozinha-produto"
-                                  key={`${pedido._id}-${produtoIndex}`}
-                                >
-                                  <strong>
-                                    {Number(produto.quantidade || 1)}x{" "}
-                                    {produto.nome}
-                                  </strong>
-
-                                  {produto.configuracoes?.length > 0 && (
-                                    <div className="cozinha-configuracoes">
-                                      {produto.configuracoes.map(
-                                        (config, configIndex) => (
-                                          <div
-                                            key={`${produtoIndex}-${configIndex}`}
-                                          >
-                                            <span>
-                                              {config.grupo || "Opção"}
-                                            </span>
-
-                                            <strong>
-                                              {config.opcao || "-"}
-                                            </strong>
-
-                                            {Number(config.valor || 0) > 0 && (
-                                              <small>
-                                                + R${" "}
-                                                {Number(
-                                                  config.valor
-                                                ).toFixed(2)}
-                                              </small>
-                                            )}
-                                          </div>
-                                        )
-                                      )}
-                                    </div>
-                                  )}
-                                </div>
-                              )
-                            )}
-                          </div>
-
-                          {pedido.observacao && (
-                            <div className="cozinha-observacao">
-                              <strong>Observação</strong>
-                              <p>{pedido.observacao}</p>
-                            </div>
-                          )}
-
-                          <div className="cozinha-pedido-actions">
-                            {acao && (
-                              <button
-                                type="button"
-                                className="acao-principal"
-                                disabled={atualizandoId === pedido._id}
-                                onClick={() =>
-                                  atualizarStatus(
-                                    pedido._id,
-                                    acao.status
-                                  )
-                                }
-                              >
-                                {acao.icon}
-
-                                {atualizandoId === pedido._id
-                                  ? "Atualizando..."
-                                  : acao.label}
-                              </button>
-                            )}
-
-                            <button
-                              type="button"
-                              className="acao-imprimir"
-                              onClick={() => imprimirPedido(pedido)}
-                            >
-                              <FaPrint />
-                              Imprimir
-                            </button>
-                          </div>
-                        </article>
-                      );
-                    })}
-                  </div>
-                </section>
-              );
-            })}
-          </div>
-        )}
-      </div>
-    </AdminLayout>
+      )}
+      {modoTv && <div className="cozinha-tv-aviso">Pressione ESC para sair do modo TV</div>}
+    </div>
   );
+
+  if (modoTv) return conteudo;
+  return <AdminLayout title="Cozinha" subtitle="Fila operacional de pedidos em tempo real">{conteudo}</AdminLayout>;
 }
 
 export default Cozinha;
