@@ -14,6 +14,24 @@ const {
   validarJustificativa,
 } = require("./sefazEventoService");
 
+const {
+  somenteNumeros,
+  numeroComZeros,
+  escapeXml,
+  limparXmlParaSefaz,
+  extrairTagXml,
+  formatarDataHoraSaoPaulo,
+  getTpAmb,
+  textoFiscal,
+  numeroFiscal,
+  validarGtin,
+  converterDataSefaz,
+} = require("./fiscal/documentoFiscalUtils");
+
+const {
+  criarIdentificacaoNfce,
+} = require("./fiscal/documentoFiscalService");
+
 const UF_PR = "41";
 const MODELO_NFCE = "65";
 const SERIE_PADRAO = 1;
@@ -27,97 +45,11 @@ const URL_QRCODE_PR =
 const URL_CONSULTA_PR =
   "http://www.fazenda.pr.gov.br/nfce/consulta";
 
-function somenteNumeros(valor = "") {
-  return String(valor || "").replace(/\D/g, "");
-}
-
-function numeroComZeros(numero, tamanho) {
-  return String(numero).padStart(tamanho, "0");
-}
-
-function escapeXml(valor = "") {
-  return String(valor ?? "")
-    .replace(/&/g, "&amp;")
-    .replace(/</g, "&lt;")
-    .replace(/>/g, "&gt;")
-    .replace(/"/g, "&quot;")
-    .replace(/'/g, "&apos;");
-}
-
-function limparXmlParaSefaz(xml = "") {
-  return String(xml)
-    .replace(/^\uFEFF/, "")
-    .replace(/<\?xml[^>]*\?>/g, "")
-    .replace(/>\s+</g, "><")
-    .trim();
-}
-
-function extrairTagXml(xml, tag) {
-  const match = String(xml).match(new RegExp(`<${tag}>([\\s\\S]*?)</${tag}>`));
-  return match ? match[1] : "";
-}
-
-function formatarDataHoraSaoPaulo() {
-  return (
-    new Date()
-      .toLocaleString("sv-SE", { timeZone: "America/Sao_Paulo" })
-      .replace(" ", "T") + "-03:00"
-  );
-}
-
-function calcularDV(chave43) {
-  const pesos = [2, 3, 4, 5, 6, 7, 8, 9];
-  let soma = 0;
-  let pesoIndex = 0;
-
-  for (let i = chave43.length - 1; i >= 0; i -= 1) {
-    soma += Number(chave43[i]) * pesos[pesoIndex];
-    pesoIndex = pesoIndex + 1 >= pesos.length ? 0 : pesoIndex + 1;
-  }
-
-  const resto = soma % 11;
-  const dv = 11 - resto;
-  return dv === 10 || dv === 11 ? 0 : dv;
-}
-
-function gerarCodigoNumerico() {
-  return String(Math.floor(10000000 + Math.random() * 89999999));
-}
-
-function gerarChaveAcesso({ cnpj, numero, serie }) {
-  const agora = new Date();
-  const ano = String(agora.getFullYear()).slice(2);
-  const mes = numeroComZeros(agora.getMonth() + 1, 2);
-  const aamm = `${ano}${mes}`;
-
-  const cNF = gerarCodigoNumerico();
-  const chave43 =
-    UF_PR +
-    aamm +
-    numeroComZeros(somenteNumeros(cnpj), 14) +
-    MODELO_NFCE +
-    numeroComZeros(serie, 3) +
-    numeroComZeros(numero, 9) +
-    "1" +
-    cNF;
-
-  const dv = calcularDV(chave43);
-
-  return {
-    chave: `${chave43}${dv}`,
-    cUF: UF_PR,
-    cNF,
-    dv,
-  };
-}
 
 function getAmbiente(config) {
   return process.env.NFCE_AMBIENTE || config?.ambiente || AMBIENTE_HOMOLOGACAO;
 }
 
-function getTpAmb(ambiente) {
-  return ambiente === "producao" ? "1" : "2";
-}
 
 function getEmpresaCnpj() {
   return somenteNumeros(process.env.EMPRESA_CNPJ || CNPJ_PADRAO);
@@ -153,21 +85,6 @@ function getProdutoNomeFiscal(nome, index, ambiente) {
   return String(nome || "Produto").trim() || "Produto";
 }
 
-function textoFiscal(valor, padrao = "") {
-  const texto = String(valor ?? "").trim();
-
-  return texto || padrao;
-}
-
-function numeroFiscal(valor, padrao = 0) {
-  const numero = Number(
-    String(valor ?? "")
-      .replace(/\./g, "")
-      .replace(",", ".")
-  );
-
-  return Number.isFinite(numero) ? numero : padrao;
-}
 
 function obterDadosFiscaisItem(item = {}) {
   const fiscal = item.dadosFiscais || {};
@@ -285,15 +202,6 @@ function obterDadosFiscaisItem(item = {}) {
   };
 }
 
-function validarGtin(gtin = "") {
-  const codigo = somenteNumeros(gtin);
-
-  if (![8, 12, 13, 14].includes(codigo.length)) {
-    return "SEM GTIN";
-  }
-
-  return codigo;
-}
 
 function validarDadosFiscaisItem(fiscal, item, index) {
   const nomeProduto = item.nome || `Item ${index + 1}`;
@@ -793,11 +701,20 @@ const numero = Number(config.proximoNumeroNfce || 1);
 const serie = Number(config.serieNfce || SERIE_PADRAO);
 const ambiente = getAmbiente(config);
 
-  const chaveDados = gerarChaveAcesso({
-    cnpj: getEmpresaCnpj(),
+  const identificacaoFiscal = criarIdentificacaoNfce({
+    empresa: {
+      cnpj: getEmpresaCnpj(),
+      codigoUf: UF_PR,
+      inscricaoEstadual: getEmpresaIe(),
+      razaoSocial: "CONCEITO FITNESS",
+      nomeFantasia: "CONCEITO FITNESS",
+    },
     numero,
     serie,
+    ambiente,
   });
+
+  const chaveDados = identificacaoFiscal.chaveDados;
 
   const xml = montarXmlNfce({ pedido, numero, serie, chaveDados, ambiente });
 
@@ -975,26 +892,6 @@ async function consultarRetornoNfce(nfceId) {
   return nfce;
 }
 
-/**
- * Converte uma data retornada pela SEFAZ em Date.
- *
- * Quando a data estiver vazia ou inválida,
- * retorna undefined para evitar salvar Invalid Date
- * no MongoDB.
- */
-function converterDataSefaz(valor) {
-  if (!valor) {
-    return undefined;
-  }
-
-  const data = new Date(valor);
-
-  if (Number.isNaN(data.getTime())) {
-    return undefined;
-  }
-
-  return data;
-}
 
 /**
  * Cancela uma NFC-e autorizada na SEFAZ.
