@@ -22,15 +22,17 @@ const {
   extrairTagXml,
   formatarDataHoraSaoPaulo,
   getTpAmb,
-  textoFiscal,
-  numeroFiscal,
-  validarGtin,
   converterDataSefaz,
 } = require("./fiscal/documentoFiscalUtils");
 
 const {
   criarIdentificacaoNfce,
 } = require("./fiscal/documentoFiscalService");
+
+const { montarXmlIdentificacao } = require("./fiscal/builders/identificacaoBuilder");
+const { montarXmlEmitente } = require("./fiscal/builders/emitenteBuilder");
+const { montarXmlDestinatarioNfce } = require("./fiscal/builders/destinatarioBuilder");
+const { montarItensXml } = require("./fiscal/builders/itensBuilder");
 
 const UF_PR = "41";
 const MODELO_NFCE = "65";
@@ -75,391 +77,6 @@ function obterCodigoPagamento(tipo) {
   if (pagamento.includes("PIX")) return "17";
 
   return "17";
-}
-
-function getProdutoNomeFiscal(nome, index, ambiente) {
-  if (ambiente !== "producao" && index === 0) {
-    return "NOTA FISCAL EMITIDA EM AMBIENTE DE HOMOLOGACAO - SEM VALOR FISCAL";
-  }
-
-  return String(nome || "Produto").trim() || "Produto";
-}
-
-
-function obterDadosFiscaisItem(item = {}) {
-  const fiscal = item.dadosFiscais || {};
-
-  return {
-    ncm: somenteNumeros(
-      fiscal.ncm ||
-      item.ncm ||
-      ""
-    ),
-
-    cest: somenteNumeros(
-      fiscal.cest ||
-      item.cest ||
-      ""
-    ),
-
-    origem: textoFiscal(
-      fiscal.origemMercadoria ||
-      fiscal.origem ||
-      item.origem ||
-      "0",
-      "0"
-    ),
-
-    cfop: somenteNumeros(
-      fiscal.cfopInterno ||
-      fiscal.cfop ||
-      item.cfop ||
-      ""
-    ),
-
-    csosn: somenteNumeros(
-      fiscal.csosn ||
-      item.csosn ||
-      ""
-    ),
-
-    cstIcms: somenteNumeros(
-      fiscal.cstIcms ||
-      fiscal.cst ||
-      item.cstIcms ||
-      ""
-    ),
-
-    codigoBeneficioFiscal: textoFiscal(
-      fiscal.codigoBeneficioFiscal ||
-      fiscal.cBenef ||
-      ""
-    ),
-
-    gtin: somenteNumeros(
-      fiscal.gtin ||
-      item.codigoBarras ||
-      item.gtin ||
-      ""
-    ),
-
-    gtinTributavel: somenteNumeros(
-      fiscal.gtinTributavel ||
-      fiscal.gtinTrib ||
-      fiscal.gtin ||
-      item.codigoBarras ||
-      ""
-    ),
-
-    unidadeComercial: textoFiscal(
-      fiscal.unidadeComercial ||
-      item.unidadeMedida ||
-      item.unidade ||
-      "UN",
-      "UN"
-    ).toUpperCase(),
-
-    unidadeTributavel: textoFiscal(
-      fiscal.unidadeTributavel ||
-      fiscal.unidadeComercial ||
-      item.unidadeMedida ||
-      item.unidade ||
-      "UN",
-      "UN"
-    ).toUpperCase(),
-
-    cstPis: somenteNumeros(
-      fiscal.cstPis ||
-      fiscal.pis?.cst ||
-      item.cstPis ||
-      "99"
-    ),
-
-    aliquotaPis: numeroFiscal(
-      fiscal.aliquotaPis ??
-      fiscal.pis?.aliquota,
-      0
-    ),
-
-    cstCofins: somenteNumeros(
-      fiscal.cstCofins ||
-      fiscal.cofins?.cst ||
-      item.cstCofins ||
-      "99"
-    ),
-
-    aliquotaCofins: numeroFiscal(
-      fiscal.aliquotaCofins ??
-      fiscal.cofins?.aliquota,
-      0
-    ),
-
-    produtoTributavel:
-      fiscal.produtoTributavel !== false,
-
-    emitirNfce:
-      fiscal.emitirNfce !== false,
-  };
-}
-
-
-function validarDadosFiscaisItem(fiscal, item, index) {
-  const nomeProduto = item.nome || `Item ${index + 1}`;
-
-  if (!fiscal.emitirNfce) {
-    throw new Error(
-      `O produto "${nomeProduto}" está marcado para não emitir NFC-e.`
-    );
-  }
-
-  if (!fiscal.produtoTributavel) {
-    throw new Error(
-      `O produto "${nomeProduto}" não está configurado como tributável.`
-    );
-  }
-
-  if (fiscal.ncm.length !== 8) {
-    throw new Error(
-      `NCM inválido ou não informado no produto "${nomeProduto}".`
-    );
-  }
-
-  if (fiscal.cfop.length !== 4) {
-    throw new Error(
-      `CFOP inválido ou não informado no produto "${nomeProduto}".`
-    );
-  }
-
-  if (!fiscal.csosn) {
-    throw new Error(
-      `CSOSN não informado no produto "${nomeProduto}".`
-    );
-  }
-
-  const csosnSuportados = ["102"];
-
-  if (!csosnSuportados.includes(fiscal.csosn)) {
-    throw new Error(
-      `O CSOSN ${fiscal.csosn} do produto "${nomeProduto}" ainda não possui grupo XML implementado.`
-    );
-  }
-}
-
-function montarXmlIcms(fiscal) {
-  return `
-    <ICMS>
-      <ICMSSN102>
-        <orig>${escapeXml(fiscal.origem)}</orig>
-        <CSOSN>${escapeXml(fiscal.csosn)}</CSOSN>
-      </ICMSSN102>
-    </ICMS>`;
-}
-
-function montarXmlPis(fiscal, valorProduto) {
-  const cst = fiscal.cstPis || "99";
-  const aliquota = Number(fiscal.aliquotaPis || 0);
-  const valorPis = valorProduto * (aliquota / 100);
-
-  if (["04", "05", "06", "07", "08", "09"].includes(cst)) {
-    return `
-      <PIS>
-        <PISNT>
-          <CST>${cst}</CST>
-        </PISNT>
-      </PIS>`;
-  }
-
-  if (["01", "02"].includes(cst)) {
-    return `
-      <PIS>
-        <PISAliq>
-          <CST>${cst}</CST>
-          <vBC>${valorProduto.toFixed(2)}</vBC>
-          <pPIS>${aliquota.toFixed(4)}</pPIS>
-          <vPIS>${valorPis.toFixed(2)}</vPIS>
-        </PISAliq>
-      </PIS>`;
-  }
-
-  return `
-    <PIS>
-      <PISOutr>
-        <CST>${cst}</CST>
-        <vBC>${valorProduto.toFixed(2)}</vBC>
-        <pPIS>${aliquota.toFixed(4)}</pPIS>
-        <vPIS>${valorPis.toFixed(2)}</vPIS>
-      </PISOutr>
-    </PIS>`;
-}
-
-function montarXmlCofins(fiscal, valorProduto) {
-  const cst = fiscal.cstCofins || "99";
-  const aliquota = Number(fiscal.aliquotaCofins || 0);
-  const valorCofins = valorProduto * (aliquota / 100);
-
-  if (["04", "05", "06", "07", "08", "09"].includes(cst)) {
-    return `
-      <COFINS>
-        <COFINSNT>
-          <CST>${cst}</CST>
-        </COFINSNT>
-      </COFINS>`;
-  }
-
-  if (["01", "02"].includes(cst)) {
-    return `
-      <COFINS>
-        <COFINSAliq>
-          <CST>${cst}</CST>
-          <vBC>${valorProduto.toFixed(2)}</vBC>
-          <pCOFINS>${aliquota.toFixed(4)}</pCOFINS>
-          <vCOFINS>${valorCofins.toFixed(2)}</vCOFINS>
-        </COFINSAliq>
-      </COFINS>`;
-  }
-
-  return `
-    <COFINS>
-      <COFINSOutr>
-        <CST>${cst}</CST>
-        <vBC>${valorProduto.toFixed(2)}</vBC>
-        <pCOFINS>${aliquota.toFixed(4)}</pCOFINS>
-        <vCOFINS>${valorCofins.toFixed(2)}</vCOFINS>
-      </COFINSOutr>
-    </COFINS>`;
-}
-
-function montarItensXml(produtos = [], ambiente) {
-  if (!Array.isArray(produtos) || produtos.length === 0) {
-    throw new Error(
-      "Pedido sem produtos para emissão da NFC-e."
-    );
-  }
-
-  return produtos
-    .map((item, index) => {
-      const fiscal = obterDadosFiscaisItem(item);
-
-      validarDadosFiscaisItem(
-        fiscal,
-        item,
-        index
-      );
-
-      const quantidade = Number(
-        item.quantidade || 1
-      );
-
-      const precoUnitario = Number(
-        item.precoUnitario ||
-        item.preco ||
-        item.valorUnitario ||
-        0
-      );
-
-      const valorProduto =
-        item.subtotal !== undefined
-          ? Number(item.subtotal || 0)
-          : quantidade * precoUnitario;
-
-      if (
-        !Number.isFinite(quantidade) ||
-        quantidade <= 0
-      ) {
-        throw new Error(
-          `Quantidade inválida no item ${index + 1}.`
-        );
-      }
-
-      if (
-        !Number.isFinite(precoUnitario) ||
-        precoUnitario <= 0
-      ) {
-        throw new Error(
-          `Preço inválido no item ${index + 1}.`
-        );
-      }
-
-      if (
-        !Number.isFinite(valorProduto) ||
-        valorProduto <= 0
-      ) {
-        throw new Error(
-          `Subtotal inválido no item ${index + 1}.`
-        );
-      }
-
-      const codigoProduto =
-        item.sku ||
-        item.codigoBarras ||
-        item.produtoId ||
-        item._id ||
-        index + 1;
-
-      const cEAN = validarGtin(
-        fiscal.gtin
-      );
-
-      const cEANTrib = validarGtin(
-        fiscal.gtinTributavel
-      );
-
-      const cestXml = fiscal.cest
-        ? `<CEST>${escapeXml(fiscal.cest)}</CEST>`
-        : "";
-
-      const beneficioXml =
-        fiscal.codigoBeneficioFiscal
-          ? `<cBenef>${escapeXml(
-              fiscal.codigoBeneficioFiscal
-            )}</cBenef>`
-          : "";
-
-      return `
-      <det nItem="${index + 1}">
-        <prod>
-          <cProd>${escapeXml(codigoProduto)}</cProd>
-          <cEAN>${cEAN}</cEAN>
-          <xProd>${escapeXml(
-            getProdutoNomeFiscal(
-              item.nome,
-              index,
-              ambiente
-            )
-          )}</xProd>
-          <NCM>${escapeXml(fiscal.ncm)}</NCM>
-          ${cestXml}
-          ${beneficioXml}
-          <CFOP>${escapeXml(fiscal.cfop)}</CFOP>
-          <uCom>${escapeXml(
-            fiscal.unidadeComercial
-          )}</uCom>
-          <qCom>${quantidade.toFixed(4)}</qCom>
-          <vUnCom>${precoUnitario.toFixed(10)}</vUnCom>
-          <vProd>${valorProduto.toFixed(2)}</vProd>
-          <cEANTrib>${cEANTrib}</cEANTrib>
-          <uTrib>${escapeXml(
-            fiscal.unidadeTributavel
-          )}</uTrib>
-          <qTrib>${quantidade.toFixed(4)}</qTrib>
-          <vUnTrib>${precoUnitario.toFixed(10)}</vUnTrib>
-          <indTot>1</indTot>
-        </prod>
-
-        <imposto>
-          ${montarXmlIcms(fiscal)}
-          ${montarXmlPis(
-            fiscal,
-            valorProduto
-          )}
-          ${montarXmlCofins(
-            fiscal,
-            valorProduto
-          )}
-        </imposto>
-      </det>`;
-    })
-    .join("");
 }
 
 function montarXmlPagamento(pedido, valorTotal) {
@@ -509,24 +126,9 @@ function montarXmlPagamento(pedido, valorTotal) {
     </pag>`;
 }
 
-function montarXmlDestinatario(cpfNota, ambiente) {
-  const cpf = somenteNumeros(cpfNota || "");
-
-  if (cpf.length !== 11) {
-    return "";
-  }
-
-  return `
-    <dest>
-      <CPF>${cpf}</CPF>
-      ${ambiente !== "producao" ? "<xNome>NF-E EMITIDA EM AMBIENTE DE HOMOLOGACAO - SEM VALOR FISCAL</xNome>" : ""}
-      <indIEDest>9</indIEDest>
-    </dest>`;
-}
-
-function montarXmlNfce({ pedido, numero, serie, chaveDados, ambiente }) {
-  const cnpj = getEmpresaCnpj();
-  const cpfNota = somenteNumeros(pedido.cpfNota || "");
+function montarXmlNfce({ pedido, identificacaoFiscal }) {
+  const ambiente = identificacaoFiscal.ambiente;
+  const cnpj = identificacaoFiscal.emitente.cnpj;
   const valorTotal = Number(pedido.total || 0);
 
     if (!Number.isFinite(valorTotal) || valorTotal <= 0) {
@@ -558,21 +160,36 @@ const valorDesconto = Number(
   pedido.desconto || 0
 );
 
-  const dhEmi = formatarDataHoraSaoPaulo();
-  const id = `NFe${chaveDados.chave}`;
+  const ideXml = montarXmlIdentificacao({
+    identificacaoFiscal,
+    codigoMunicipioFatoGerador: MUNICIPIO_UMUARAMA,
+  });
+
+  const emitenteXml = montarXmlEmitente({
+    empresa: identificacaoFiscal.emitente,
+    endereco: {
+      logradouro: "AV PARANA",
+      numero: "8455",
+      bairro: "ZONA III",
+      codigoMunicipio: MUNICIPIO_UMUARAMA,
+      municipio: "UMUARAMA",
+      uf: "PR",
+      cep: "87502000",
+    },
+  });
+
+  const destinatarioXml = montarXmlDestinatarioNfce({
+    cpf: pedido.cpfNota,
+    nome: pedido.cliente?.nome || pedido.nomeCliente,
+    ambiente,
+  });
 
   return `<?xml version="1.0" encoding="UTF-8"?>
 <NFe xmlns="http://www.portalfiscal.inf.br/nfe">
-  <infNFe Id="${id}" versao="4.00">
-    <ide>
-      <cUF>${UF_PR}</cUF><cNF>${chaveDados.cNF}</cNF><natOp>VENDA</natOp><mod>${MODELO_NFCE}</mod><serie>${serie}</serie><nNF>${numero}</nNF><dhEmi>${dhEmi}</dhEmi><tpNF>1</tpNF><idDest>1</idDest><cMunFG>${MUNICIPIO_UMUARAMA}</cMunFG><tpImp>4</tpImp><tpEmis>1</tpEmis><cDV>${chaveDados.dv}</cDV><tpAmb>${getTpAmb(ambiente)}</tpAmb><finNFe>1</finNFe><indFinal>1</indFinal><indPres>1</indPres><procEmi>0</procEmi><verProc>ConceitoFitERP-1.0</verProc>
-    </ide>
-    <emit>
-      <CNPJ>${cnpj}</CNPJ><xNome>CONCEITO FITNESS</xNome><xFant>CONCEITO FITNESS</xFant>
-      <enderEmit><xLgr>AV PARANA</xLgr><nro>8455</nro><xBairro>ZONA III</xBairro><cMun>${MUNICIPIO_UMUARAMA}</cMun><xMun>UMUARAMA</xMun><UF>PR</UF><CEP>87502000</CEP><cPais>1058</cPais><xPais>BRASIL</xPais></enderEmit>
-      <IE>${getEmpresaIe()}</IE><CRT>1</CRT>
-    </emit>
-    ${montarXmlDestinatario(cpfNota, ambiente)}
+  <infNFe Id="${identificacaoFiscal.idDocumento}" versao="4.00">
+    ${ideXml}
+    ${emitenteXml}
+    ${destinatarioXml}
     ${montarItensXml(pedido.produtos, ambiente)}
     <total>
   <ICMSTot>
@@ -716,7 +333,7 @@ const ambiente = getAmbiente(config);
 
   const chaveDados = identificacaoFiscal.chaveDados;
 
-  const xml = montarXmlNfce({ pedido, numero, serie, chaveDados, ambiente });
+  const xml = montarXmlNfce({ pedido, identificacaoFiscal });
 
   const nfce = await Nfce.create({
     pedido: pedido._id,
