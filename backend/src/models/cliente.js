@@ -300,21 +300,17 @@ clienteSchema.index(
 /*
  * Validação básica antes de salvar o cliente.
  */
-clienteSchema.pre("validate", function validarCliente(next) {
+clienteSchema.pre("validate", function validarCliente() {
   if (this.tipoPessoa === "juridica") {
     if (!String(this.cnpj || "").trim()) {
-      return next(
-        new Error(
-          "CNPJ é obrigatório para cliente pessoa jurídica."
-        )
+      throw new Error(
+        "CNPJ é obrigatório para cliente pessoa jurídica."
       );
     }
 
     if (!String(this.razaoSocial || this.nome || "").trim()) {
-      return next(
-        new Error(
-          "Razão social é obrigatória para cliente pessoa jurídica."
-        )
+      throw new Error(
+        "Razão social é obrigatória para cliente pessoa jurídica."
       );
     }
   }
@@ -323,14 +319,10 @@ clienteSchema.pre("validate", function validarCliente(next) {
     this.tipoPessoa === "fisica" &&
     !String(this.nome || "").trim()
   ) {
-    return next(
-      new Error(
-        "Nome é obrigatório para cliente pessoa física."
-      )
+    throw new Error(
+      "Nome é obrigatório para cliente pessoa física."
     );
   }
-
-  return next();
 });
 
 module.exports =
