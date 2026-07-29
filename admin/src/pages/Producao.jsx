@@ -39,10 +39,10 @@ function Producao() {
   });
 
   async function carregarTudo() {
-    const materiasRes = await api.get("/producao/materias-primas");
+    const materiasRes = await api.get("/materias-primas");
+    const fichasRes = await api.get("/fichas-tecnicas");
     const produtosRes = await api.get("/produtos");
-    const fichasRes = await api.get("/producao/fichas-tecnicas");
-
+    
     setMaterias(materiasRes.data.materias || []);
     setAlertas(materiasRes.data.alertas || []);
     setProdutos(produtosRes.data.produtos || []);
@@ -59,7 +59,7 @@ function Producao() {
       return;
     }
 
-    await api.post("/producao/materias-primas", novaMateria);
+    await api.post("/materias-primas", novaMateria);
 
     setNovaMateria({
       nome: "",
@@ -80,7 +80,7 @@ function Producao() {
       return;
     }
 
-    await api.post("/producao/fichas-tecnicas", {
+    await api.post("/fichas-tecnicas", {
       produto: novaFicha.produto,
       itens: [
         {

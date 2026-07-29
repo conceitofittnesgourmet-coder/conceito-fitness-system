@@ -64,7 +64,7 @@ function Fiscal() {
   async function carregarDados() {
     try {
       const fornecedoresRes = await api.get("/compras/fornecedores");
-      const materiasRes = await api.get("/producao/materias-primas");
+      const materiasRes = await api.get("/materias-primas");
       const notasRes = await api.get("/fiscal/notas-entrada");
       const resumoRes = await api.get("/fiscal/resumo");
       const configRes = await api.get("/fiscal-config");
