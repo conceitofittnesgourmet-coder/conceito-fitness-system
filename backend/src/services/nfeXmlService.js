@@ -1,4 +1,5 @@
 const crypto = require("crypto");
+const { obterEnderecoFiscalEmpresa } = require("./fiscalValidationService");
 
 function somenteNumeros(v) { return String(v || "").replace(/\D/g, ""); }
 function esc(v) { return String(v ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&apos;"); }
@@ -52,7 +53,7 @@ function gerarXmlNfe({ nfe, empresa }) {
   if (cnpj.length !== 14) throw new Error("CNPJ da empresa emissora inválido.");
   if (!ie) throw new Error("Inscrição Estadual da empresa emissora não cadastrada.");
 
-  const endEmit = empresa.endereco || {};
+  const endEmit = obterEnderecoFiscalEmpresa(empresa);
   validarEndereco(endEmit, "Endereço do emitente");
   validarEndereco(nfe.destinatario?.endereco, "Endereço do destinatário");
   if (!Array.isArray(nfe.itens) || !nfe.itens.length) throw new Error("NF-e sem itens.");

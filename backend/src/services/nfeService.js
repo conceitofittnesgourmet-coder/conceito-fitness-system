@@ -2,14 +2,18 @@ const Pedido = require("../models/pedido");
 const Nfe = require("../models/nfe");
 const Empresa = require("../models/empresa");
 const ConfiguracaoFiscal = require("../models/configuracaofiscal");
-const { assinarXmlNfce } = require("./xmlSignatureService");
+const { assinarXmlNfe } = require("./xmlSignatureService");
 const { gerarXmlNfe } = require("./nfeXmlService");
 const { transmitirNfeParaSefaz, consultarReciboNfe } = require("./sefazNfeService");
+const { validarAntesDeGerarNfe, obterEnderecoFiscalEmpresa } = require("./fiscalValidationService");
 
 function nums(v) { return String(v || "").replace(/\D/g, ""); }
 function num(v,d=0) { const n=Number(v); return Number.isFinite(n)?n:d; }
 function r2(v) { return Number(num(v).toFixed(2)); }
-function estadoEmpresa(empresa) { return String(empresa?.endereco?.uf || empresa?.uf || "PR").toUpperCase(); }
+function estadoEmpresa(empresa) {
+  const endereco = obterEnderecoFiscalEmpresa(empresa);
+  return String(endereco?.uf || empresa?.estado || empresa?.uf || "PR").toUpperCase();
+}
 
 function destinatarioDoPedido(pedido, informado={}) {
   const end=informado.endereco || {};
@@ -65,6 +69,17 @@ async function gerarNfeDoPedido(dados) {
   const dest=destinatarioDoPedido(pedido,dados.destinatario || {});
   const itens=itensDoPedido(pedido,estadoEmpresa(empresa),dest.endereco.uf);
   const t=totais(itens,{ ...dados, valorDesconto:dados.valorDesconto ?? pedido.desconto ?? 0 });
+
+  // Valida todos os dados antes de reservar numeração, criar a NF-e e gerar o XML.
+  // Assim, erros de CPF/CNPJ, endereço, produtos ou certificado não consomem número fiscal.
+  validarAntesDeGerarNfe({
+    empresa,
+    destinatario: dest,
+    itens,
+    totais: t,
+    validarA1: true,
+  });
+
   const nr=await reservar(empresaId,dados.ambiente,dados.serie);
   const nfe=await Nfe.create({ empresa:empresaId, pedido:pedido._id, cliente:null, numero:nr.numero, serie:nr.serie, modelo:"55", ambiente:nr.ambiente, naturezaOperacao:dados.naturezaOperacao || "Venda de mercadoria", tipoOperacao:1, finalidade:1, consumidorFinal:dados.consumidorFinal ?? true, indicadorPresenca:dados.indicadorPresenca ?? 1, destinoOperacao:estadoEmpresa(empresa) === dest.endereco.uf ? 1 : 2, modalidadeFrete:num(dados.modalidadeFrete,9), destinatario:dest, itens, totais:t, pagamento:{ forma:String(dados.formaPagamento || "17"), descricao:dados.descricaoPagamento || pedido.pagamento || "PIX", valor:t.valorTotal }, informacoesComplementares:dados.informacoesComplementares || pedido.observacao || "", status:"gerada" });
   const gerado=gerarXmlNfe({ nfe, empresa }); nfe.xml=gerado.xml; nfe.chaveAcesso=gerado.chaveAcesso; nfe.mensagemSefaz="XML da NF-e gerado. Próxima etapa: assinatura."; await nfe.save(); return nfe;
@@ -72,7 +87,7 @@ async function gerarNfeDoPedido(dados) {
 
 async function assinarNfe(id) {
   const nfe=await Nfe.findById(id); if (!nfe) throw new Error("NF-e não encontrada."); if (!nfe.xml) throw new Error("XML da NF-e não encontrado.");
-  nfe.xmlAssinado=assinarXmlNfce(String(nfe.xml).replace(/>\s+</g,"><").trim()); nfe.status="assinada"; nfe.mensagemSefaz="XML da NF-e assinado. Próxima etapa: transmissão."; await nfe.save(); return nfe;
+  nfe.xmlAssinado=assinarXmlNfe(String(nfe.xml).replace(/>\s+</g,"><").trim()); nfe.status="assinada"; nfe.mensagemSefaz="XML da NF-e assinado. Próxima etapa: transmissão."; await nfe.save(); return nfe;
 }
 
 async function transmitirNfe(id) {
