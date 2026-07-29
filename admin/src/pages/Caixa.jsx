@@ -66,18 +66,31 @@ function Caixa() {
       api.get("/caixa/historico").catch(() => ({ data: { caixas: [] } })),
     ]);
 
-    setCaixa(resumoResponse.data.caixa || null);
-    setPedidos(resumoResponse.data.pedidos || []);
-    setResumoApi(resumoResponse.data.resumo || null);
-    setHistoricoCaixas(historicoResponse.data.caixas || []);
+    const dadosResumo = resumoResponse?.data || {};
+    const dadosHistorico = historicoResponse?.data || {};
 
-    if (resumoResponse.data.caixa?.saldoInicial !== undefined) {
-      setSaldoInicial(Number(resumoResponse.data.caixa.saldoInicial || 0));
+    const caixaRecebido = dadosResumo.caixa || null;
+    const pedidosRecebidos = Array.isArray(dadosResumo.pedidos)
+      ? dadosResumo.pedidos
+      : [];
+    const historicoRecebido = Array.isArray(dadosHistorico.caixas)
+      ? dadosHistorico.caixas
+      : Array.isArray(dadosHistorico.historico)
+        ? dadosHistorico.historico
+        : [];
+
+    setCaixa(caixaRecebido);
+    setPedidos(pedidosRecebidos);
+    setResumoApi(dadosResumo.resumo || null);
+    setHistoricoCaixas(historicoRecebido);
+
+    if (caixaRecebido?.saldoInicial !== undefined) {
+      setSaldoInicial(Number(caixaRecebido.saldoInicial || 0));
     }
 
     localStorage.setItem(
       "caixaAberto",
-      resumoResponse.data.caixa?.status === "aberto" ? "true" : "false"
+      caixaRecebido?.status === "aberto" ? "true" : "false"
     );
   } catch (error) {
     console.log("Erro ao carregar caixa:", error);
@@ -106,7 +119,7 @@ function Caixa() {
   }, []);
 
   const resumo = useMemo(() => {
-  const vendas = pedidos || [];
+  const vendas = Array.isArray(pedidos) ? pedidos : [];
 
   return {
     vendas,
@@ -784,8 +797,8 @@ inputMode="decimal"
     overflowY: "auto",
   }}
 >
-  {historicoCaixas
-    .filter((cx) => cx.status === "fechado")
+  {(Array.isArray(historicoCaixas) ? historicoCaixas : [])
+    .filter((cx) => cx?.status === "fechado")
     .map((cx) => (
       <div
         key={cx._id}

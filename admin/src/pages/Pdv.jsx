@@ -674,19 +674,46 @@ total: totalPedido,
         
     const response = await api.post("/pedidos", novoPedido);
 
-const pedidoCriado = response.data.pedido || response.data;
+    const dadosResposta = response?.data || {};
+    const pedidoCriado =
+      dadosResposta.pedido ||
+      dadosResposta.venda ||
+      dadosResposta.data?.pedido ||
+      dadosResposta.data ||
+      dadosResposta;
 
-const desejaImprimir = window.confirm(
-  "Pedido finalizado com sucesso!\n\nClique em OK para imprimir ou Cancelar para finalizar sem imprimir."
-);
+    const pedidoId =
+      pedidoCriado?._id ||
+      pedidoCriado?.id ||
+      dadosResposta?.pedidoId ||
+      dadosResposta?._id ||
+      dadosResposta?.id ||
+      null;
 
-if (desejaImprimir) {
-  const janela = window.open(`/cupom/${pedidoCriado._id}?print=true`, "_blank");
+    const desejaImprimir = window.confirm(
+      "Pedido finalizado com sucesso!\n\nClique em OK para imprimir ou Cancelar para finalizar sem imprimir."
+    );
 
-  if (janela) {
-    janela.focus();
-  }
-}
+    if (desejaImprimir) {
+      if (!pedidoId) {
+        alert(
+          "A venda foi registrada, mas o sistema não recebeu o código do pedido para abrir o cupom. Verifique o pedido na tela de Pedidos."
+        );
+      } else {
+        const janela = window.open(
+          `/cupom/${pedidoId}?print=true`,
+          "_blank"
+        );
+
+        if (janela) {
+          janela.focus();
+        } else {
+          alert(
+            "A venda foi registrada, mas o navegador bloqueou a abertura do cupom. Libere os pop-ups para este site."
+          );
+        }
+      }
+    }
 
     atualizarCarrinhoComanda([]);
 
@@ -716,9 +743,15 @@ if (desejaImprimir) {
 ]);
 
   } catch (error) {
-    console.log(error);
+    console.error("Erro ao finalizar pedido:", error);
 
-    alert("Erro ao finalizar pedido.");
+    const mensagem =
+      error.response?.data?.message ||
+      error.response?.data?.erro ||
+      error.message ||
+      "Erro ao finalizar pedido.";
+
+    alert(mensagem);
   }
 }
 
