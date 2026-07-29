@@ -33,6 +33,18 @@ const { montarXmlIdentificacao } = require("./fiscal/builders/identificacaoBuild
 const { montarXmlEmitente } = require("./fiscal/builders/emitenteBuilder");
 const { montarXmlDestinatarioNfce } = require("./fiscal/builders/destinatarioBuilder");
 const { montarItensXml } = require("./fiscal/builders/itensBuilder");
+const {
+  calcularTotaisPedido,
+  montarXmlTotais,
+} = require("./fiscal/builders/totaisBuilder");
+const { montarXmlTransporteNfce } = require("./fiscal/builders/transporteBuilder");
+const { montarXmlPagamento } = require("./fiscal/builders/pagamentoBuilder");
+const {
+  montarXmlInformacoesAdicionais,
+} = require("./fiscal/builders/informacoesAdicionaisBuilder");
+const {
+  montarXmlResponsavelTecnico,
+} = require("./fiscal/builders/responsavelTecnicoBuilder");
 
 const UF_PR = "41";
 const MODELO_NFCE = "65";
@@ -61,104 +73,10 @@ function getEmpresaIe() {
   return somenteNumeros(process.env.EMPRESA_IE || IE_PADRAO);
 }
 
-function obterCodigoPagamento(tipo) {
-  const pagamento = String(tipo || "")
-    .normalize("NFD")
-    .replace(/[\u0300-\u036f]/g, "")
-    .trim()
-    .toUpperCase();
-
-  if (pagamento.includes("DINHEIRO")) return "01";
-  if (pagamento.includes("CREDITO")) return "03";
-  if (pagamento.includes("DEBITO")) return "04";
-  if (pagamento.includes("CARTAO DE CREDITO")) return "03";
-  if (pagamento.includes("CARTAO DE DEBITO")) return "04";
-  if (pagamento.includes("CARTAO")) return "03";
-  if (pagamento.includes("PIX")) return "17";
-
-  return "17";
-}
-
-function montarXmlPagamento(pedido, valorTotal) {
-  const pagamentos = Array.isArray(pedido.pagamentos) && pedido.pagamentos.length > 0
-    ? pedido.pagamentos
-    : [
-        {
-          forma: pedido.pagamento || pedido.formaPagamento || "PIX",
-          valor: valorTotal,
-        },
-      ];
-
-  const detPagXml = pagamentos
-    .map((pagamentoItem) => {
-      const forma = String(pagamentoItem.forma || "")
-        .normalize("NFD")
-        .replace(/[\u0300-\u036f]/g, "")
-        .trim()
-        .toUpperCase();
-
-      const tPag = obterCodigoPagamento(forma);
-      const valor = Number(pagamentoItem.valor || 0);
-
-      const precisaCard = ["03", "04", "17"].includes(tPag);
-
-      const cardXml = precisaCard
-        ? `
-        <card>
-          <tpIntegra>2</tpIntegra>
-          <tBand>99</tBand>
-          <cAut>000000</cAut>
-        </card>`
-        : "";
-
-      return `
-      <detPag>
-        <tPag>${tPag}</tPag>
-        <vPag>${valor.toFixed(2)}</vPag>
-        ${cardXml}
-      </detPag>`;
-    })
-    .join("");
-
-  return `
-    <pag>
-      ${detPagXml}
-    </pag>`;
-}
-
 function montarXmlNfce({ pedido, identificacaoFiscal }) {
   const ambiente = identificacaoFiscal.ambiente;
   const cnpj = identificacaoFiscal.emitente.cnpj;
-  const valorTotal = Number(pedido.total || 0);
-
-    if (!Number.isFinite(valorTotal) || valorTotal <= 0) {
-    throw new Error("Valor total inválido para emissão da NFC-e.");
-  }
-
-const valorProdutos = (pedido.produtos || []).reduce(
-  (totalProdutos, item) => {
-    const subtotalItem =
-      item.subtotal !== undefined
-        ? Number(item.subtotal || 0)
-        : Number(
-            item.precoUnitario ||
-            item.preco ||
-            0
-          ) *
-          Number(item.quantidade || 1);
-
-    return totalProdutos + subtotalItem;
-  },
-  0
-);
-
-const valorFrete = Number(
-  pedido.taxaEntrega || 0
-);
-
-const valorDesconto = Number(
-  pedido.desconto || 0
-);
+  const totais = calcularTotaisPedido(pedido);
 
   const ideXml = montarXmlIdentificacao({
     identificacaoFiscal,
@@ -191,33 +109,11 @@ const valorDesconto = Number(
     ${emitenteXml}
     ${destinatarioXml}
     ${montarItensXml(pedido.produtos, ambiente)}
-    <total>
-  <ICMSTot>
-    <vBC>0.00</vBC>
-    <vICMS>0.00</vICMS>
-    <vICMSDeson>0.00</vICMSDeson>
-    <vFCP>0.00</vFCP>
-    <vBCST>0.00</vBCST>
-    <vST>0.00</vST>
-    <vFCPST>0.00</vFCPST>
-    <vFCPSTRet>0.00</vFCPSTRet>
-    <vProd>${valorProdutos.toFixed(2)}</vProd>
-    <vFrete>${valorFrete.toFixed(2)}</vFrete>
-    <vSeg>0.00</vSeg>
-    <vDesc>${valorDesconto.toFixed(2)}</vDesc>
-    <vII>0.00</vII>
-    <vIPI>0.00</vIPI>
-    <vIPIDevol>0.00</vIPIDevol>
-    <vPIS>0.00</vPIS>
-    <vCOFINS>0.00</vCOFINS>
-    <vOutro>0.00</vOutro>
-    <vNF>${valorTotal.toFixed(2)}</vNF>
-  </ICMSTot>
-</total>
-    <transp><modFrete>9</modFrete></transp>
-    ${montarXmlPagamento(pedido, valorTotal)}
-    <infAdic><infCpl>${ambiente !== "producao" ? "TESTE" : "Documento emitido pelo sistema Conceito Fitness."}</infCpl></infAdic>
-    <infRespTec><CNPJ>${cnpj}</CNPJ><xContato>CONCEITO FITNESS</xContato><email>conceitofittnesgourmet@gmail.com</email><fone>44999999999</fone></infRespTec>
+    ${montarXmlTotais(totais)}
+    ${montarXmlTransporteNfce()}
+    ${montarXmlPagamento(pedido, totais.valorTotal)}
+    ${montarXmlInformacoesAdicionais({ ambiente })}
+    ${montarXmlResponsavelTecnico({ cnpj })}
   </infNFe>
 </NFe>`;
 }
