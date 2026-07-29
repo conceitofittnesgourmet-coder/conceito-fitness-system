@@ -5,6 +5,7 @@ const configuracaoFiscalSchema = new mongoose.Schema(
     empresa: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Empresa",
+      index: true,
     },
 
     ambiente: {
@@ -18,14 +19,30 @@ const configuracaoFiscalSchema = new mongoose.Schema(
       default: "65",
     },
 
+    // Numeração exclusiva da NFC-e, modelo 65.
     serieNfce: {
       type: Number,
       default: 1,
+      min: 1,
     },
 
     proximoNumeroNfce: {
       type: Number,
       default: 1,
+      min: 1,
+    },
+
+    // Numeração exclusiva da NF-e, modelo 55.
+    serieNfe: {
+      type: Number,
+      default: 1,
+      min: 1,
+    },
+
+    proximoNumeroNfe: {
+      type: Number,
+      default: 1,
+      min: 1,
     },
 
     cscId: {
@@ -48,12 +65,26 @@ const configuracaoFiscalSchema = new mongoose.Schema(
       default: false,
     },
 
+    credenciadoNfe: {
+      type: Boolean,
+      default: false,
+    },
+
     observacao: {
       type: String,
       default: "",
     },
   },
   { timestamps: true }
+);
+
+// Uma configuração fiscal por empresa.
+configuracaoFiscalSchema.index(
+  { empresa: 1 },
+  {
+    unique: true,
+    partialFilterExpression: { empresa: { $type: "objectId" } },
+  }
 );
 
 module.exports =

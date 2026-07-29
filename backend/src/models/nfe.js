@@ -790,3 +790,4 @@ nfeSchema.index(
 module.exports =
   mongoose.models.Nfe ||
   mongoose.model("Nfe", nfeSchema);
+  
