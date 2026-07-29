@@ -3,11 +3,9 @@ const mongoose = require("mongoose");
 const nfceSchema = new mongoose.Schema(
   {
     pedido: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Pedido",
-      required: true,
-      index: true,
-    },
+  type: mongoose.Schema.Types.ObjectId,
+  ref: "Pedido",
+},
 
     numero: {
       type: Number,

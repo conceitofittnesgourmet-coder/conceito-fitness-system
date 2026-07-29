@@ -3,10 +3,9 @@ const mongoose = require("mongoose");
 const configuracaoFiscalSchema = new mongoose.Schema(
   {
     empresa: {
-      type: mongoose.Schema.Types.ObjectId,
-      ref: "Empresa",
-      index: true,
-    },
+  type: mongoose.Schema.Types.ObjectId,
+  ref: "Empresa",
+},
 
     ambiente: {
       type: String,

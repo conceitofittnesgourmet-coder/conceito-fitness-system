@@ -367,7 +367,6 @@ const nfeSchema = new mongoose.Schema(
       type: String,
       default: "",
       trim: true,
-      index: true,
     },
 
     protocolo: {
@@ -790,4 +789,3 @@ nfeSchema.index(
 module.exports =
   mongoose.models.Nfe ||
   mongoose.model("Nfe", nfeSchema);
-  
