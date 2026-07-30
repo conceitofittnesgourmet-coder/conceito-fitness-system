@@ -1,0 +1,36 @@
+.empresa-page { display: grid; gap: 22px; }
+.empresa-hero { display: flex; justify-content: space-between; gap: 24px; align-items: center; padding: 30px; border: 1px solid rgba(72, 255, 145, .2); border-radius: 24px; background: linear-gradient(135deg, rgba(17, 43, 35, .96), rgba(15, 23, 42, .96)); }
+.empresa-kicker { display: inline-flex; align-items: center; gap: 8px; color: #3cff84; font-weight: 800; text-transform: uppercase; letter-spacing: .08em; font-size: 12px; }
+.empresa-hero h2 { margin: 10px 0 8px; font-size: clamp(28px, 4vw, 44px); color: #fff; }
+.empresa-hero p, .empresa-toolbar span, .empresa-card-header p { color: #aab5c7; margin: 0; }
+.empresa-status { min-width: 245px; padding: 16px 18px; display: flex; align-items: center; gap: 12px; border-radius: 16px; }
+.empresa-status.pendente { background: rgba(245, 158, 11, .12); border: 1px solid rgba(245, 158, 11, .35); color: #fbbf24; }
+.empresa-status.completo { background: rgba(34, 197, 94, .12); border: 1px solid rgba(34, 197, 94, .35); color: #4ade80; }
+.empresa-status div { display: grid; gap: 3px; }
+.empresa-status span { color: #cbd5e1; font-size: 12px; }
+.empresa-alerta { padding: 14px 16px; border-radius: 12px; font-weight: 700; }
+.empresa-alerta.sucesso { background: rgba(34, 197, 94, .13); color: #86efac; border: 1px solid rgba(34, 197, 94, .28); }
+.empresa-alerta.erro { background: rgba(239, 68, 68, .13); color: #fca5a5; border: 1px solid rgba(239, 68, 68, .28); }
+.empresa-alerta.info { background: rgba(59, 130, 246, .13); color: #93c5fd; border: 1px solid rgba(59, 130, 246, .28); }
+.empresa-toolbar { display: flex; align-items: center; gap: 14px; flex-wrap: wrap; }
+.empresa-btn { border: 0; border-radius: 12px; padding: 12px 16px; font-weight: 800; cursor: pointer; }
+.empresa-btn.secundario { background: rgba(52, 211, 153, .14); border: 1px solid rgba(52, 211, 153, .35); color: #5ee7a2; }
+.empresa-card { padding: 24px; margin-bottom: 20px; border-radius: 20px; border: 1px solid rgba(148, 163, 184, .15); background: rgba(15, 23, 42, .78); box-shadow: 0 18px 50px rgba(0,0,0,.15); }
+.empresa-card-header { display: flex; justify-content: space-between; gap: 20px; align-items: center; margin-bottom: 22px; }
+.empresa-card-header > div { display: flex; align-items: center; gap: 10px; }
+.empresa-card-header span { display: grid; place-items: center; width: 34px; height: 34px; border-radius: 10px; background: #16d66b; color: #07130d; font-weight: 900; }
+.empresa-card-header h3 { color: #fff; margin: 0; font-size: 21px; }
+.empresa-grid { display: grid; grid-template-columns: repeat(4, minmax(0, 1fr)); gap: 16px; }
+.empresa-grid label { display: grid; gap: 7px; color: #d9e2ef; font-size: 13px; font-weight: 700; }
+.empresa-grid input, .empresa-grid select, .empresa-grid textarea { width: 100%; box-sizing: border-box; border: 1px solid rgba(148, 163, 184, .23); border-radius: 11px; padding: 12px 13px; background: rgba(255,255,255,.96); color: #111827; outline: none; }
+.empresa-grid input:focus, .empresa-grid select:focus, .empresa-grid textarea:focus { border-color: #22c55e; box-shadow: 0 0 0 3px rgba(34, 197, 94, .15); }
+.empresa-grid .span-2 { grid-column: span 2; }
+.empresa-grid .span-4 { grid-column: 1 / -1; }
+.empresa-grid .check-field { align-self: end; display: flex; flex-direction: row; align-items: center; padding: 12px; }
+.empresa-grid .check-field input { width: auto; }
+.empresa-pendencias { display: grid; gap: 7px; margin: 4px 0 18px; padding: 16px 18px; border-radius: 13px; background: rgba(245, 158, 11, .10); color: #fde68a; border: 1px solid rgba(245, 158, 11, .25); }
+.empresa-pendencias span { color: #e5e7eb; font-size: 13px; }
+.empresa-salvar { width: 100%; border: 0; border-radius: 13px; padding: 16px; display: flex; justify-content: center; align-items: center; gap: 9px; background: linear-gradient(90deg, #16d66b, #20e78b); color: #07140d; font-weight: 900; font-size: 16px; cursor: pointer; }
+.empresa-salvar:disabled, .empresa-btn:disabled { opacity: .55; cursor: not-allowed; }
+@media (max-width: 1000px) { .empresa-grid { grid-template-columns: repeat(2, minmax(0,1fr)); } .empresa-grid .span-4 { grid-column: 1 / -1; } }
+@media (max-width: 700px) { .empresa-hero, .empresa-card-header { align-items: flex-start; flex-direction: column; } .empresa-status { min-width: 0; width: 100%; box-sizing: border-box; } .empresa-grid { grid-template-columns: 1fr; } .empresa-grid .span-2, .empresa-grid .span-4 { grid-column: span 1; } .empresa-card { padding: 18px; } }

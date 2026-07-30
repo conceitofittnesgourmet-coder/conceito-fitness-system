@@ -87,6 +87,8 @@ import Relatorios from "./pages/Relatorios";
 
 import Fiscal from "./pages/Fiscal";
 
+import Empresa from "./pages/Empresa";
+
 import CardapioOnlineAdmin from "./pages/cardapioonlineadmin"; 
 
 import Categorias from "./pages/Categorias";
@@ -515,6 +517,16 @@ function App() {
 
 
 
+
+
+<Route
+  path="/empresa"
+  element={
+    <PrivateRoute>
+      <Empresa />
+    </PrivateRoute>
+  }
+/>
 
       {/* FINANCEIRO */}
 

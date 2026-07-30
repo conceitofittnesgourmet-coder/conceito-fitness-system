@@ -8,7 +8,8 @@ function somenteNumeros(valor) {
 }
 
 function campo(ok, nome, mensagem, categoria) {
-  return { ok: Boolean(ok), nome, mensagem, categoria };
+  const actionUrl = ["empresa", "endereco"].includes(categoria) ? "/empresa" : null;
+  return { ok: Boolean(ok), nome, mensagem, categoria, actionUrl };
 }
 
 async function diagnosticarFiscal(empresaId = null) {

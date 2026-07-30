@@ -1,0 +1,12 @@
+git add admin/src/App.jsx
+git add admin/src/layouts/AdminLayout.jsx
+git add admin/src/pages/Empresa.jsx
+git add admin/src/styles/empresa.css
+git add backend/src/models/empresa.js
+git add backend/src/controllers/empresacontroller.js
+git add backend/src/services/fiscalReadinessService.js
+
+git status
+git diff --cached --stat
+git commit -m "V01.1 - Adiciona cadastro central da empresa"
+git push origin main

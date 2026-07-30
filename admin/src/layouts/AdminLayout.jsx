@@ -21,6 +21,7 @@ FaTruckLoading,
 FaGlobe,
 FaTags,
 FaList,
+FaBuilding,
 
 } from "react-icons/fa";
 
@@ -74,6 +75,7 @@ function AdminLayout({
     { label: "Cozinha", path: "/cozinha", icon: <FaUtensils /> },
     { label: "Entregador", path: "/entregador", icon: <FaTruck /> },
     { label: "Clientes", path: "/clientes", icon: <FaUsers /> },
+    { label: "Empresa", path: "/empresa", icon: <FaBuilding /> },
     { label: "Financeiro", path: "/financeiro", icon: <FaWallet /> },
     
 
