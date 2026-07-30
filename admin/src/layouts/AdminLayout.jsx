@@ -60,6 +60,7 @@ function AdminLayout({
     { label: "Painel", path: "/", icon: <FaChartLine /> },
     { label: "Produtos", path: "/produtos", icon: <FaBoxOpen /> },
     { label: "Cadastro Mestre", path: "/produtos/cadastro-mestre", icon: <FaClipboardList /> },
+    { label: "Ingredientes", path: "/ingredientes", icon: <FaIndustry /> },
     { label: "Categorias", path: "/categorias", icon: <FaTags /> },
     
   {
