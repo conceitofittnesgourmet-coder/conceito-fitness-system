@@ -27,3 +27,26 @@ exports.lancarMovimento = async (req,res) => { try {
   const movimento=await MovimentoClube.create({cliente:cliente._id,tipo,pontos:sinalP,cashback:sinalC,descricao:req.body?.descricao||"Ajuste manual",origem:"painel-admin"});
   res.status(201).json({success:true,movimento,carteira:await Clube.prepararCarteira(cliente)});
  } catch(e){res.status(400).json({success:false,message:e.message});} };
+
+const CupomClube = require("../models/cupomclube");
+const CampanhaClube = require("../models/campanhaclube");
+const Promocoes = require("../services/ClubePromocoesService");
+
+exports.listarCupons = async (_req,res) => { try { res.json({success:true,cupons:await CupomClube.find().sort({createdAt:-1})}); } catch(e){res.status(500).json({success:false,message:e.message});} };
+exports.salvarCupom = async (req,res) => { try {
+  const dados={...req.body,codigo:String(req.body?.codigo||"").trim().toUpperCase()};
+  if(!dados.codigo||!dados.nome)return res.status(400).json({success:false,message:"Código e nome são obrigatórios."});
+  const cupom=req.params.id?await CupomClube.findByIdAndUpdate(req.params.id,dados,{new:true,runValidators:true}):await CupomClube.create(dados);
+  res.status(req.params.id?200:201).json({success:true,cupom});
+ } catch(e){res.status(400).json({success:false,message:e.code===11000?"Já existe um cupom com este código.":e.message});} };
+exports.excluirCupom = async (req,res) => { try { await CupomClube.findByIdAndDelete(req.params.id);res.json({success:true}); } catch(e){res.status(400).json({success:false,message:e.message});} };
+exports.validarCupom = async (req,res) => { try { const r=await Promocoes.validarCupom(req.body||{});res.json({success:true,cupom:{id:r.cupom._id,codigo:r.cupom.codigo,nome:r.cupom.nome,tipo:r.cupom.tipo},desconto:r.desconto,total:r.total}); } catch(e){res.status(400).json({success:false,message:e.message});} };
+
+exports.listarCampanhas = async (_req,res) => { try { res.json({success:true,campanhas:await CampanhaClube.find().sort({createdAt:-1})}); } catch(e){res.status(500).json({success:false,message:e.message});} };
+exports.salvarCampanha = async (req,res) => { try {
+  if(!req.body?.nome)return res.status(400).json({success:false,message:"Nome da campanha é obrigatório."});
+  const campanha=req.params.id?await CampanhaClube.findByIdAndUpdate(req.params.id,req.body,{new:true,runValidators:true}):await CampanhaClube.create(req.body);
+  res.status(req.params.id?200:201).json({success:true,campanha});
+ } catch(e){res.status(400).json({success:false,message:e.message});} };
+exports.excluirCampanha = async (req,res) => { try { await CampanhaClube.findByIdAndDelete(req.params.id);res.json({success:true}); } catch(e){res.status(400).json({success:false,message:e.message});} };
+exports.simularBeneficios = async (req,res) => { try { res.json({success:true,beneficios:await Promocoes.calcularBeneficios(req.body||{})}); } catch(e){res.status(400).json({success:false,message:e.message});} };
