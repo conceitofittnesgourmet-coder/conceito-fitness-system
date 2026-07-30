@@ -305,6 +305,146 @@ const atualizarPublicacaoProduto = async (req, res) => {
   }
 };
 
+
+function normalizarFiscal(valor = {}) {
+  const somenteNumeros = (v, limite) => String(v ?? "").replace(/\D/g, "").slice(0, limite);
+  const campos = {};
+
+  if (valor.ncm !== undefined) campos.ncm = somenteNumeros(valor.ncm, 8);
+  if (valor.cest !== undefined) campos.cest = somenteNumeros(valor.cest, 7);
+  if (valor.cfopInterno !== undefined) campos.cfopInterno = somenteNumeros(valor.cfopInterno, 4);
+  if (valor.cfopInterestadual !== undefined) campos.cfopInterestadual = somenteNumeros(valor.cfopInterestadual, 4);
+  if (valor.csosn !== undefined) campos.csosn = somenteNumeros(valor.csosn, 3);
+  if (valor.cstIcms !== undefined) campos.cstIcms = somenteNumeros(valor.cstIcms, 3);
+  if (valor.origemMercadoria !== undefined) campos.origemMercadoria = somenteNumeros(valor.origemMercadoria, 1);
+  if (valor.codigoBeneficioFiscal !== undefined) campos.codigoBeneficioFiscal = String(valor.codigoBeneficioFiscal || "").trim().toUpperCase();
+  if (valor.unidadeComercial !== undefined) campos.unidadeComercial = String(valor.unidadeComercial || "UN").trim().toUpperCase();
+  if (valor.unidadeTributavel !== undefined) campos.unidadeTributavel = String(valor.unidadeTributavel || "UN").trim().toUpperCase();
+  if (valor.cstPis !== undefined) campos.cstPis = somenteNumeros(valor.cstPis, 2);
+  if (valor.cstCofins !== undefined) campos.cstCofins = somenteNumeros(valor.cstCofins, 2);
+  if (valor.emitirNfce !== undefined) campos.emitirNfce = Boolean(valor.emitirNfce);
+
+  return campos;
+}
+
+function analisarSituacaoFiscal(produto) {
+  const fiscal = produto?.dadosFiscais || {};
+  const pendencias = [];
+  if (String(fiscal.ncm || "").replace(/\D/g, "").length !== 8) pendencias.push("NCM");
+  if (String(fiscal.cfopInterno || "").replace(/\D/g, "").length !== 4) pendencias.push("CFOP");
+  if (!String(fiscal.origemMercadoria ?? "").trim()) pendencias.push("Origem");
+  if (!String(fiscal.csosn || fiscal.cstIcms || "").trim()) pendencias.push("CSOSN/CST");
+  return {
+    status: pendencias.length === 0 ? "completo" : pendencias.length <= 2 ? "atencao" : "incompleto",
+    pendencias,
+  };
+}
+
+const listarCadastroFiscal = async (req, res) => {
+  try {
+    const { search = "", status = "todos", ativo = "todos" } = req.query;
+    const filtro = {};
+    if (search) filtro.nome = { $regex: search, $options: "i" };
+    if (ativo !== "todos") filtro.ativo = ativo === "true";
+
+    const produtos = await Produto.find(filtro)
+      .select("nome categoria categorias sku codigoBarras ativo dadosFiscais historicoFiscal updatedAt")
+      .sort({ nome: 1 });
+
+    let resultado = produtos.map((produto) => {
+      const analise = analisarSituacaoFiscal(produto);
+      return {
+        _id: produto._id,
+        nome: produto.nome,
+        categoria: produto.categoria,
+        categorias: produto.categorias,
+        sku: produto.sku,
+        codigoBarras: produto.codigoBarras,
+        ativo: produto.ativo,
+        dadosFiscais: produto.dadosFiscais || {},
+        statusFiscal: analise.status,
+        pendenciasFiscais: analise.pendencias,
+        ultimaAlteracaoFiscal: produto.historicoFiscal?.at(-1) || null,
+        updatedAt: produto.updatedAt,
+      };
+    });
+
+    if (status !== "todos") resultado = resultado.filter((item) => item.statusFiscal === status);
+
+    const resumo = resultado.reduce((acc, item) => {
+      acc.total += 1;
+      acc[item.statusFiscal] += 1;
+      for (const pendencia of item.pendenciasFiscais) {
+        if (pendencia === "NCM") acc.semNcm += 1;
+        if (pendencia === "CFOP") acc.semCfop += 1;
+        if (pendencia === "CSOSN/CST") acc.semTributacao += 1;
+      }
+      return acc;
+    }, { total: 0, completo: 0, atencao: 0, incompleto: 0, semNcm: 0, semCfop: 0, semTributacao: 0 });
+
+    return res.json({ success: true, resumo, produtos: resultado });
+  } catch (error) {
+    return responderErro(res, error, "ERRO LISTAR CADASTRO FISCAL:");
+  }
+};
+
+const atualizarFiscalEmLote = async (req, res) => {
+  try {
+    const ids = Array.isArray(req.body?.ids) ? req.body.ids.filter(Boolean) : [];
+    const campos = normalizarFiscal(req.body?.dadosFiscais || {});
+
+    if (!ids.length) return res.status(400).json({ success: false, message: "Selecione pelo menos um produto" });
+    if (!Object.keys(campos).length) return res.status(400).json({ success: false, message: "Informe pelo menos um campo fiscal" });
+
+    const set = {};
+    for (const [campo, valor] of Object.entries(campos)) set[`dadosFiscais.${campo}`] = valor;
+
+    const alteradoPor = req.admin?.nome || req.admin?.email || req.admin?.id || "Administrador";
+    const historico = { alteradoEm: new Date(), alteradoPor: String(alteradoPor), origem: "cadastro_fiscal_lote", campos };
+
+    const resultado = await Produto.updateMany(
+      { _id: { $in: ids } },
+      { $set: set, $push: { historicoFiscal: { $each: [historico], $slice: -50 } } },
+      { runValidators: true }
+    );
+
+    if (global.io) global.io.emit("produtos-fiscais-atualizados", { ids, campos });
+
+    return res.json({
+      success: true,
+      message: `${resultado.modifiedCount || 0} produto(s) atualizado(s) com sucesso`,
+      selecionados: ids.length,
+      modificados: resultado.modifiedCount || 0,
+    });
+  } catch (error) {
+    return responderErro(res, error, "ERRO ATUALIZAR FISCAL EM LOTE:");
+  }
+};
+
+const atualizarFiscalIndividual = async (req, res) => {
+  try {
+    const campos = normalizarFiscal(req.body?.dadosFiscais || req.body || {});
+    if (!Object.keys(campos).length) return res.status(400).json({ success: false, message: "Informe pelo menos um campo fiscal" });
+
+    const produto = await Produto.findById(req.params.id);
+    if (!produto) return res.status(404).json({ success: false, message: "Produto não encontrado" });
+
+    produto.dadosFiscais = { ...(produto.dadosFiscais?.toObject?.() || produto.dadosFiscais || {}), ...campos };
+    produto.historicoFiscal.push({
+      alteradoEm: new Date(),
+      alteradoPor: String(req.admin?.nome || req.admin?.email || req.admin?.id || "Administrador"),
+      origem: "cadastro_fiscal_individual",
+      campos,
+    });
+    if (produto.historicoFiscal.length > 50) produto.historicoFiscal = produto.historicoFiscal.slice(-50);
+    await produto.save();
+
+    return res.json({ success: true, message: "Dados fiscais atualizados", produto, analise: analisarSituacaoFiscal(produto) });
+  } catch (error) {
+    return responderErro(res, error, "ERRO ATUALIZAR FISCAL INDIVIDUAL:");
+  }
+};
+
 const deletarProduto = async (req, res) => {
   try {
     const produto = await Produto.findById(req.params.id);
@@ -327,5 +467,8 @@ module.exports = {
   buscarProduto,
   atualizarProduto,
   atualizarPublicacaoProduto,
+  listarCadastroFiscal,
+  atualizarFiscalEmLote,
+  atualizarFiscalIndividual,
   deletarProduto,
 };

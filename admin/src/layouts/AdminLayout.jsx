@@ -105,6 +105,11 @@ function AdminLayout({
   path: "/fiscal",
   icon: <FaFileInvoice />,
 },
+    {
+  label: "Cadastro Fiscal",
+  path: "/fiscal/produtos",
+  icon: <FaClipboardList />,
+},
     ];
 
   return (

@@ -165,6 +165,15 @@ dadosFiscais: {
   },
 },
 
+    historicoFiscal: [
+      {
+        alteradoEm: { type: Date, default: Date.now },
+        alteradoPor: { type: String, default: "Sistema" },
+        origem: { type: String, default: "cadastro_individual" },
+        campos: { type: mongoose.Schema.Types.Mixed, default: {} },
+      },
+    ],
+
     descricao: {
       type: String,
       default: "",

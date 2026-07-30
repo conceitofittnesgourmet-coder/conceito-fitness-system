@@ -14,6 +14,9 @@ const {
   criarProduto,
   atualizarProduto,
   atualizarPublicacaoProduto,
+  listarCadastroFiscal,
+  atualizarFiscalEmLote,
+  atualizarFiscalIndividual,
   deletarProduto,
 } = require("../controllers/produtocontroller");
 
@@ -80,6 +83,11 @@ router.patch(
   authMiddleware,
   atualizarPublicacaoProduto
 );
+
+// CADASTRO FISCAL INTELIGENTE — PROTEGIDO
+router.get("/fiscal/cadastro", authMiddleware, listarCadastroFiscal);
+router.patch("/fiscal/lote", authMiddleware, atualizarFiscalEmLote);
+router.patch("/:id/fiscal", authMiddleware, atualizarFiscalIndividual);
 
 // BUSCAR PRODUTO POR ID — PÚBLICO
 router.get(

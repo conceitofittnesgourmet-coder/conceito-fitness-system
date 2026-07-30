@@ -89,6 +89,8 @@ import Fiscal from "./pages/Fiscal";
 
 import Empresa from "./pages/Empresa";
 
+import CadastroFiscalProdutos from "./pages/CadastroFiscalProdutos";
+
 import CardapioOnlineAdmin from "./pages/cardapioonlineadmin"; 
 
 import Categorias from "./pages/Categorias";
@@ -518,6 +520,15 @@ function App() {
 
 
 
+
+<Route
+  path="/fiscal/produtos"
+  element={
+    <PrivateRoute>
+      <CadastroFiscalProdutos />
+    </PrivateRoute>
+  }
+/>
 
 <Route
   path="/empresa"
