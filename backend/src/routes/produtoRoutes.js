@@ -17,6 +17,8 @@ const {
   listarCadastroFiscal,
   atualizarFiscalEmLote,
   atualizarFiscalIndividual,
+  listarCadastroMestre,
+  atualizarCadastroMestre,
   deletarProduto,
 } = require("../controllers/produtocontroller");
 
@@ -88,6 +90,11 @@ router.patch(
 router.get("/fiscal/cadastro", authMiddleware, listarCadastroFiscal);
 router.patch("/fiscal/lote", authMiddleware, atualizarFiscalEmLote);
 router.patch("/:id/fiscal", authMiddleware, atualizarFiscalIndividual);
+
+
+// CADASTRO MESTRE DE PRODUTOS — PROTEGIDO
+router.get("/mestre/cadastro", authMiddleware, listarCadastroMestre);
+router.patch("/:id/mestre", authMiddleware, atualizarCadastroMestre);
 
 // BUSCAR PRODUTO POR ID — PÚBLICO
 router.get(

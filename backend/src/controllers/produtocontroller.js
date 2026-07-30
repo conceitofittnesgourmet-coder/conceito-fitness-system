@@ -445,6 +445,127 @@ const atualizarFiscalIndividual = async (req, res) => {
   }
 };
 
+
+function normalizarCadastroMestre(valor = {}) {
+  const texto = (v) => String(v ?? "").trim();
+  const numero = (v, padrao = 0) => {
+    if (v === undefined || v === null || v === "") return padrao;
+    const n = Number(String(v).replace(",", "."));
+    return Number.isFinite(n) ? n : padrao;
+  };
+  const booleano = (v, padrao = false) => {
+    if (v === undefined || v === null || v === "") return padrao;
+    if (typeof v === "boolean") return v;
+    return ["true", "1", "sim", "yes"].includes(String(v).toLowerCase());
+  };
+
+  return {
+    marca: texto(valor.marca),
+    fabricante: texto(valor.fabricante),
+    referenciaInterna: texto(valor.referenciaInterna),
+    comercial: {
+      precoPromocional: Math.max(0, numero(valor.comercial?.precoPromocional)),
+      vendaMinima: Math.max(0.001, numero(valor.comercial?.vendaMinima, 1)),
+      permiteDesconto: booleano(valor.comercial?.permiteDesconto, true),
+    },
+    producao: {
+      controlaProducao: booleano(valor.producao?.controlaProducao),
+      rendimentoPadrao: Math.max(0.001, numero(valor.producao?.rendimentoPadrao, 1)),
+      unidadeRendimento: texto(valor.producao?.unidadeRendimento || "UN").toUpperCase(),
+      pesoFinalGramas: Math.max(0, numero(valor.producao?.pesoFinalGramas)),
+      perdaPercentual: Math.min(100, Math.max(0, numero(valor.producao?.perdaPercentual))),
+    },
+    estoque: {
+      controlaEstoque: booleano(valor.estoque?.controlaEstoque, true),
+      estoqueMaximo: Math.max(0, numero(valor.estoque?.estoqueMaximo)),
+      localizacao: texto(valor.estoque?.localizacao),
+    },
+    cardapio: {
+      nomePublico: texto(valor.cardapio?.nomePublico),
+      descricaoCurta: texto(valor.cardapio?.descricaoCurta).slice(0, 240),
+      ordemExibicao: Math.max(0, Math.trunc(numero(valor.cardapio?.ordemExibicao))),
+    },
+    marketplaces: {
+      ifoodCodigo: texto(valor.marketplaces?.ifoodCodigo),
+      aiqfomeCodigo: texto(valor.marketplaces?.aiqfomeCodigo),
+    },
+  };
+}
+
+function analisarCadastroMestre(produto) {
+  const mestre = produto?.cadastroMestre || {};
+  const pendencias = [];
+  if (!String(produto?.sku || "").trim()) pendencias.push("SKU");
+  if (!String(produto?.codigoBarras || "").trim()) pendencias.push("Código de barras");
+  if (!String(mestre?.cardapio?.nomePublico || produto?.nome || "").trim()) pendencias.push("Nome público");
+  if (Number(produto?.preco || 0) <= 0) pendencias.push("Preço de venda");
+  if (Number(produto?.custo || 0) <= 0) pendencias.push("Custo/CMV");
+  if (mestre?.producao?.controlaProducao && Number(mestre?.producao?.rendimentoPadrao || 0) <= 0) pendencias.push("Rendimento");
+  return {
+    status: pendencias.length === 0 ? "completo" : pendencias.length <= 2 ? "atencao" : "incompleto",
+    pendencias,
+    percentual: Math.max(0, Math.round(((6 - Math.min(6, pendencias.length)) / 6) * 100)),
+  };
+}
+
+const listarCadastroMestre = async (req, res) => {
+  try {
+    const { search = "", status = "todos", ativo = "todos" } = req.query;
+    const filtro = {};
+    if (search) filtro.$or = [
+      { nome: { $regex: search, $options: "i" } },
+      { sku: { $regex: search, $options: "i" } },
+      { codigoBarras: { $regex: search, $options: "i" } },
+    ];
+    if (ativo !== "todos") filtro.ativo = ativo === "true";
+
+    const produtos = await Produto.find(filtro)
+      .select("nome categoria sku codigoBarras preco custo estoque estoqueMinimo ativo cadastroMestre dadosFiscais informacoesNutricionais selos imagens updatedAt")
+      .sort({ nome: 1 });
+
+    let itens = produtos.map((produto) => ({
+      ...produto.toObject(),
+      diagnosticoCadastro: analisarCadastroMestre(produto),
+    }));
+    if (status !== "todos") itens = itens.filter((item) => item.diagnosticoCadastro.status === status);
+
+    const resumo = itens.reduce((acc, item) => {
+      acc.total += 1;
+      acc[item.diagnosticoCadastro.status] += 1;
+      acc.percentualMedio += item.diagnosticoCadastro.percentual;
+      return acc;
+    }, { total: 0, completo: 0, atencao: 0, incompleto: 0, percentualMedio: 0 });
+    resumo.percentualMedio = resumo.total ? Math.round(resumo.percentualMedio / resumo.total) : 0;
+
+    return res.json({ success: true, resumo, produtos: itens });
+  } catch (error) {
+    return responderErro(res, error, "ERRO LISTAR CADASTRO MESTRE:");
+  }
+};
+
+const atualizarCadastroMestre = async (req, res) => {
+  try {
+    const produto = await Produto.findById(req.params.id);
+    if (!produto) return res.status(404).json({ success: false, message: "Produto não encontrado" });
+
+    const campos = normalizarCadastroMestre(req.body?.cadastroMestre || req.body || {});
+    const alteradoPor = String(req.admin?.nome || req.admin?.email || req.admin?.id || "Administrador");
+    produto.cadastroMestre = { ...campos, atualizadoEm: new Date(), atualizadoPor: alteradoPor };
+    produto.historicoCadastroMestre.push({ alteradoEm: new Date(), alteradoPor, campos });
+    if (produto.historicoCadastroMestre.length > 50) produto.historicoCadastroMestre = produto.historicoCadastroMestre.slice(-50);
+    await produto.save();
+
+    return res.json({
+      success: true,
+      message: "Cadastro mestre atualizado com sucesso",
+      produto,
+      diagnosticoCadastro: analisarCadastroMestre(produto),
+    });
+  } catch (error) {
+    return responderErro(res, error, "ERRO ATUALIZAR CADASTRO MESTRE:");
+  }
+};
+
 const deletarProduto = async (req, res) => {
   try {
     const produto = await Produto.findById(req.params.id);
@@ -470,5 +591,7 @@ module.exports = {
   listarCadastroFiscal,
   atualizarFiscalEmLote,
   atualizarFiscalIndividual,
+  listarCadastroMestre,
+  atualizarCadastroMestre,
   deletarProduto,
 };

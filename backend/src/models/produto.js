@@ -165,6 +165,48 @@ dadosFiscais: {
   },
 },
 
+    cadastroMestre: {
+      marca: { type: String, default: "", trim: true },
+      fabricante: { type: String, default: "", trim: true },
+      referenciaInterna: { type: String, default: "", trim: true },
+      comercial: {
+        precoPromocional: { type: Number, default: 0 },
+        vendaMinima: { type: Number, default: 1 },
+        permiteDesconto: { type: Boolean, default: true },
+      },
+      producao: {
+        controlaProducao: { type: Boolean, default: false },
+        rendimentoPadrao: { type: Number, default: 1 },
+        unidadeRendimento: { type: String, default: "UN", trim: true },
+        pesoFinalGramas: { type: Number, default: 0 },
+        perdaPercentual: { type: Number, default: 0 },
+      },
+      estoque: {
+        controlaEstoque: { type: Boolean, default: true },
+        estoqueMaximo: { type: Number, default: 0 },
+        localizacao: { type: String, default: "", trim: true },
+      },
+      cardapio: {
+        nomePublico: { type: String, default: "", trim: true },
+        descricaoCurta: { type: String, default: "", trim: true },
+        ordemExibicao: { type: Number, default: 0 },
+      },
+      marketplaces: {
+        ifoodCodigo: { type: String, default: "", trim: true },
+        aiqfomeCodigo: { type: String, default: "", trim: true },
+      },
+      atualizadoEm: { type: Date, default: null },
+      atualizadoPor: { type: String, default: "", trim: true },
+    },
+
+    historicoCadastroMestre: [
+      {
+        alteradoEm: { type: Date, default: Date.now },
+        alteradoPor: { type: String, default: "Sistema" },
+        campos: { type: mongoose.Schema.Types.Mixed, default: {} },
+      },
+    ],
+
     historicoFiscal: [
       {
         alteradoEm: { type: Date, default: Date.now },

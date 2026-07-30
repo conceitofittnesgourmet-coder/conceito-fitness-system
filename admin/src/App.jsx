@@ -90,6 +90,7 @@ import Fiscal from "./pages/Fiscal";
 import Empresa from "./pages/Empresa";
 
 import CadastroFiscalProdutos from "./pages/CadastroFiscalProdutos";
+import CadastroMestreProdutos from "./pages/CadastroMestreProdutos";
 
 import CardapioOnlineAdmin from "./pages/cardapioonlineadmin"; 
 
@@ -448,6 +449,16 @@ function App() {
         }
 
       />
+
+
+<Route
+  path="/produtos/cadastro-mestre"
+  element={
+    <PrivateRoute>
+      <CadastroMestreProdutos />
+    </PrivateRoute>
+  }
+/>
 
 <Route
   path="/categorias"
