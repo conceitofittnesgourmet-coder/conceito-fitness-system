@@ -15,6 +15,7 @@ function OrdensProducao() {
   const [ordens, setOrdens] = useState([]);
   const [produtos, setProdutos] = useState([]);
   const [resumo, setResumo] = useState({ aberta: 0, em_producao: 0, concluida: 0, cancelada: 0, totalAtivas: 0 });
+  const [indicadores, setIndicadores] = useState({ ordensConcluidas: 0, unidadesProduzidas: 0, cmvProduzido: 0, lucroBrutoPotencial: 0, margemBrutaPotencial: 0, recentes: [] });
   const [filtro, setFiltro] = useState("");
   const [busca, setBusca] = useState("");
   const [carregando, setCarregando] = useState(false);
@@ -28,14 +29,16 @@ function OrdensProducao() {
       const params = {};
       if (filtro) params.status = filtro;
       if (busca.trim()) params.busca = busca.trim();
-      const [ordensRes, resumoRes, produtosRes] = await Promise.all([
+      const [ordensRes, resumoRes, produtosRes, indicadoresRes] = await Promise.all([
         api.get("/producao/ordens", { params }),
         api.get("/producao/ordens/resumo"),
         api.get("/produtos"),
+        api.get("/producao/ordens/indicadores", { params: { dias: 30, limite: 8 } }),
       ]);
       setOrdens(ordensRes.data.ordens || []);
       setResumo(resumoRes.data.resumo || {});
       setProdutos(produtosRes.data.produtos || produtosRes.data || []);
+      setIndicadores(indicadoresRes.data.indicadores || {});
     } catch (error) {
       alert(error.response?.data?.message || "Não foi possível carregar as ordens de produção.");
     } finally { setCarregando(false); }
@@ -102,6 +105,13 @@ function OrdensProducao() {
           <button onClick={() => setFiltro("concluida")}><span>Concluídas</span><strong>{resumo.concluida || 0}</strong></button>
         </section>
 
+        <section className="op-gerencial">
+          <div><span>CMV produzido (30 dias)</span><strong>R$ {Number(indicadores.cmvProduzido || 0).toFixed(2)}</strong></div>
+          <div><span>Unidades produzidas</span><strong>{Number(indicadores.unidadesProduzidas || 0).toFixed(2)}</strong></div>
+          <div><span>Lucro bruto potencial</span><strong>R$ {Number(indicadores.lucroBrutoPotencial || 0).toFixed(2)}</strong></div>
+          <div><span>Margem potencial</span><strong>{Number(indicadores.margemBrutaPotencial || 0).toFixed(2)}%</strong></div>
+        </section>
+
         <section className="op-grid">
           <form className="op-card op-form" onSubmit={criarOrdem}>
             <h2><FaPlus /> Nova ordem</h2>
@@ -124,6 +134,13 @@ function OrdensProducao() {
             )}
           </div>
         </section>
+
+        {(indicadores.recentes || []).length > 0 && <section className="op-card op-cmv-historico">
+          <h2>Histórico gerencial de CMV</h2>
+          <div className="op-table-wrap"><table><thead><tr><th>Data</th><th>Ordem</th><th>Produto</th><th>Produzido</th><th>CMV total</th><th>Custo unitário</th><th>Lucro potencial</th></tr></thead><tbody>
+            {(indicadores.recentes || []).map((item) => <tr key={item._id}><td>{dataHora(item.dataProducao)}</td><td>{item.codigoOrdem}</td><td>{item.produto?.nome || "Produto removido"}</td><td>{Number(item.quantidadeProduzida || 0).toFixed(2)}</td><td>R$ {Number(item.custoTotal || 0).toFixed(2)}</td><td>R$ {Number(item.custoUnitario || 0).toFixed(2)}</td><td>R$ {Number(item.lucroBrutoPotencial || 0).toFixed(2)}</td></tr>)}
+          </tbody></table></div>
+        </section>}
 
         {analise && <section className="op-card op-insumos">
           <div className="op-insumos-head"><div><h2><FaBoxes /> Análise de ingredientes</h2><p>{analise.ordem.codigo} — {analise.ordem.produto?.nome}</p></div><button onClick={() => setAnalise(null)}>Fechar</button></div>

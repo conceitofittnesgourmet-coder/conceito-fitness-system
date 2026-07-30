@@ -3,6 +3,7 @@ const OrdemProducao = require("../models/ordemproducao");
 const Produto = require("../models/produto");
 const FichaTecnica = require("../models/fichatecnica");
 const MateriaPrima = require("../models/materiaprima");
+const CmvProducao = require("../models/cmvproducao");
 
 const TRANSICOES = {
   aberta: ["em_producao", "cancelada"],
@@ -392,6 +393,30 @@ async function concluirProducao(id, dados, empresa, usuario) {
       produto.movimentacoes = produto.movimentacoes.slice(-300);
       await produto.save({ session });
 
+      const precoVendaUnitario = arredondar(produto.preco || 0);
+      const valorVendaPotencial = arredondar(precoVendaUnitario * quantidadeProduzida);
+      const lucroBrutoPotencial = arredondar(valorVendaPotencial - custoTotalProducao);
+      const margemBrutaPotencial = valorVendaPotencial > 0
+        ? arredondar((lucroBrutoPotencial / valorVendaPotencial) * 100, 4)
+        : 0;
+
+      await CmvProducao.create([{
+        empresa: ordem.empresa || empresa || produto.empresa || null,
+        ordem: ordem._id,
+        produto: produto._id,
+        codigoOrdem: ordem.codigo,
+        loteProducao,
+        quantidadeProduzida,
+        custoTotal: custoTotalProducao,
+        custoUnitario: custoUnitarioProducao,
+        precoVendaUnitario,
+        valorVendaPotencial,
+        lucroBrutoPotencial,
+        margemBrutaPotencial,
+        responsavel: usuarioNome(usuario),
+        dataProducao: agora,
+      }], { session });
+
       ordem.quantidadeProduzida = quantidadeProduzida;
       ordem.concluidaEm = agora;
       ordem.status = "concluida";
@@ -472,6 +497,70 @@ async function alterarStatus(id, novoStatus, dados, empresa, usuario) {
   return buscarPorId(ordem._id, empresa);
 }
 
+async function indicadoresGerenciais({ empresa, dias = 30, limite = 12 } = {}) {
+  const quantidadeDias = Math.min(Math.max(Number(dias) || 30, 1), 365);
+  const desde = new Date();
+  desde.setDate(desde.getDate() - quantidadeDias);
+
+  const filtro = { dataProducao: { $gte: desde } };
+  if (empresa) filtro.empresa = empresa;
+
+  const [totais, recentes, porProduto] = await Promise.all([
+    CmvProducao.aggregate([
+      { $match: filtro },
+      { $group: {
+        _id: null,
+        ordensConcluidas: { $sum: 1 },
+        unidadesProduzidas: { $sum: "$quantidadeProduzida" },
+        cmvProduzido: { $sum: "$custoTotal" },
+        valorVendaPotencial: { $sum: "$valorVendaPotencial" },
+        lucroBrutoPotencial: { $sum: "$lucroBrutoPotencial" },
+      } },
+    ]),
+    CmvProducao.find(filtro)
+      .populate("produto", "nome sku")
+      .sort({ dataProducao: -1 })
+      .limit(Math.min(Math.max(Number(limite) || 12, 1), 50))
+      .lean(),
+    CmvProducao.aggregate([
+      { $match: filtro },
+      { $group: {
+        _id: "$produto",
+        quantidadeProduzida: { $sum: "$quantidadeProduzida" },
+        custoTotal: { $sum: "$custoTotal" },
+        lucroBrutoPotencial: { $sum: "$lucroBrutoPotencial" },
+      } },
+      { $sort: { custoTotal: -1 } },
+      { $limit: 5 },
+      { $lookup: { from: "produtos", localField: "_id", foreignField: "_id", as: "produto" } },
+      { $unwind: { path: "$produto", preserveNullAndEmptyArrays: true } },
+      { $project: {
+        _id: 0, produtoId: "$_id", nome: { $ifNull: ["$produto.nome", "Produto removido"] },
+        quantidadeProduzida: 1, custoTotal: 1, lucroBrutoPotencial: 1,
+      } },
+    ]),
+  ]);
+
+  const base = totais[0] || {};
+  const cmvProduzido = arredondar(base.cmvProduzido || 0, 2);
+  const valorVendaPotencial = arredondar(base.valorVendaPotencial || 0, 2);
+  const lucroBrutoPotencial = arredondar(base.lucroBrutoPotencial || 0, 2);
+
+  return {
+    periodoDias: quantidadeDias,
+    ordensConcluidas: Number(base.ordensConcluidas || 0),
+    unidadesProduzidas: arredondar(base.unidadesProduzidas || 0, 2),
+    cmvProduzido,
+    valorVendaPotencial,
+    lucroBrutoPotencial,
+    margemBrutaPotencial: valorVendaPotencial > 0
+      ? arredondar((lucroBrutoPotencial / valorVendaPotencial) * 100, 2)
+      : 0,
+    recentes,
+    porProduto,
+  };
+}
+
 module.exports = {
   listar,
   resumo,
@@ -481,4 +570,5 @@ module.exports = {
   alterarStatus,
   analisarInsumos,
   concluirProducao,
+  indicadoresGerenciais,
 };

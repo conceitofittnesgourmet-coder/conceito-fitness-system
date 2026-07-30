@@ -5,6 +5,7 @@ const router = express.Router();
 const producaoController = require("../controllers/producaocontroller");
 
 router.get("/ordens/resumo", producaoController.resumoOrdens);
+router.get("/ordens/indicadores", producaoController.indicadoresOrdens);
 router.get("/ordens", producaoController.listarOrdens);
 router.post("/ordens", producaoController.criarOrdem);
 router.get("/ordens/:id", producaoController.buscarOrdem);

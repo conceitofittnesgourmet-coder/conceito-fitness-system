@@ -207,3 +207,16 @@ exports.analisarInsumosOrdem = async (req, res) => {
     return res.json({ success: true, message: analise.podeProduzir ? "Ingredientes disponíveis para produção." : "Há ingredientes insuficientes.", analise });
   } catch (error) { return responderErro(res, error, "ERRO ANALISAR INSUMOS DA ORDEM:"); }
 };
+
+exports.indicadoresOrdens = async (req, res) => {
+  try {
+    const indicadores = await OrdemProducaoService.indicadoresGerenciais({
+      empresa: req.usuario?.empresa,
+      dias: req.query.dias,
+      limite: req.query.limite,
+    });
+    return res.json({ success: true, indicadores });
+  } catch (error) {
+    return responderErro(res, error, "ERRO INDICADORES GERENCIAIS DA PRODUÇÃO:");
+  }
+};
