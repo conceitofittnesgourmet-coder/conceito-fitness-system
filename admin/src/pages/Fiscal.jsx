@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import AdminLayout from "../layouts/AdminLayout";
 import api from "../services/api";
+import NfeOperacional from "../components/NfeOperacional";
 
 import {
   FaFileInvoice,
@@ -30,10 +31,13 @@ function Fiscal() {
   ambiente: "homologacao",
   serieNfce: 1,
   proximoNumeroNfce: 1,
+  serieNfe: 1,
+  proximoNumeroNfe: 1,
   cscId: "",
   cscToken: "",
   certificadoConfigurado: false,
   credenciadoNfce: false,
+  credenciadoNfe: false,
   observacao: "",
 });
   const [nota, setNota] = useState({
@@ -520,11 +524,11 @@ async function cancelarNfceEmitida(nfce) {
         </section>
 
         <section className="fiscal-card grande">
-  <h2>Configuração NFC-e</h2>
+  <h2>Configuração Fiscal NF-e e NFC-e</h2>
 
   <p>
-    Deixe esta área preenchida. A emissão oficial ficará pendente apenas do
-    credenciamento NFC-e, CSC e liberação da Receita PR.
+    Configure separadamente a numeração da NF-e modelo 55 e da NFC-e modelo 65.
+    Mantenha o ambiente em homologação até a primeira autorização de teste.
   </p>
 
   <div className="fiscal-form-grid">
@@ -564,6 +568,43 @@ async function cancelarNfceEmitida(nfce) {
         })
       }
     />
+
+    <input
+      type="number"
+      placeholder="Série NF-e"
+      value={configFiscal.serieNfe}
+      onChange={(e) =>
+        setConfigFiscal({
+          ...configFiscal,
+          serieNfe: e.target.value,
+        })
+      }
+    />
+
+    <input
+      type="number"
+      placeholder="Próximo número NF-e"
+      value={configFiscal.proximoNumeroNfe}
+      onChange={(e) =>
+        setConfigFiscal({
+          ...configFiscal,
+          proximoNumeroNfe: e.target.value,
+        })
+      }
+    />
+
+    <select
+      value={configFiscal.credenciadoNfe ? "sim" : "nao"}
+      onChange={(e) =>
+        setConfigFiscal({
+          ...configFiscal,
+          credenciadoNfe: e.target.value === "sim",
+        })
+      }
+    >
+      <option value="nao">NF-e não credenciada</option>
+      <option value="sim">NF-e credenciada</option>
+    </select>
 
     <input
       placeholder="ID CSC"
@@ -629,6 +670,8 @@ async function cancelarNfceEmitida(nfce) {
     Salvar Configuração Fiscal
   </button>
 </section>
+
+<NfeOperacional />
 
 <section className="fiscal-card grande">
   <h2>Emissão NFC-e</h2>

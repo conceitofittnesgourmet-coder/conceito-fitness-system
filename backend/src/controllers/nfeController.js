@@ -4,7 +4,9 @@ const {
   assinarNfe,
   transmitirNfe,
   consultarRetornoNfe,
+  processarNfeDoPedido,
 } = require("../services/nfeService");
+const { diagnosticarFiscal } = require("../services/fiscalReadinessService");
 const { gerarDanfeNfeHtml } = require("../services/danfeNfeService");
 
 function obterEmpresaId(req) {
@@ -17,6 +19,45 @@ function obterEmpresaId(req) {
     null
   );
 }
+
+
+exports.diagnostico = async (req, res) => {
+  try {
+    const diagnostico = await diagnosticarFiscal(obterEmpresaId(req));
+    return res.json({ success: true, diagnostico });
+  } catch (error) {
+    console.error("ERRO DIAGNOSTICO FISCAL:", error);
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+exports.processarPorPedido = async (req, res) => {
+  try {
+    const nfe = await processarNfeDoPedido({
+      pedidoId: req.params.pedidoId,
+      empresaId: obterEmpresaId(req),
+      ...req.body,
+    });
+
+    return res.status(nfe.status === "autorizada" ? 200 : 202).json({
+      success: true,
+      message: nfe.status === "autorizada"
+        ? "NF-e autorizada pela SEFAZ."
+        : nfe.mensagemSefaz || "NF-e enviada para processamento.",
+      nfe,
+    });
+  } catch (error) {
+    console.error("ERRO PROCESSAR NFE:", error);
+    return res.status(error.statusCode || (error?.code === 11000 ? 409 : 400)).json({
+      success: false,
+      code: error.codigo || error.code || "ERRO_PROCESSAR_NFE",
+      message: error?.code === 11000
+        ? "Já existe uma NF-e para este pedido ou esta numeração já foi utilizada."
+        : error.message,
+      erros: error.erros || [],
+    });
+  }
+};
 
 exports.emitirPorPedido = async (req, res) => {
   try {

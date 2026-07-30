@@ -455,3 +455,24 @@
   opacity: 0.55;
   cursor: not-allowed;
 }
+/* NF-e operacional - V01 */
+.nfe-cabecalho { display:flex; justify-content:space-between; gap:18px; align-items:flex-start; margin-bottom:18px; }
+.nfe-etiqueta { display:inline-block; color:#86efac; font-size:12px; font-weight:900; letter-spacing:1px; text-transform:uppercase; margin-bottom:8px; }
+.nfe-prontidao { padding:10px 14px; border-radius:999px; font-weight:900; white-space:nowrap; }
+.nfe-prontidao.ok { background:rgba(34,197,94,.18); color:#86efac; border:1px solid rgba(34,197,94,.35); }
+.nfe-prontidao.pendente { background:rgba(245,158,11,.16); color:#fcd34d; border:1px solid rgba(245,158,11,.32); }
+.nfe-diagnostico { display:flex; gap:12px; flex-wrap:wrap; align-items:center; padding:14px; border-radius:16px; background:rgba(30,41,59,.72); margin-bottom:14px; }
+.nfe-diagnostico span { color:rgba(255,255,255,.72); }
+.nfe-pendencias { display:grid; gap:8px; margin-bottom:18px; }
+.nfe-pendencias div { display:flex; flex-direction:column; gap:3px; padding:11px 13px; border-radius:12px; background:rgba(245,158,11,.12); border:1px solid rgba(245,158,11,.22); }
+.nfe-pendencias span { color:#fde68a; }
+.nfe-form-grid { display:grid; grid-template-columns:repeat(3,minmax(180px,1fr)); gap:12px; }
+.nfe-campo { display:flex; flex-direction:column; gap:7px; }
+.nfe-campo-largo { grid-column:span 2; }
+.nfe-campo span { font-weight:800; color:rgba(255,255,255,.72); font-size:13px; }
+.nfe-campo input,.nfe-campo select { min-height:48px; border-radius:14px; border:1px solid rgba(148,163,184,.25); background:rgba(255,255,255,.96); color:#0f172a; font-weight:700; padding:0 14px; }
+.nfe-mensagem,.nfe-erros { margin-top:14px; padding:14px; border-radius:14px; white-space:pre-wrap; }
+.nfe-mensagem { background:rgba(34,197,94,.13); border:1px solid rgba(34,197,94,.25); }
+.nfe-erros { background:rgba(239,68,68,.12); border:1px solid rgba(239,68,68,.25); color:#fecaca; display:grid; gap:7px; }
+.nfe-historico { margin-top:22px; }
+@media (max-width:900px) { .nfe-cabecalho{flex-direction:column}.nfe-form-grid{grid-template-columns:1fr}.nfe-campo-largo{grid-column:auto} }

@@ -43,10 +43,13 @@ exports.salvarConfiguracao = async (req, res) => {
       ambiente: req.body.ambiente || "homologacao",
       serieNfce: Number(req.body.serieNfce || 1),
       proximoNumeroNfce: Number(req.body.proximoNumeroNfce || 1),
+      serieNfe: Number(req.body.serieNfe || 1),
+      proximoNumeroNfe: Number(req.body.proximoNumeroNfe || 1),
       cscId: req.body.cscId || "",
       cscToken: req.body.cscToken || "",
       certificadoConfigurado: Boolean(req.body.certificadoConfigurado),
       credenciadoNfce: Boolean(req.body.credenciadoNfce),
+      credenciadoNfe: Boolean(req.body.credenciadoNfe),
       observacao: req.body.observacao || "",
       empresa: req.usuario?.empresa || null,
     };

@@ -106,4 +106,26 @@ async function consultarRetornoNfe(id) {
   if (nfe.cStat === "100") { nfe.status="autorizada"; nfe.dataAutorizacao=ret.dhRecbto ? new Date(ret.dhRecbto) : new Date(); nfe.xmlAutorizado=ret.xmlAutorizado || nfe.xmlAssinado; } else if (["103","104","105"].includes(nfe.cStat)) nfe.status="processando"; else nfe.status="rejeitada";
   await nfe.save(); return nfe;
 }
-module.exports={ gerarNfeDoPedido, assinarNfe, transmitirNfe, consultarRetornoNfe };
+
+async function processarNfeDoPedido(dados) {
+  let nfe = await Nfe.findOne({ pedido: dados.pedidoId });
+
+  if (!nfe) {
+    nfe = await gerarNfeDoPedido(dados);
+  }
+
+  if (nfe.status === "autorizada") return nfe;
+  if (nfe.status === "cancelada") throw new Error("A NF-e vinculada a este pedido está cancelada.");
+
+  if (!nfe.xmlAssinado) {
+    nfe = await assinarNfe(nfe._id);
+  }
+
+  if (nfe.status !== "autorizada") {
+    nfe = await transmitirNfe(nfe._id);
+  }
+
+  return nfe;
+}
+
+module.exports={ gerarNfeDoPedido, assinarNfe, transmitirNfe, consultarRetornoNfe, processarNfeDoPedido };
