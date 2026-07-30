@@ -9,6 +9,36 @@ const historicoOrdemSchema = new mongoose.Schema({
   observacao: { type: String, default: "", trim: true },
 }, { _id: true });
 
+const loteConsumidoSchema = new mongoose.Schema({
+  codigo: { type: String, default: "", trim: true },
+  validade: { type: Date, default: null },
+  quantidade: { type: Number, default: 0, min: 0 },
+}, { _id: false });
+
+const consumoRealizadoSchema = new mongoose.Schema({
+  materiaPrima: { type: mongoose.Schema.Types.ObjectId, ref: "MateriaPrima", required: true },
+  nome: { type: String, default: "", trim: true },
+  unidade: { type: String, default: "unidade", trim: true },
+  quantidade: { type: Number, default: 0, min: 0 },
+  custoUnitario: { type: Number, default: 0, min: 0 },
+  custoTotal: { type: Number, default: 0, min: 0 },
+  saldoAnterior: { type: Number, default: 0, min: 0 },
+  saldoPosterior: { type: Number, default: 0, min: 0 },
+  lotesConsumidos: { type: [loteConsumidoSchema], default: [] },
+}, { _id: false });
+
+const itemAnaliseSchema = new mongoose.Schema({
+  materiaPrima: { type: mongoose.Schema.Types.ObjectId, ref: "MateriaPrima", required: true },
+  nome: { type: String, default: "" },
+  unidade: { type: String, default: "unidade" },
+  necessario: { type: Number, default: 0 },
+  estoqueAtual: { type: Number, default: 0 },
+  reservadoOutrasOrdens: { type: Number, default: 0 },
+  disponivel: { type: Number, default: 0 },
+  falta: { type: Number, default: 0 },
+  suficiente: { type: Boolean, default: false },
+}, { _id: false });
+
 const ordemProducaoSchema = new mongoose.Schema({
   empresa: { type: mongoose.Schema.Types.ObjectId, ref: "Empresa", default: null, index: true },
   codigo: { type: String, required: true, unique: true, uppercase: true, trim: true, index: true },
@@ -34,20 +64,20 @@ const ordemProducaoSchema = new mongoose.Schema({
   analiseInsumos: {
     analisadaEm: { type: Date, default: null },
     podeProduzir: { type: Boolean, default: false },
-    itens: { type: [new mongoose.Schema({
-      materiaPrima: { type: mongoose.Schema.Types.ObjectId, ref: "MateriaPrima", required: true },
-      nome: { type: String, default: "" },
-      unidade: { type: String, default: "unidade" },
-      necessario: { type: Number, default: 0 },
-      estoqueAtual: { type: Number, default: 0 },
-      reservadoOutrasOrdens: { type: Number, default: 0 },
-      disponivel: { type: Number, default: 0 },
-      falta: { type: Number, default: 0 },
-      suficiente: { type: Boolean, default: false },
-    }, { _id: false })], default: [] },
+    itens: { type: [itemAnaliseSchema], default: [] },
   },
   reservaAtiva: { type: Boolean, default: false, index: true },
   reservadoEm: { type: Date, default: null },
+
+  // Dados imutáveis da conclusão da produção.
+  conclusaoProcessada: { type: Boolean, default: false, index: true },
+  loteProducao: { type: String, default: "", trim: true, index: true },
+  custoTotalProducao: { type: Number, default: 0, min: 0 },
+  custoUnitarioProducao: { type: Number, default: 0, min: 0 },
+  estoqueProdutoAntes: { type: Number, default: 0, min: 0 },
+  estoqueProdutoDepois: { type: Number, default: 0, min: 0 },
+  consumoRealizado: { type: [consumoRealizadoSchema], default: [] },
+
   historico: { type: [historicoOrdemSchema], default: [] },
 }, { timestamps: true });
 

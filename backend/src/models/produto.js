@@ -413,6 +413,12 @@ tipoProduto: {
     },
 
     quantidade: Number,
+    saldoAnterior: { type: Number, default: 0 },
+    saldoPosterior: { type: Number, default: 0 },
+    custoUnitario: { type: Number, default: 0 },
+    documento: { type: String, default: "" },
+    lote: { type: String, default: "" },
+    realizadoPor: { type: String, default: "Sistema" },
 
     motivo: String,
 

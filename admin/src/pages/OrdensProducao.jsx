@@ -79,7 +79,11 @@ function OrdensProducao() {
       payload.motivoCancelamento = motivo;
     }
     try {
-      await api.put(`/producao/ordens/${ordem._id}/status`, payload);
+      const { data } = await api.put(`/producao/ordens/${ordem._id}/status`, payload);
+      if (status === "concluida") {
+        const concluida = data.ordem || {};
+        alert(`Produção concluída com sucesso.\nLote: ${concluida.loteProducao || "-"}\nCusto total: R$ ${Number(concluida.custoTotalProducao || 0).toFixed(2)}\nEstoque final: ${Number(concluida.estoqueProdutoDepois || 0).toFixed(2)}`);
+      }
       await carregar();
     } catch (error) { alert(error.response?.data?.message || "Erro ao atualizar ordem."); }
   }
@@ -114,7 +118,7 @@ function OrdensProducao() {
             <div className="op-toolbar"><h2>Ordens cadastradas</h2><div><FaSearch /><input value={busca} onChange={(e) => setBusca(e.target.value)} onKeyDown={(e) => e.key === "Enter" && carregar()} placeholder="Código, produto ou responsável" /><button onClick={carregar}>Buscar</button></div></div>
             {carregando ? <p>Carregando...</p> : (
               <div className="op-table-wrap"><table><thead><tr><th>Ordem</th><th>Produto</th><th>Quantidade</th><th>Responsável</th><th>Planejada</th><th>Status</th><th>Ações</th></tr></thead><tbody>
-                {ordens.map((ordem) => <tr key={ordem._id}><td><strong>{ordem.codigo}</strong><small>Prioridade {ordem.prioridade}</small></td><td>{ordem.produto?.nome || "Produto removido"}</td><td>{ordem.quantidadePlanejada} {ordem.unidade}</td><td>{ordem.responsavel || "-"}</td><td>{dataHora(ordem.dataPlanejada)}</td><td><span className={`op-status ${ordem.status}`}>{STATUS[ordem.status]}</span></td><td><div className="op-actions"><button title="Conferir ingredientes" onClick={() => analisarInsumos(ordem)} disabled={analisandoId === ordem._id}><FaBoxes /></button>{ordem.status === "aberta" && <button title="Iniciar" onClick={() => alterarStatus(ordem, "em_producao")}><FaPlay /></button>}{ordem.status === "em_producao" && <button title="Concluir" onClick={() => alterarStatus(ordem, "concluida")}><FaCheck /></button>}{["aberta", "em_producao"].includes(ordem.status) && <button title="Cancelar" onClick={() => alterarStatus(ordem, "cancelada")}><FaBan /></button>}</div></td></tr>)}
+                {ordens.map((ordem) => <tr key={ordem._id}><td><strong>{ordem.codigo}</strong><small>Prioridade {ordem.prioridade}</small>{ordem.loteProducao && <small className="op-lote">Lote {ordem.loteProducao}</small>}</td><td>{ordem.produto?.nome || "Produto removido"}</td><td>{ordem.quantidadePlanejada} {ordem.unidade}{ordem.status === "concluida" && <small>Produzido: {ordem.quantidadeProduzida} · Custo un.: R$ {Number(ordem.custoUnitarioProducao || 0).toFixed(2)}</small>}</td><td>{ordem.responsavel || "-"}</td><td>{dataHora(ordem.dataPlanejada)}</td><td><span className={`op-status ${ordem.status}`}>{STATUS[ordem.status]}</span></td><td><div className="op-actions"><button title="Conferir ingredientes" onClick={() => analisarInsumos(ordem)} disabled={analisandoId === ordem._id}><FaBoxes /></button>{ordem.status === "aberta" && <button title="Iniciar" onClick={() => alterarStatus(ordem, "em_producao")}><FaPlay /></button>}{ordem.status === "em_producao" && <button title="Concluir" onClick={() => alterarStatus(ordem, "concluida")}><FaCheck /></button>}{["aberta", "em_producao"].includes(ordem.status) && <button title="Cancelar" onClick={() => alterarStatus(ordem, "cancelada")}><FaBan /></button>}</div></td></tr>)}
                 {!ordens.length && <tr><td colSpan="7">Nenhuma ordem encontrada.</td></tr>}
               </tbody></table></div>
             )}
