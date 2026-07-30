@@ -141,226 +141,198 @@ function EmConstrucao({ titulo }) {
 
 
 // ==========================================
-// DASHBOARD
+// DASHBOARD EXECUTIVO
 // ==========================================
 function Dashboard() {
-const [dados, setDados] = useState({
-  totalPedidos: 0,
-  totalProdutos: 0,
-  totalClientes: 0,
-  faturamento: 0,
-  lucroTotal: 0,
-  custoTotal: 0,
-  margemLucro: 0,
-  topProdutosLucrativos: [],
-});
-
+  const [dados, setDados] = useState(null);
   const [loading, setLoading] = useState(true);
+  const [dias, setDias] = useState(30);
 
-  const vendas = [
-    { dia: "Seg", valor: 1200 },
-    { dia: "Ter", valor: 1800 },
-    { dia: "Qua", valor: 900 },
-    { dia: "Qui", valor: 2400 },
-    { dia: "Sex", valor: 3200 },
-    { dia: "Sab", valor: 4500 },
-    { dia: "Dom", valor: 2800 },
-  ];
+  function moeda(valor) {
+    return Number(valor || 0).toLocaleString("pt-BR", {
+      style: "currency",
+      currency: "BRL",
+    });
+  }
 
-  const pedidosGrafico = [
-    { hora: "10h", total: 4 },
-    { hora: "12h", total: 12 },
-    { hora: "14h", total: 8 },
-    { hora: "16h", total: 3 },
-    { hora: "18h", total: 15 },
-    { hora: "20h", total: 22 },
-  ];
-
-  async function carregarDashboard() {
+  async function carregarDashboard(periodo = dias) {
+    setLoading(true);
     try {
-      const response = await api.get("/dashboard");
-
-      if (response.data?.dashboard) {
-        setDados(response.data.dashboard);
-      }
+      const response = await api.get("/dashboard/executivo", { params: { dias: periodo } });
+      setDados(response.data?.dashboard || null);
     } catch (error) {
-      console.log("Erro dashboard:", error);
+      console.log("Erro dashboard executivo:", error);
+      setDados(null);
     } finally {
       setLoading(false);
     }
   }
 
   useEffect(() => {
-    carregarDashboard();
-  }, []);
+    carregarDashboard(dias);
+  }, [dias]);
+
+  const kpis = dados?.kpis || {};
+  const alertas = dados?.alertas || [];
+  const rankingLucro = dados?.rankings?.porLucro || [];
+  const rankingQuantidade = dados?.rankings?.porQuantidade || [];
 
   return (
     <AdminLayout
-      title="Painel Administrativo"
-      subtitle={loading ? "Carregando o painel..." : "Controle total da operação gourmet"}
+      title="Dashboard Executivo"
+      subtitle={loading ? "Calculando indicadores..." : `Visão consolidada dos últimos ${dias} dias`}
     >
       <div className="dashboard-premium">
         <section className="dashboard-hero">
           <div>
             <span className="hero-label">Conceito Fitness Gourmet</span>
-            <h1>Gestão Premium</h1>
-            <p>Visão inteligente da operação, vendas, produtos e performance em tempo real.</p>
+            <h1>Gestão Executiva</h1>
+            <p>Vendas, CMV, lucro, produção, estoque e alertas operacionais em dados reais.</p>
           </div>
 
-          <div className="hero-status">
-            <span></span>
-            Sistema Online
+          <div className="dashboard-actions">
+            <select value={dias} onChange={(event) => setDias(Number(event.target.value))}>
+              <option value={7}>Últimos 7 dias</option>
+              <option value={15}>Últimos 15 dias</option>
+              <option value={30}>Últimos 30 dias</option>
+              <option value={60}>Últimos 60 dias</option>
+              <option value={90}>Últimos 90 dias</option>
+            </select>
+            <div className="hero-status"><span></span>Sistema Online</div>
           </div>
         </section>
 
-        <section className="kpi-premium-grid">
+        <section className="kpi-premium-grid executive-kpis">
           <div className="kpi-premium-card">
-  <div className="kpi-icon green"><FaShoppingBag /></div>
-  <span>Pedidos</span>
-  <strong>{dados.totalPedidos || 0}</strong>
-  <p>Pedidos registrados</p>
-</div>
+            <div className="kpi-icon gold"><FaMoneyBillWave /></div>
+            <span>Faturamento</span>
+            <strong>{moeda(kpis.faturamento)}</strong>
+            <p className={Number(kpis.variacaoFaturamento) >= 0 ? "trend-positive" : "trend-negative"}>
+              {Number(kpis.variacaoFaturamento || 0).toFixed(1)}% versus período anterior
+            </p>
+          </div>
 
-<div className="kpi-premium-card">
-  <div className="kpi-icon blue"><FaBoxOpen /></div>
-  <span>Produtos Ativos</span>
-  <strong>{dados.totalProdutos || 0}</strong>
-  <p>Cardápio online</p>
-</div>
+          <div className="kpi-premium-card">
+            <div className="kpi-icon green"><FaChartLine /></div>
+            <span>Lucro bruto</span>
+            <strong>{moeda(kpis.lucroBruto)}</strong>
+            <p>Margem de {Number(kpis.margemBruta || 0).toFixed(1)}%</p>
+          </div>
 
-<div className="kpi-premium-card">
-  <div className="kpi-icon gold"><FaMoneyBillWave /></div>
-  <span>Faturamento</span>
-  <strong>R$ {Number(dados.faturamento || 0).toFixed(2)}</strong>
-  <p>Receita total</p>
-</div>
+          <div className="kpi-premium-card">
+            <div className="kpi-icon purple"><FaExclamationTriangle /></div>
+            <span>CMV vendido</span>
+            <strong>{moeda(kpis.cmvVendido)}</strong>
+            <p>Custo associado às vendas</p>
+          </div>
 
-<div className="kpi-premium-card">
-  <div className="kpi-icon purple"><FaUsers /></div>
-  <span>Clientes</span>
-  <strong>{dados.totalClientes || 0}</strong>
-  <p>Clientes cadastrados</p>
-</div>
+          <div className="kpi-premium-card">
+            <div className="kpi-icon blue"><FaShoppingBag /></div>
+            <span>Pedidos</span>
+            <strong>{kpis.pedidos || 0}</strong>
+            <p>Ticket médio de {moeda(kpis.ticketMedio)}</p>
+          </div>
 
-<div className="kpi-premium-card">
-  <div className="kpi-icon green"><FaChartLine /></div>
-  <span>Lucro Bruto</span>
-  <strong>R$ {Number(dados.lucroTotal || 0).toFixed(2)}</strong>
-  <p>Faturamento - CMV</p>
-</div>
+          <div className="kpi-premium-card compact">
+            <span>Produção concluída</span>
+            <strong>{Number(kpis.unidadesProduzidas || 0).toLocaleString("pt-BR")}</strong>
+            <p>{moeda(kpis.custoProduzido)} em custo produzido</p>
+          </div>
 
-<div className="kpi-premium-card">
-  <div className="kpi-icon gold"><FaExclamationTriangle /></div>
-  <span>CMV</span>
-  <strong>R$ {Number(dados.custoTotal || 0).toFixed(2)}</strong>
-  <p>Custo dos produtos vendidos</p>
-</div>
+          <div className="kpi-premium-card compact">
+            <span>Ordens ativas</span>
+            <strong>{kpis.ordensAtivas || 0}</strong>
+            <p>Abertas ou em produção</p>
+          </div>
+
+          <div className="kpi-premium-card compact">
+            <span>Produtos</span>
+            <strong>{kpis.totalProdutos || 0}</strong>
+            <p>Itens cadastrados</p>
+          </div>
+
+          <div className="kpi-premium-card compact">
+            <span>Clientes</span>
+            <strong>{kpis.totalClientes || 0}</strong>
+            <p>Cadastros na base</p>
+          </div>
         </section>
 
-        <section className="dashboard-premium-grid">
-          <div className="dashboard-panel large">
-            <div className="panel-header">
-              <div>
-                <h2>Performance de Vendas</h2>
-                <p>Acompanhe o movimento da semana</p>
-              </div>
-              <FaChartLine />
+        <section className="dashboard-panel dashboard-chart-full">
+          <div className="panel-header">
+            <div>
+              <h2>Evolução financeira e comercial</h2>
+              <p>Dados consolidados por dia no período selecionado</p>
             </div>
-
-            <DashboardCharts vendas={vendas} pedidos={pedidosGrafico} />
+            <FaChartLine />
           </div>
+          <DashboardCharts vendas={dados?.series?.vendas || []} pedidos={dados?.series?.pedidosPorHora || []} />
+        </section>
 
+        <section className="dashboard-premium-grid executive-panels">
           <div className="dashboard-panel">
             <div className="panel-header">
-              <div>
-                <h2>Status Operacional</h2>
-                <p>Saúde do sistema</p>
-              </div>
-              <FaCheckCircle />
+              <div><h2>Produtos por lucro</h2><p>Rentabilidade bruta no período</p></div>
+              <FaMoneyBillWave />
             </div>
-
-            <div className="dashboard-panel">
-  <div className="panel-header">
-    <div>
-      <h2>Lucro Real</h2>
-      <p>CMV e margem da operação</p>
-    </div>
-    <FaMoneyBillWave />
-  </div>
-
-  <div className="status-list-premium">
-    <div>
-      <span>Lucro Bruto</span>
-      <strong>R$ {Number(dados.lucroTotal || 0).toFixed(2)}</strong>
-    </div>
-
-    <div>
-      <span>CMV</span>
-      <strong>R$ {Number(dados.custoTotal || 0).toFixed(2)}</strong>
-    </div>
-
-    <div>
-      <span>Margem</span>
-      <strong>{Number(dados.margemLucro || 0).toFixed(2)}%</strong>
-    </div>
-  </div>
-</div>
-
-<div className="dashboard-panel">
-  <div className="panel-header">
-    <div>
-      <h2>Produtos Mais Lucrativos</h2>
-      <p>Ranking por lucro bruto</p>
-    </div>
-    <FaChartLine />
-  </div>
-
-  <div className="status-list-premium">
-    {(dados.topProdutosLucrativos || []).slice(0, 5).map((item, index) => (
-      <div key={item.nome}>
-        <span>{index + 1}. {item.nome}</span>
-        <strong>R$ {Number(item.lucro || 0).toFixed(2)}</strong>
-      </div>
-    ))}
-
-    {(!dados.topProdutosLucrativos || dados.topProdutosLucrativos.length === 0) && (
-      <div>
-        <span>Nenhum produto lucrativo ainda</span>
-        <strong>R$ 0,00</strong>
-      </div>
-    )}
-  </div>
-</div>
-
-            <div className="status-list-premium">
-              <div><span>Servidor</span><strong>Online</strong></div>
-              <div><span>Banco de Dados</span><strong>Conectado</strong></div>
-              <div><span>Pedidos em tempo real</span><strong>Ativo</strong></div>
-              <div><span>Cozinha</span><strong>Operando</strong></div>
+            <div className="status-list-premium ranking-list">
+              {rankingLucro.slice(0, 7).map((item, index) => (
+                <div key={`${item.produtoId || item.nome}-lucro`}>
+                  <span>{index + 1}. {item.nome}<small>{Number(item.margem || 0).toFixed(1)}% de margem</small></span>
+                  <strong>{moeda(item.lucro)}</strong>
+                </div>
+              ))}
+              {!rankingLucro.length && <div><span>Sem vendas no período</span><strong>—</strong></div>}
             </div>
           </div>
 
           <div className="dashboard-panel">
             <div className="panel-header">
-              <div>
-                <h2>Resumo Inteligente</h2>
-                <p>Indicadores rápidos</p>
-              </div>
-              <FaClock />
+              <div><h2>Produtos mais vendidos</h2><p>Ranking por quantidade</p></div>
+              <FaBoxOpen />
             </div>
+            <div className="status-list-premium ranking-list">
+              {rankingQuantidade.slice(0, 7).map((item, index) => (
+                <div key={`${item.produtoId || item.nome}-quantidade`}>
+                  <span>{index + 1}. {item.nome}<small>{moeda(item.faturamento)} faturados</small></span>
+                  <strong>{Number(item.quantidade || 0).toLocaleString("pt-BR")}</strong>
+                </div>
+              ))}
+              {!rankingQuantidade.length && <div><span>Sem vendas no período</span><strong>—</strong></div>}
+            </div>
+          </div>
 
-            <div className="mini-insights">
-              <div>
-                <FaClock />
-                <span>Tempo médio estimado</span>
-                <strong>18 min</strong>
-              </div>
+          <div className="dashboard-panel">
+            <div className="panel-header">
+              <div><h2>Alertas operacionais</h2><p>Pontos que precisam de atenção</p></div>
+              <FaExclamationTriangle />
+            </div>
+            <div className="executive-alerts">
+              {alertas.map((alerta, index) => (
+                <div className={`executive-alert ${alerta.nivel}`} key={`${alerta.tipo}-${index}`}>
+                  <FaExclamationTriangle />
+                  <span>{alerta.mensagem}</span>
+                </div>
+              ))}
+              {!alertas.length && (
+                <div className="executive-alert ok"><FaCheckCircle /><span>Nenhum alerta operacional no momento.</span></div>
+              )}
+            </div>
+          </div>
 
-              <div>
-                <FaExclamationTriangle />
-                <span>Alertas críticos</span>
-                <strong>0</strong>
-              </div>
+          <div className="dashboard-panel">
+            <div className="panel-header">
+              <div><h2>Estoque crítico</h2><p>Produtos no mínimo ou abaixo dele</p></div>
+              <FaBoxOpen />
+            </div>
+            <div className="status-list-premium ranking-list">
+              {(dados?.estoqueBaixo || []).slice(0, 7).map((item) => (
+                <div key={item.id}>
+                  <span>{item.nome}<small>Mínimo: {item.estoqueMinimo}</small></span>
+                  <strong>{item.estoque}</strong>
+                </div>
+              ))}
+              {!(dados?.estoqueBaixo || []).length && <div><span>Estoques dentro do mínimo</span><strong>OK</strong></div>}
             </div>
           </div>
         </section>
@@ -368,8 +340,6 @@ const [dados, setDados] = useState({
     </AdminLayout>
   );
 }
-
-
 
 
 

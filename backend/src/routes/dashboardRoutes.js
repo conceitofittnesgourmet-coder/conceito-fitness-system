@@ -1,25 +1,9 @@
-const express =
-  require("express");
+const express = require("express");
+const router = express.Router();
+const authMiddleware = require("../middlewares/authmiddleware");
+const { dashboard, dashboardExecutivo } = require("../controllers/dashboardcontroller");
 
-const router =
-  express.Router();
+router.get("/", authMiddleware, dashboard);
+router.get("/executivo", authMiddleware, dashboardExecutivo);
 
-const authMiddleware =
-  require(
-    "../middlewares/authmiddleware"
-  );
-
-const {
-  dashboard
-} = require(
-  "../controllers/dashboardcontroller"
-);
-
-router.get(
-  "/",
-  authMiddleware,
-  dashboard
-);
-
-module.exports =
-  router;
+module.exports = router;
