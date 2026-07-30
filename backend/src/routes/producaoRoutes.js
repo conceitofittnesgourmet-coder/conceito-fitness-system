@@ -4,6 +4,13 @@ const router = express.Router();
 
 const producaoController = require("../controllers/producaocontroller");
 
+router.get("/ordens/resumo", producaoController.resumoOrdens);
+router.get("/ordens", producaoController.listarOrdens);
+router.post("/ordens", producaoController.criarOrdem);
+router.get("/ordens/:id", producaoController.buscarOrdem);
+router.put("/ordens/:id", producaoController.atualizarOrdem);
+router.put("/ordens/:id/status", producaoController.alterarStatusOrdem);
+
 router.get("/", producaoController.listarFila);
 
 router.get("/resumo", producaoController.resumo);

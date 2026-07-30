@@ -69,6 +69,8 @@ import Financeiro from "./pages/Financeiro";
 
 import Producao from "./pages/Producao";
 
+import OrdensProducao from "./pages/OrdensProducao";
+
 import FichaTecnica from "./pages/FichaTecnica";
 
 import Analise from "./pages/Analise";
@@ -567,6 +569,16 @@ function App() {
   element={
     <PrivateRoute>
       <Financeiro />
+    </PrivateRoute>
+  }
+/>
+
+
+<Route
+  path="/producao/ordens"
+  element={
+    <PrivateRoute>
+      <OrdensProducao />
     </PrivateRoute>
   }
 />

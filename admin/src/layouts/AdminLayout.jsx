@@ -82,6 +82,12 @@ function AdminLayout({
     
 
     {
+  label: "Ordens de Produção",
+  path: "/producao/ordens",
+  icon: <FaIndustry />
+},
+
+{
   label: "Produção",
   path: "/producao",
   icon: <FaIndustry />

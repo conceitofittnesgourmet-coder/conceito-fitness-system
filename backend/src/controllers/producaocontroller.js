@@ -156,3 +156,47 @@ exports.atualizarPrioridade = async (req, res) => {
     );
   }
 };
+
+const OrdemProducaoService = require("../services/OrdemProducaoService");
+
+exports.listarOrdens = async (req, res) => {
+  try {
+    const ordens = await OrdemProducaoService.listar({ empresa: req.usuario?.empresa, status: req.query.status, busca: req.query.busca, limite: req.query.limite });
+    return res.json({ success: true, total: ordens.length, ordens });
+  } catch (error) { return responderErro(res, error, "ERRO LISTAR ORDENS DE PRODUÇÃO:"); }
+};
+
+exports.resumoOrdens = async (req, res) => {
+  try {
+    const resumo = await OrdemProducaoService.resumo({ empresa: req.usuario?.empresa });
+    return res.json({ success: true, resumo });
+  } catch (error) { return responderErro(res, error, "ERRO RESUMO ORDENS DE PRODUÇÃO:"); }
+};
+
+exports.buscarOrdem = async (req, res) => {
+  try {
+    const ordem = await OrdemProducaoService.buscarPorId(req.params.id, req.usuario?.empresa);
+    return res.json({ success: true, ordem });
+  } catch (error) { return responderErro(res, error, "ERRO BUSCAR ORDEM DE PRODUÇÃO:"); }
+};
+
+exports.criarOrdem = async (req, res) => {
+  try {
+    const ordem = await OrdemProducaoService.criar({ dados: req.body || {}, empresa: req.usuario?.empresa, usuario: req.usuario });
+    return res.status(201).json({ success: true, message: "Ordem de produção criada com sucesso.", ordem });
+  } catch (error) { return responderErro(res, error, "ERRO CRIAR ORDEM DE PRODUÇÃO:"); }
+};
+
+exports.atualizarOrdem = async (req, res) => {
+  try {
+    const ordem = await OrdemProducaoService.atualizar(req.params.id, req.body || {}, req.usuario?.empresa, req.usuario);
+    return res.json({ success: true, message: "Ordem de produção atualizada com sucesso.", ordem });
+  } catch (error) { return responderErro(res, error, "ERRO ATUALIZAR ORDEM DE PRODUÇÃO:"); }
+};
+
+exports.alterarStatusOrdem = async (req, res) => {
+  try {
+    const ordem = await OrdemProducaoService.alterarStatus(req.params.id, req.body?.status, req.body || {}, req.usuario?.empresa, req.usuario);
+    return res.json({ success: true, message: "Status da ordem atualizado com sucesso.", ordem });
+  } catch (error) { return responderErro(res, error, "ERRO ALTERAR STATUS DA ORDEM DE PRODUÇÃO:"); }
+};
