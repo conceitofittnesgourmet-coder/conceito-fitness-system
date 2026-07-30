@@ -22,6 +22,8 @@ FaGlobe,
 FaTags,
 FaList,
 FaBuilding,
+FaFileSignature,
+FaGift,
 
 } from "react-icons/fa";
 
@@ -77,6 +79,8 @@ function AdminLayout({
     { label: "Cozinha", path: "/cozinha", icon: <FaUtensils /> },
     { label: "Entregador", path: "/entregador", icon: <FaTruck /> },
     { label: "Clientes", path: "/clientes", icon: <FaUsers /> },
+    { label: "Orçamentos", path: "/orcamentos", icon: <FaFileSignature /> },
+    { label: "Clube Conceito", path: "/clube-conceito", icon: <FaGift /> },
     { label: "Empresa", path: "/empresa", icon: <FaBuilding /> },
     { label: "Financeiro", path: "/financeiro", icon: <FaWallet /> },
     

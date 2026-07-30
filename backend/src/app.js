@@ -22,6 +22,7 @@ const empresaRoutes = require("./routes/empresaRoutes");
 const caixaRoutes = require("./routes/caixaRoutes");
 const clienteRoutes = require("./routes/clienteRoutes");
 const clubeRoutes = require("./routes/clubeRoutes");
+const orcamentoRoutes = require("./routes/orcamentoRoutes");
 const freteRoutes = require("./routes/freteRoutes");
 const financeiroRoutes = require("./routes/financeiroRoutes");
 const producaoRoutes = require("./routes/producaoRoutes");
@@ -130,6 +131,7 @@ app.use("/api/opcoes-componentes", opcaoComponenteRoutes);
 app.use("/api/materias-primas", materiaPrimaRoutes);
 app.use("/api/fichas-tecnicas", fichaTecnicaRoutes);
 app.use("/api/nfe", nfeRoutes);
+app.use("/api/orcamentos", orcamentoRoutes);
 app.use(errorHandler);
 
 module.exports = app;

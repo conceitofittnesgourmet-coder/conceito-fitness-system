@@ -65,6 +65,7 @@ from "./pages/MasterDashboard";
 
 import Clientes from "./pages/Clientes";
 import ClubeConceito from "./pages/ClubeConceito";
+import Orcamentos from "./pages/Orcamentos";
 
 import Financeiro from "./pages/Financeiro";
 
@@ -494,6 +495,8 @@ function App() {
 
       {/* CLUBE CONCEITO */}
       <Route path="/clube-conceito" element={<PrivateRoute><ClubeConceito /></PrivateRoute>} />
+      <Route path="/orcamentos" element={<PrivateRoute><Orcamentos /></PrivateRoute>} />
+
 
       {/* CLIENTES */}
 
