@@ -50,3 +50,70 @@ exports.salvarCampanha = async (req,res) => { try {
  } catch(e){res.status(400).json({success:false,message:e.message});} };
 exports.excluirCampanha = async (req,res) => { try { await CampanhaClube.findByIdAndDelete(req.params.id);res.json({success:true}); } catch(e){res.status(400).json({success:false,message:e.message});} };
 exports.simularBeneficios = async (req,res) => { try { res.json({success:true,beneficios:await Promocoes.calcularBeneficios(req.body||{})}); } catch(e){res.status(400).json({success:false,message:e.message});} };
+
+const PlanoAssinaturaClube = require("../models/planoassinaturaclube");
+const AssinaturaClube = require("../models/assinaturaclube");
+
+function vencimentoPorPlano(plano, inicio = new Date()) {
+  const data = new Date(inicio);
+  data.setDate(data.getDate() + Math.max(1, Number(plano.duracaoDias || 30)));
+  return data;
+}
+
+exports.listarPlanos = async (_req, res) => { try {
+  res.json({ success: true, planos: await PlanoAssinaturaClube.find().sort({ destaque: -1, valor: 1 }) });
+} catch (e) { res.status(500).json({ success: false, message: e.message }); } };
+
+exports.salvarPlano = async (req, res) => { try {
+  if (!req.body?.nome || Number(req.body?.valor) < 0) return res.status(400).json({ success: false, message: "Nome e valor do plano são obrigatórios." });
+  const dados = { ...req.body, beneficios: Array.isArray(req.body.beneficios) ? req.body.beneficios : String(req.body.beneficios || "").split("\n").map(v => v.trim()).filter(Boolean) };
+  const plano = req.params.id
+    ? await PlanoAssinaturaClube.findByIdAndUpdate(req.params.id, dados, { new: true, runValidators: true })
+    : await PlanoAssinaturaClube.create(dados);
+  res.status(req.params.id ? 200 : 201).json({ success: true, plano });
+} catch (e) { res.status(400).json({ success: false, message: e.message }); } };
+
+exports.excluirPlano = async (req, res) => { try {
+  const emUso = await AssinaturaClube.exists({ plano: req.params.id, status: { $in: ["ativa", "pendente", "pausada"] } });
+  if (emUso) return res.status(409).json({ success: false, message: "Este plano possui assinaturas vinculadas. Desative-o em vez de excluir." });
+  await PlanoAssinaturaClube.findByIdAndDelete(req.params.id);
+  res.json({ success: true });
+} catch (e) { res.status(400).json({ success: false, message: e.message }); } };
+
+exports.listarAssinaturas = async (_req, res) => { try {
+  await AssinaturaClube.updateMany({ status: "ativa", vencimento: { $lt: new Date() } }, { $set: { status: "vencida" } });
+  const assinaturas = await AssinaturaClube.find().populate("cliente", "nome telefone email numeroAssociado").populate("plano").sort({ createdAt: -1 });
+  res.json({ success: true, assinaturas });
+} catch (e) { res.status(500).json({ success: false, message: e.message }); } };
+
+exports.criarAssinatura = async (req, res) => { try {
+  const cliente = await Cliente.findById(req.body?.clienteId);
+  const plano = await PlanoAssinaturaClube.findById(req.body?.planoId);
+  if (!cliente || !plano) return res.status(404).json({ success: false, message: "Cliente ou plano não encontrado." });
+  await AssinaturaClube.updateMany({ cliente: cliente._id, status: "ativa" }, { $set: { status: "cancelada", canceladaEm: new Date() } });
+  const inicio = req.body?.inicio ? new Date(req.body.inicio) : new Date();
+  const assinatura = await AssinaturaClube.create({
+    cliente: cliente._id, plano: plano._id, inicio,
+    vencimento: req.body?.vencimento ? new Date(req.body.vencimento) : vencimentoPorPlano(plano, inicio),
+    renovacaoAutomatica: Boolean(req.body?.renovacaoAutomatica), formaPagamento: req.body?.formaPagamento || "manual",
+    valorContratado: Number(req.body?.valorContratado ?? plano.valor), observacao: req.body?.observacao || "", status: req.body?.status || "ativa",
+  });
+  res.status(201).json({ success: true, assinatura: await assinatura.populate(["cliente", "plano"]) });
+} catch (e) { res.status(400).json({ success: false, message: e.message }); } };
+
+exports.atualizarAssinatura = async (req, res) => { try {
+  const dados = { ...req.body };
+  if (dados.status === "cancelada") dados.canceladaEm = new Date();
+  const assinatura = await AssinaturaClube.findByIdAndUpdate(req.params.id, dados, { new: true, runValidators: true }).populate("cliente", "nome telefone email numeroAssociado").populate("plano");
+  if (!assinatura) return res.status(404).json({ success: false, message: "Assinatura não encontrada." });
+  res.json({ success: true, assinatura });
+} catch (e) { res.status(400).json({ success: false, message: e.message }); } };
+
+exports.resumoAssinaturas = async (_req, res) => { try {
+  await AssinaturaClube.updateMany({ status: "ativa", vencimento: { $lt: new Date() } }, { $set: { status: "vencida" } });
+  const [ativas, pendentes, vencidas, receita] = await Promise.all([
+    AssinaturaClube.countDocuments({ status: "ativa" }), AssinaturaClube.countDocuments({ status: "pendente" }),
+    AssinaturaClube.countDocuments({ status: "vencida" }), AssinaturaClube.aggregate([{ $match: { status: "ativa" } }, { $group: { _id: null, total: { $sum: "$valorContratado" } } }]),
+  ]);
+  res.json({ success: true, resumo: { ativas, pendentes, vencidas, receitaRecorrente: receita[0]?.total || 0 } });
+} catch (e) { res.status(500).json({ success: false, message: e.message }); } };

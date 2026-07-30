@@ -87,6 +87,7 @@ export default function MinhaContaModal({ aberto, onClose, sessao, onEntrar, onS
             {carteira && <section className="co-club-wallet">
               <div><span>{carteira.programa}</span><strong>{carteira.cliente.numeroAssociado}</strong><small>Nível {carteira.nivel?.nome || "Básico"}</small></div>
               <div className="co-club-balances"><p><b>{Math.round(carteira.pontos)}</b><span>pontos</span></p><p><b>R$ {Number(carteira.cashback||0).toFixed(2)}</b><span>cashback</span></p></div>
+              {carteira.assinatura && <div className="co-club-subscription"><strong>{carteira.assinatura.plano?.nome}</strong><span>Assinatura ativa até {new Date(carteira.assinatura.vencimento).toLocaleDateString("pt-BR")}</span></div>}
               {carteira.proximoNivel && <footer>Faltam R$ {Number(carteira.proximoNivel.falta).toFixed(2)} para o nível {carteira.proximoNivel.nome}.</footer>}
             </section>}
 

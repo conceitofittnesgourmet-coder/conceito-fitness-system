@@ -1,6 +1,7 @@
 const Cliente = require("../models/cliente");
 const ClubeConfiguracao = require("../models/clubeconfiguracao");
 const MovimentoClube = require("../models/movimentoclube");
+const AssinaturaClube = require("../models/assinaturaclube");
 
 function telefoneNumeros(valor) { return String(valor || "").replace(/\D/g, ""); }
 function numeroAssociado(cliente) { return `CC-${String(cliente._id).slice(-8).toUpperCase()}`; }
@@ -26,6 +27,7 @@ async function prepararCarteira(cliente) {
   if (nivel?.nome && cliente.clube !== nivel.nome) { cliente.clube = nivel.nome; mudou = true; }
   if (mudou) await cliente.save();
   const proximo = [...config.niveis].sort((a,b)=>a.gastoMinimo-b.gastoMinimo).find(n => n.gastoMinimo > Number(cliente.gasto || 0));
+  const assinatura = await AssinaturaClube.findOne({ cliente: cliente._id, status: "ativa", vencimento: { $gte: new Date() } }).populate("plano").lean();
   return {
     cliente: { id: cliente._id, nome: cliente.nome, telefone: cliente.telefone, numeroAssociado: cliente.numeroAssociado, membroClube: cliente.membroClube, dataAdesao: cliente.dataAdesaoClube },
     programa: config.nomePrograma,
@@ -34,6 +36,7 @@ async function prepararCarteira(cliente) {
     cashback: Number(cliente.cashback || 0),
     gastoAcumulado: Number(cliente.gasto || 0),
     proximoNivel: proximo ? { nome: proximo.nome, gastoMinimo: proximo.gastoMinimo, falta: Math.max(0, proximo.gastoMinimo - Number(cliente.gasto || 0)) } : null,
+    assinatura: assinatura ? { id: assinatura._id, status: assinatura.status, inicio: assinatura.inicio, vencimento: assinatura.vencimento, renovacaoAutomatica: assinatura.renovacaoAutomatica, plano: assinatura.plano } : null,
   };
 }
 
