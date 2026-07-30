@@ -20,6 +20,7 @@ export default function MinhaContaModal({ aberto, onClose, sessao, onEntrar, onS
   const [pedidos, setPedidos] = useState([]);
   const [carregando, setCarregando] = useState(false);
   const [mensagem, setMensagem] = useState("");
+  const [carteira, setCarteira] = useState(null);
 
   useEffect(() => {
     setForm({ nome: sessao?.nome || "", telefone: sessao?.telefone || "", email: sessao?.email || "" });
@@ -32,6 +33,7 @@ export default function MinhaContaModal({ aberto, onClose, sessao, onEntrar, onS
       .then((response) => setPedidos(response.data?.pedidos || []))
       .catch(() => setPedidos([]))
       .finally(() => setCarregando(false));
+    api.get("/clube/carteira", { params: { telefone: sessao.telefone } }).then((r) => setCarteira(r.data?.carteira || null)).catch(() => setCarteira(null));
   }, [aberto, sessao?.telefone]);
 
   if (!aberto) return null;
@@ -81,6 +83,12 @@ export default function MinhaContaModal({ aberto, onClose, sessao, onEntrar, onS
               <div><PackageCheck /><strong>{pedidos.length}</strong><span>Pedidos</span></div>
               <div><Heart /><strong>{favoritos.length}</strong><span>Favoritos</span></div>
             </div>
+
+            {carteira && <section className="co-club-wallet">
+              <div><span>{carteira.programa}</span><strong>{carteira.cliente.numeroAssociado}</strong><small>Nível {carteira.nivel?.nome || "Básico"}</small></div>
+              <div className="co-club-balances"><p><b>{Math.round(carteira.pontos)}</b><span>pontos</span></p><p><b>R$ {Number(carteira.cashback||0).toFixed(2)}</b><span>cashback</span></p></div>
+              {carteira.proximoNivel && <footer>Faltam R$ {Number(carteira.proximoNivel.falta).toFixed(2)} para o nível {carteira.proximoNivel.nome}.</footer>}
+            </section>}
 
             <section className="co-order-history">
               <div className="co-account-section-title"><Clock3 /><div><h3>Meus pedidos</h3><p>Acompanhe as compras feitas com seu WhatsApp.</p></div></div>

@@ -64,6 +64,7 @@ import MasterDashboard
 from "./pages/MasterDashboard";
 
 import Clientes from "./pages/Clientes";
+import ClubeConceito from "./pages/ClubeConceito";
 
 import Financeiro from "./pages/Financeiro";
 
@@ -490,6 +491,9 @@ function App() {
       
 
 
+
+      {/* CLUBE CONCEITO */}
+      <Route path="/clube-conceito" element={<PrivateRoute><ClubeConceito /></PrivateRoute>} />
 
       {/* CLIENTES */}
 

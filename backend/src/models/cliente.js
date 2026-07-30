@@ -232,6 +232,10 @@ const clienteSchema = new mongoose.Schema(
       default: "Básico",
     },
 
+    membroClube: { type: Boolean, default: true, index: true },
+    numeroAssociado: { type: String, default: "", trim: true, index: true },
+    dataAdesaoClube: { type: Date, default: null },
+
     observacaoFiscal: {
       type: String,
       default: "",
