@@ -47,6 +47,10 @@ function FichaTecnica() {
   ]);
   const [variacoes, setVariacoes] = useState([]);
   const [observacao, setObservacao] = useState("");
+  const [modoPreparo, setModoPreparo] = useState("");
+  const [rendimento, setRendimento] = useState(1);
+  const [unidadeRendimento, setUnidadeRendimento] = useState("UN");
+  const [perdaPercentual, setPerdaPercentual] = useState(0);
 
   const [loading, setLoading] = useState(true);
   const [salvando, setSalvando] = useState(false);
@@ -138,6 +142,10 @@ function FichaTecnica() {
         setIngredientesBase([criarIngredienteVazio()]);
         setVariacoes([]);
         setObservacao("");
+        setModoPreparo("");
+        setRendimento(1);
+        setUnidadeRendimento("UN");
+        setPerdaPercentual(0);
         return;
       }
 
@@ -194,6 +202,10 @@ function FichaTecnica() {
       );
 
       setObservacao(ficha.observacao || "");
+      setModoPreparo(ficha.modoPreparo || "");
+      setRendimento(ficha.rendimento || 1);
+      setUnidadeRendimento(ficha.unidadeRendimento || "UN");
+      setPerdaPercentual(ficha.perdaPercentual || 0);
     } catch (error) {
       console.log("Erro ao buscar ficha do produto:", error);
 
@@ -340,6 +352,10 @@ function FichaTecnica() {
         })),
 
         observacao,
+        modoPreparo,
+        rendimento: Number(rendimento),
+        unidadeRendimento,
+        perdaPercentual: Number(perdaPercentual || 0),
         ativa: true,
       };
 
@@ -369,6 +385,10 @@ function FichaTecnica() {
     setIngredientesBase([criarIngredienteVazio()]);
     setVariacoes([]);
     setObservacao("");
+    setModoPreparo("");
+    setRendimento(1);
+    setUnidadeRendimento("UN");
+    setPerdaPercentual(0);
   }
 
   return (
@@ -549,17 +569,14 @@ function FichaTecnica() {
               </section>
 
               <section className="ficha-card">
-                <div className="ficha-field">
-                  <label>Observações da ficha</label>
-
-                  <textarea
-                    value={observacao}
-                    onChange={(e) =>
-                      setObservacao(e.target.value)
-                    }
-                    placeholder="Ex.: rendimento, modo de preparo, orientações de armazenamento..."
-                  />
+                <div className="ficha-subtitulo"><div><h2>Rendimento e perdas</h2><p>Esses dados definem o CMV real por unidade produzida.</p></div></div>
+                <div className="ficha-grade-parametros">
+                  <div className="ficha-field"><label>Rendimento da receita *</label><input type="number" min="0.0001" step="0.001" value={rendimento} onChange={(e) => setRendimento(e.target.value)} /></div>
+                  <div className="ficha-field"><label>Unidade do rendimento</label><select value={unidadeRendimento} onChange={(e) => setUnidadeRendimento(e.target.value)}><option value="UN">Unidades</option><option value="KG">Quilogramas</option><option value="G">Gramas</option><option value="L">Litros</option><option value="ML">Mililitros</option><option value="PORCAO">Porções</option></select></div>
+                  <div className="ficha-field"><label>Perda estimada (%)</label><input type="number" min="0" max="99.99" step="0.01" value={perdaPercentual} onChange={(e) => setPerdaPercentual(e.target.value)} /></div>
                 </div>
+                <div className="ficha-field"><label>Modo de preparo</label><textarea value={modoPreparo} onChange={(e) => setModoPreparo(e.target.value)} placeholder="Descreva o processo de produção, temperatura, tempo e sequência..." /></div>
+                <div className="ficha-field"><label>Observações da ficha</label><textarea value={observacao} onChange={(e) => setObservacao(e.target.value)} placeholder="Armazenamento, validade, padrão de montagem e demais orientações..." /></div>
               </section>
 
               <div className="ficha-actions-final">
@@ -589,6 +606,8 @@ function FichaTecnica() {
               ingredientesBase={ingredientesBase}
               variacoes={variacoes}
               materias={materias}
+              rendimento={rendimento}
+              perdaPercentual={perdaPercentual}
             />
           </div>
         )}
@@ -612,7 +631,7 @@ function FichaTecnica() {
                   <th>Produto</th>
                   <th>Custo-base</th>
                   <th>Variações</th>
-                  <th>Custo total cadastrado</th>
+                  <th>CMV unitário</th>
                   <th>Ação</th>
                 </tr>
               </thead>
@@ -640,7 +659,7 @@ function FichaTecnica() {
                     <td>
                       R${" "}
                       {Number(
-                        ficha.custoTotal || 0
+                        ficha.custoUnitario || ficha.custoTotal || 0
                       ).toFixed(4)}
                     </td>
 
