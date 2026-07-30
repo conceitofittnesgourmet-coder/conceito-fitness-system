@@ -35,6 +35,7 @@ function ProdutoModal({
   onAdicionar,
 }) {
   const [selecoes, setSelecoes] = useState({});
+  const [observacaoItem, setObservacaoItem] = useState("");
 
   if (!produto) return null;
 
@@ -95,6 +96,7 @@ function ProdutoModal({
     selecoes,
     adicionais,
     precoUnitario: Number(produto.preco || 0) + adicionais,
+    observacaoItem: observacaoItem.trim(),
   });
 }
 
@@ -176,6 +178,18 @@ function ProdutoModal({
               />
             );
           })}
+
+          <div className="co-modal-block">
+            <h3>Observação do item</h3>
+            <textarea
+              className="co-modal-note"
+              placeholder="Ex.: sem canela, pouco gelo, aquecer antes de entregar..."
+              value={observacaoItem}
+              maxLength={180}
+              onChange={(e) => setObservacaoItem(e.target.value)}
+            />
+            <small className="co-note-counter">{observacaoItem.length}/180</small>
+          </div>
 
           {listaSelos.length > 0 && (
             <div className="co-modal-block">

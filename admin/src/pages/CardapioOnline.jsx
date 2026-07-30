@@ -22,6 +22,10 @@ import {
   Sparkles,
   UserRound,
   SlidersHorizontal,
+  Trash2,
+  UtensilsCrossed,
+  Store,
+  MapPin,
 } from "lucide-react";
 
 import api from "../services/api";
@@ -34,7 +38,13 @@ function CardapioOnline() {
 
   const [produtos, setProdutos] = useState([]);
   const [categorias, setCategorias] = useState(["Todos"]);
-  const [carrinho, setCarrinho] = useState([]);
+  const [carrinho, setCarrinho] = useState(() => {
+    try {
+      return JSON.parse(localStorage.getItem("conceito-cardapio-carrinho") || "[]");
+    } catch {
+      return [];
+    }
+  });
   const [busca, setBusca] = useState("");
   const [categoria, setCategoria] = useState("Todos");
   const [filtroDietario, setFiltroDietario] = useState("Todos");
@@ -46,14 +56,21 @@ function CardapioOnline() {
   const [distanciaKm, setDistanciaKm] = useState(null);
   const [produtoSelecionado, setProdutoSelecionado] = useState(null);
   const [quantidadeModal, setQuantidadeModal] = useState(1);
-  const [cliente, setCliente] = useState({
-  nome: "",
-  telefone: "",
-  entrega: "",
-  endereco: "",
-  referencia: "",
-  observacao: "",
-});
+  const [cliente, setCliente] = useState(() => {
+    try {
+      return {
+        nome: "",
+        telefone: "",
+        entrega: "",
+        endereco: "",
+        referencia: "",
+        observacao: "",
+        ...(JSON.parse(localStorage.getItem("conceito-cardapio-cliente") || "{}")),
+      };
+    } catch {
+      return { nome: "", telefone: "", entrega: "", endereco: "", referencia: "", observacao: "" };
+    }
+  });
 const [gruposComponentes, setGruposComponentes] = useState([]);
 const [opcoesComponentes, setOpcoesComponentes] = useState([]);
 
@@ -108,6 +125,14 @@ function filtrarCategoria(cat) {
     setCarregando(false);
   }
 }
+
+  useEffect(() => {
+    localStorage.setItem("conceito-cardapio-carrinho", JSON.stringify(carrinho));
+  }, [carrinho]);
+
+  useEffect(() => {
+    localStorage.setItem("conceito-cardapio-cliente", JSON.stringify(cliente));
+  }, [cliente]);
 
   useEffect(() => {
     carregarProdutos();
@@ -225,7 +250,8 @@ function filtrarCategoria(cat) {
     .map((opcao) => opcao.nome)
     .join(", ");
 
-  const chaveCarrinho = `${id}-${resumoConfig}`;
+  const observacaoItem = String(configuracao.observacaoItem || "").trim();
+  const chaveCarrinho = `${id}-${resumoConfig}-${observacaoItem}`;
 
   const existe = carrinho.find((item) => item.chaveCarrinho === chaveCarrinho);
 
@@ -249,22 +275,43 @@ function filtrarCategoria(cat) {
         preco: precoUnitario,
         imagem: getImagemProduto(produto),
         quantidade,
+        observacaoItem,
       },
     ]);
   }
 }
 
-  function alterarQuantidade(id, quantidade) {
+  function alterarQuantidade(chaveCarrinho, quantidade) {
     if (quantidade <= 0) {
-      setCarrinho(carrinho.filter((item) => item.id !== id));
+      setCarrinho((atual) => atual.filter((item) => item.chaveCarrinho !== chaveCarrinho));
       return;
     }
 
-    setCarrinho(
-      carrinho.map((item) =>
-        item.id === id ? { ...item, quantidade } : item
+    setCarrinho((atual) =>
+      atual.map((item) =>
+        item.chaveCarrinho === chaveCarrinho ? { ...item, quantidade } : item
       )
     );
+  }
+
+  function alterarObservacaoItem(chaveCarrinho, observacaoItem) {
+    setCarrinho((atual) =>
+      atual.map((item) =>
+        item.chaveCarrinho === chaveCarrinho ? { ...item, observacaoItem } : item
+      )
+    );
+  }
+
+  function removerItem(chaveCarrinho) {
+    setCarrinho((atual) => atual.filter((item) => item.chaveCarrinho !== chaveCarrinho));
+  }
+
+  function limparCarrinho() {
+    if (carrinho.length === 0 || window.confirm("Deseja limpar todo o carrinho?")) {
+      setCarrinho([]);
+      setFrete(0);
+      setDistanciaKm(null);
+    }
   }
   
   const filtrosDietarios = [
@@ -405,7 +452,7 @@ if (
         item.configuracao
           ? `\n   Opções: ${item.configuracao}`
           : ""
-      }`
+      }${item.observacaoItem ? `\n   Observação: ${item.observacaoItem}` : ""}`
   )
   .join("\n");
 
@@ -813,9 +860,12 @@ produto.motivoIndisponibilidade && (
         </section>
 
         <aside className="co-cart" id="pedido">
-          <h2>
-            <ShoppingBag size={22} /> Seu Pedido
-          </h2>
+          <div className="co-cart-heading">
+            <h2><ShoppingBag size={22} /> Seu Pedido</h2>
+            {carrinho.length > 0 && (
+              <button type="button" onClick={limparCarrinho}>Limpar</button>
+            )}
+          </div>
 
           <p className="co-cart-sub">Entrega ou Retirada</p>
 
@@ -842,9 +892,9 @@ Seu carrinho está esperando por algo delicioso ☕
 
                     <div className="co-qty">
                       <button
-                        onClick={() =>
-                          alterarQuantidade(item.id, item.quantidade - 1)
-                        }
+                        type="button"
+                        aria-label={`Diminuir ${item.nome}`}
+                        onClick={() => alterarQuantidade(item.chaveCarrinho, item.quantidade - 1)}
                       >
                         -
                       </button>
@@ -852,14 +902,28 @@ Seu carrinho está esperando por algo delicioso ☕
                       <span>{item.quantidade}</span>
 
                       <button
-                        onClick={() =>
-                          alterarQuantidade(item.id, item.quantidade + 1)
-                        }
+                        type="button"
+                        aria-label={`Aumentar ${item.nome}`}
+                        onClick={() => alterarQuantidade(item.chaveCarrinho, item.quantidade + 1)}
                       >
                         +
                       </button>
                     </div>
+                    <textarea
+                      className="co-item-note"
+                      placeholder="Observação deste item..."
+                      value={item.observacaoItem || ""}
+                      onChange={(e) => alterarObservacaoItem(item.chaveCarrinho, e.target.value)}
+                    />
                   </div>
+                  <button
+                    type="button"
+                    className="co-remove-item"
+                    aria-label={`Remover ${item.nome}`}
+                    onClick={() => removerItem(item.chaveCarrinho)}
+                  >
+                    <Trash2 size={17} />
+                  </button>
                 </div>
               ))}
             </div>
@@ -884,36 +948,35 @@ Seu carrinho está esperando por algo delicioso ☕
               }
             />
 
-            <label>Entrega ou Retirada</label>
-
-<select
-  value={cliente.entrega}
-  onChange={(e) => {
-  const tipo = e.target.value;
-
-  if (tipo !== "Delivery") {
-    setFrete(0);
-    setDistanciaKm(null);
-  }
-
-  setCliente({
-    ...cliente,
-    entrega: tipo,
-    endereco:
-      tipo === "Delivery"
-        ? cliente.endereco
-        : "",
-    referencia:
-      tipo === "Delivery"
-        ? cliente.referencia
-        : "",
-  });
-}}
->
-  <option value="">Selecione</option>
-  <option value="Retirada no balcão">Retirada no balcão</option>
-  <option value="Delivery">Delivery</option>
-</select>
+            <label>Como você deseja receber?</label>
+            <div className="co-service-options">
+              {[
+                { value: "Consumo no local", label: "Consumir no local", icon: UtensilsCrossed },
+                { value: "Retirada no balcão", label: "Retirar na loja", icon: Store },
+                { value: "Delivery", label: "Delivery", icon: MapPin },
+              ].map(({ value, label, icon: Icon }) => (
+                <button
+                  type="button"
+                  key={value}
+                  className={cliente.entrega === value ? "active" : ""}
+                  onClick={() => {
+                    if (value !== "Delivery") {
+                      setFrete(0);
+                      setDistanciaKm(null);
+                    }
+                    setCliente({
+                      ...cliente,
+                      entrega: value,
+                      endereco: value === "Delivery" ? cliente.endereco : "",
+                      referencia: value === "Delivery" ? cliente.referencia : "",
+                    });
+                  }}
+                >
+                  <Icon size={18} />
+                  <span>{label}</span>
+                </button>
+              ))}
+            </div>
 
 {cliente.entrega === "Delivery" && (
   <>
@@ -1085,12 +1148,13 @@ Seu carrinho está esperando por algo delicioso ☕
           onFechar={() => setProdutoSelecionado(null)}
           grupos={gruposComponentes}
 opcoes={opcoesComponentes}
-onAdicionar={({ selecoes, adicionais, precoUnitario }) => {
+onAdicionar={({ selecoes, adicionais, precoUnitario, observacaoItem }) => {
   adicionarProduto(produtoSelecionado, {
     quantidade: quantidadeModal,
     selecoes,
     adicionais,
     precoUnitario,
+    observacaoItem,
   });
 
   setProdutoSelecionado(null);
