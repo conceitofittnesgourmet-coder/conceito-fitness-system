@@ -220,3 +220,36 @@ exports.indicadoresOrdens = async (req, res) => {
     return responderErro(res, error, "ERRO INDICADORES GERENCIAIS DA PRODUÇÃO:");
   }
 };
+const PlanejamentoProducaoService = require("../services/PlanejamentoProducaoService");
+
+exports.sugerirPlanejamento = async (req, res) => {
+  try {
+    const planejamento = await PlanejamentoProducaoService.sugerir({
+      empresa: req.usuario?.empresa,
+      dataPlanejada: req.query.dataPlanejada,
+      diasHistorico: req.query.diasHistorico,
+      diasCobertura: req.query.diasCobertura,
+    });
+    return res.json({ success: true, planejamento });
+  } catch (error) {
+    return responderErro(res, error, "ERRO PLANEJAMENTO INTELIGENTE DE PRODUÇÃO:");
+  }
+};
+
+exports.criarOrdensPlanejamento = async (req, res) => {
+  try {
+    const ordens = await PlanejamentoProducaoService.criarOrdens({
+      empresa: req.usuario?.empresa,
+      usuario: req.usuario,
+      dataPlanejada: req.body?.dataPlanejada,
+      itens: req.body?.itens,
+    });
+    return res.status(201).json({
+      success: true,
+      message: `${ordens.length} ordem(ns) criada(s) pelo planejamento inteligente.`,
+      ordens,
+    });
+  } catch (error) {
+    return responderErro(res, error, "ERRO CRIAR ORDENS DO PLANEJAMENTO:");
+  }
+};
