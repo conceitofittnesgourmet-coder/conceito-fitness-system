@@ -7,7 +7,14 @@ const {
   criarCliente,
   atualizarCliente,
   deletarCliente,
+  acessarCardapio,
+  perfilCardapio,
+  atualizarFavoritosCardapio,
 } = require("../controllers/clientecontroller");
+
+router.post("/cardapio/acessar", acessarCardapio);
+router.get("/cardapio/perfil", perfilCardapio);
+router.put("/cardapio/favoritos", atualizarFavoritosCardapio);
 
 router.get("/", listarClientes);
 router.post("/", criarCliente);

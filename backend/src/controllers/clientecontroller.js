@@ -114,3 +114,78 @@ exports.deletarCliente = async (req, res) => {
     });
   }
 };
+
+function normalizarTelefone(valor) {
+  return String(valor || "").replace(/\D/g, "");
+}
+
+exports.acessarCardapio = async (req, res) => {
+  try {
+    const nome = String(req.body?.nome || "").trim();
+    const telefone = normalizarTelefone(req.body?.telefone);
+    const email = String(req.body?.email || "").trim().toLowerCase();
+
+    if (!nome || telefone.length < 10) {
+      return res.status(400).json({
+        success: false,
+        message: "Informe seu nome e um WhatsApp válido.",
+      });
+    }
+
+    let cliente = await Cliente.findOne({ telefone });
+
+    if (!cliente) {
+      cliente = await Cliente.create({ nome, telefone, whatsapp: telefone, email, origem: "cardapio-online" });
+    } else {
+      cliente.nome = nome || cliente.nome;
+      cliente.email = email || cliente.email;
+      cliente.whatsapp = telefone;
+      await cliente.save();
+    }
+
+    return res.json({ success: true, cliente });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+exports.perfilCardapio = async (req, res) => {
+  try {
+    const telefone = normalizarTelefone(req.query?.telefone);
+    if (telefone.length < 10) {
+      return res.status(400).json({ success: false, message: "WhatsApp inválido." });
+    }
+
+    const cliente = await Cliente.findOne({ telefone });
+    if (!cliente) {
+      return res.status(404).json({ success: false, message: "Cliente não encontrado." });
+    }
+
+    return res.json({ success: true, cliente });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+exports.atualizarFavoritosCardapio = async (req, res) => {
+  try {
+    const telefone = normalizarTelefone(req.body?.telefone);
+    const favoritos = Array.isArray(req.body?.favoritos)
+      ? [...new Set(req.body.favoritos.map(String).filter(Boolean))]
+      : [];
+
+    const cliente = await Cliente.findOneAndUpdate(
+      { telefone },
+      { $set: { favoritosCardapio: favoritos } },
+      { new: true }
+    );
+
+    if (!cliente) {
+      return res.status(404).json({ success: false, message: "Cliente não encontrado." });
+    }
+
+    return res.json({ success: true, favoritos: cliente.favoritosCardapio });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};

@@ -2160,3 +2160,104 @@ min-width:52px;
     text-align: left;
   }
 }
+
+/* V03.2.3 — Área do cliente, favoritos e QR Code */
+.co-favorite-button {
+  position: absolute;
+  top: 12px;
+  right: 12px;
+  width: 38px;
+  height: 38px;
+  border: 0;
+  border-radius: 50%;
+  display: grid;
+  place-items: center;
+  background: rgba(255, 255, 255, 0.94);
+  color: #86634f;
+  box-shadow: 0 8px 22px rgba(78, 52, 38, 0.14);
+  cursor: pointer;
+  z-index: 3;
+}
+
+.co-favorite-button.active { color: #c76e84; background: #fff4f7; }
+.co-table-identification { padding: 12px 14px; border-radius: 14px; background: #f2f7ef; color: #36553a; font-size: 0.9rem; }
+
+.co-account-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 2000;
+  display: grid;
+  place-items: center;
+  padding: 18px;
+  background: rgba(34, 27, 24, 0.58);
+  backdrop-filter: blur(7px);
+}
+
+.co-account-modal {
+  position: relative;
+  width: min(720px, 100%);
+  max-height: min(88vh, 820px);
+  overflow-y: auto;
+  border-radius: 28px;
+  background: #fffdf9;
+  box-shadow: 0 30px 90px rgba(33, 24, 20, 0.3);
+}
+
+.co-account-close {
+  position: absolute;
+  top: 16px;
+  right: 16px;
+  z-index: 2;
+  width: 40px;
+  height: 40px;
+  display: grid;
+  place-items: center;
+  border: 0;
+  border-radius: 50%;
+  background: #fff;
+  color: #5b463c;
+  box-shadow: 0 6px 20px rgba(44, 31, 25, 0.12);
+  cursor: pointer;
+}
+
+.co-account-login { padding: 42px; display: grid; gap: 10px; }
+.co-account-icon { width: 58px; height: 58px; display: grid; place-items: center; border-radius: 20px; background: #eef5e9; color: #3f6845; }
+.co-account-login > span { margin-top: 8px; color: #b77b51; font-weight: 700; text-transform: uppercase; letter-spacing: 0.1em; font-size: 0.75rem; }
+.co-account-login h2 { margin: 0; color: #44332c; font-size: clamp(1.8rem, 5vw, 2.5rem); }
+.co-account-login p { margin: 0 0 12px; color: #7f7068; line-height: 1.55; }
+.co-account-login label { margin-top: 8px; color: #55453d; font-weight: 700; font-size: 0.88rem; }
+.co-account-login input { min-height: 48px; border: 1px solid #e6ddd6; border-radius: 14px; padding: 0 15px; font: inherit; background: #fff; }
+.co-account-submit { margin-top: 12px; min-height: 50px; border: 0; border-radius: 15px; background: #426a48; color: #fff; font-weight: 800; cursor: pointer; }
+.co-account-error { padding: 10px 12px; border-radius: 12px; background: #fff0f0; color: #a23e3e; }
+
+.co-account-content { padding: 34px; }
+.co-account-profile { display: flex; align-items: center; gap: 14px; padding: 8px 48px 22px 0; border-bottom: 1px solid #eee4dc; }
+.co-account-avatar { width: 58px; height: 58px; flex: 0 0 auto; display: grid; place-items: center; border-radius: 50%; background: linear-gradient(135deg, #d990a3, #b76f84); color: #fff; font-size: 1.5rem; font-weight: 800; }
+.co-account-profile span, .co-account-profile small { color: #8b7a71; }
+.co-account-profile h2 { margin: 1px 0; color: #44332c; }
+.co-account-profile > button { margin-left: auto; display: inline-flex; align-items: center; gap: 6px; border: 0; background: transparent; color: #9a5a5a; cursor: pointer; }
+.co-account-stats { display: grid; grid-template-columns: repeat(2, 1fr); gap: 12px; margin: 20px 0; }
+.co-account-stats > div { display: grid; grid-template-columns: auto 1fr; column-gap: 10px; padding: 16px; border-radius: 18px; background: #f6f2ed; color: #5c4a41; }
+.co-account-stats svg { grid-row: span 2; align-self: center; color: #b77752; }
+.co-account-stats strong { font-size: 1.25rem; }
+.co-account-stats span { font-size: 0.82rem; color: #82736a; }
+.co-account-section-title { display: flex; gap: 10px; align-items: flex-start; margin-bottom: 14px; color: #426a48; }
+.co-account-section-title h3, .co-account-section-title p { margin: 0; }
+.co-account-section-title p { color: #8a7a72; font-size: 0.86rem; margin-top: 3px; }
+.co-account-empty { padding: 25px; border: 1px dashed #dacfc6; border-radius: 18px; text-align: center; color: #8b7a71; }
+.co-order-history { margin-top: 8px; }
+.co-order-card { padding: 16px; border: 1px solid #ebe1d9; border-radius: 18px; margin-top: 10px; background: #fff; }
+.co-order-card > div:first-child { display: flex; justify-content: space-between; gap: 12px; }
+.co-order-card span, .co-order-card p { color: #817168; font-size: 0.86rem; }
+.co-order-status { display: inline-flex; margin-top: 9px; padding: 6px 10px; border-radius: 999px; background: #edf5ea; color: #3d6844; font-size: 0.78rem; font-weight: 800; }
+.co-order-card p { margin: 10px 0; }
+.co-order-card footer { display: flex; justify-content: space-between; align-items: center; }
+.co-order-card footer a { color: #9c5f74; font-weight: 800; text-decoration: none; }
+
+@media (max-width: 640px) {
+  .co-account-overlay { padding: 0; align-items: end; }
+  .co-account-modal { width: 100%; max-height: 92vh; border-radius: 24px 24px 0 0; }
+  .co-account-login, .co-account-content { padding: 28px 20px; }
+  .co-account-profile { align-items: flex-start; flex-wrap: wrap; }
+  .co-account-profile > button { width: 100%; margin-left: 72px; }
+}

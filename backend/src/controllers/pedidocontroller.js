@@ -13,6 +13,26 @@ const {
 } = require("../services/fichaTecnicaService");
 
 
+
+
+exports.listarPedidosCardapio = async (req, res) => {
+  try {
+    const telefone = String(req.query?.telefone || "").replace(/\D/g, "");
+    if (telefone.length < 10) {
+      return res.status(400).json({ success: false, message: "WhatsApp inválido." });
+    }
+
+    const pedidos = await Pedido.find({ telefone })
+      .sort({ createdAt: -1 })
+      .limit(30)
+      .select("numeroPedido produtos total status statusProducao tipo mesa createdAt tempoPrevisto");
+
+    return res.json({ success: true, pedidos });
+  } catch (error) {
+    return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
 // LISTAR
 exports.listarPedidos = async (req, res) => {
   try {

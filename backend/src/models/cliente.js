@@ -221,6 +221,11 @@ const clienteSchema = new mongoose.Schema(
       default: 0,
     },
 
+    favoritosCardapio: {
+      type: [String],
+      default: [],
+    },
+
     clube: {
       type: String,
       enum: ["Básico", "Prata", "Ouro", "Premium", "Black"],

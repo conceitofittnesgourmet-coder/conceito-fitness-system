@@ -32,6 +32,7 @@ import api from "../services/api";
 import socket from "../services/socket";
 import "../styles/CardapioOnline.css";
 import ProdutoModal from "../components/CardapioOnline/ProdutoModal";
+import MinhaContaModal from "../components/CardapioOnline/MinhaContaModal";
 
 function CardapioOnline() {
   const WHATSAPP_LOJA = "5544991288775";
@@ -55,6 +56,13 @@ function CardapioOnline() {
   const [frete, setFrete] = useState(0);
   const [distanciaKm, setDistanciaKm] = useState(null);
   const [produtoSelecionado, setProdutoSelecionado] = useState(null);
+  const [contaAberta, setContaAberta] = useState(false);
+  const [sessaoCliente, setSessaoCliente] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("conceito-cardapio-sessao") || "null"); } catch { return null; }
+  });
+  const [favoritos, setFavoritos] = useState(() => {
+    try { return JSON.parse(localStorage.getItem("conceito-cardapio-favoritos") || "[]"); } catch { return []; }
+  });
   const [quantidadeModal, setQuantidadeModal] = useState(1);
   const [cliente, setCliente] = useState(() => {
     try {
@@ -133,6 +141,17 @@ function filtrarCategoria(cat) {
   useEffect(() => {
     localStorage.setItem("conceito-cardapio-cliente", JSON.stringify(cliente));
   }, [cliente]);
+
+  useEffect(() => {
+    localStorage.setItem("conceito-cardapio-favoritos", JSON.stringify(favoritos));
+  }, [favoritos]);
+
+  useEffect(() => {
+    const mesa = new URLSearchParams(window.location.search).get("mesa");
+    if (mesa) {
+      setCliente((atual) => ({ ...atual, entrega: "Consumo no local", mesa }));
+    }
+  }, []);
 
   useEffect(() => {
     carregarProdutos();
@@ -469,6 +488,7 @@ ${itens}
 👤 *Cliente:* ${cliente.nome}
 📱 *WhatsApp:* ${cliente.telefone}
 📍 *Entrega/Retirada:* ${cliente.entrega || "Não informado"}
+🪑 *Mesa:* ${cliente.mesa || "-"}
 🏠 *Endereço:* ${cliente.endereco || "-"}
 📌 *Referência:* ${cliente.referencia || "-"}
 📝 *Observação:* ${cliente.observacao || "Nenhuma"}
@@ -481,6 +501,34 @@ Aguardo confirmação.
     );
   }
 
+  async function acessarConta(dados) {
+    const response = await api.post("/clientes/cardapio/acessar", dados);
+    const novaSessao = response.data?.cliente || null;
+    setSessaoCliente(novaSessao);
+    localStorage.setItem("conceito-cardapio-sessao", JSON.stringify(novaSessao));
+    setCliente((atual) => ({ ...atual, nome: novaSessao?.nome || dados.nome, telefone: novaSessao?.telefone || dados.telefone }));
+    const favoritosServidor = novaSessao?.favoritosCardapio || [];
+    setFavoritos(favoritosServidor.length ? favoritosServidor : favoritos);
+  }
+
+  function sairConta() {
+    setSessaoCliente(null);
+    localStorage.removeItem("conceito-cardapio-sessao");
+  }
+
+  async function alternarFavorito(produtoId) {
+    const id = String(produtoId);
+    const novos = favoritos.includes(id) ? favoritos.filter((item) => item !== id) : [...favoritos, id];
+    setFavoritos(novos);
+    if (sessaoCliente?.telefone) {
+      try {
+        await api.put("/clientes/cardapio/favoritos", { telefone: sessaoCliente.telefone, favoritos: novos });
+      } catch (error) {
+        console.log("Não foi possível sincronizar favoritos:", error);
+      }
+    }
+  }
+
   function ProdutoCard({ produto, badge }) {
     const restricoes = String(produto.restricoes || "")
       .split(",")
@@ -491,6 +539,14 @@ Aguardo confirmação.
       <article className="co-product-card">
         <div className="co-product-image">
           {badge && <span className="co-badge">{badge}</span>}
+          <button
+            type="button"
+            className={`co-favorite-button ${favoritos.includes(String(produto._id || produto.id)) ? "active" : ""}`}
+            onClick={(event) => { event.stopPropagation(); alternarFavorito(produto._id || produto.id); }}
+            aria-label="Favoritar produto"
+          >
+            <Heart size={18} fill={favoritos.includes(String(produto._id || produto.id)) ? "currentColor" : "none"} />
+          </button>
 
           <img
   src={getImagemProduto(produto)}
@@ -601,10 +657,10 @@ produto.motivoIndisponibilidade && (
         </nav>
 
         <div className="co-header-actions">
-          <a className="co-account-button" href="#pedido" aria-label="Área do cliente">
+          <button className="co-account-button" type="button" onClick={() => setContaAberta(true)} aria-label="Área do cliente">
             <UserRound size={20} />
-            <span>Minha conta</span>
-          </a>
+            <span>{sessaoCliente?.nome ? sessaoCliente.nome.split(" ")[0] : "Minha conta"}</span>
+          </button>
           <button
             className="co-header-cart"
             type="button"
@@ -978,6 +1034,10 @@ Seu carrinho está esperando por algo delicioso ☕
               ))}
             </div>
 
+            {cliente.entrega === "Consumo no local" && cliente.mesa && (
+              <div className="co-table-identification">Mesa identificada pelo QR Code: <strong>{cliente.mesa}</strong></div>
+            )}
+
 {cliente.entrega === "Delivery" && (
   <>
     <label>Endereço de entrega</label>
@@ -1139,6 +1199,15 @@ Seu carrinho está esperando por algo delicioso ☕
         </div>
       </footer>
             
+      <MinhaContaModal
+        aberto={contaAberta}
+        onClose={() => setContaAberta(false)}
+        sessao={sessaoCliente}
+        onEntrar={acessarConta}
+        onSair={sairConta}
+        favoritos={favoritos}
+      />
+
       {produtoSelecionado && (
         <ProdutoModal
           produto={produtoSelecionado}
