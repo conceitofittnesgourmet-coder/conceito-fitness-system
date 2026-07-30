@@ -4,8 +4,6 @@ const router = express.Router();
 
 const pedidoController = require("../controllers/pedidocontroller");
 
-router.get("/cardapio/historico", pedidoController.listarPedidosCardapio);
-
 router.get("/", pedidoController.listarPedidos);
 
 router.get("/:id", pedidoController.buscarPedido);
