@@ -16,6 +16,12 @@ import {
   Scale,
   Flame,
   MessageCircle,
+  Menu,
+  X,
+  Heart,
+  Sparkles,
+  UserRound,
+  SlidersHorizontal,
 } from "lucide-react";
 
 import api from "../services/api";
@@ -31,6 +37,10 @@ function CardapioOnline() {
   const [carrinho, setCarrinho] = useState([]);
   const [busca, setBusca] = useState("");
   const [categoria, setCategoria] = useState("Todos");
+  const [filtroDietario, setFiltroDietario] = useState("Todos");
+  const [carregando, setCarregando] = useState(true);
+  const [erroCarregamento, setErroCarregamento] = useState("");
+  const [menuAberto, setMenuAberto] = useState(false);
   const [calculandoFrete, setCalculandoFrete] = useState(false);
   const [frete, setFrete] = useState(0);
   const [distanciaKm, setDistanciaKm] = useState(null);
@@ -71,6 +81,8 @@ function filtrarCategoria(cat) {
 
   async function carregarProdutos() {
   try {
+    setCarregando(true);
+    setErroCarregamento("");
     const [produtosRes, gruposRes, opcoesRes] = await Promise.all([
       api.get("/produtos/cardapio"),
       api.get("/grupos-componentes"),
@@ -91,8 +103,26 @@ function filtrarCategoria(cat) {
     setOpcoesComponentes(opcoesRes.data.opcoes || []);
   } catch (error) {
     console.log("Erro ao carregar cardápio online:", error);
+    setErroCarregamento("Não foi possível carregar o cardápio agora. Tente novamente em instantes.");
+  } finally {
+    setCarregando(false);
   }
 }
+
+  useEffect(() => {
+    carregarProdutos();
+
+    const atualizarCardapio = () => carregarProdutos();
+    socket.on("produto-criado", atualizarCardapio);
+    socket.on("produto-atualizado", atualizarCardapio);
+    socket.on("produto-publicacao-atualizada", atualizarCardapio);
+
+    return () => {
+      socket.off("produto-criado", atualizarCardapio);
+      socket.off("produto-atualizado", atualizarCardapio);
+      socket.off("produto-publicacao-atualizada", atualizarCardapio);
+    };
+  }, []);
 
   function abrirProduto(produto) {
   setProdutoSelecionado(produto);
@@ -237,17 +267,50 @@ function filtrarCategoria(cat) {
     );
   }
   
+  const filtrosDietarios = [
+    "Todos",
+    "Sem glúten",
+    "Zero lactose",
+    "Zero açúcar",
+    "Low carb",
+    "Vegano",
+    "Proteico",
+  ];
+
+  function textoPesquisaProduto(produto) {
+    const restricoes = Array.isArray(produto.restricoes)
+      ? produto.restricoes.join(" ")
+      : String(produto.restricoes || "");
+    const selos = Array.isArray(produto.selos) ? produto.selos.join(" ") : String(produto.selos || "");
+    return [produto.nome, produto.descricao, produto.categoria, ...(produto.categorias || []), restricoes, selos]
+      .filter(Boolean)
+      .join(" ")
+      .toLowerCase();
+  }
+
   const produtosFiltrados = produtos.filter((produto) => {
-    const matchBusca = produto.nome
-      ?.toLowerCase()
-      .includes(busca.toLowerCase());
+    const texto = textoPesquisaProduto(produto);
+    const termo = busca.trim().toLowerCase();
+    const matchBusca = !termo || texto.includes(termo);
 
+    const categoriasProduto = [produto.categoria, ...(produto.categorias || [])]
+      .filter(Boolean)
+      .map((item) => String(item).toLowerCase());
     const matchCategoria =
-      categoria === "Todos" ||
-      String(produto.categoria || "").toLowerCase() ===
-        categoria.toLowerCase();
+      categoria === "Todos" || categoriasProduto.includes(categoria.toLowerCase());
 
-    return matchBusca && matchCategoria && produto.ativo !== false;
+    const mapaFiltro = {
+      "Sem glúten": ["sem glúten", "sem gluten", "sg"],
+      "Zero lactose": ["zero lactose", "sem lactose", "sl"],
+      "Zero açúcar": ["zero açúcar", "zero acucar", "sem açúcar", "sem acucar", "sa"],
+      "Low carb": ["low carb", "lowcarb", "lc"],
+      Vegano: ["vegano", "vegan"],
+      Proteico: ["proteico", "proteína", "proteina", "whey"],
+    };
+    const termosFiltro = mapaFiltro[filtroDietario] || [];
+    const matchDietario = filtroDietario === "Todos" || termosFiltro.some((item) => texto.includes(item));
+
+    return matchBusca && matchCategoria && matchDietario && produto.ativo !== false;
   });
 
   const destaques = produtosFiltrados.filter(
@@ -468,64 +531,62 @@ produto.motivoIndisponibilidade && (
   return (
     <div className="co-page">
       <header className="co-header">
-        <div className="co-logo">
-  <img
-    src="/logo-conceito.png"
-    alt="Conceito Fitness Gourmet"
-    className="co-logo-image"
-  />
-</div>
-
-        <nav className="co-nav">
-  <button onClick={() => irPara(destaquesRef)} className="active">
-    Cardápio
-  </button>
-
-  <button onClick={() => irPara(combosRef)}>
-    Combos
-  </button>
-
-  <button onClick={() => irPara(novidadesRef)}>
-    Novidades
-  </button>
-
-  <button onClick={() => filtrarCategoria("Bebidas")}>
-    Bebidas
-  </button>
-
-  <button onClick={() => filtrarCategoria("DOCES")}>
-    Doces
-  </button>
-
-  <button onClick={() => irPara(duvidasRef)}>
-    Dúvidas
-  </button>
-</nav>
-
-        <a
-          className="co-whatsapp-top"
-          href={`https://wa.me/${WHATSAPP_LOJA}`}
-          target="_blank"
-          rel="noreferrer"
+        <button
+          className="co-menu-button"
+          type="button"
+          aria-label={menuAberto ? "Fechar menu" : "Abrir menu"}
+          onClick={() => setMenuAberto((aberto) => !aberto)}
         >
-          <MessageCircle size={22} />
-          <div>
-            <strong>Atendimento via WhatsApp</strong>
-            <span>Fale conosco</span>
-          </div>
-        </a>
+          {menuAberto ? <X /> : <Menu />}
+        </button>
+
+        <button className="co-logo" type="button" onClick={() => window.scrollTo({ top: 0, behavior: "smooth" })}>
+          <img src="/logo-conceito.png" alt="Conceito Fitness Gourmet" className="co-logo-image" />
+        </button>
+
+        <nav className={`co-nav ${menuAberto ? "is-open" : ""}`}>
+          <button onClick={() => { irPara(destaquesRef); setMenuAberto(false); }} className="active">Cardápio</button>
+          <button onClick={() => { irPara(combosRef); setMenuAberto(false); }}>Combos</button>
+          <button onClick={() => { irPara(novidadesRef); setMenuAberto(false); }}>Novidades</button>
+          <button onClick={() => { filtrarCategoria("Bebidas"); setMenuAberto(false); }}>Bebidas</button>
+          <button onClick={() => { filtrarCategoria("DOCES"); setMenuAberto(false); }}>Doces</button>
+          <button onClick={() => { irPara(duvidasRef); setMenuAberto(false); }}>Dúvidas</button>
+        </nav>
+
+        <div className="co-header-actions">
+          <a className="co-account-button" href="#pedido" aria-label="Área do cliente">
+            <UserRound size={20} />
+            <span>Minha conta</span>
+          </a>
+          <button
+            className="co-header-cart"
+            type="button"
+            onClick={() => document.querySelector(".co-cart")?.scrollIntoView({ behavior: "smooth" })}
+            aria-label="Abrir carrinho"
+          >
+            <ShoppingBag size={21} />
+            <span>{carrinho.reduce((totalItens, item) => totalItens + item.quantidade, 0)}</span>
+          </button>
+        </div>
       </header>
 
       <section className="co-hero">
         <div className="co-hero-text">
+          <span className="co-eyebrow"><Sparkles size={16} /> Cafeteria inclusiva premium</span>
           <h1>
             Alimentação que <span>transforma.</span>
           </h1>
 
           <p>
-            Saudável, gourmet e feita com ingredientes selecionados para o seu
-            melhor.
+            Sabor de verdade, cuidado em cada detalhe e opções para diferentes escolhas alimentares.
           </p>
+
+          <div className="co-hero-actions">
+            <button type="button" onClick={() => irPara(destaquesRef)}>Explorar cardápio</button>
+            <a href={`https://wa.me/${WHATSAPP_LOJA}`} target="_blank" rel="noreferrer">
+              <MessageCircle size={18} /> Falar com a loja
+            </a>
+          </div>
 
           <div className="co-hero-benefits">
             <div>
@@ -571,20 +632,70 @@ produto.motivoIndisponibilidade && (
               </button>
             </div>
 
+            <div className="co-category-heading">
+              <div><Gift size={18} /><strong>Categorias</strong></div>
+              <span>{produtosFiltrados.length} produto(s)</span>
+            </div>
             <div className="co-category-grid">
               {categorias.map((cat) => (
-  <button
-    key={cat}
-    className={categoria === cat ? "active" : ""}
-    onClick={() => filtrarCategoria(cat)}
-  >
-    <Gift />
-    <span>{cat}</span>
-  </button>
-))}
+                <button
+                  key={cat}
+                  className={categoria === cat ? "active" : ""}
+                  onClick={() => filtrarCategoria(cat)}
+                >
+                  <Gift />
+                  <span>{cat}</span>
+                </button>
+              ))}
+            </div>
+
+            <div className="co-dietary-filter">
+              <div className="co-category-heading">
+                <div><SlidersHorizontal size={18} /><strong>Filtros alimentares</strong></div>
+                {(filtroDietario !== "Todos" || busca || categoria !== "Todos") && (
+                  <button type="button" onClick={() => { setBusca(""); setCategoria("Todos"); setFiltroDietario("Todos"); }}>Limpar filtros</button>
+                )}
+              </div>
+              <div className="co-filter-chips">
+                {filtrosDietarios.map((filtro) => (
+                  <button
+                    type="button"
+                    key={filtro}
+                    className={filtroDietario === filtro ? "active" : ""}
+                    onClick={() => setFiltroDietario(filtro)}
+                  >
+                    {filtro === "Todos" ? <Sparkles size={15} /> : <Leaf size={15} />}
+                    {filtro}
+                  </button>
+                ))}
+              </div>
             </div>
           </div>
 
+          {carregando && (
+            <div className="co-loading-grid" aria-label="Carregando produtos">
+              {Array.from({ length: 6 }).map((_, index) => <div className="co-skeleton-card" key={index} />)}
+            </div>
+          )}
+
+          {!carregando && erroCarregamento && (
+            <div className="co-state-card">
+              <strong>Não conseguimos abrir o cardápio.</strong>
+              <span>{erroCarregamento}</span>
+              <button type="button" onClick={carregarProdutos}>Tentar novamente</button>
+            </div>
+          )}
+
+          {!carregando && !erroCarregamento && produtosFiltrados.length === 0 && (
+            <div className="co-state-card">
+              <Search size={28} />
+              <strong>Nenhum produto encontrado.</strong>
+              <span>Tente outra busca ou remova algum filtro.</span>
+              <button type="button" onClick={() => { setBusca(""); setCategoria("Todos"); setFiltroDietario("Todos"); }}>Ver todo o cardápio</button>
+            </div>
+          )}
+
+          {!carregando && !erroCarregamento && destaques.length > 0 && (
           <section className="co-section" ref={destaquesRef}>
             <div className="co-section-title">
               <div>
@@ -611,7 +722,9 @@ produto.motivoIndisponibilidade && (
               ))}
             </div>
           </section>
+          )}
 
+          {combos.length > 0 && (
           <section className="co-section" ref={combosRef}>
             <div className="co-section-title">
               <div>
@@ -636,7 +749,9 @@ produto.motivoIndisponibilidade && (
               ))}
             </div>
           </section>
+          )}
 
+          {novidades.length > 0 && (
           <section className="co-section" ref={novidadesRef}>
             <div className="co-section-title">
               <div>
@@ -678,9 +793,26 @@ produto.motivoIndisponibilidade && (
               ))}
             </div>
           </section>
+          )}
+
+          {!carregando && !erroCarregamento && produtosFiltrados.length > 0 && (
+            <section className="co-section co-all-products">
+              <div className="co-section-title">
+                <div>
+                  <h2><Heart /> {categoria === "Todos" ? "Todo o cardápio" : categoria}</h2>
+                  <p>Escolha com calma. Cada produto foi preparado para uma experiência especial.</p>
+                </div>
+              </div>
+              <div className="co-products-grid">
+                {produtosFiltrados.map((produto) => (
+                  <ProdutoCard key={`todos-${produto._id || produto.id}`} produto={produto} />
+                ))}
+              </div>
+            </section>
+          )}
         </section>
 
-        <aside className="co-cart">
+        <aside className="co-cart" id="pedido">
           <h2>
             <ShoppingBag size={22} /> Seu Pedido
           </h2>
@@ -698,7 +830,7 @@ Seu carrinho está esperando por algo delicioso ☕
           ) : (
             <div className="co-cart-list">
               {carrinho.map((item) => (
-                <div className="co-cart-item" key={item.id}>
+                <div className="co-cart-item" key={item.chaveCarrinho || item.id}>
                   <img src={item.imagem} alt={item.nome} />
 
                   <div>
