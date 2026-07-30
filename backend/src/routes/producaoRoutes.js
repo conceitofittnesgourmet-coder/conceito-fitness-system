@@ -10,6 +10,7 @@ router.post("/ordens", producaoController.criarOrdem);
 router.get("/ordens/:id", producaoController.buscarOrdem);
 router.put("/ordens/:id", producaoController.atualizarOrdem);
 router.put("/ordens/:id/status", producaoController.alterarStatusOrdem);
+router.get("/ordens/:id/insumos", producaoController.analisarInsumosOrdem);
 
 router.get("/", producaoController.listarFila);
 

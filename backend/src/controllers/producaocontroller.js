@@ -200,3 +200,10 @@ exports.alterarStatusOrdem = async (req, res) => {
     return res.json({ success: true, message: "Status da ordem atualizado com sucesso.", ordem });
   } catch (error) { return responderErro(res, error, "ERRO ALTERAR STATUS DA ORDEM DE PRODUÇÃO:"); }
 };
+
+exports.analisarInsumosOrdem = async (req, res) => {
+  try {
+    const analise = await OrdemProducaoService.analisarInsumos(req.params.id, req.usuario?.empresa);
+    return res.json({ success: true, message: analise.podeProduzir ? "Ingredientes disponíveis para produção." : "Há ingredientes insuficientes.", analise });
+  } catch (error) { return responderErro(res, error, "ERRO ANALISAR INSUMOS DA ORDEM:"); }
+};

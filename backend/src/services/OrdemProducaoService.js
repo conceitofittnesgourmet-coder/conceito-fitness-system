@@ -1,150 +1,18 @@
 const OrdemProducao = require("../models/ordemproducao");
 const Produto = require("../models/produto");
 const FichaTecnica = require("../models/fichatecnica");
+const MateriaPrima = require("../models/materiaprima");
 
-const TRANSICOES = {
-  aberta: ["em_producao", "cancelada"],
-  em_producao: ["concluida", "cancelada"],
-  concluida: [],
-  cancelada: [],
-};
-
-function erro(mensagem, statusCode = 400) {
-  const e = new Error(mensagem);
-  e.statusCode = statusCode;
-  return e;
-}
-
-function usuarioNome(usuario) {
-  return usuario?.nome || usuario?.email || "Sistema";
-}
-
-function gerarCodigo() {
-  const agora = new Date();
-  const data = agora.toISOString().slice(0, 10).replace(/-/g, "");
-  const sufixo = `${agora.getTime()}`.slice(-6);
-  const aleatorio = Math.floor(Math.random() * 90 + 10);
-  return `OP-${data}-${sufixo}${aleatorio}`;
-}
-
-async function listar({ empresa, status, busca, limite = 100 } = {}) {
-  const filtro = {};
-  if (empresa) filtro.empresa = empresa;
-  if (status) filtro.status = status;
-  if (busca) {
-    const produtos = await Produto.find({ nome: { $regex: busca, $options: "i" } }).select("_id").lean();
-    filtro.$or = [
-      { codigo: { $regex: busca, $options: "i" } },
-      { responsavel: { $regex: busca, $options: "i" } },
-      { produto: { $in: produtos.map((p) => p._id) } },
-    ];
-  }
-
-  return OrdemProducao.find(filtro)
-    .populate("produto", "nome sku estoque preco foto")
-    .populate("fichaTecnica", "rendimento unidadeRendimento custoUnitario")
-    .sort({ prioridade: -1, createdAt: -1 })
-    .limit(Math.min(Math.max(Number(limite) || 100, 1), 300))
-    .lean();
-}
-
-async function resumo({ empresa } = {}) {
-  const match = empresa ? { empresa } : {};
-  const dados = await OrdemProducao.aggregate([
-    { $match: match },
-    { $group: { _id: "$status", total: { $sum: 1 }, quantidade: { $sum: "$quantidadePlanejada" } } },
-  ]);
-  const saida = { aberta: 0, em_producao: 0, concluida: 0, cancelada: 0, totalAtivas: 0 };
-  dados.forEach((item) => { if (Object.prototype.hasOwnProperty.call(saida, item._id)) saida[item._id] = item.total; });
-  saida.totalAtivas = saida.aberta + saida.em_producao;
-  return saida;
-}
-
-async function buscarPorId(id, empresa) {
-  const filtro = { _id: id };
-  if (empresa) filtro.empresa = empresa;
-  const ordem = await OrdemProducao.findOne(filtro)
-    .populate("produto", "nome sku estoque preco")
-    .populate("fichaTecnica");
-  if (!ordem) throw erro("Ordem de produção não encontrada.", 404);
-  return ordem;
-}
-
-async function criar({ dados, empresa, usuario } = {}) {
-  const quantidade = Number(dados.quantidadePlanejada);
-  if (!dados.produto) throw erro("Selecione o produto da ordem de produção.");
-  if (!Number.isFinite(quantidade) || quantidade <= 0) throw erro("Informe uma quantidade planejada maior que zero.");
-
-  const produto = await Produto.findById(dados.produto);
-  if (!produto) throw erro("Produto não encontrado.", 404);
-
-  const ficha = await FichaTecnica.findOne({ produto: produto._id, ativa: true }).sort({ updatedAt: -1 });
-  const ordem = await OrdemProducao.create({
-    empresa: empresa || produto.empresa || null,
-    codigo: gerarCodigo(),
-    produto: produto._id,
-    fichaTecnica: ficha?._id || null,
-    quantidadePlanejada: quantidade,
-    unidade: dados.unidade || ficha?.unidadeRendimento || "UN",
-    responsavel: String(dados.responsavel || "").trim(),
-    prioridade: Math.min(Math.max(Number(dados.prioridade) || 0, 0), 10),
-    dataPlanejada: dados.dataPlanejada || null,
-    observacoes: String(dados.observacoes || "").trim(),
-    historico: [{ usuario: usuarioNome(usuario), acao: "ordem_criada", statusNovo: "aberta", observacao: "Ordem de produção criada." }],
-  });
-  return buscarPorId(ordem._id, empresa);
-}
-
-async function atualizar(id, dados, empresa, usuario) {
-  const ordem = await buscarPorId(id, empresa);
-  if (["concluida", "cancelada"].includes(ordem.status)) throw erro("Ordens concluídas ou canceladas não podem ser editadas.", 409);
-  if (dados.quantidadePlanejada !== undefined) {
-    const quantidade = Number(dados.quantidadePlanejada);
-    if (!Number.isFinite(quantidade) || quantidade <= 0) throw erro("A quantidade planejada deve ser maior que zero.");
-    ordem.quantidadePlanejada = quantidade;
-  }
-  ["responsavel", "unidade", "observacoes"].forEach((campo) => {
-    if (dados[campo] !== undefined) ordem[campo] = String(dados[campo] || "").trim();
-  });
-  if (dados.prioridade !== undefined) ordem.prioridade = Math.min(Math.max(Number(dados.prioridade) || 0, 0), 10);
-  if (dados.dataPlanejada !== undefined) ordem.dataPlanejada = dados.dataPlanejada || null;
-  ordem.historico.push({ usuario: usuarioNome(usuario), acao: "ordem_editada", statusNovo: ordem.status, observacao: "Dados da ordem atualizados." });
-  ordem.historico = ordem.historico.slice(-100);
-  await ordem.save();
-  return buscarPorId(ordem._id, empresa);
-}
-
-async function alterarStatus(id, novoStatus, dados, empresa, usuario) {
-  const ordem = await buscarPorId(id, empresa);
-  const destino = String(novoStatus || "").trim().toLowerCase();
-  if (!TRANSICOES[ordem.status]?.includes(destino)) throw erro(`Não é permitido alterar a ordem de "${ordem.status}" para "${destino}".`, 409);
-
-  const anterior = ordem.status;
-  const agora = new Date();
-  ordem.status = destino;
-  if (destino === "em_producao") ordem.iniciadaEm = agora;
-  if (destino === "concluida") {
-    const produzida = Number(dados.quantidadeProduzida ?? ordem.quantidadePlanejada);
-    if (!Number.isFinite(produzida) || produzida <= 0) throw erro("Informe a quantidade efetivamente produzida.");
-    ordem.quantidadeProduzida = produzida;
-    ordem.concluidaEm = agora;
-  }
-  if (destino === "cancelada") {
-    const motivo = String(dados.motivoCancelamento || "").trim();
-    if (!motivo) throw erro("Informe o motivo do cancelamento.");
-    ordem.motivoCancelamento = motivo;
-    ordem.canceladaEm = agora;
-  }
-  ordem.historico.push({
-    usuario: usuarioNome(usuario),
-    acao: destino === "cancelada" ? "ordem_cancelada" : "status_alterado",
-    statusAnterior: anterior,
-    statusNovo: destino,
-    observacao: destino === "cancelada" ? ordem.motivoCancelamento : String(dados.observacao || "").trim(),
-  });
-  ordem.historico = ordem.historico.slice(-100);
-  await ordem.save();
-  return buscarPorId(ordem._id, empresa);
-}
-
-module.exports = { listar, resumo, buscarPorId, criar, atualizar, alterarStatus };
+const TRANSICOES={aberta:["em_producao","cancelada"],em_producao:["concluida","cancelada"],concluida:[],cancelada:[]};
+const FATORES={kg:{base:"massa",fator:1000},g:{base:"massa",fator:1},litro:{base:"volume",fator:1000},l:{base:"volume",fator:1000},ml:{base:"volume",fator:1},unidade:{base:"unidade",fator:1},un:{base:"unidade",fator:1},pacote:{base:"pacote",fator:1},caixa:{base:"caixa",fator:1}};
+function erro(m,s=400){const e=new Error(m);e.statusCode=s;return e;} function usuarioNome(u){return u?.nome||u?.email||"Sistema";}
+function gerarCodigo(){const a=new Date(),d=a.toISOString().slice(0,10).replace(/-/g,"");return `OP-${d}-${`${a.getTime()}`.slice(-6)}${Math.floor(Math.random()*90+10)}`;}
+function conv(q,o,d){o=FATORES[String(o||"unidade").toLowerCase()];d=FATORES[String(d||"unidade").toLowerCase()];if(!o||!d||o.base!==d.base)throw erro("Conversão incompatível na ficha técnica.");return Number(q)*o.fator/d.fator;}
+async function listar({empresa,status,busca,limite=100}={}){const f={};if(empresa)f.empresa=empresa;if(status)f.status=status;if(busca){const p=await Produto.find({nome:{$regex:busca,$options:"i"}}).select("_id").lean();f.$or=[{codigo:{$regex:busca,$options:"i"}},{responsavel:{$regex:busca,$options:"i"}},{produto:{$in:p.map(x=>x._id)}}];}return OrdemProducao.find(f).populate("produto","nome sku estoque preco foto").populate("fichaTecnica","rendimento unidadeRendimento custoUnitario").sort({prioridade:-1,createdAt:-1}).limit(Math.min(Math.max(Number(limite)||100,1),300)).lean();}
+async function resumo({empresa}={}){const d=await OrdemProducao.aggregate([{$match:empresa?{empresa}:{}},{$group:{_id:"$status",total:{$sum:1}}}]);const s={aberta:0,em_producao:0,concluida:0,cancelada:0,totalAtivas:0};d.forEach(i=>{if(i._id in s)s[i._id]=i.total});s.totalAtivas=s.aberta+s.em_producao;return s;}
+async function buscarPorId(id,empresa){const f={_id:id};if(empresa)f.empresa=empresa;const o=await OrdemProducao.findOne(f).populate("produto","nome sku estoque preco").populate("fichaTecnica").populate("analiseInsumos.itens.materiaPrima","nome unidade estoqueAtual");if(!o)throw erro("Ordem de produção não encontrada.",404);return o;}
+async function analisarInsumos(id,empresa,{salvar=true}={}){const ordem=await OrdemProducao.findOne({_id:id,...(empresa?{empresa}:{})});if(!ordem)throw erro("Ordem de produção não encontrada.",404);const ficha=await FichaTecnica.findById(ordem.fichaTecnica).populate("itens.materiaPrima");if(!ficha)throw erro("O produto não possui ficha técnica ativa.",409);const fator=Number(ordem.quantidadePlanejada)/Number(ficha.rendimento||1);const reservas=await OrdemProducao.find({_id:{$ne:ordem._id},reservaAtiva:true,status:"em_producao"}).select("analiseInsumos.itens").lean();const mapa={};for(const r of reservas)for(const i of r.analiseInsumos?.itens||[])mapa[String(i.materiaPrima)]=(mapa[String(i.materiaPrima)]||0)+Number(i.necessario||0);const itens=ficha.itens.map(i=>{const m=i.materiaPrima;const necessario=conv(i.quantidade*fator,i.unidade,m.unidade);const reservadoOutrasOrdens=mapa[String(m._id)]||0;const estoqueAtual=Number(m.estoqueAtual||0),disponivel=Math.max(estoqueAtual-reservadoOutrasOrdens,0),falta=Math.max(necessario-disponivel,0);return{materiaPrima:m._id,nome:m.nome,unidade:m.unidade,necessario,estoqueAtual,reservadoOutrasOrdens,disponivel,falta,suficiente:falta<=1e-9};});const analise={analisadaEm:new Date(),podeProduzir:itens.every(i=>i.suficiente),itens};if(salvar){ordem.analiseInsumos=analise;await ordem.save();}return analise;}
+async function criar({dados,empresa,usuario}={}){const q=Number(dados.quantidadePlanejada);if(!dados.produto||!Number.isFinite(q)||q<=0)throw erro("Selecione o produto e informe uma quantidade maior que zero.");const p=await Produto.findById(dados.produto);if(!p)throw erro("Produto não encontrado.",404);const f=await FichaTecnica.findOne({produto:p._id,ativa:true}).sort({updatedAt:-1});const o=await OrdemProducao.create({empresa:empresa||p.empresa||null,codigo:gerarCodigo(),produto:p._id,fichaTecnica:f?._id||null,quantidadePlanejada:q,unidade:dados.unidade||f?.unidadeRendimento||"UN",responsavel:String(dados.responsavel||"").trim(),prioridade:Math.min(Math.max(Number(dados.prioridade)||0,0),10),dataPlanejada:dados.dataPlanejada||null,observacoes:String(dados.observacoes||"").trim(),historico:[{usuario:usuarioNome(usuario),acao:"ordem_criada",statusNovo:"aberta",observacao:"Ordem de produção criada."}]});return buscarPorId(o._id,empresa);}
+async function atualizar(id,dados,empresa,usuario){const o=await buscarPorId(id,empresa);if(["concluida","cancelada"].includes(o.status))throw erro("Ordens concluídas ou canceladas não podem ser editadas.",409);if(dados.quantidadePlanejada!==undefined){const q=Number(dados.quantidadePlanejada);if(q<=0)throw erro("A quantidade deve ser maior que zero.");o.quantidadePlanejada=q;o.analiseInsumos=undefined;}["responsavel","unidade","observacoes"].forEach(c=>{if(dados[c]!==undefined)o[c]=String(dados[c]||"").trim()});if(dados.prioridade!==undefined)o.prioridade=Math.min(Math.max(Number(dados.prioridade)||0,0),10);if(dados.dataPlanejada!==undefined)o.dataPlanejada=dados.dataPlanejada||null;o.historico.push({usuario:usuarioNome(usuario),acao:"ordem_editada",statusNovo:o.status,observacao:"Dados atualizados."});await o.save();return buscarPorId(o._id,empresa);}
+async function alterarStatus(id,novoStatus,dados,empresa,usuario){const o=await buscarPorId(id,empresa),dest=String(novoStatus||"").toLowerCase();if(!TRANSICOES[o.status]?.includes(dest))throw erro("Transição de status não permitida.",409);const ant=o.status,agora=new Date();if(dest==="em_producao"){const a=await analisarInsumos(o._id,empresa);if(!a.podeProduzir)throw erro("Produção bloqueada: há ingredientes insuficientes.",409);o.analiseInsumos=a;o.reservaAtiva=true;o.reservadoEm=agora;o.iniciadaEm=agora;}if(dest==="concluida"){const q=Number(dados.quantidadeProduzida??o.quantidadePlanejada);if(q<=0)throw erro("Informe a quantidade produzida.");o.quantidadeProduzida=q;o.concluidaEm=agora;o.reservaAtiva=false;}if(dest==="cancelada"){const m=String(dados.motivoCancelamento||"").trim();if(!m)throw erro("Informe o motivo do cancelamento.");o.motivoCancelamento=m;o.canceladaEm=agora;o.reservaAtiva=false;}o.status=dest;o.historico.push({usuario:usuarioNome(usuario),acao:dest==="cancelada"?"ordem_cancelada":"status_alterado",statusAnterior:ant,statusNovo:dest,observacao:dest==="em_producao"?"Insumos conferidos e reservados.":String(dados.observacao||o.motivoCancelamento||"")});await o.save();return buscarPorId(o._id,empresa);}
+module.exports={listar,resumo,buscarPorId,criar,atualizar,alterarStatus,analisarInsumos};

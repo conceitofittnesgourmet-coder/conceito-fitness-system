@@ -31,6 +31,23 @@ const ordemProducaoSchema = new mongoose.Schema({
   canceladaEm: { type: Date, default: null },
   motivoCancelamento: { type: String, default: "", trim: true },
   observacoes: { type: String, default: "", trim: true },
+  analiseInsumos: {
+    analisadaEm: { type: Date, default: null },
+    podeProduzir: { type: Boolean, default: false },
+    itens: { type: [new mongoose.Schema({
+      materiaPrima: { type: mongoose.Schema.Types.ObjectId, ref: "MateriaPrima", required: true },
+      nome: { type: String, default: "" },
+      unidade: { type: String, default: "unidade" },
+      necessario: { type: Number, default: 0 },
+      estoqueAtual: { type: Number, default: 0 },
+      reservadoOutrasOrdens: { type: Number, default: 0 },
+      disponivel: { type: Number, default: 0 },
+      falta: { type: Number, default: 0 },
+      suficiente: { type: Boolean, default: false },
+    }, { _id: false })], default: [] },
+  },
+  reservaAtiva: { type: Boolean, default: false, index: true },
+  reservadoEm: { type: Date, default: null },
   historico: { type: [historicoOrdemSchema], default: [] },
 }, { timestamps: true });
 

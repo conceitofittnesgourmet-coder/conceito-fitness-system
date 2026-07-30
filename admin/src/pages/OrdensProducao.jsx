@@ -1,5 +1,5 @@
 import { useEffect, useMemo, useState } from "react";
-import { FaIndustry, FaPlay, FaCheck, FaBan, FaPlus, FaSearch } from "react-icons/fa";
+import { FaIndustry, FaPlay, FaCheck, FaBan, FaPlus, FaSearch, FaBoxes } from "react-icons/fa";
 import AdminLayout from "../layouts/AdminLayout";
 import api from "../services/api";
 import "../styles/ordens-producao.css";
@@ -18,6 +18,8 @@ function OrdensProducao() {
   const [filtro, setFiltro] = useState("");
   const [busca, setBusca] = useState("");
   const [carregando, setCarregando] = useState(false);
+  const [analise, setAnalise] = useState(null);
+  const [analisandoId, setAnalisandoId] = useState("");
   const [form, setForm] = useState({ produto: "", quantidadePlanejada: "", unidade: "UN", responsavel: "", prioridade: 0, dataPlanejada: "", observacoes: "" });
 
   async function carregar() {
@@ -51,6 +53,17 @@ function OrdensProducao() {
       setForm({ produto: "", quantidadePlanejada: "", unidade: "UN", responsavel: "", prioridade: 0, dataPlanejada: "", observacoes: "" });
       await carregar();
     } catch (error) { alert(error.response?.data?.message || "Erro ao criar ordem."); }
+  }
+
+
+  async function analisarInsumos(ordem) {
+    setAnalisandoId(ordem._id);
+    try {
+      const { data } = await api.get(`/producao/ordens/${ordem._id}/insumos`);
+      setAnalise({ ordem, ...(data.analise || {}) });
+    } catch (error) {
+      alert(error.response?.data?.message || "Erro ao analisar ingredientes.");
+    } finally { setAnalisandoId(""); }
   }
 
   async function alterarStatus(ordem, status) {
@@ -101,12 +114,20 @@ function OrdensProducao() {
             <div className="op-toolbar"><h2>Ordens cadastradas</h2><div><FaSearch /><input value={busca} onChange={(e) => setBusca(e.target.value)} onKeyDown={(e) => e.key === "Enter" && carregar()} placeholder="Código, produto ou responsável" /><button onClick={carregar}>Buscar</button></div></div>
             {carregando ? <p>Carregando...</p> : (
               <div className="op-table-wrap"><table><thead><tr><th>Ordem</th><th>Produto</th><th>Quantidade</th><th>Responsável</th><th>Planejada</th><th>Status</th><th>Ações</th></tr></thead><tbody>
-                {ordens.map((ordem) => <tr key={ordem._id}><td><strong>{ordem.codigo}</strong><small>Prioridade {ordem.prioridade}</small></td><td>{ordem.produto?.nome || "Produto removido"}</td><td>{ordem.quantidadePlanejada} {ordem.unidade}</td><td>{ordem.responsavel || "-"}</td><td>{dataHora(ordem.dataPlanejada)}</td><td><span className={`op-status ${ordem.status}`}>{STATUS[ordem.status]}</span></td><td><div className="op-actions">{ordem.status === "aberta" && <button title="Iniciar" onClick={() => alterarStatus(ordem, "em_producao")}><FaPlay /></button>}{ordem.status === "em_producao" && <button title="Concluir" onClick={() => alterarStatus(ordem, "concluida")}><FaCheck /></button>}{["aberta", "em_producao"].includes(ordem.status) && <button title="Cancelar" onClick={() => alterarStatus(ordem, "cancelada")}><FaBan /></button>}</div></td></tr>)}
+                {ordens.map((ordem) => <tr key={ordem._id}><td><strong>{ordem.codigo}</strong><small>Prioridade {ordem.prioridade}</small></td><td>{ordem.produto?.nome || "Produto removido"}</td><td>{ordem.quantidadePlanejada} {ordem.unidade}</td><td>{ordem.responsavel || "-"}</td><td>{dataHora(ordem.dataPlanejada)}</td><td><span className={`op-status ${ordem.status}`}>{STATUS[ordem.status]}</span></td><td><div className="op-actions"><button title="Conferir ingredientes" onClick={() => analisarInsumos(ordem)} disabled={analisandoId === ordem._id}><FaBoxes /></button>{ordem.status === "aberta" && <button title="Iniciar" onClick={() => alterarStatus(ordem, "em_producao")}><FaPlay /></button>}{ordem.status === "em_producao" && <button title="Concluir" onClick={() => alterarStatus(ordem, "concluida")}><FaCheck /></button>}{["aberta", "em_producao"].includes(ordem.status) && <button title="Cancelar" onClick={() => alterarStatus(ordem, "cancelada")}><FaBan /></button>}</div></td></tr>)}
                 {!ordens.length && <tr><td colSpan="7">Nenhuma ordem encontrada.</td></tr>}
               </tbody></table></div>
             )}
           </div>
         </section>
+
+        {analise && <section className="op-card op-insumos">
+          <div className="op-insumos-head"><div><h2><FaBoxes /> Análise de ingredientes</h2><p>{analise.ordem.codigo} — {analise.ordem.produto?.nome}</p></div><button onClick={() => setAnalise(null)}>Fechar</button></div>
+          <div className={`op-disponibilidade ${analise.podeProduzir ? "ok" : "erro"}`}>{analise.podeProduzir ? "Estoque suficiente: a produção pode ser iniciada." : "Produção bloqueada: existem ingredientes insuficientes."}</div>
+          <div className="op-table-wrap"><table><thead><tr><th>Ingrediente</th><th>Necessário</th><th>Estoque</th><th>Reservado</th><th>Disponível</th><th>Falta</th><th>Situação</th></tr></thead><tbody>
+            {(analise.itens || []).map((item) => <tr key={String(item.materiaPrima)}><td>{item.nome}</td><td>{Number(item.necessario).toFixed(3)} {item.unidade}</td><td>{Number(item.estoqueAtual).toFixed(3)}</td><td>{Number(item.reservadoOutrasOrdens).toFixed(3)}</td><td>{Number(item.disponivel).toFixed(3)}</td><td>{Number(item.falta).toFixed(3)}</td><td><span className={`op-insumo-status ${item.suficiente ? "ok" : "erro"}`}>{item.suficiente ? "Suficiente" : "Insuficiente"}</span></td></tr>)}
+          </tbody></table></div>
+        </section>}
       </div>
     </AdminLayout>
   );
