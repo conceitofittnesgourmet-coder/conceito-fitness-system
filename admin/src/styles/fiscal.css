@@ -568,3 +568,12 @@
   .nfe-validacao-grid { grid-template-columns: 1fr; }
   .nfe-validacao-topo { flex-direction: column; }
 }
+
+/* V01.4 — monitoramento SEFAZ e histórico operacional da NF-e */
+.nfe-diagnostico-acoes { display: flex; gap: 8px; flex-wrap: wrap; }
+.nfe-status-sefaz { margin: 14px 0; padding: 12px 14px; border-radius: 10px; display: grid; gap: 4px; border: 1px solid #d7d7d7; background: #fff; }
+.nfe-status-sefaz.ok { border-color: #9bc9a7; background: #f2fbf4; }
+.nfe-status-sefaz.alerta { border-color: #e4c68d; background: #fff9ed; }
+.nfe-status-sefaz strong { font-size: 14px; }
+.nfe-status-sefaz span { font-size: 13px; }
+.nfe-status-sefaz small { opacity: .72; }

@@ -5,6 +5,7 @@ const {
   assinarNfe,
   transmitirNfe,
   consultarRetornoNfe,
+  consultarStatusSefaz,
   processarNfeDoPedido,
 } = require("../services/nfeService");
 const { diagnosticarFiscal } = require("../services/fiscalReadinessService");
@@ -29,6 +30,18 @@ exports.diagnostico = async (req, res) => {
   } catch (error) {
     console.error("ERRO DIAGNOSTICO FISCAL:", error);
     return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+
+exports.statusSefaz = async (req, res) => {
+  try {
+    const ambiente = req.query.ambiente || "homologacao";
+    const status = await consultarStatusSefaz(ambiente);
+    return res.json({ success: true, status });
+  } catch (error) {
+    console.error("ERRO STATUS SEFAZ NFE:", error);
+    return res.status(503).json({ success: false, message: error.message });
   }
 };
 

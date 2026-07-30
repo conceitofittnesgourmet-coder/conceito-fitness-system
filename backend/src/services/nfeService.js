@@ -4,8 +4,61 @@ const Empresa = require("../models/empresa");
 const ConfiguracaoFiscal = require("../models/configuracaofiscal");
 const { assinarXmlNfe } = require("./xmlSignatureService");
 const { gerarXmlNfe } = require("./nfeXmlService");
-const { transmitirNfeParaSefaz, consultarReciboNfe } = require("./sefazNfeService");
+const { transmitirNfeParaSefaz, consultarReciboNfe, consultarNfePorChave, consultarStatusServicoNfe } = require("./sefazNfeService");
 const { validarAntesDeGerarNfe, obterEnderecoFiscalEmpresa } = require("./fiscalValidationService");
+
+function registrarHistorico(nfe, etapa, dados = {}) {
+  nfe.historicoProcessamento = nfe.historicoProcessamento || [];
+  nfe.historicoProcessamento.push({
+    etapa,
+    status: dados.status || nfe.status || "",
+    cStat: String(dados.cStat || nfe.cStat || ""),
+    mensagem: dados.mensagem || nfe.mensagemSefaz || "",
+    protocolo: dados.protocolo || nfe.protocolo || "",
+    recibo: dados.recibo || nfe.recibo || "",
+    data: new Date(),
+  });
+  if (nfe.historicoProcessamento.length > 100) {
+    nfe.historicoProcessamento = nfe.historicoProcessamento.slice(-100);
+  }
+}
+
+function montarXmlAutorizado(xmlAssinado, xmlRetorno) {
+  const xml = String(xmlAssinado || "").replace(/^<\?xml[^>]*>\s*/i, "").trim();
+  const retorno = String(xmlRetorno || "");
+  const protocolo = retorno.match(/<(?:\w+:)?protNFe\b[^>]*>[\s\S]*?<\/(?:\w+:)?protNFe>/i)?.[0] || "";
+  if (!xml || !protocolo) return xmlAssinado || "";
+  return `<?xml version="1.0" encoding="UTF-8"?><nfeProc xmlns="http://www.portalfiscal.inf.br/nfe" versao="4.00">${xml}${protocolo}</nfeProc>`;
+}
+
+function aplicarRetornoSefaz(nfe, ret, etapa) {
+  nfe.cStat = String(ret.cStat || "");
+  nfe.recibo = ret.nRec || nfe.recibo || "";
+  nfe.protocolo = ret.nProt || nfe.protocolo || "";
+  nfe.mensagemSefaz = ret.xMotivo || "Retorno SEFAZ recebido.";
+  nfe.xmlRetornoSefaz = ret.xmlRetorno || ret.xmlSoap || nfe.xmlRetornoSefaz || "";
+  nfe.ultimaTentativaSefaz = new Date();
+
+  if (nfe.cStat === "100") {
+    nfe.status = "autorizada";
+    nfe.dataAutorizacao = ret.dhRecbto ? new Date(ret.dhRecbto) : new Date();
+    nfe.xmlAutorizado = montarXmlAutorizado(nfe.xmlAssinado, nfe.xmlRetornoSefaz);
+  } else if (["103", "104", "105"].includes(nfe.cStat) || nfe.recibo) {
+    nfe.status = "processando";
+  } else if (["110", "301", "302", "303"].includes(nfe.cStat)) {
+    nfe.status = "denegada";
+  } else {
+    nfe.status = "rejeitada";
+  }
+
+  registrarHistorico(nfe, etapa, {
+    status: nfe.status,
+    cStat: nfe.cStat,
+    mensagem: nfe.mensagemSefaz,
+    protocolo: nfe.protocolo,
+    recibo: nfe.recibo,
+  });
+}
 
 function nums(v) { return String(v || "").replace(/\D/g, ""); }
 function num(v,d=0) { const n=Number(v); return Number.isFinite(n)?n:d; }
@@ -157,29 +210,66 @@ async function gerarNfeDoPedido(dados) {
 
   const nr=await reservar(empresaId,dados.ambiente,dados.serie);
   const nfe=await Nfe.create({ empresa:empresaId, pedido:pedido._id, cliente:null, numero:nr.numero, serie:nr.serie, modelo:"55", ambiente:nr.ambiente, naturezaOperacao:dados.naturezaOperacao || "Venda de mercadoria", tipoOperacao:1, finalidade:1, consumidorFinal:dados.consumidorFinal ?? true, indicadorPresenca:dados.indicadorPresenca ?? 1, destinoOperacao:estadoEmpresa(empresa) === dest.endereco.uf ? 1 : 2, modalidadeFrete:num(dados.modalidadeFrete,9), destinatario:dest, itens, totais:t, pagamento:{ forma:String(dados.formaPagamento || "17"), descricao:dados.descricaoPagamento || pedido.pagamento || "PIX", valor:t.valorTotal }, informacoesComplementares:dados.informacoesComplementares || pedido.observacao || "", status:"gerada" });
-  const gerado=gerarXmlNfe({ nfe, empresa }); nfe.xml=gerado.xml; nfe.chaveAcesso=gerado.chaveAcesso; nfe.mensagemSefaz="XML da NF-e gerado. Próxima etapa: assinatura."; await nfe.save(); return nfe;
+  const gerado=gerarXmlNfe({ nfe, empresa }); nfe.xml=gerado.xml; nfe.chaveAcesso=gerado.chaveAcesso; nfe.mensagemSefaz="XML da NF-e gerado. Próxima etapa: assinatura."; registrarHistorico(nfe, "geracao", { status: "gerada", mensagem: nfe.mensagemSefaz }); await nfe.save(); return nfe;
 }
 
 async function assinarNfe(id) {
   const nfe=await Nfe.findById(id); if (!nfe) throw new Error("NF-e não encontrada."); if (!nfe.xml) throw new Error("XML da NF-e não encontrado.");
-  nfe.xmlAssinado=assinarXmlNfe(String(nfe.xml).replace(/>\s+</g,"><").trim()); nfe.status="assinada"; nfe.mensagemSefaz="XML da NF-e assinado. Próxima etapa: transmissão."; await nfe.save(); return nfe;
+  nfe.xmlAssinado=assinarXmlNfe(String(nfe.xml).replace(/>\s+</g,"><").trim()); nfe.status="assinada"; nfe.mensagemSefaz="XML da NF-e assinado. Próxima etapa: transmissão."; registrarHistorico(nfe, "assinatura", { status: "assinada", mensagem: nfe.mensagemSefaz }); await nfe.save(); return nfe;
 }
 
 async function transmitirNfe(id) {
-  let nfe=await Nfe.findById(id); if (!nfe) throw new Error("NF-e não encontrada."); if (["autorizada","cancelada"].includes(nfe.status)) throw new Error(`NF-e já está ${nfe.status}.`);
-  if (!nfe.xmlAssinado) nfe=await assinarNfe(id);
-  const ret=await transmitirNfeParaSefaz(nfe.xmlAssinado,String(nfe.numero).padStart(15,"0"));
-  nfe.cStat=String(ret.cStat || ""); nfe.recibo=ret.nRec || ""; nfe.protocolo=ret.nProt || ""; nfe.mensagemSefaz=ret.xMotivo || "Retorno SEFAZ recebido.";
-  if (nfe.cStat === "100") { nfe.status="autorizada"; nfe.dataAutorizacao=ret.dhRecbto ? new Date(ret.dhRecbto) : new Date(); nfe.xmlAutorizado=ret.xmlAutorizado || nfe.xmlAssinado; }
-  else if (["103","104","105"].includes(nfe.cStat) || nfe.recibo) nfe.status="processando"; else nfe.status="rejeitada";
-  await nfe.save(); return nfe;
+  let nfe = await Nfe.findById(id);
+  if (!nfe) throw new Error("NF-e não encontrada.");
+  if (["autorizada", "cancelada", "denegada"].includes(nfe.status)) {
+    throw new Error(`NF-e já está ${nfe.status}.`);
+  }
+  if (!nfe.xmlAssinado) nfe = await assinarNfe(id);
+
+  nfe.quantidadeTentativasSefaz = num(nfe.quantidadeTentativasSefaz) + 1;
+  nfe.ultimaTentativaSefaz = new Date();
+  registrarHistorico(nfe, "transmissao_iniciada", { status: "transmitida", mensagem: "NF-e enviada à SEFAZ." });
+  await nfe.save();
+
+  try {
+    const ret = await transmitirNfeParaSefaz(
+      nfe.xmlAssinado,
+      String(nfe.numero).padStart(15, "0"),
+      nfe.ambiente
+    );
+    aplicarRetornoSefaz(nfe, ret, "retorno_transmissao");
+    await nfe.save();
+    return nfe;
+  } catch (error) {
+    nfe.status = "erro";
+    nfe.mensagemSefaz = error.message || "Falha técnica na comunicação com a SEFAZ.";
+    registrarHistorico(nfe, "erro_transmissao", { status: "erro", mensagem: nfe.mensagemSefaz });
+    await nfe.save();
+    throw error;
+  }
 }
 
 async function consultarRetornoNfe(id) {
-  const nfe=await Nfe.findById(id); if (!nfe) throw new Error("NF-e não encontrada."); if (!nfe.recibo) throw new Error("Recibo da NF-e não encontrado.");
-  const ret=await consultarReciboNfe(nfe.recibo); nfe.cStat=String(ret.cStat || ""); nfe.protocolo=ret.nProt || nfe.protocolo; nfe.mensagemSefaz=ret.xMotivo || "Consulta realizada.";
-  if (nfe.cStat === "100") { nfe.status="autorizada"; nfe.dataAutorizacao=ret.dhRecbto ? new Date(ret.dhRecbto) : new Date(); nfe.xmlAutorizado=ret.xmlAutorizado || nfe.xmlAssinado; } else if (["103","104","105"].includes(nfe.cStat)) nfe.status="processando"; else nfe.status="rejeitada";
-  await nfe.save(); return nfe;
+  const nfe = await Nfe.findById(id);
+  if (!nfe) throw new Error("NF-e não encontrada.");
+  if (nfe.status === "autorizada") return nfe;
+
+  let ret;
+  if (nfe.recibo) {
+    ret = await consultarReciboNfe(nfe.recibo, nfe.ambiente);
+  } else if (nfe.chaveAcesso) {
+    ret = await consultarNfePorChave(nfe.chaveAcesso, nfe.ambiente);
+  } else {
+    throw new Error("A NF-e não possui recibo nem chave de acesso para consulta.");
+  }
+
+  aplicarRetornoSefaz(nfe, ret, "consulta_sefaz");
+  await nfe.save();
+  return nfe;
+}
+
+async function consultarStatusSefaz(ambiente = "homologacao") {
+  return consultarStatusServicoNfe(ambiente);
 }
 
 async function processarNfeDoPedido(dados) {
@@ -203,4 +293,4 @@ async function processarNfeDoPedido(dados) {
   return nfe;
 }
 
-module.exports={ prevalidarNfeDoPedido, gerarNfeDoPedido, assinarNfe, transmitirNfe, consultarRetornoNfe, processarNfeDoPedido };
+module.exports={ prevalidarNfeDoPedido, gerarNfeDoPedido, assinarNfe, transmitirNfe, consultarRetornoNfe, consultarStatusSefaz, processarNfeDoPedido };

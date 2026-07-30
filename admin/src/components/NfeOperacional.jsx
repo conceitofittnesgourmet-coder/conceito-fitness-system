@@ -39,6 +39,7 @@ function NfeOperacional() {
   const [mensagem, setMensagem] = useState("");
   const [erros, setErros] = useState([]);
   const [validacao, setValidacao] = useState(null);
+  const [statusSefaz, setStatusSefaz] = useState(null);
 
   const pedidoSelecionado = useMemo(
     () => pedidos.find((pedido) => pedido._id === pedidoId),
@@ -149,6 +150,21 @@ function NfeOperacional() {
     }
   }
 
+  async function consultarStatusSefaz() {
+    try {
+      setCarregando(true);
+      const ambiente = diagnostico?.ambiente || "homologacao";
+      const response = await api.get(`/nfe/sefaz/status?ambiente=${ambiente}`);
+      setStatusSefaz(response.data.status || null);
+      setMensagem(response.data.status?.xMotivo || "Status da SEFAZ consultado.");
+    } catch (error) {
+      setStatusSefaz(null);
+      setMensagem(error.response?.data?.message || "Não foi possível consultar o status da SEFAZ.");
+    } finally {
+      setCarregando(false);
+    }
+  }
+
   async function consultar(id) {
     try {
       setCarregando(true);
@@ -188,7 +204,18 @@ function NfeOperacional() {
           <span>Ambiente: {diagnostico.ambiente}</span>
           <span>Produtos: {diagnostico.produtos?.total || 0}</span>
           <span>Pendências: {diagnostico.pendencias?.length || 0}</span>
-          <button type="button" className="btn-ver" onClick={carregar}>Atualizar diagnóstico</button>
+          <div className="nfe-diagnostico-acoes">
+            <button type="button" className="btn-ver" onClick={carregar}>Atualizar diagnóstico</button>
+            <button type="button" className="btn-ver" onClick={consultarStatusSefaz} disabled={carregando}>Testar SEFAZ</button>
+          </div>
+        </div>
+      )}
+
+      {statusSefaz && (
+        <div className={`nfe-status-sefaz ${statusSefaz.cStat === "107" ? "ok" : "alerta"}`}>
+          <strong>SEFAZ {statusSefaz.cStat === "107" ? "operacional" : "respondeu com alerta"}</strong>
+          <span>cStat {statusSefaz.cStat || "-"} — {statusSefaz.xMotivo || "Sem mensagem"}</span>
+          <small>Ambiente: {statusSefaz.ambiente || diagnostico?.ambiente || "-"} {statusSefaz.dhRecbto ? `• ${new Date(statusSefaz.dhRecbto).toLocaleString("pt-BR")}` : ""}</small>
         </div>
       )}
 
@@ -309,7 +336,7 @@ function NfeOperacional() {
       <div className="fiscal-table-wrap nfe-historico">
         <table>
           <thead>
-            <tr><th>Número</th><th>Destinatário</th><th>Valor</th><th>Status</th><th>SEFAZ</th><th>Ações</th></tr>
+            <tr><th>Número</th><th>Destinatário</th><th>Valor</th><th>Status</th><th>SEFAZ</th><th>Protocolo</th><th>Ações</th></tr>
           </thead>
           <tbody>
             {nfes.map((nfe) => (
@@ -319,6 +346,7 @@ function NfeOperacional() {
                 <td>{dinheiro(nfe.totais?.valorTotal)}</td>
                 <td>{nfe.status}</td>
                 <td>{nfe.cStat || "-"} {nfe.mensagemSefaz || ""}</td>
+                <td>{nfe.protocolo || nfe.recibo || "-"}</td>
                 <td className="acoes-nota">
                   {nfe.status === "processando" && <button className="btn-ver" onClick={() => consultar(nfe._id)}>Consultar</button>}
                   <button className="btn-ver" onClick={() => abrir(`/nfe/${nfe._id}/danfe`)}>DANFE</button>
@@ -326,7 +354,7 @@ function NfeOperacional() {
                 </td>
               </tr>
             ))}
-            {nfes.length === 0 && <tr><td colSpan="6">Nenhuma NF-e emitida.</td></tr>}
+            {nfes.length === 0 && <tr><td colSpan="7">Nenhuma NF-e emitida.</td></tr>}
           </tbody>
         </table>
       </div>

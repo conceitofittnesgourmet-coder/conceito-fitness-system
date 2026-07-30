@@ -275,6 +275,20 @@ const cartaCorrecaoSchema = new mongoose.Schema(
   }
 );
 
+
+const processamentoNfeSchema = new mongoose.Schema(
+  {
+    etapa: { type: String, required: true, trim: true },
+    status: { type: String, default: "", trim: true },
+    cStat: { type: String, default: "", trim: true },
+    mensagem: { type: String, default: "", trim: true },
+    protocolo: { type: String, default: "", trim: true },
+    recibo: { type: String, default: "", trim: true },
+    data: { type: Date, default: Date.now },
+  },
+  { _id: true }
+);
+
 const nfeSchema = new mongoose.Schema(
   {
     empresa: {
@@ -663,6 +677,27 @@ const nfeSchema = new mongoose.Schema(
     xmlAutorizado: {
       type: String,
       default: "",
+    },
+
+    xmlRetornoSefaz: {
+      type: String,
+      default: "",
+    },
+
+    ultimaTentativaSefaz: {
+      type: Date,
+      default: null,
+    },
+
+    quantidadeTentativasSefaz: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+
+    historicoProcessamento: {
+      type: [processamentoNfeSchema],
+      default: [],
     },
 
     status: {
