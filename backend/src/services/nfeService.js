@@ -58,6 +58,81 @@ async function reservar(empresaId, ambienteInformado, serieInformada) {
   return { numero, serie, ambiente };
 }
 
+
+async function prevalidarNfeDoPedido(dados) {
+  const pedido = await Pedido.findById(dados.pedidoId);
+  if (!pedido) throw new Error("Pedido não encontrado.");
+  if (pedido.status === "cancelado") throw new Error("Não é permitido emitir NF-e para pedido cancelado.");
+
+  const empresaId = dados.empresaId || pedido.empresa;
+  if (!empresaId) throw new Error("Empresa emissora não identificada no pedido nem na requisição.");
+
+  const empresa = await Empresa.findById(empresaId);
+  if (!empresa) throw new Error("Empresa emissora não encontrada.");
+
+  const existente = await Nfe.findOne({ empresa: empresaId, pedido: pedido._id });
+  if (existente && !["rejeitada", "erro"].includes(existente.status)) {
+    throw new Error(`Já existe uma NF-e ${existente.status} vinculada a este pedido.`);
+  }
+
+  const destinatario = destinatarioDoPedido(pedido, dados.destinatario || {});
+  const ufEmitente = estadoEmpresa(empresa);
+  const itens = itensDoPedido(pedido, ufEmitente, destinatario.endereco.uf);
+  const resumoTotais = totais(itens, {
+    ...dados,
+    valorDesconto: dados.valorDesconto ?? pedido.desconto ?? 0,
+  });
+
+  const validacao = validarAntesDeGerarNfe({
+    empresa,
+    destinatario,
+    itens,
+    totais: resumoTotais,
+    validarA1: true,
+  });
+
+  const cfg = await ConfiguracaoFiscal.findOne({ empresa: empresaId });
+  const ambiente = dados.ambiente || cfg?.ambiente || "homologacao";
+  const serie = num(dados.serie || cfg?.serieNfe, 1);
+  const proximoNumero = num(cfg?.proximoNumeroNfe, 1);
+
+  return {
+    valido: true,
+    ambiente,
+    homologacao: ambiente === "homologacao",
+    serie,
+    proximoNumero,
+    pedido: {
+      id: pedido._id,
+      cliente: pedido.cliente || destinatario.nomeRazaoSocial,
+      total: resumoTotais.valorTotal,
+      quantidadeItens: itens.length,
+    },
+    emitente: {
+      razaoSocial: empresa.razaoSocial || empresa.nome || "",
+      cnpj: validacao.cnpjEmitente,
+      uf: ufEmitente,
+    },
+    destinatario: {
+      nomeRazaoSocial: destinatario.nomeRazaoSocial,
+      documento: validacao.cnpjDestinatario || validacao.cpf,
+      uf: destinatario.endereco.uf,
+    },
+    itens: itens.map((item, indice) => ({
+      numero: indice + 1,
+      descricao: item.descricao,
+      ncm: item.ncm,
+      cfop: item.cfop,
+      tributacao: item.csosn || item.cstIcms,
+      quantidade: item.quantidadeComercial,
+      valor: item.valorProduto,
+    })),
+    totais: resumoTotais,
+    aviso: ambiente === "homologacao"
+      ? "Validação concluída em ambiente de homologação. Nenhuma numeração foi consumida e nenhum XML foi transmitido."
+      : "A configuração está em produção. Confirme os dados antes de transmitir a NF-e.",
+  };
+}
 async function gerarNfeDoPedido(dados) {
   const pedido=await Pedido.findById(dados.pedidoId);
   if (!pedido) throw new Error("Pedido não encontrado.");
@@ -128,4 +203,4 @@ async function processarNfeDoPedido(dados) {
   return nfe;
 }
 
-module.exports={ gerarNfeDoPedido, assinarNfe, transmitirNfe, consultarRetornoNfe, processarNfeDoPedido };
+module.exports={ prevalidarNfeDoPedido, gerarNfeDoPedido, assinarNfe, transmitirNfe, consultarRetornoNfe, processarNfeDoPedido };

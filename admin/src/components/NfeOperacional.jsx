@@ -38,6 +38,7 @@ function NfeOperacional() {
   const [carregando, setCarregando] = useState(false);
   const [mensagem, setMensagem] = useState("");
   const [erros, setErros] = useState([]);
+  const [validacao, setValidacao] = useState(null);
 
   const pedidoSelecionado = useMemo(
     () => pedidos.find((pedido) => pedido._id === pedidoId),
@@ -66,16 +67,62 @@ function NfeOperacional() {
     carregar();
   }, []);
 
+  function invalidarValidacao() {
+    setValidacao(null);
+  }
+
+  function atualizarDestinatario(campo, valor) {
+    invalidarValidacao();
+    setDestinatario((atual) => ({ ...atual, [campo]: valor }));
+  }
+
   function atualizarEndereco(campo, valor) {
+    invalidarValidacao();
     setDestinatario((atual) => ({
       ...atual,
       endereco: { ...atual.endereco, [campo]: valor },
     }));
   }
 
+
+  async function validarNfe() {
+    if (!pedidoId) {
+      setMensagem("Selecione um pedido antes de validar a NF-e.");
+      return;
+    }
+
+    setCarregando(true);
+    setMensagem("");
+    setErros([]);
+    setValidacao(null);
+
+    try {
+      const response = await api.post(`/nfe/validar/${pedidoId}`, {
+        destinatario,
+        formaPagamento: "17",
+        descricaoPagamento: pedidoSelecionado?.pagamento || "PIX",
+        consumidorFinal: true,
+        indicadorPresenca: pedidoSelecionado?.tipo === "delivery" ? 2 : 1,
+      });
+
+      setValidacao(response.data.validacao || null);
+      setMensagem(response.data.message || "Validação fiscal concluída.");
+    } catch (error) {
+      setMensagem(error.response?.data?.message || "Não foi possível validar a NF-e.");
+      setErros(error.response?.data?.erros || []);
+    } finally {
+      setCarregando(false);
+    }
+  }
+
   async function processarNfe() {
     if (!pedidoId) {
       setMensagem("Selecione um pedido antes de emitir a NF-e.");
+      return;
+    }
+
+    if (!validacao?.valido) {
+      setMensagem("Valide o pedido antes de gerar e transmitir a NF-e.");
       return;
     }
 
@@ -159,7 +206,7 @@ function NfeOperacional() {
       <div className="nfe-form-grid">
         <label className="nfe-campo nfe-campo-largo">
           <span>Pedido</span>
-          <select value={pedidoId} onChange={(e) => setPedidoId(e.target.value)}>
+          <select value={pedidoId} onChange={(e) => { setPedidoId(e.target.value); invalidarValidacao(); }}>
             <option value="">Selecione um pedido</option>
             {pedidos.map((pedido) => (
               <option key={pedido._id} value={pedido._id}>
@@ -171,19 +218,19 @@ function NfeOperacional() {
 
         <label className="nfe-campo nfe-campo-largo">
           <span>Razão social</span>
-          <input value={destinatario.nomeRazaoSocial} onChange={(e) => setDestinatario({ ...destinatario, nomeRazaoSocial: e.target.value })} />
+          <input value={destinatario.nomeRazaoSocial} onChange={(e) => atualizarDestinatario("nomeRazaoSocial", e.target.value)} />
         </label>
         <label className="nfe-campo">
           <span>CNPJ</span>
-          <input value={destinatario.cnpj} onChange={(e) => setDestinatario({ ...destinatario, cnpj: e.target.value })} />
+          <input value={destinatario.cnpj} onChange={(e) => atualizarDestinatario("cnpj", e.target.value)} />
         </label>
         <label className="nfe-campo">
           <span>Inscrição estadual</span>
-          <input value={destinatario.inscricaoEstadual} onChange={(e) => setDestinatario({ ...destinatario, inscricaoEstadual: e.target.value })} />
+          <input value={destinatario.inscricaoEstadual} onChange={(e) => atualizarDestinatario("inscricaoEstadual", e.target.value)} />
         </label>
         <label className="nfe-campo">
           <span>Indicador IE</span>
-          <select value={destinatario.indicadorIe} onChange={(e) => setDestinatario({ ...destinatario, indicadorIe: Number(e.target.value) })}>
+          <select value={destinatario.indicadorIe} onChange={(e) => atualizarDestinatario("indicadorIe", Number(e.target.value))}>
             <option value={1}>Contribuinte</option>
             <option value={2}>Contribuinte isento</option>
             <option value={9}>Não contribuinte</option>
@@ -191,7 +238,7 @@ function NfeOperacional() {
         </label>
         <label className="nfe-campo">
           <span>E-mail</span>
-          <input type="email" value={destinatario.email} onChange={(e) => setDestinatario({ ...destinatario, email: e.target.value })} />
+          <input type="email" value={destinatario.email} onChange={(e) => atualizarDestinatario("email", e.target.value)} />
         </label>
         <label className="nfe-campo">
           <span>CEP</span>
@@ -223,9 +270,34 @@ function NfeOperacional() {
         </label>
       </div>
 
-      <button className="btn-fiscal salvar" type="button" onClick={processarNfe} disabled={carregando || !diagnostico?.pronto}>
-        {carregando ? "Processando NF-e..." : "Gerar, assinar e transmitir NF-e"}
-      </button>
+      <div className="nfe-acoes-emissao">
+        <button className="btn-fiscal validar" type="button" onClick={validarNfe} disabled={carregando || !diagnostico?.pronto}>
+          {carregando ? "Validando..." : "1. Validar pedido para NF-e"}
+        </button>
+        <button className="btn-fiscal salvar" type="button" onClick={processarNfe} disabled={carregando || !diagnostico?.pronto || !validacao?.valido}>
+          {carregando ? "Processando NF-e..." : "2. Gerar, assinar e transmitir NF-e"}
+        </button>
+      </div>
+
+      {validacao?.valido && (
+        <div className={`nfe-validacao-resumo ${validacao.homologacao ? "homologacao" : "producao"}`}>
+          <div className="nfe-validacao-topo">
+            <div>
+              <strong>Pré-validação concluída</strong>
+              <span>{validacao.aviso}</span>
+            </div>
+            <b>{String(validacao.ambiente || "").toUpperCase()}</b>
+          </div>
+          <div className="nfe-validacao-grid">
+            <div><span>Próxima numeração</span><strong>{validacao.proximoNumero}/{validacao.serie}</strong></div>
+            <div><span>Emitente</span><strong>{validacao.emitente?.razaoSocial}</strong></div>
+            <div><span>Destinatário</span><strong>{validacao.destinatario?.nomeRazaoSocial}</strong></div>
+            <div><span>Itens</span><strong>{validacao.pedido?.quantidadeItens}</strong></div>
+            <div><span>Total</span><strong>{dinheiro(validacao.totais?.valorTotal)}</strong></div>
+            <div><span>Destino</span><strong>{validacao.emitente?.uf} → {validacao.destinatario?.uf}</strong></div>
+          </div>
+        </div>
+      )}
 
       {mensagem && <div className="nfe-mensagem">{mensagem}</div>}
       {erros.length > 0 && (

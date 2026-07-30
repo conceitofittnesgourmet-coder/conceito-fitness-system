@@ -476,3 +476,95 @@
 .nfe-erros { background:rgba(239,68,68,.12); border:1px solid rgba(239,68,68,.25); color:#fecaca; display:grid; gap:7px; }
 .nfe-historico { margin-top:22px; }
 @media (max-width:900px) { .nfe-cabecalho{flex-direction:column}.nfe-form-grid{grid-template-columns:1fr}.nfe-campo-largo{grid-column:auto} }
+
+/* NF-e homologação assistida - V01.3 */
+.nfe-acoes-emissao {
+  display: flex;
+  gap: 12px;
+  flex-wrap: wrap;
+  margin-top: 18px;
+}
+
+.btn-fiscal.validar {
+  background: rgba(59, 130, 246, 0.2);
+  border: 1px solid rgba(96, 165, 250, 0.45);
+  color: #bfdbfe;
+}
+
+.btn-fiscal.validar:hover:not(:disabled) {
+  background: rgba(59, 130, 246, 0.3);
+}
+
+.nfe-validacao-resumo {
+  margin-top: 16px;
+  padding: 18px;
+  border-radius: 18px;
+  background: rgba(15, 23, 42, 0.72);
+  border: 1px solid rgba(34, 197, 94, 0.32);
+}
+
+.nfe-validacao-resumo.producao {
+  border-color: rgba(245, 158, 11, 0.5);
+}
+
+.nfe-validacao-topo {
+  display: flex;
+  justify-content: space-between;
+  gap: 16px;
+  align-items: flex-start;
+  margin-bottom: 14px;
+}
+
+.nfe-validacao-topo strong,
+.nfe-validacao-topo span {
+  display: block;
+}
+
+.nfe-validacao-topo span {
+  margin-top: 5px;
+  color: rgba(255, 255, 255, 0.68);
+}
+
+.nfe-validacao-topo b {
+  padding: 8px 11px;
+  border-radius: 999px;
+  background: rgba(34, 197, 94, 0.16);
+  color: #86efac;
+  font-size: 12px;
+}
+
+.nfe-validacao-resumo.producao .nfe-validacao-topo b {
+  background: rgba(245, 158, 11, 0.16);
+  color: #fde68a;
+}
+
+.nfe-validacao-grid {
+  display: grid;
+  grid-template-columns: repeat(3, minmax(160px, 1fr));
+  gap: 10px;
+}
+
+.nfe-validacao-grid div {
+  padding: 13px;
+  border-radius: 13px;
+  background: rgba(30, 41, 59, 0.78);
+}
+
+.nfe-validacao-grid span,
+.nfe-validacao-grid strong {
+  display: block;
+}
+
+.nfe-validacao-grid span {
+  color: rgba(255, 255, 255, 0.56);
+  font-size: 12px;
+  font-weight: 800;
+  margin-bottom: 5px;
+}
+
+@media (max-width: 900px) {
+  .nfe-acoes-emissao { flex-direction: column; }
+  .nfe-acoes-emissao .btn-fiscal { width: 100%; }
+  .nfe-validacao-grid { grid-template-columns: 1fr; }
+  .nfe-validacao-topo { flex-direction: column; }
+}

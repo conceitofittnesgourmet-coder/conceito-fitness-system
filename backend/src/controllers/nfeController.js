@@ -1,5 +1,6 @@
 const Nfe = require("../models/nfe");
 const {
+  prevalidarNfeDoPedido,
   gerarNfeDoPedido,
   assinarNfe,
   transmitirNfe,
@@ -28,6 +29,32 @@ exports.diagnostico = async (req, res) => {
   } catch (error) {
     console.error("ERRO DIAGNOSTICO FISCAL:", error);
     return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+exports.validarPorPedido = async (req, res) => {
+  try {
+    const resultado = await prevalidarNfeDoPedido({
+      pedidoId: req.params.pedidoId,
+      empresaId: obterEmpresaId(req),
+      ...req.body,
+    });
+
+    return res.json({
+      success: true,
+      message: resultado.homologacao
+        ? "Pedido validado para emissão em homologação."
+        : "Pedido validado para emissão em produção.",
+      validacao: resultado,
+    });
+  } catch (error) {
+    console.error("ERRO VALIDAR NFE:", error);
+    return res.status(error.statusCode || 422).json({
+      success: false,
+      code: error.codigo || error.code || "ERRO_VALIDAR_NFE",
+      message: error.message,
+      erros: error.erros || [],
+    });
   }
 };
 

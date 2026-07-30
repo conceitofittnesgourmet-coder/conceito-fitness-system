@@ -5,6 +5,7 @@ const controller = require("../controllers/nfeController");
 router.get("/", controller.listar);
 router.get("/diagnostico/status", controller.diagnostico);
 router.get("/pedido/:pedidoId", controller.buscarPorPedido);
+router.post("/validar/:pedidoId", controller.validarPorPedido);
 router.post("/emitir/:pedidoId", controller.emitirPorPedido);
 router.post("/processar/:pedidoId", controller.processarPorPedido);
 router.post("/assinar/:id", controller.assinarPorId);
