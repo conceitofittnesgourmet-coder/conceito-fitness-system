@@ -117,3 +117,29 @@ exports.resumoAssinaturas = async (_req, res) => { try {
   ]);
   res.json({ success: true, resumo: { ativas, pendentes, vencidas, receitaRecorrente: receita[0]?.total || 0 } });
 } catch (e) { res.status(500).json({ success: false, message: e.message }); } };
+
+
+const MissaoClube = require("../models/missaoclube");
+const ProgressoMissaoClube = require("../models/progressomissaoclube");
+const Gamificacao = require("../services/ClubeGamificacaoService");
+
+exports.listarMissoes = async (_req, res) => { try {
+  const missoes = await MissaoClube.find().sort({ ativo: -1, createdAt: -1 });
+  const contagens = await ProgressoMissaoClube.aggregate([{ $group: { _id: "$missao", participantes: { $sum: 1 }, concluidas: { $sum: { $cond: ["$concluida", 1, 0] } } } }]);
+  const mapa = new Map(contagens.map(i => [String(i._id), i]));
+  res.json({ success: true, missoes: missoes.map(m => ({ ...m.toObject(), estatisticas: mapa.get(String(m._id)) || { participantes: 0, concluidas: 0 } })) });
+} catch (e) { res.status(500).json({ success: false, message: e.message }); } };
+exports.salvarMissao = async (req, res) => { try {
+  if (!req.body?.nome || Number(req.body?.meta) < 1) return res.status(400).json({ success: false, message: "Nome e meta são obrigatórios." });
+  const dados = { ...req.body, recompensa: { ...(req.body.recompensa || {}), valor: Number(req.body?.recompensa?.valor || 0) } };
+  const missao = req.params.id ? await MissaoClube.findByIdAndUpdate(req.params.id, dados, { new: true, runValidators: true }) : await MissaoClube.create(dados);
+  res.status(req.params.id ? 200 : 201).json({ success: true, missao });
+} catch (e) { res.status(400).json({ success: false, message: e.message }); } };
+exports.excluirMissao = async (req, res) => { try {
+  const possuiProgresso = await ProgressoMissaoClube.exists({ missao: req.params.id });
+  if (possuiProgresso) return res.status(409).json({ success: false, message: "A missão já possui progresso. Desative-a em vez de excluir." });
+  await MissaoClube.findByIdAndDelete(req.params.id); res.json({ success: true });
+} catch (e) { res.status(400).json({ success: false, message: e.message }); } };
+exports.rankingGamificacao = async (_req, res) => { try { res.json({ success: true, ranking: await Gamificacao.ranking(30) }); } catch (e) { res.status(500).json({ success: false, message: e.message }); } };
+exports.processarEventoGamificacao = async (req, res) => { try { res.json({ success: true, resultado: await Gamificacao.processarEvento(req.body || {}) }); } catch (e) { res.status(400).json({ success: false, message: e.message }); } };
+exports.progressoCliente = async (req, res) => { try { res.json({ success: true, missoes: await Gamificacao.missoesDoCliente(req.params.clienteId) }); } catch (e) { res.status(400).json({ success: false, message: e.message }); } };

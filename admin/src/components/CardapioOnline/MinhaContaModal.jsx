@@ -1,5 +1,5 @@
 import { useEffect, useState } from "react";
-import { Clock3, Heart, LogOut, PackageCheck, UserRound, X } from "lucide-react";
+import { Target, Clock3, Heart, LogOut, PackageCheck, UserRound, X } from "lucide-react";
 import api from "../../services/api";
 
 function statusLabel(pedido) {
@@ -90,6 +90,8 @@ export default function MinhaContaModal({ aberto, onClose, sessao, onEntrar, onS
               {carteira.assinatura && <div className="co-club-subscription"><strong>{carteira.assinatura.plano?.nome}</strong><span>Assinatura ativa até {new Date(carteira.assinatura.vencimento).toLocaleDateString("pt-BR")}</span></div>}
               {carteira.proximoNivel && <footer>Faltam R$ {Number(carteira.proximoNivel.falta).toFixed(2)} para o nível {carteira.proximoNivel.nome}.</footer>}
             </section>}
+
+            {carteira?.gamificacao?.missoes?.length > 0 && <section className="co-missions"><div className="co-account-section-title"><Target /><div><h3>Minhas missões</h3><p>{carteira.gamificacao.concluidas || 0} concluídas</p></div></div><div className="co-mission-list">{carteira.gamificacao.missoes.slice(0, 6).map((m) => <article key={m._id} className={m.concluida ? "done" : ""}><span>{m.icone || "⭐"}</span><div><strong>{m.nome}</strong><small>{m.progresso} de {m.meta}</small><div><i style={{ width: `${m.percentual}%` }} /></div></div><b>{m.percentual}%</b></article>)}</div></section>}
 
             <section className="co-order-history">
               <div className="co-account-section-title"><Clock3 /><div><h3>Meus pedidos</h3><p>Acompanhe as compras feitas com seu WhatsApp.</p></div></div>

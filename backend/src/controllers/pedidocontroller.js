@@ -1,6 +1,7 @@
 const Produto = require("../models/produto");
 const Pedido = require("../models/pedido");
 const Cliente = require("../models/cliente");
+const ClubeGamificacao = require("../services/ClubeGamificacaoService");
 const ContaReceber = require("../models/contareceber");
 const MovimentacaoFinanceira = require("../models/movimentacaofinanceira");
 const {
@@ -12,26 +13,6 @@ const {
   consumirFichaDoItemPedido,
 } = require("../services/fichaTecnicaService");
 
-
-
-
-exports.listarPedidosCardapio = async (req, res) => {
-  try {
-    const telefone = String(req.query?.telefone || "").replace(/\D/g, "");
-    if (telefone.length < 10) {
-      return res.status(400).json({ success: false, message: "WhatsApp inválido." });
-    }
-
-    const pedidos = await Pedido.find({ telefone })
-      .sort({ createdAt: -1 })
-      .limit(30)
-      .select("numeroPedido produtos total status statusProducao tipo mesa createdAt tempoPrevisto");
-
-    return res.json({ success: true, pedidos });
-  } catch (error) {
-    return res.status(500).json({ success: false, message: error.message });
-  }
-};
 
 // LISTAR
 exports.listarPedidos = async (req, res) => {
@@ -260,6 +241,14 @@ pagamentos: pagamentosRecebidos,
 
     
     const pedidoCriado = await Pedido.create(dadosPedido);
+
+    // GAMIFICAÇÃO DO CLUBE: não interrompe a venda caso o cliente não esteja cadastrado.
+    ClubeGamificacao.processarEvento({
+      telefone: telefone || "",
+      valor: Number(total || 0),
+      pedidoId: pedidoCriado._id,
+      itens: produtosSnapshot.map((item) => ({ produtoId: item.produtoId, categoria: item.categoria, quantidade: item.quantidade })),
+    }).catch((erro) => console.error("ERRO GAMIFICAÇÃO DO PEDIDO:", erro.message));
     
     // ===============================
 // FINANCEIRO AUTOMÁTICO

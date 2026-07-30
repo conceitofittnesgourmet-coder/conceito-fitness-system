@@ -2,6 +2,7 @@ const Cliente = require("../models/cliente");
 const ClubeConfiguracao = require("../models/clubeconfiguracao");
 const MovimentoClube = require("../models/movimentoclube");
 const AssinaturaClube = require("../models/assinaturaclube");
+const Gamificacao = require("./ClubeGamificacaoService");
 
 function telefoneNumeros(valor) { return String(valor || "").replace(/\D/g, ""); }
 function numeroAssociado(cliente) { return `CC-${String(cliente._id).slice(-8).toUpperCase()}`; }
@@ -44,8 +45,11 @@ async function carteiraPorTelefone(telefone) {
   const cliente = await Cliente.findOne({ telefone: telefoneNumeros(telefone) });
   if (!cliente) return null;
   const carteira = await prepararCarteira(cliente);
-  const movimentos = await MovimentoClube.find({ cliente: cliente._id }).sort({ createdAt: -1 }).limit(20).lean();
-  return { ...carteira, movimentos };
+  const [movimentos, missoes] = await Promise.all([
+    MovimentoClube.find({ cliente: cliente._id }).sort({ createdAt: -1 }).limit(20).lean(),
+    Gamificacao.missoesDoCliente(cliente._id),
+  ]);
+  return { ...carteira, movimentos, gamificacao: { missoes, concluidas: missoes.filter(m => m.concluida).length } };
 }
 
 async function painel() {
