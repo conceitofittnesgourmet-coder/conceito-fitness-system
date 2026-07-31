@@ -4,6 +4,7 @@ const IfoodApiService = require("../services/IfoodApiService");
 const IfoodPollingService = require("../services/IfoodPollingService");
 const IfoodOrderStatusService = require("../services/IfoodOrderStatusService");
 const IfoodCatalogoService = require("../services/IfoodCatalogoService");
+const IfoodReconciliacaoService = require("../services/IfoodReconciliacaoService");
 
 function publico(documento) {
   if (!documento) return null;
@@ -197,6 +198,46 @@ exports.atualizarPrecoCatalogo = async (req, res) => {
   try {
     const resultado = await IfoodCatalogoService.atualizarPreco(req.params.produtoId, req.body?.preco);
     return res.json({ success: true, message: "Preço atualizado no iFood.", resultado });
+  } catch (error) {
+    return res.status(400).json({ success: false, message: error.message });
+  }
+};
+
+
+exports.executarAuditoria = async (req, res) => {
+  try {
+    const resultado = await IfoodReconciliacaoService.executar({
+      origem: "manual",
+      consultarRemoto: req.body?.consultarRemoto !== false,
+    });
+    return res.json({ success: true, message: "Auditoria da integração concluída.", resultado });
+  } catch (error) {
+    return res.status(400).json({ success: false, message: error.message });
+  }
+};
+
+exports.ultimaAuditoria = async (req, res, next) => {
+  try {
+    const resultado = await IfoodReconciliacaoService.ultima();
+    return res.json({ success: true, resultado });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.historicoAuditorias = async (req, res, next) => {
+  try {
+    const auditorias = await IfoodReconciliacaoService.historico(req.query.limite);
+    return res.json({ success: true, auditorias });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.corrigirPendencia = async (req, res) => {
+  try {
+    const resultado = await IfoodReconciliacaoService.corrigir(req.body || {});
+    return res.json({ success: true, message: resultado.mensagem, resultado });
   } catch (error) {
     return res.status(400).json({ success: false, message: error.message });
   }

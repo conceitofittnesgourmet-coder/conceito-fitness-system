@@ -22,3 +22,53 @@
 .ifood-orders-table{min-width:980px}.ifood-order-actions{display:flex;gap:6px;flex-wrap:wrap}.ifood-order-actions button{border:1px solid #d9ccc4;background:#fff;color:#59463a;border-radius:9px;padding:7px 9px;font-size:.72rem;font-weight:700;display:inline-flex;align-items:center;gap:5px;cursor:pointer}.ifood-order-actions button:hover{background:#f7eee8}.ifood-order-actions button.danger,.ifood-modal-actions .danger{border-color:#efc7c2;background:#fff1ef;color:#9b342c}.ifood-order-actions button:disabled{opacity:.45;cursor:not-allowed}.ifood-order-status{display:inline-flex;padding:5px 9px;border-radius:999px;background:#eee5df;color:#5d493d;font-weight:700;font-size:.72rem}.status-confirmed,.status-cfm{background:#e3f4e8;color:#28613d}.status-placed,.status-plc{background:#fff1c7;color:#7d5a00}.status-ready_to_pickup,.status-rtp{background:#e1f0ff;color:#245d8d}.status-dispatched,.status-dsp{background:#ebe6ff;color:#57438c}.status-cancelled,.status-can{background:#ffe4e1;color:#9a332b}.status-concluded,.status-con{background:#e9ecef;color:#4c545b}.ifood-command-error{color:#a63d35!important;white-space:normal;max-width:220px!important}.ifood-modal-backdrop{position:fixed;inset:0;background:rgba(42,31,25,.5);z-index:3000;display:grid;place-items:center;padding:20px}.ifood-modal{width:min(520px,100%);background:#fff;border-radius:20px;padding:22px;box-shadow:0 24px 70px rgba(0,0,0,.24);display:grid;gap:16px}.ifood-modal-header{display:flex;justify-content:space-between;gap:16px;align-items:flex-start}.ifood-modal-header span{font-size:.75rem;color:#8b6b52;text-transform:uppercase;font-weight:800;letter-spacing:.05em}.ifood-modal-header h3{margin:4px 0 0;color:#3f332d}.ifood-modal-header>button{border:0;background:#f4ece7;border-radius:10px;width:36px;height:36px;cursor:pointer}.ifood-modal p{margin:0;color:#76665e;line-height:1.5}.ifood-modal label{display:grid;gap:7px;color:#554841;font-weight:700;font-size:.84rem}.ifood-modal select{border:1px solid #d9ccc4;border-radius:12px;padding:12px;background:#fff}.ifood-modal-actions{display:flex;justify-content:flex-end;gap:10px}.ifood-modal-actions button{border:0;border-radius:11px;padding:11px 15px;font-weight:800;cursor:pointer}.ifood-modal-actions .secondary{background:#eee5df;color:#533f31}@media(max-width:640px){.ifood-modal-actions{flex-direction:column}.ifood-modal-actions button{width:100%}}
 
 .ifood-catalog-card{display:grid;gap:18px}.ifood-catalog-head{display:flex;justify-content:space-between;gap:18px;align-items:flex-start}.ifood-catalog-head .ifood-card-title{margin-bottom:0}.ifood-catalog-buttons{display:flex;gap:9px;flex-wrap:wrap}.ifood-catalog-buttons button{border:0;border-radius:11px;padding:10px 14px;font-weight:800;display:inline-flex;align-items:center;gap:7px;cursor:pointer}.ifood-catalog-buttons .primary{background:#74563f;color:#fff}.ifood-catalog-buttons .secondary{background:#eee5df;color:#533f31}.ifood-catalog-buttons button:disabled{opacity:.5;cursor:not-allowed}.ifood-catalog-result{display:flex;align-items:center;gap:9px;padding:12px 14px;border-radius:12px;font-weight:700}.ifood-catalog-result.ok{background:#eaf7ef;color:#21663c}.ifood-catalog-result.erro{background:#fdeceb;color:#8b2f29}.ifood-catalog-table{min-width:760px}.ifood-catalog-table td small{max-width:260px}.ifood-catalog-table .ifood-order-actions{min-width:160px}@media(max-width:720px){.ifood-catalog-head{flex-direction:column}.ifood-catalog-buttons{width:100%}.ifood-catalog-buttons button{flex:1;justify-content:center}}
+
+/* V04.3.5 - Auditoria e reconciliação */
+.ifood-audit-card { margin-top: 24px; }
+.ifood-audit-head { display: flex; align-items: flex-start; justify-content: space-between; gap: 20px; }
+.ifood-audit-actions { display: flex; align-items: center; gap: 12px; flex-wrap: wrap; justify-content: flex-end; }
+.ifood-audit-actions label { display: flex; align-items: center; gap: 8px; font-size: .88rem; color: #53635c; }
+.ifood-audit-status { margin: 18px 0; padding: 16px 18px; border-radius: 16px; display: flex; align-items: center; gap: 13px; border: 1px solid transparent; }
+.ifood-audit-status svg { font-size: 1.5rem; flex: 0 0 auto; }
+.ifood-audit-status div { display: flex; flex-direction: column; gap: 3px; }
+.ifood-audit-status span { font-size: .84rem; opacity: .8; }
+.ifood-audit-status.ok { background: #edf8f1; border-color: #cce9d5; color: #26673d; }
+.ifood-audit-status.atencao { background: #fff8e6; border-color: #f3dfaa; color: #82621b; }
+.ifood-audit-status.critico,
+.ifood-audit-status.erro { background: #fff0f0; border-color: #efcaca; color: #963d3d; }
+.ifood-audit-metrics { grid-template-columns: repeat(6, minmax(120px, 1fr)); }
+.ifood-audit-filters { display: flex; flex-wrap: wrap; gap: 7px; margin: 18px 0 14px; }
+.ifood-audit-filters button { border: 1px solid #d8e2dc; background: #fff; color: #4b5f55; border-radius: 999px; padding: 7px 12px; cursor: pointer; font-size: .8rem; text-transform: capitalize; }
+.ifood-audit-filters button.active { background: #476a58; border-color: #476a58; color: #fff; }
+.ifood-audit-list { display: grid; gap: 10px; }
+.ifood-audit-issue { display: grid; grid-template-columns: auto 1fr auto; gap: 12px; align-items: center; padding: 15px; border-radius: 15px; border: 1px solid #e5ebe7; background: #fff; }
+.ifood-audit-issue.critico { border-left: 4px solid #c95656; }
+.ifood-audit-issue.aviso { border-left: 4px solid #d7a62e; }
+.ifood-audit-issue.info { border-left: 4px solid #5b88b2; }
+.ifood-audit-issue-icon { font-size: 1.15rem; color: #8b5d5d; }
+.ifood-audit-issue-body h4 { margin: 3px 0 5px; color: #2f4339; }
+.ifood-audit-issue-body p { margin: 0 0 5px; color: #65736c; font-size: .88rem; }
+.ifood-audit-issue-body small { color: #68756e; }
+.ifood-audit-issue-meta { display: flex; gap: 8px; align-items: center; flex-wrap: wrap; }
+.ifood-audit-issue-meta span { background: #edf3ef; color: #476a58; border-radius: 999px; padding: 3px 8px; font-size: .72rem; }
+.ifood-audit-issue-meta code { font-size: .7rem; color: #8a9690; }
+.ifood-audit-issue > button { border: 0; background: #476a58; color: #fff; padding: 9px 12px; border-radius: 10px; cursor: pointer; display: inline-flex; align-items: center; gap: 6px; white-space: nowrap; }
+.ifood-audit-issue > button:disabled { opacity: .55; cursor: wait; }
+.ifood-audit-empty { min-height: 130px; display: flex; flex-direction: column; align-items: center; justify-content: center; text-align: center; gap: 7px; color: #708078; background: #f8faf9; border: 1px dashed #d9e3dd; border-radius: 16px; }
+.ifood-audit-empty svg { font-size: 1.6rem; color: #5d806e; }
+.ifood-audit-history { margin-top: 20px; border-top: 1px solid #e4ebe7; padding-top: 16px; }
+.ifood-audit-history h4 { display: flex; align-items: center; gap: 8px; margin: 0 0 10px; color: #40564b; }
+.ifood-audit-history > div { display: flex; gap: 8px; flex-wrap: wrap; }
+.ifood-audit-history span { display: inline-flex; align-items: center; gap: 6px; border: 1px solid #dde6e1; padding: 7px 10px; border-radius: 10px; font-size: .76rem; color: #66756d; }
+.ifood-audit-history span.ok svg { color: #378759; }
+.ifood-audit-history span.atencao svg { color: #c28a15; }
+.ifood-audit-history span.critico svg,
+.ifood-audit-history span.erro svg { color: #bf4b4b; }
+@media (max-width: 1100px) { .ifood-audit-metrics { grid-template-columns: repeat(3, 1fr); } }
+@media (max-width: 720px) {
+  .ifood-audit-head { flex-direction: column; }
+  .ifood-audit-actions { width: 100%; justify-content: flex-start; }
+  .ifood-audit-metrics { grid-template-columns: repeat(2, 1fr); }
+  .ifood-audit-issue { grid-template-columns: auto 1fr; }
+  .ifood-audit-issue > button { grid-column: 1 / -1; justify-content: center; }
+}

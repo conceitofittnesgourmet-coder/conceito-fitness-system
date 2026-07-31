@@ -22,4 +22,9 @@ router.post("/catalogo/sincronizar", controller.sincronizarCatalogo);
 router.patch("/catalogo/produtos/:produtoId/disponibilidade", controller.atualizarDisponibilidadeCatalogo);
 router.patch("/catalogo/produtos/:produtoId/preco", controller.atualizarPrecoCatalogo);
 
+router.get("/auditoria/ultima", controller.ultimaAuditoria);
+router.get("/auditoria/historico", controller.historicoAuditorias);
+router.post("/auditoria/executar", controller.executarAuditoria);
+router.post("/auditoria/corrigir", controller.corrigirPendencia);
+
 module.exports = router;

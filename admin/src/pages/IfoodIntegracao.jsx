@@ -19,6 +19,7 @@ import {
 import AdminLayout from "../layouts/AdminLayout";
 import api from "../services/api";
 import IfoodCatalogoPanel from "../components/IfoodCatalogoPanel";
+import IfoodAuditoriaPanel from "../components/IfoodAuditoriaPanel";
 import "../styles/ifood-integracao.css";
 
 const inicial = {
@@ -406,6 +407,8 @@ async function confirmarCancelamento() {
 </div>
 
         <IfoodCatalogoPanel configuracao={form} notificar={(tipo, texto) => setMensagem({ tipo, texto })} />
+
+        <IfoodAuditoriaPanel configuracao={form} notificar={(tipo, texto) => setMensagem({ tipo, texto })} />
 
         {cancelamento && <div className="ifood-modal-backdrop" onMouseDown={() => setCancelamento(null)}>
           <div className="ifood-modal" onMouseDown={(e) => e.stopPropagation()}>
