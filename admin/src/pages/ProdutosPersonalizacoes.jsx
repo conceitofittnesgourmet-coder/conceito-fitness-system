@@ -7,6 +7,8 @@ import {
   FaFilter,
   FaList,
   FaSave,
+  FaExclamationTriangle,
+  FaSyncAlt,
   FaSearch,
   FaTimes,
 } from "react-icons/fa";
@@ -51,6 +53,8 @@ function ProdutosPersonalizacoes() {
   const [copiarDe, setCopiarDe] = useState("");
   const [carregando, setCarregando] = useState(true);
   const [salvando, setSalvando] = useState(false);
+  const [auditando, setAuditando] = useState(false);
+  const [auditoria, setAuditoria] = useState(null);
 
   async function carregarBase() {
     try {
@@ -167,6 +171,21 @@ function ProdutosPersonalizacoes() {
     }
   }
 
+  async function executarAuditoria() {
+    try {
+      setAuditando(true);
+      const { data } = await api.get("/produtos/personalizacoes/auditoria");
+      setAuditoria(data.auditoria || null);
+      const criticas = Number(data.auditoria?.resumo?.critica || 0);
+      if (criticas > 0) toast.error(`Auditoria encontrou ${criticas} pendência(s) crítica(s).`);
+      else toast.success("Auditoria concluída sem pendências críticas.");
+    } catch (error) {
+      toast.error(error.response?.data?.message || "Erro ao executar auditoria.");
+    } finally {
+      setAuditando(false);
+    }
+  }
+
   async function copiar() {
     if (!produtoId || !copiarDe) return toast.error("Selecione o produto de origem.");
     if (!window.confirm("Substituir a configuração atual pela configuração do produto escolhido?")) return;
@@ -204,6 +223,28 @@ function ProdutosPersonalizacoes() {
           <header className="pp-header"><div><span>Produto selecionado</span><h2>{produto.nome}</h2><p>Preço base: {dinheiro(produto.preco)}</p></div><button className="pp-save" onClick={salvar} disabled={salvando}><FaSave/>{salvando ? "Salvando..." : "Salvar configuração"}</button></header>
 
           <section className="pp-copy"><FaClone/><div><strong>Copiar configuração de outro produto</strong><span>Útil para bolos com as mesmas massas, recheios e coberturas.</span></div><select value={copiarDe} onChange={(e)=>setCopiarDe(e.target.value)}><option value="">Selecione a origem</option>{produtos.filter((p)=>idDe(p)!==produtoId && (p.gruposComponentes||[]).length).map((p)=><option key={idDe(p)} value={idDe(p)}>{p.nome}</option>)}</select><button onClick={copiar} disabled={!copiarDe || salvando}>Copiar</button></section>
+
+          <section className="pp-audit">
+            <div className="pp-audit-head">
+              <div><FaExclamationTriangle/><span><strong>Teste integrado das personalizações</strong><small>Verifica produtos, grupos, opções, limites, padrões e disponibilidade no cardápio.</small></span></div>
+              <button onClick={executarAuditoria} disabled={auditando}><FaSyncAlt className={auditando ? "spin" : ""}/>{auditando ? "Analisando..." : "Executar auditoria"}</button>
+            </div>
+            {auditoria && <div className="pp-audit-result">
+              <div className="pp-audit-cards">
+                <span><strong>{auditoria.resumo?.produtosConfigurados || 0}</strong> configurados</span>
+                <span className="ok"><strong>{auditoria.resumo?.produtosProntos || 0}</strong> prontos</span>
+                <span className="critical"><strong>{auditoria.resumo?.critica || 0}</strong> críticas</span>
+                <span className="warning"><strong>{auditoria.resumo?.atencao || 0}</strong> atenções</span>
+              </div>
+              {(auditoria.pendencias || []).length === 0 ? <p className="pp-audit-success"><FaCheck/> Todas as configurações auditadas estão consistentes.</p> : <div className="pp-audit-list">
+                {(auditoria.pendencias || []).slice(0, 30).map((item, indice)=><article className={`severity-${item.severidade}`} key={`${item.codigo}-${item.produtoId}-${item.grupoId}-${indice}`}>
+                  <div><strong>{item.produto || "Catálogo"}{item.grupo ? ` · ${item.grupo}` : ""}</strong><small>{item.codigo}</small></div>
+                  <p>{item.mensagem}</p><span>{item.acao}</span>
+                </article>)}
+                {(auditoria.pendencias || []).length > 30 && <small>Mostrando as primeiras 30 de {auditoria.pendencias.length} pendências.</small>}
+              </div>}
+            </div>}
+          </section>
 
           <section className="pp-global"><label><input type="checkbox" checked={permiteMontagemCliente} onChange={(e)=>setPermiteMontagemCliente(e.target.checked)}/><span><strong>Permitir montagem pelo cliente</strong><small>Exibe os grupos no Cardápio Online e nos canais habilitados.</small></span></label><label><input type="checkbox" checked={permiteObservacao} onChange={(e)=>setPermiteObservacao(e.target.checked)}/><span><strong>Permitir observações</strong><small>Cliente pode informar detalhes especiais do item.</small></span></label></section>
 

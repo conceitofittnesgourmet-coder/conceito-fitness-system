@@ -55,6 +55,7 @@ async function validarPersonalizacao(produto, configuracoesRecebidas = []) {
   const gruposPorId = new Map(grupos.map((grupo) => [id(grupo), grupo]));
   const opcoesPorId = new Map(opcoes.map((opcao) => [id(opcao), opcao]));
   const snapshots = [];
+  const combinacoesRecebidas = new Set();
   let adicionais = 0;
 
   for (const item of listaRecebida) {
@@ -62,6 +63,12 @@ async function validarPersonalizacao(produto, configuracoesRecebidas = []) {
     const opcaoId = id(item.opcaoId);
     const grupo = gruposPorId.get(grupoId);
     const opcao = opcoesPorId.get(opcaoId);
+    const chaveCombinacao = `${grupoId}:${opcaoId}`;
+
+    if (combinacoesRecebidas.has(chaveCombinacao)) {
+      throw new Error("A mesma opção foi enviada mais de uma vez no pedido.");
+    }
+    combinacoesRecebidas.add(chaveCombinacao);
 
     if (!grupo || !gruposProduto.has(grupoId)) {
       throw new Error(`Grupo de personalização inválido para ${produto.nome}.`);
@@ -122,6 +129,10 @@ async function validarPersonalizacao(produto, configuracoesRecebidas = []) {
 
     const { minimo, maximo } = limitesGrupo(grupo, config);
     const escolhidas = snapshots.filter((item) => item.grupoId === grupoId);
+
+    if (grupo.tipoSelecao === "unica" && escolhidas.length > 1) {
+      throw new Error(`Escolha apenas uma opção em ${grupo.nome}.`);
+    }
     const total = grupo.permiteQuantidadePorOpcao
       ? escolhidas.reduce((soma, item) => soma + item.quantidade, 0)
       : escolhidas.length;

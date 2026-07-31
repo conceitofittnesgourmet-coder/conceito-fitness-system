@@ -22,6 +22,7 @@ const {
   buscarPersonalizacoesProduto,
   salvarPersonalizacoesProduto,
   copiarPersonalizacoesProduto,
+  auditarPersonalizacoesProdutos,
   deletarProduto,
 } = require("../controllers/produtocontroller");
 
@@ -99,6 +100,13 @@ router.patch("/:id/fiscal", authMiddleware, atualizarFiscalIndividual);
 router.get("/mestre/cadastro", authMiddleware, listarCadastroMestre);
 router.patch("/:id/mestre", authMiddleware, atualizarCadastroMestre);
 
+
+// AUDITORIA INTEGRADA DAS PERSONALIZAÇÕES — PROTEGIDO
+router.get(
+  "/personalizacoes/auditoria",
+  authMiddleware,
+  auditarPersonalizacoesProdutos
+);
 
 // PERSONALIZAÇÕES POR PRODUTO — PROTEGIDO
 router.get("/:id/personalizacoes", authMiddleware, buscarPersonalizacoesProduto);

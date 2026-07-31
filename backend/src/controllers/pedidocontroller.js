@@ -135,6 +135,14 @@ for (const item of produtos) {
       ? precoBase + Number(personalizacao.adicionais || 0)
       : Number(item.precoUnitario || item.preco || precoBase);
   const quantidadeItem = Number(item.quantidade || 1);
+  if (!Number.isFinite(quantidadeItem) || quantidadeItem <= 0) {
+    return res.status(400).json({
+      success: false,
+      message: `Quantidade inválida para ${produtoBanco.nome}.`,
+    });
+  }
+
+  const observacaoItem = String(item.observacaoItem || "").trim().slice(0, 300);
 
   produtosSnapshot.push({
 
@@ -180,7 +188,7 @@ for (const item of produtos) {
 
     adicionais: Number(personalizacao.adicionais || 0),
 
-    observacaoItem: String(item.observacaoItem || "").trim(),
+    observacaoItem,
 
     dadosNutricionais:
       produtoBanco.informacoesNutricionais || {},
@@ -198,6 +206,34 @@ for (const item of produtos) {
 
 }
 
+const subtotalSeguro = produtosSnapshot.reduce(
+  (soma, item) => soma + Number(item.subtotal || 0),
+  0
+);
+const taxaEntregaSegura = Math.max(0, Number(req.body.taxaEntrega || 0));
+const descontoSeguro = Math.min(
+  Math.max(0, Number(req.body.desconto || 0)),
+  subtotalSeguro + taxaEntregaSegura
+);
+const totalSeguro = Math.max(
+  0,
+  subtotalSeguro + taxaEntregaSegura - descontoSeguro
+);
+
+const pagamentosSeguros = pagamentosRecebidos.length > 0
+  ? pagamentosRecebidos
+  : [{ forma: pagamentoPrincipal, valor: totalSeguro }];
+const totalPagamentos = pagamentosSeguros.reduce(
+  (soma, pagamento) => soma + Number(pagamento.valor || 0),
+  0
+);
+if (Math.abs(totalPagamentos - totalSeguro) > 0.01) {
+  return res.status(400).json({
+    success: false,
+    message: `A soma dos pagamentos (${totalPagamentos.toFixed(2)}) deve ser igual ao total seguro do pedido (${totalSeguro.toFixed(2)}).`,
+  });
+}
+
     const dadosPedido = {
   numeroPedido: proximoNumero,
 
@@ -208,13 +244,13 @@ for (const item of produtos) {
 
   produtos: produtosSnapshot,
 
-  total: Number(total || 0),
+  total: totalSeguro,
 
-  subtotal: Number(req.body.subtotal || total || 0),
+  subtotal: subtotalSeguro,
 
-  taxaEntrega: Number(req.body.taxaEntrega || 0),
+  taxaEntrega: taxaEntregaSegura,
 
-  desconto: Number(req.body.desconto || 0),
+  desconto: descontoSeguro,
 
   motivoDesconto:
     req.body.motivoDesconto || "",
@@ -241,7 +277,7 @@ complementoEntrega:
     req.body.referenciaEntrega || "",
 
   pagamento: pagamentoPrincipal,
-pagamentos: pagamentosRecebidos,
+pagamentos: pagamentosSeguros,
 
   tipo:
     req.body.tipo || "balcao",
@@ -260,7 +296,7 @@ pagamentos: pagamentosRecebidos,
     // GAMIFICAÇÃO DO CLUBE: não interrompe a venda caso o cliente não esteja cadastrado.
     ClubeGamificacao.processarEvento({
       telefone: telefone || "",
-      valor: Number(total || 0),
+      valor: totalSeguro,
       pedidoId: pedidoCriado._id,
       itens: produtosSnapshot.map((item) => ({ produtoId: item.produtoId, categoria: item.categoria, quantidade: item.quantidade })),
     }).catch((erro) => console.error("ERRO GAMIFICAÇÃO DO PEDIDO:", erro.message));
@@ -269,12 +305,9 @@ pagamentos: pagamentosRecebidos,
 // FINANCEIRO AUTOMÁTICO
 // ===============================
 try {
-  const valorPedido = Number(total || 0);
+  const valorPedido = totalSeguro;
 
-const pagamentosFinanceiro =
-  pagamentosRecebidos.length > 0
-    ? pagamentosRecebidos
-    : [{ forma: pagamentoPrincipal, valor: valorPedido }];
+const pagamentosFinanceiro = pagamentosSeguros;
 
   for (const pagamentoItem of pagamentosFinanceiro) {
   const contaReceber = await ContaReceber.create({
@@ -326,7 +359,7 @@ if (telefone) {
     telefone: telefoneLimpo,
   });
 
-  const valorPedido = Number(total || 0);
+  const valorPedido = totalSeguro;
   const pontosGanhos = Math.floor(valorPedido);
   const cashbackGanho = valorPedido * 0.03;
 

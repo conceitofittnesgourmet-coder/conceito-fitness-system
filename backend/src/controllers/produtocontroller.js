@@ -3,6 +3,7 @@ const fs = require("fs-extra");
 const Produto = require("../models/produto");
 const ProdutoService = require("../services/ProdutoService");
 const ConfiguracaoProdutoService = require("../services/ConfiguracaoProdutoService");
+const AuditoriaPersonalizacoesService = require("../services/AuditoriaPersonalizacoesService");
 
 async function uploadImagens(files = []) {
   const imagens = [];
@@ -568,6 +569,16 @@ const atualizarCadastroMestre = async (req, res) => {
 };
 
 
+
+const auditarPersonalizacoesProdutos = async (req, res) => {
+  try {
+    const auditoria = await AuditoriaPersonalizacoesService.executarAuditoria();
+    return res.json({ success: true, auditoria });
+  } catch (error) {
+    return responderErro(res, error, "ERRO AUDITAR PERSONALIZAÇÕES:");
+  }
+};
+
 const buscarPersonalizacoesProduto = async (req, res) => {
   try {
     const dados = await ConfiguracaoProdutoService.buscarConfiguracao(req.params.id);
@@ -634,5 +645,6 @@ module.exports = {
   buscarPersonalizacoesProduto,
   salvarPersonalizacoesProduto,
   copiarPersonalizacoesProduto,
+  auditarPersonalizacoesProdutos,
   deletarProduto,
 };
