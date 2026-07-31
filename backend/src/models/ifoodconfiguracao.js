@@ -20,6 +20,13 @@ const ifoodConfiguracaoSchema = new mongoose.Schema(
     ultimoErro: { type: String, default: "" },
     ultimoStatusLoja: { type: String, default: "" },
     tokenExpiraEm: { type: Date, default: null },
+    ultimoPollingEm: { type: Date, default: null },
+    ultimoPollingOk: { type: Boolean, default: false },
+    ultimoPollingErro: { type: String, default: "" },
+    ultimoEventoEm: { type: Date, default: null },
+    eventosRecebidos: { type: Number, default: 0 },
+    eventosProcessados: { type: Number, default: 0 },
+    pedidosImportados: { type: Number, default: 0 },
   },
   { timestamps: true }
 );

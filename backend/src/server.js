@@ -12,6 +12,9 @@ const app =
 const connectDB =
   require("./config/db");
 
+const IfoodPollingService =
+  require("./services/IfoodPollingService");
+
 
 
 
@@ -56,6 +59,9 @@ const io = new Server(server, {
 
 global.io = io;
 app.set("io", io);
+
+// Polling iFood em segundo plano. Só processa quando a integração estiver ativa.
+IfoodPollingService.iniciar();
 
 
 

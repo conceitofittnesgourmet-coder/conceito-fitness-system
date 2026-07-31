@@ -335,6 +335,66 @@ numeroPedido: {
 
 
 
+canalVenda: {
+  type: String,
+  enum: ["erp", "cardapio", "pdv", "ifood", "orcamento"],
+  default: "erp",
+  index: true,
+},
+
+ifoodOrderId: {
+  type: String,
+  default: undefined,
+  unique: true,
+  sparse: true,
+  index: true,
+},
+
+ifoodDisplayId: {
+  type: String,
+  default: "",
+},
+
+ifoodMerchantId: {
+  type: String,
+  default: "",
+},
+
+ifoodStatus: {
+  type: String,
+  default: "",
+},
+
+ifoodOrderType: {
+  type: String,
+  default: "",
+},
+
+ifoodOrderTiming: {
+  type: String,
+  default: "",
+},
+
+ifoodCriadoEm: {
+  type: Date,
+  default: null,
+},
+
+ifoodAgendadoPara: {
+  type: Date,
+  default: null,
+},
+
+ifoodPayload: {
+  type: mongoose.Schema.Types.Mixed,
+  default: null,
+},
+
+ifoodPayloadUltimoEvento: {
+  type: mongoose.Schema.Types.Mixed,
+  default: null,
+},
+
   status: {
   type: String,
 

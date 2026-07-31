@@ -4,6 +4,8 @@ const { descriptografar } = require("./IfoodCryptoService");
 
 const AUTH_URL = "https://merchant-api.ifood.com.br/authentication/v1.0/oauth/token";
 const MERCHANT_URL = "https://merchant-api.ifood.com.br/merchant/v1.0";
+const EVENTS_URL = "https://merchant-api.ifood.com.br/events/v1.0";
+const ORDER_URL = "https://merchant-api.ifood.com.br/order/v1.0";
 
 let tokenCache = { accessToken: "", expiraEm: 0, chave: "" };
 
@@ -151,10 +153,55 @@ async function testarConexao() {
   }
 }
 
+
+async function pollingEventos(configuracao) {
+  if (!configuracao.merchantId) {
+    throw new Error("Selecione o Merchant ID antes de iniciar o polling.");
+  }
+
+  const response = await requisicao(configuracao, {
+    method: "GET",
+    url: `${EVENTS_URL}/events:polling`,
+    headers: { "x-polling-merchants": configuracao.merchantId },
+    validateStatus: (status) => status === 200 || status === 204,
+  });
+
+  if (response.status === 204) return [];
+  return Array.isArray(response.data) ? response.data : [];
+}
+
+async function reconhecerEventos(configuracao, eventos) {
+  const ids = [...new Set((eventos || []).map((item) => item?.id).filter(Boolean))];
+  if (ids.length === 0) return { reconhecidos: 0 };
+
+  for (let inicio = 0; inicio < ids.length; inicio += 2000) {
+    const lote = ids.slice(inicio, inicio + 2000).map((id) => ({ id }));
+    await requisicao(configuracao, {
+      method: "POST",
+      url: `${EVENTS_URL}/events/acknowledgment`,
+      data: lote,
+      headers: { "Content-Type": "application/json" },
+    });
+  }
+  return { reconhecidos: ids.length };
+}
+
+async function obterPedido(configuracao, orderId) {
+  const response = await requisicao(configuracao, {
+    method: "GET",
+    url: `${ORDER_URL}/orders/${orderId}`,
+  });
+  return response.data;
+}
+
 module.exports = {
   obterConfiguracaoCompleta,
   obterToken,
   listarMerchants,
   obterStatus,
   testarConexao,
+  pollingEventos,
+  reconhecerEventos,
+  obterPedido,
+  requisicao,
 };

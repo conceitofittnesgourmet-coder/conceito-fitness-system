@@ -7,6 +7,9 @@ import {
   FaSave,
   FaStore,
   FaSyncAlt,
+  FaShoppingBag,
+  FaHistory,
+  FaPlay,
 } from "react-icons/fa";
 import AdminLayout from "../layouts/AdminLayout";
 import api from "../services/api";
@@ -30,6 +33,13 @@ const inicial = {
   ultimoTesteEm: null,
   ultimoErro: "",
   ultimoStatusLoja: "",
+  ultimoPollingEm: null,
+  ultimoPollingOk: false,
+  ultimoPollingErro: "",
+  ultimoEventoEm: null,
+  eventosRecebidos: 0,
+  eventosProcessados: 0,
+  pedidosImportados: 0,
 };
 
 function IfoodIntegracao() {
@@ -39,6 +49,9 @@ function IfoodIntegracao() {
   const [salvando, setSalvando] = useState(false);
   const [testando, setTestando] = useState(false);
   const [mensagem, setMensagem] = useState(null);
+  const [eventos, setEventos] = useState([]);
+  const [pedidosImportados, setPedidosImportados] = useState([]);
+  const [executandoPolling, setExecutandoPolling] = useState(false);
 
   const prontoParaTeste = useMemo(
     () => Boolean(form.clientId && (form.clientSecret || form.clientSecretConfigurado)),
@@ -59,6 +72,7 @@ function IfoodIntegracao() {
 
   useEffect(() => {
     carregar();
+    carregarOperacao();
   }, []);
 
   function alterar(nome, valor) {
@@ -128,6 +142,47 @@ function IfoodIntegracao() {
     }));
   }
 
+
+async function carregarOperacao() {
+  try {
+    const [eventosResponse, pedidosResponse] = await Promise.all([
+      api.get("/ifood/eventos?limite=20"),
+      api.get("/ifood/pedidos-importados?limite=20"),
+    ]);
+    setEventos(eventosResponse.data?.eventos || []);
+    setPedidosImportados(pedidosResponse.data?.pedidos || []);
+  } catch (error) {
+    // A configuração inicial continua acessível mesmo sem histórico.
+  }
+}
+
+async function executarPolling() {
+  setExecutandoPolling(true);
+  setMensagem(null);
+  try {
+    if (form.clientSecret || !form.clientSecretConfigurado) {
+      await api.put("/ifood/configuracao", form);
+    }
+    const response = await api.post("/ifood/polling/executar");
+    const resultado = response.data?.resultado || {};
+    setMensagem({
+      tipo: resultado.erros?.length ? "erro" : "ok",
+      texto: `Polling concluído: ${resultado.recebidos || 0} evento(s), ${resultado.pedidosImportados || 0} pedido(s) novo(s).`,
+    });
+    await carregar();
+    await carregarOperacao();
+  } catch (error) {
+    setMensagem({ tipo: "erro", texto: error.response?.data?.message || "Falha ao executar o polling." });
+  } finally {
+    setExecutandoPolling(false);
+  }
+}
+
+function dataHora(valor) {
+  if (!valor) return "—";
+  return new Date(valor).toLocaleString("pt-BR");
+}
+
   return (
     <AdminLayout
       title="Integração iFood"
@@ -136,10 +191,10 @@ function IfoodIntegracao() {
       <div className="ifood-page">
         <section className="ifood-hero">
           <div>
-            <span className="ifood-kicker"><FaPlug /> V04.3.1</span>
-            <h2>Base segura da integração</h2>
+            <span className="ifood-kicker"><FaPlug /> V04.3.2</span>
+            <h2>Recebimento seguro de pedidos</h2>
             <p>
-              Primeiro validamos autenticação, permissões e a loja vinculada. Pedidos e catálogo serão ativados nas próximas etapas.
+              Polling oficial, reconhecimento dos eventos e importação sem duplicidade para o ERP.
             </p>
           </div>
           <div className={`ifood-health ${form.ultimoTesteOk ? "ok" : "pendente"}`}>
@@ -213,17 +268,53 @@ function IfoodIntegracao() {
         </div>
 
         <section className="ifood-card">
-          <div className="ifood-card-title"><FaSyncAlt /><div><h3>Controles de sincronização</h3><p>Os controles ficam preparados, mas o polling só deverá ser ligado após a etapa de pedidos.</p></div></div>
+          <div className="ifood-card-title"><FaSyncAlt /><div><h3>Controles de sincronização</h3><p>Ative o polling somente depois de validar a loja e executar um teste manual.</p></div></div>
           <div className="ifood-switches">
             <label><input type="checkbox" checked={Boolean(form.ativa)} onChange={(e) => alterar("ativa", e.target.checked)} /> Integração ativa</label>
+            <label><input type="checkbox" checked={Boolean(form.pollingAtivo)} onChange={(e) => alterar("pollingAtivo", e.target.checked)} /> Polling automático a cada 30 segundos</label>
             <label><input type="checkbox" checked={Boolean(form.sincronizarPedidos)} onChange={(e) => alterar("sincronizarPedidos", e.target.checked)} /> Sincronizar pedidos</label>
             <label><input type="checkbox" checked={Boolean(form.sincronizarCatalogo)} onChange={(e) => alterar("sincronizarCatalogo", e.target.checked)} /> Sincronizar catálogo</label>
             <label><input type="checkbox" checked={Boolean(form.sincronizarDisponibilidade)} onChange={(e) => alterar("sincronizarDisponibilidade", e.target.checked)} /> Sincronizar disponibilidade</label>
           </div>
           <div className="ifood-polling-note">
-            <FaExclamationTriangle /> O polling oficial deverá executar a cada 30 segundos e confirmar os eventos recebidos. Ele ainda não é iniciado nesta versão.
+            <FaExclamationTriangle /> O evento só recebe acknowledgment depois de ser armazenado e processado. Eventos duplicados não criam pedidos repetidos.
           </div>
         </section>
+
+
+
+<section className="ifood-card ifood-operation-card">
+  <div className="ifood-card-title"><FaShoppingBag /><div><h3>Operação de pedidos</h3><p>Execute um ciclo manual antes de ativar o polling automático.</p></div></div>
+  <div className="ifood-metrics">
+    <div><span>Eventos recebidos</span><strong>{form.eventosRecebidos || 0}</strong></div>
+    <div><span>Eventos processados</span><strong>{form.eventosProcessados || 0}</strong></div>
+    <div><span>Pedidos importados</span><strong>{form.pedidosImportados || 0}</strong></div>
+    <div><span>Último polling</span><strong>{dataHora(form.ultimoPollingEm)}</strong></div>
+  </div>
+  {form.ultimoPollingErro && <div className="ifood-alert erro">{form.ultimoPollingErro}</div>}
+  <button className="primary" onClick={executarPolling} disabled={executandoPolling || !form.merchantId}>
+    <FaPlay /> {executandoPolling ? "Consultando iFood..." : "Executar polling agora"}
+  </button>
+</section>
+
+<div className="ifood-grid">
+  <section className="ifood-card">
+    <div className="ifood-card-title"><FaHistory /><div><h3>Eventos recentes</h3><p>Histórico persistido antes do acknowledgment.</p></div></div>
+    <div className="ifood-table-wrap">
+      <table className="ifood-table"><thead><tr><th>Evento</th><th>Pedido</th><th>Status</th><th>Recebido</th></tr></thead>
+        <tbody>{eventos.length ? eventos.map((item) => <tr key={item._id}><td><strong>{item.fullCode || item.code}</strong><small>{item.eventId}</small></td><td>{item.orderId || "—"}</td><td><span className={`ifood-event-status ${item.statusProcessamento}`}>{item.statusProcessamento}</span></td><td>{dataHora(item.criadoNoIfoodEm || item.createdAt)}</td></tr>) : <tr><td colSpan="4">Nenhum evento recebido.</td></tr>}</tbody>
+      </table>
+    </div>
+  </section>
+  <section className="ifood-card">
+    <div className="ifood-card-title"><FaShoppingBag /><div><h3>Pedidos importados</h3><p>Pedidos vinculados ao fluxo interno do ERP.</p></div></div>
+    <div className="ifood-table-wrap">
+      <table className="ifood-table"><thead><tr><th>iFood</th><th>ERP</th><th>Status</th><th>Importado</th></tr></thead>
+        <tbody>{pedidosImportados.length ? pedidosImportados.map((item) => <tr key={item._id}><td><strong>#{item.displayId || item.orderId?.slice(-6)}</strong><small>{item.orderType}</small></td><td>{item.pedidoErp?.numeroPedido ? `#${item.pedidoErp.numeroPedido}` : "—"}</td><td>{item.status}</td><td>{dataHora(item.importadoEm || item.createdAt)}</td></tr>) : <tr><td colSpan="4">Nenhum pedido importado.</td></tr>}</tbody>
+      </table>
+    </div>
+  </section>
+</div>
 
         <div className="ifood-actions">
           <button className="secondary" onClick={salvar} disabled={salvando || carregando}><FaSave /> {salvando ? "Salvando..." : "Salvar configuração"}</button>

@@ -1,6 +1,7 @@
 const IfoodConfiguracao = require("../models/ifoodconfiguracao");
 const { criptografar } = require("../services/IfoodCryptoService");
 const IfoodApiService = require("../services/IfoodApiService");
+const IfoodPollingService = require("../services/IfoodPollingService");
 
 function publico(documento) {
   if (!documento) return null;
@@ -91,5 +92,33 @@ exports.statusLoja = async (req, res, next) => {
     return res.json({ success: true, status });
   } catch (error) {
     return res.status(400).json({ success: false, message: error.message });
+  }
+};
+
+
+exports.executarPolling = async (req, res) => {
+  try {
+    const resultado = await IfoodPollingService.executarPolling({ manual: true });
+    return res.json({ success: true, message: "Polling do iFood executado.", resultado });
+  } catch (error) {
+    return res.status(400).json({ success: false, message: error.message });
+  }
+};
+
+exports.listarEventos = async (req, res, next) => {
+  try {
+    const eventos = await IfoodPollingService.listarEventos(req.query.limite);
+    return res.json({ success: true, eventos });
+  } catch (error) {
+    next(error);
+  }
+};
+
+exports.listarPedidosImportados = async (req, res, next) => {
+  try {
+    const pedidos = await IfoodPollingService.listarPedidosImportados(req.query.limite);
+    return res.json({ success: true, pedidos });
+  } catch (error) {
+    next(error);
   }
 };
