@@ -65,7 +65,7 @@ exports.resumo = async (req, res) => {
 exports.buscarPedido = async (req, res) => {
   try {
     const pedido =
-      await ProducaoService.buscarPedidoProducao({
+      await ProducaoService.buscarPedidoDetalhado({
         pedidoId: req.params.id,
         empresa: req.usuario?.empresa,
       });

@@ -25,6 +25,12 @@ import AdminLayout
 from "../layouts/AdminLayout";
 
 import {
+  configuracoesAgrupadas,
+  imprimirComandaPedido,
+  resumoOpcao,
+} from "../utils/personalizacaoPedido";
+
+import {
 
   FaCheck,
 
@@ -32,7 +38,9 @@ import {
 
   FaTruck,
 
-  FaClock
+  FaClock,
+
+  FaPrint
 
 } from "react-icons/fa";
 
@@ -76,141 +84,14 @@ function Pedidos() {
   // IMPRESSÃO
   // ==========================================
 
-  function imprimirCupom(
-  pedido
-) {
-
-  const janela =
-    window.open(
-      "",
-      "_blank",
-      "width=400,height=600"
-    );
-
-
-
-
-
-  janela.document.write(`
-
-    <html>
-
-      <head>
-
-        <title>
-          Pedido
-        </title>
-
-        <style>
-
-          body{
-
-            font-family:
-              monospace;
-
-            padding:20px;
-
-          }
-
-          h2,h3,p{
-
-            margin:8px 0;
-
-          }
-
-          hr{
-
-            margin:12px 0;
-
-          }
-
-        </style>
-
-      </head>
-
-      <body>
-
-        <h2>
-          CONCEITO FITNESS
-        </h2>
-
-        <hr />
-
-        <p>
-
-          Pedido:
-          ${pedido._id?.slice(-6)}
-
-        </p>
-
-        <p>
-
-          Cliente:
-          ${pedido.cliente}
-
-        </p>
-
-        <p>
-
-          Telefone:
-          ${pedido.telefone}
-
-        </p>
-
-        <hr />
-
-        <h3>
-          ITENS
-        </h3>
-
-        ${pedido.produtos
-
-          ?.map(
-
-            (produto) => `
-
-              <p>
-
-                ${produto.nome}
-
-                x${produto.quantidade}
-
-              </p>
-
-            `
-
-          )
-
-          .join("")}
-
-        <hr />
-
-        <h2>
-
-          TOTAL:
-          R$ ${pedido.total}
-
-        </h2>
-
-      </body>
-
-    </html>
-
-  `);
-
-
-
-
-
-  janela.document.close();
-
-
-
-
-
-  janela.print();
-
-}
+  function imprimirCupom(pedido) {
+    try {
+      imprimirComandaPedido(pedido, { titulo: "COMANDA DE PEDIDO" });
+    } catch (error) {
+      console.error(error);
+      toast.error(error.message || "Não foi possível abrir a impressão");
+    }
+  }
 
 
 
@@ -325,8 +206,8 @@ async function cancelarPedido(id) {
     );
   }
 }
-    
-      
+
+
 
   // ==========================================
   // SOCKET.IO
@@ -757,7 +638,7 @@ async function cancelarPedido(id) {
               {/* INFO */}
 
               <div className="pedido-info pedido-info-premium">
-              
+
                 <p>
 
                   <strong>
@@ -810,28 +691,30 @@ async function cancelarPedido(id) {
                     ) => (
 
                       <div
-
                         key={index}
-
-                        className="produto-pedido"
-
+                        className="produto-pedido produto-pedido-personalizado"
                       >
+                        <div className="produto-pedido-linha">
+                          <span>{produto.nome}</span>
+                          <strong>x{produto.quantidade}</strong>
+                        </div>
 
-                        <span>
-                          {produto.nome}
-                        </span>
+                        {configuracoesAgrupadas(produto).length > 0 && (
+                          <div className="pedido-personalizacoes">
+                            {configuracoesAgrupadas(produto).map(({ grupo, opcoes }) => (
+                              <div key={`${grupo}-${index}`} className="pedido-personalizacao-grupo">
+                                <b>{grupo}:</b>
+                                <span>{opcoes.map(resumoOpcao).join(", ")}</span>
+                              </div>
+                            ))}
+                          </div>
+                        )}
 
-
-
-
-
-                        <strong>
-
-                          x
-                          {produto.quantidade}
-
-                        </strong>
-
+                        {produto.observacaoItem && (
+                          <div className="pedido-observacao-item">
+                            <strong>OBS DO ITEM:</strong> {produto.observacaoItem}
+                          </div>
+                        )}
                       </div>
 
                     )
@@ -849,6 +732,15 @@ async function cancelarPedido(id) {
               {/* BOTÕES */}
 
               <div className="pedido-actions pedido-actions-premium">
+  <button
+    className="btn-imprimir-comanda"
+    onClick={() => imprimirCupom(pedido)}
+    title="Imprimir comanda com personalizações"
+  >
+    <FaPrint />
+    Comanda
+  </button>
+
   {pedido.status !== "cancelado" && (
     <>
       <button
@@ -901,10 +793,10 @@ async function cancelarPedido(id) {
 
 }
 
-</div>              
+</div>
       {/* IMPRESSÃO */}
 
-      
+
 
     </AdminLayout>
 

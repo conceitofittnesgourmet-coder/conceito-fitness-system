@@ -1,4 +1,5 @@
 const Pedido = require("../models/pedido");
+const { enriquecerPedido } = require("./PersonalizacaoProducaoService");
 
 const STATUS_PRODUCAO = [
   "aguardando",
@@ -113,13 +114,15 @@ async function listarFila({
     300
   );
 
-  return Pedido.find(filtro)
+  const pedidos = await Pedido.find(filtro)
     .sort({
       prioridadeProducao: -1,
       createdAt: 1,
     })
     .limit(limiteSeguro)
     .lean();
+
+  return pedidos.map(enriquecerPedido);
 }
 
 async function buscarResumo({ empresa } = {}) {
@@ -181,6 +184,11 @@ async function buscarPedidoProducao({ pedidoId, empresa } = {}) {
   }
 
   return pedido;
+}
+
+async function buscarPedidoDetalhado({ pedidoId, empresa } = {}) {
+  const pedido = await buscarPedidoProducao({ pedidoId, empresa });
+  return enriquecerPedido(pedido);
 }
 
 async function atualizarStatus({
@@ -295,8 +303,16 @@ async function atualizarPrioridade({
     empresa,
   });
 
+  const prioridadeTexto = String(prioridade ?? "").trim().toLowerCase();
+  const prioridadeNumerica =
+    prioridadeTexto === "alta" || prioridadeTexto === "urgente"
+      ? 10
+      : prioridadeTexto === "normal" || prioridadeTexto === "baixa"
+        ? 0
+        : Number(prioridade);
+
   pedido.prioridadeProducao = Math.min(
-    Math.max(Number(prioridade) || 0, 0),
+    Math.max(Number(prioridadeNumerica) || 0, 0),
     10
   );
 
@@ -310,6 +326,7 @@ module.exports = {
   listarFila,
   buscarResumo,
   buscarPedidoProducao,
+  buscarPedidoDetalhado,
   atualizarStatus,
   atualizarChecklist,
   atualizarPrioridade,

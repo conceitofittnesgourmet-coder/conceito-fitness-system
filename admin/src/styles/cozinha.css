@@ -551,3 +551,65 @@
         width:100%
     }
 }
+/* V04.2.4 — Personalizações na cozinha */
+.cozinha-item-bloco {
+    padding:9px 0;
+    border-bottom:1px solid #e2e8f0
+}
+.cozinha-item-bloco:last-child {
+    border-bottom:0
+}
+.cozinha-personalizacoes {
+    display:flex;
+    flex-direction:column;
+    gap:4px;
+    margin:7px 0 0 42px
+}
+.cozinha-personalizacao-grupo {
+    display:flex;
+    align-items:flex-start;
+    gap:5px;
+    color:#475569;
+    font-size:.76rem;
+    line-height:1.35
+}
+.cozinha-personalizacao-grupo b {
+    flex:0 0 auto;
+    color:#0f172a
+}
+.cozinha-observacao-item {
+    margin:8px 0 0 42px;
+    padding:7px 8px;
+    border:2px solid #f59e0b;
+    border-radius:8px;
+    background:#fff7ed;
+    color:#7c2d12;
+    font-size:.76rem;
+    line-height:1.4
+}
+.cozinha-card-acoes {
+    display:grid;
+    grid-template-columns:1fr;
+    gap:8px
+}
+.cozinha-imprimir-comanda {
+    display:inline-flex;
+    align-items:center;
+    justify-content:center;
+    gap:7px;
+    width:100%;
+    min-height:38px;
+    border:1px solid #cbd5e1;
+    border-radius:10px;
+    background:#fff;
+    color:#334155;
+    font-weight:800;
+    cursor:pointer
+}
+.cozinha-imprimir-comanda:hover {
+    border-color:#94a3b8;
+    background:#f8fafc
+}
+.modo-tv .cozinha-imprimir-comanda {
+    display:none
+}

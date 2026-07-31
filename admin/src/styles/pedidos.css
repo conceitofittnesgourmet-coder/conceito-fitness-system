@@ -119,3 +119,75 @@
 .btn-cancelar:hover {
   background: #b91c1c;
 }
+/* V04.2.4 — Personalizações e comanda */
+.produto-pedido-personalizado {
+  display:block;
+  padding:12px 0;
+  border-bottom:1px solid rgba(255,255,255,.1)
+}
+.produto-pedido-personalizado:last-child {
+  border-bottom:0
+}
+.produto-pedido-linha {
+  display:flex;
+  align-items:center;
+  justify-content:space-between;
+  gap:12px
+}
+.pedido-personalizacoes {
+  display:flex;
+  flex-direction:column;
+  gap:5px;
+  margin-top:8px;
+  padding:9px 10px;
+  border-radius:10px;
+  background:rgba(255,255,255,.06)
+}
+.pedido-personalizacao-grupo {
+  display:flex;
+  align-items:flex-start;
+  gap:6px;
+  color:#cbd5e1;
+  font-size:.78rem;
+  line-height:1.4
+}
+.pedido-personalizacao-grupo b {
+  color:#fff;
+  flex:0 0 auto
+}
+.pedido-observacao-item {
+  margin-top:8px;
+  padding:8px 10px;
+  border:2px solid #f59e0b;
+  border-radius:10px;
+  background:rgba(245,158,11,.12);
+  color:#fde68a;
+  font-size:.78rem;
+  line-height:1.4
+}
+.btn-imprimir-comanda {
+  display:inline-flex;
+  align-items:center;
+  justify-content:center;
+  gap:7px;
+  min-height:40px;
+  padding:0 13px;
+  border:1px solid rgba(255,255,255,.18);
+  border-radius:10px;
+  background:rgba(255,255,255,.08);
+  color:#fff;
+  font-weight:800;
+  cursor:pointer
+}
+.btn-imprimir-comanda:hover {
+  background:rgba(255,255,255,.14)
+}
+@media(max-width:640px) {
+  .pedido-personalizacao-grupo {
+    flex-direction:column;
+    gap:2px
+  }
+  .btn-imprimir-comanda {
+    width:100%
+  }
+}

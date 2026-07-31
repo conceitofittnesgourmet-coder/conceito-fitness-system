@@ -15,6 +15,7 @@ router.put("/ordens/:id", producaoController.atualizarOrdem);
 router.put("/ordens/:id/status", producaoController.alterarStatusOrdem);
 router.get("/ordens/:id/insumos", producaoController.analisarInsumosOrdem);
 
+router.get("/fila", producaoController.listarFila);
 router.get("/", producaoController.listarFila);
 
 router.get("/resumo", producaoController.resumo);

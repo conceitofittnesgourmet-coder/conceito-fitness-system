@@ -8,6 +8,7 @@ import {
   FaExclamationTriangle,
   FaFire,
   FaRedo,
+  FaPrint,
   FaStopwatch,
   FaTimes,
   FaTv,
@@ -17,6 +18,11 @@ import {
 import AdminLayout from "../layouts/AdminLayout";
 import api from "../services/api";
 import socket from "../services/socket";
+import {
+  configuracoesAgrupadas,
+  imprimirComandaPedido,
+  resumoOpcao,
+} from "../utils/personalizacaoPedido";
 
 const COLUNAS = [
   { chave: "aguardando", titulo: "Aguardando", icone: <FaClock />, statusAceitos: ["aguardando", "pendente", "novo"] },
@@ -97,6 +103,16 @@ function classeTempo(segundos, tempoPrevistoMinutos) {
 
 function checklistPedido(pedido) {
   const original = Array.isArray(pedido.checklist) ? pedido.checklist : [];
+  const sugerido = Array.isArray(pedido.checklistSugerido)
+    ? pedido.checklistSugerido
+    : [];
+  if (!original.length && sugerido.length) {
+    return sugerido.map((item, index) => ({
+      id: item._id || item.id || `sugerido-${index}`,
+      descricao: item.descricao || item.nome || `Etapa ${index + 1}`,
+      concluido: Boolean(item.concluido),
+    }));
+  }
   if (!original.length) {
     return CHECKLIST_PADRAO.map((descricao, index) => ({ id: `padrao-${index}`, descricao, concluido: false }));
   }
@@ -134,7 +150,11 @@ function PedidoCard({ pedido, agora, atualizando, onAlterarStatus, onAlternarChe
   const checklist = checklistPedido(pedido);
   const concluidos = checklist.filter((item) => item.concluido).length;
   const progresso = checklist.length ? Math.round((concluidos / checklist.length) * 100) : 0;
-  const prioridade = pedido.prioridade === true || pedido.prioridade === "alta" || pedido.prioridade === "urgente";
+  const prioridade =
+    Number(pedido.prioridadeProducao || 0) > 0 ||
+    pedido.prioridade === true ||
+    pedido.prioridade === "alta" ||
+    pedido.prioridade === "urgente";
   const proximo = proximoStatus(status);
   void agora;
 
@@ -156,11 +176,35 @@ function PedidoCard({ pedido, agora, atualizando, onAlterarStatus, onAlternarChe
       </div>
 
       <div className="cozinha-itens">
-        {itensPedido(pedido).map((item, index) => (
-          <div className="cozinha-item" key={item._id || `${nomeProduto(item)}-${index}`}>
-            <strong>{quantidadeProduto(item)}x</strong><span>{nomeProduto(item)}</span>
-          </div>
-        ))}
+        {itensPedido(pedido).map((item, index) => {
+          const grupos = configuracoesAgrupadas(item);
+          const observacaoItem = String(item.observacaoItem || "").trim();
+
+          return (
+            <div className="cozinha-item-bloco" key={item._id || `${nomeProduto(item)}-${index}`}>
+              <div className="cozinha-item">
+                <strong>{quantidadeProduto(item)}x</strong><span>{nomeProduto(item)}</span>
+              </div>
+
+              {grupos.length > 0 && (
+                <div className="cozinha-personalizacoes">
+                  {grupos.map(({ grupo, opcoes }) => (
+                    <div className="cozinha-personalizacao-grupo" key={`${grupo}-${index}`}>
+                      <b>{grupo}:</b>
+                      <span>{opcoes.map(resumoOpcao).join(", ")}</span>
+                    </div>
+                  ))}
+                </div>
+              )}
+
+              {observacaoItem && (
+                <div className="cozinha-observacao-item">
+                  <strong>OBS DO ITEM:</strong> {observacaoItem}
+                </div>
+              )}
+            </div>
+          );
+        })}
         {itensPedido(pedido).length === 0 && <p className="cozinha-sem-itens">Itens não informados.</p>}
       </div>
 
@@ -180,6 +224,14 @@ function PedidoCard({ pedido, agora, atualizando, onAlterarStatus, onAlternarChe
       </div>
 
       <div className="cozinha-card-acoes">
+        <button
+          type="button"
+          className="cozinha-imprimir-comanda"
+          onClick={() => imprimirComandaPedido(pedido)}
+          title="Imprimir comanda com todas as personalizações"
+        >
+          <FaPrint /> Imprimir comanda
+        </button>
         {proximo ? (
           <button type="button" className={`cozinha-acao-principal acao-${status}`} onClick={() => onAlterarStatus(pedido, proximo)} disabled={atualizando}>
             {atualizando ? "Atualizando..." : textoAcao(status)}
