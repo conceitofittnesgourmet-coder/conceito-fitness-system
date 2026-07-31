@@ -23,6 +23,7 @@ import {
   UserRound,
   SlidersHorizontal,
   Trash2,
+  Pencil,
   UtensilsCrossed,
   Store,
   MapPin,
@@ -56,6 +57,7 @@ function CardapioOnline() {
   const [frete, setFrete] = useState(0);
   const [distanciaKm, setDistanciaKm] = useState(null);
   const [produtoSelecionado, setProdutoSelecionado] = useState(null);
+  const [itemEmEdicao, setItemEmEdicao] = useState(null);
   const [contaAberta, setContaAberta] = useState(false);
   const [sessaoCliente, setSessaoCliente] = useState(() => {
     try { return JSON.parse(localStorage.getItem("conceito-cardapio-sessao") || "null"); } catch { return null; }
@@ -169,9 +171,25 @@ function filtrarCategoria(cat) {
   }, []);
 
   function abrirProduto(produto) {
-  setProdutoSelecionado(produto);
-  setQuantidadeModal(1);
-}
+    setItemEmEdicao(null);
+    setProdutoSelecionado(produto);
+    setQuantidadeModal(1);
+  }
+
+  function editarItemCarrinho(item) {
+    const produto = produtos.find(
+      (p) => String(p._id || p.id) === String(item.id)
+    );
+
+    if (!produto) {
+      alert("Este produto não está mais disponível no cardápio.");
+      return;
+    }
+
+    setItemEmEdicao(item);
+    setProdutoSelecionado(produto);
+    setQuantidadeModal(Number(item.quantidade || 1));
+  }
 
   function corrigirUrlImagem(valor) {
   const backendURL = "https://conceito-fitness-system.onrender.com";
@@ -250,55 +268,69 @@ function filtrarCategoria(cat) {
 }
 
   function adicionarProduto(produto, configuracao = {}) {
-  const id = produto._id || produto.id;
+    const id = produto._id || produto.id;
+    const selecoes = configuracao.selecoes || {};
+    const configuracoes = configuracao.configuracoes || [];
+    const resumoConfiguracoes = configuracao.resumoConfiguracoes || [];
+    const precoUnitario =
+      configuracao.precoUnitario !== undefined
+        ? Number(configuracao.precoUnitario)
+        : Number(produto.precoExibicao ?? produto.preco ?? 0);
+    const quantidade = Number(configuracao.quantidade || 1);
+    const observacaoItem = String(configuracao.observacaoItem || "").trim();
 
-  const selecoes = configuracao.selecoes || {};
-  const precoUnitario =
-    configuracao.precoUnitario !== undefined
-      ? Number(configuracao.precoUnitario)
-      : Number(
-      produto.precoExibicao ??
-      produto.preco ??
-      0
-);
-
-  const quantidade = Number(configuracao.quantidade || 1);
-
-  const resumoConfig = Object.values(selecoes)
-    .flat()
-    .map((opcao) => opcao.nome)
-    .join(", ");
-
-  const observacaoItem = String(configuracao.observacaoItem || "").trim();
-  const chaveCarrinho = `${id}-${resumoConfig}-${observacaoItem}`;
-
-  const existe = carrinho.find((item) => item.chaveCarrinho === chaveCarrinho);
-
-  if (existe) {
-    setCarrinho(
-      carrinho.map((item) =>
-        item.chaveCarrinho === chaveCarrinho
-          ? { ...item, quantidade: item.quantidade + quantidade }
-          : item
+    const assinaturaConfiguracao = configuracoes
+      .map(
+        (config) =>
+          `${config.grupoId}:${config.opcaoId}:${Number(config.quantidade || 1)}`
       )
-    );
-  } else {
-    setCarrinho([
-      ...carrinho,
-      {
-        id,
-        chaveCarrinho,
-        nome: produto.nome,
-        configuracao: resumoConfig,
-        selecoes,
-        preco: precoUnitario,
-        imagem: getImagemProduto(produto),
-        quantidade,
-        observacaoItem,
-      },
-    ]);
+      .sort()
+      .join("|");
+
+    const chaveCarrinho = `${id}-${assinaturaConfiguracao}-${observacaoItem}`;
+    const resumoConfig = resumoConfiguracoes
+      .map((item) => `${item.grupo}: ${item.texto}`)
+      .join(" · ");
+
+    const novoItem = {
+      id,
+      chaveCarrinho,
+      nome: produto.nome,
+      configuracao: resumoConfig,
+      resumoConfiguracoes,
+      configuracoes,
+      selecoes,
+      preco: precoUnitario,
+      precoBase: Number(produto.precoExibicao ?? produto.preco ?? 0),
+      adicionais: Number(configuracao.adicionais || 0),
+      imagem: getImagemProduto(produto),
+      quantidade,
+      observacaoItem,
+    };
+
+    if (configuracao.chaveOriginal) {
+      setCarrinho((atual) =>
+        atual.map((item) =>
+          item.chaveCarrinho === configuracao.chaveOriginal ? novoItem : item
+        )
+      );
+      return;
+    }
+
+    const existe = carrinho.find((item) => item.chaveCarrinho === chaveCarrinho);
+
+    if (existe) {
+      setCarrinho(
+        carrinho.map((item) =>
+          item.chaveCarrinho === chaveCarrinho
+            ? { ...item, quantidade: item.quantidade + quantidade }
+            : item
+        )
+      );
+    } else {
+      setCarrinho([...carrinho, novoItem]);
+    }
   }
-}
 
   function alterarQuantidade(chaveCarrinho, quantidade) {
     if (quantidade <= 0) {
@@ -332,7 +364,7 @@ function filtrarCategoria(cat) {
       setDistanciaKm(null);
     }
   }
-  
+
   const filtrosDietarios = [
     "Todos",
     "Sem glúten",
@@ -463,17 +495,29 @@ if (
 }
 
     const itens = carrinho
-  .map(
-    (item) =>
-      `• ${item.nome} x${item.quantidade} - R$ ${(
-        item.preco * item.quantidade
-      ).toFixed(2)}${
-        item.configuracao
-          ? `\n   Opções: ${item.configuracao}`
-          : ""
-      }${item.observacaoItem ? `\n   Observação: ${item.observacaoItem}` : ""}`
-  )
-  .join("\n");
+      .map((item) => {
+        const detalhes =
+          Array.isArray(item.resumoConfiguracoes) &&
+          item.resumoConfiguracoes.length > 0
+            ? `
+${item.resumoConfiguracoes
+                .map((config) => `   ${config.grupo}: ${config.texto}`)
+                .join("\n")}`
+            : item.configuracao
+              ? `
+   Opções: ${item.configuracao}`
+              : "";
+
+        return `• ${item.nome} x${item.quantidade} - R$ ${(
+          item.preco * item.quantidade
+        ).toFixed(2)}${detalhes}${
+          item.observacaoItem
+            ? `
+   Observação: ${item.observacaoItem}`
+            : ""
+        }`;
+      })
+      .join("\n");
 
     const mensagem = `
 Olá! Quero fazer um pedido pelo cardápio online da Conceito Fitness Gourmet.
@@ -941,9 +985,17 @@ Seu carrinho está esperando por algo delicioso ☕
 
                   <div>
                     <strong>{item.nome}</strong>
-                    {item.configuracao && (
-  <small className="co-cart-config">{item.configuracao}</small>
-)}
+                    {Array.isArray(item.resumoConfiguracoes) && item.resumoConfiguracoes.length > 0 ? (
+                      <div className="co-cart-config-list">
+                        {item.resumoConfiguracoes.map((config) => (
+                          <small key={`${config.grupoId}-${config.grupo}`}>
+                            <strong>{config.grupo}:</strong> {config.texto}
+                          </small>
+                        ))}
+                      </div>
+                    ) : item.configuracao ? (
+                      <small className="co-cart-config">{item.configuracao}</small>
+                    ) : null}
                     <span>R$ {item.preco.toFixed(2)}</span>
 
                     <div className="co-qty">
@@ -972,14 +1024,24 @@ Seu carrinho está esperando por algo delicioso ☕
                       onChange={(e) => alterarObservacaoItem(item.chaveCarrinho, e.target.value)}
                     />
                   </div>
-                  <button
-                    type="button"
-                    className="co-remove-item"
-                    aria-label={`Remover ${item.nome}`}
-                    onClick={() => removerItem(item.chaveCarrinho)}
-                  >
-                    <Trash2 size={17} />
-                  </button>
+                  <div className="co-cart-item-actions">
+                    <button
+                      type="button"
+                      className="co-edit-item"
+                      aria-label={`Editar ${item.nome}`}
+                      onClick={() => editarItemCarrinho(item)}
+                    >
+                      <Pencil size={16} />
+                    </button>
+                    <button
+                      type="button"
+                      className="co-remove-item"
+                      aria-label={`Remover ${item.nome}`}
+                      onClick={() => removerItem(item.chaveCarrinho)}
+                    >
+                      <Trash2 size={17} />
+                    </button>
+                  </div>
                 </div>
               ))}
             </div>
@@ -1088,7 +1150,7 @@ Seu carrinho está esperando por algo delicioso ☕
     )}
   </>
 )}
-    
+
 
             <label>Observação (opcional)</label>
             <textarea
@@ -1198,7 +1260,7 @@ Seu carrinho está esperando por algo delicioso ☕
           <span>Atendimento com excelência</span>
         </div>
       </footer>
-            
+
       <MinhaContaModal
         aberto={contaAberta}
         onClose={() => setContaAberta(false)}
@@ -1214,20 +1276,35 @@ Seu carrinho está esperando por algo delicioso ☕
           imagem={getImagemProduto(produtoSelecionado)}
           quantidade={quantidadeModal}
           setQuantidade={setQuantidadeModal}
-          onFechar={() => setProdutoSelecionado(null)}
+          onFechar={() => {
+            setProdutoSelecionado(null);
+            setItemEmEdicao(null);
+          }}
           grupos={gruposComponentes}
-opcoes={opcoesComponentes}
-onAdicionar={({ selecoes, adicionais, precoUnitario, observacaoItem }) => {
-  adicionarProduto(produtoSelecionado, {
-    quantidade: quantidadeModal,
-    selecoes,
-    adicionais,
-    precoUnitario,
-    observacaoItem,
-  });
+          opcoes={opcoesComponentes}
+          configuracaoInicial={itemEmEdicao}
+          onAdicionar={({
+            selecoes,
+            configuracoes,
+            resumoConfiguracoes,
+            adicionais,
+            precoUnitario,
+            observacaoItem,
+          }) => {
+            adicionarProduto(produtoSelecionado, {
+              quantidade: quantidadeModal,
+              selecoes,
+              configuracoes,
+              resumoConfiguracoes,
+              adicionais,
+              precoUnitario,
+              observacaoItem,
+              chaveOriginal: itemEmEdicao?.chaveCarrinho,
+            });
 
-  setProdutoSelecionado(null);
-}}
+            setProdutoSelecionado(null);
+            setItemEmEdicao(null);
+          }}
         />
       )}
     </div>

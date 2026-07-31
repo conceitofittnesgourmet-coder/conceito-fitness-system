@@ -8,6 +8,10 @@ function idsDaLista(lista = []) {
   return lista.map(obterId).filter(Boolean);
 }
 
+function quantidadeOpcao(opcao) {
+  return Math.max(1, Number(opcao?.quantidade || 1));
+}
+
 export function obterGruposDoProduto(produto, grupos = []) {
   const gruposIds = idsDaLista(produto?.gruposComponentes || []);
   const configs = produto?.configuracaoGrupos || [];
@@ -19,9 +23,7 @@ export function obterGruposDoProduto(produto, grupos = []) {
         (item) => obterId(item.grupoId) === obterId(grupo)
       );
 
-      const minimo = Number(
-        config?.minimoEscolhas ?? grupo.minimoEscolhas ?? 0
-      );
+      const minimo = Number(config?.minimoEscolhas ?? grupo.minimoEscolhas ?? 0);
       const maximo = Math.max(
         minimo,
         Number(config?.maximoEscolhas ?? grupo.maximoEscolhas ?? 1)
@@ -63,6 +65,7 @@ export function obterOpcoesDoGrupo(grupo, opcoes = [], canal = "cardapio") {
 
       return {
         ...opcao,
+        quantidade: quantidadeOpcao(opcao),
         indisponivel:
           disponibilidade.disponivel === false || estoqueInsuficiente,
         motivoIndisponibilidade:
@@ -70,9 +73,10 @@ export function obterOpcoesDoGrupo(grupo, opcoes = [], canal = "cardapio") {
           (estoqueInsuficiente ? "Opção esgotada" : ""),
       };
     })
-    .sort((a, b) =>
-      Number(a.ordem || 0) - Number(b.ordem || 0) ||
-      String(a.nome || "").localeCompare(String(b.nome || ""), "pt-BR")
+    .sort(
+      (a, b) =>
+        Number(a.ordem || 0) - Number(b.ordem || 0) ||
+        String(a.nome || "").localeCompare(String(b.nome || ""), "pt-BR")
     );
 }
 
@@ -81,9 +85,9 @@ export function montarSelecoesPadrao(grupos = [], opcoes = []) {
     const padrao = new Set(grupo.opcoesPadrao || []);
     if (padrao.size === 0) return resultado;
 
-    const selecionadas = obterOpcoesDoGrupo(grupo, opcoes).filter(
-      (opcao) => padrao.has(obterId(opcao)) && !opcao.indisponivel
-    );
+    const selecionadas = obterOpcoesDoGrupo(grupo, opcoes)
+      .filter((opcao) => padrao.has(obterId(opcao)) && !opcao.indisponivel)
+      .map((opcao) => ({ ...opcao, quantidade: 1 }));
 
     if (selecionadas.length > 0) {
       resultado[obterId(grupo)] = selecionadas.slice(
@@ -96,14 +100,81 @@ export function montarSelecoesPadrao(grupos = [], opcoes = []) {
   }, {});
 }
 
+export function clonarSelecoes(selecoes = {}) {
+  return Object.entries(selecoes || {}).reduce((resultado, [grupoId, lista]) => {
+    resultado[grupoId] = (lista || []).map((opcao) => ({
+      ...opcao,
+      quantidade: quantidadeOpcao(opcao),
+    }));
+    return resultado;
+  }, {});
+}
+
 export function calcularAdicionais(selecoes = {}) {
   return Object.values(selecoes)
     .flat()
     .reduce(
       (acc, opcao) =>
-        acc + Number(opcao.precoAdicional || opcao.valor || 0),
+        acc +
+        Number(opcao.precoAdicional || opcao.valor || 0) *
+          quantidadeOpcao(opcao),
       0
     );
+}
+
+export function totalEscolhasDoGrupo(grupo, selecionadas = []) {
+  if (grupo?.permiteQuantidadePorOpcao) {
+    return selecionadas.reduce(
+      (total, opcao) => total + quantidadeOpcao(opcao),
+      0
+    );
+  }
+  return selecionadas.length;
+}
+
+export function montarConfiguracoesPersistencia(grupos = [], selecoes = {}) {
+  return grupos.flatMap((grupo) => {
+    const grupoId = obterId(grupo);
+    return (selecoes[grupoId] || []).map((opcao) => {
+      const quantidade = quantidadeOpcao(opcao);
+      const valorUnitario = Number(
+        opcao.precoAdicional ?? opcao.valor ?? 0
+      );
+
+      return {
+        grupoId,
+        grupo: grupo.nome || "Personalização",
+        grupoTipo: grupo.tipo || "personalizado",
+        opcaoId: obterId(opcao),
+        opcao: opcao.nome || "Opção",
+        quantidade,
+        valorUnitario,
+        valor: valorUnitario * quantidade,
+      };
+    });
+  });
+}
+
+export function montarResumoConfiguracoes(grupos = [], selecoes = {}) {
+  return grupos
+    .map((grupo) => {
+      const escolhidas = selecoes[obterId(grupo)] || [];
+      if (!escolhidas.length) return null;
+
+      const texto = escolhidas
+        .map((opcao) => {
+          const quantidade = quantidadeOpcao(opcao);
+          return `${quantidade > 1 ? `${quantidade}x ` : ""}${opcao.nome}`;
+        })
+        .join(", ");
+
+      return {
+        grupoId: obterId(grupo),
+        grupo: grupo.nome,
+        texto,
+      };
+    })
+    .filter(Boolean);
 }
 
 export function validarGruposObrigatorios(grupos = [], selecoes = {}) {
@@ -115,6 +186,7 @@ export function validarGruposObrigatorios(grupos = [], selecoes = {}) {
     );
     const maximo = Number(grupo.maximoEscolhas || 1);
     const selecionadas = selecoes[obterId(grupo)] || [];
+    const totalEscolhas = totalEscolhasDoGrupo(grupo, selecionadas);
 
     if (selecionadas.some((opcao) => opcao.indisponivel)) {
       return {
@@ -123,17 +195,40 @@ export function validarGruposObrigatorios(grupos = [], selecoes = {}) {
       };
     }
 
-    if (selecionadas.length < minimo) {
+    if (selecionadas.some((opcao) => quantidadeOpcao(opcao) < 1)) {
       return {
         valido: false,
-        mensagem: `Escolha pelo menos ${minimo} opção(ões) em ${grupo.nome}.`,
+        mensagem: `Existe uma quantidade inválida em ${grupo.nome}.`,
       };
     }
 
-    if (selecionadas.length > maximo) {
+    if (
+      grupo.permiteQuantidadePorOpcao &&
+      selecionadas.some(
+        (opcao) =>
+          quantidadeOpcao(opcao) >
+          Number(grupo.quantidadeMaximaPorOpcao || 1)
+      )
+    ) {
       return {
         valido: false,
-        mensagem: `Escolha no máximo ${maximo} opção(ões) em ${grupo.nome}.`,
+        mensagem: `A quantidade máxima por opção em ${grupo.nome} é ${Number(
+          grupo.quantidadeMaximaPorOpcao || 1
+        )}.`,
+      };
+    }
+
+    if (totalEscolhas < minimo) {
+      return {
+        valido: false,
+        mensagem: `Escolha pelo menos ${minimo} item(ns) em ${grupo.nome}.`,
+      };
+    }
+
+    if (totalEscolhas > maximo) {
+      return {
+        valido: false,
+        mensagem: `Escolha no máximo ${maximo} item(ns) em ${grupo.nome}.`,
       };
     }
   }

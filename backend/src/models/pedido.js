@@ -225,11 +225,25 @@ dadosFiscais: {
       {
         grupoId: String,
         grupo: String,
+        grupoTipo: { type: String, default: "personalizado" },
         opcaoId: String,
         opcao: String,
-        valor: Number,
+        quantidade: { type: Number, default: 1, min: 1 },
+        valorUnitario: { type: Number, default: 0 },
+        valor: { type: Number, default: 0 },
       },
     ],
+
+    observacaoItem: {
+      type: String,
+      default: "",
+      maxlength: 300,
+    },
+
+    adicionais: {
+      type: Number,
+      default: 0,
+    },
   },
 ],
 

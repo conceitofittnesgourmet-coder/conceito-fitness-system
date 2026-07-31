@@ -12,6 +12,7 @@ const Nfce = require("../models/nfce");
 const {
   consumirFichaDoItemPedido,
 } = require("../services/fichaTecnicaService");
+const { validarPersonalizacao } = require("../services/PersonalizacaoPedidoService");
 
 
 // LISTAR
@@ -124,6 +125,17 @@ for (const item of produtos) {
     });
   }
 
+  const personalizacao = await validarPersonalizacao(
+    produtoBanco,
+    item.configuracoes || []
+  );
+  const precoBase = Number(produtoBanco.preco || 0);
+  const precoUnitarioSeguro =
+    personalizacao.configuracoes.length > 0
+      ? precoBase + Number(personalizacao.adicionais || 0)
+      : Number(item.precoUnitario || item.preco || precoBase);
+  const quantidadeItem = Number(item.quantidade || 1);
+
   produtosSnapshot.push({
 
     produtoId: produtoBanco._id,
@@ -136,17 +148,17 @@ for (const item of produtos) {
 
     codigoBarras: produtoBanco.codigoBarras || "",
 
-    quantidade: Number(item.quantidade || 1),
+    quantidade: quantidadeItem,
 
-    preco: Number(item.preco || 0),
+    preco: precoUnitarioSeguro,
 
-    precoUnitario: Number(item.precoUnitario || item.preco || 0),
+    precoUnitario: precoUnitarioSeguro,
 
-    precoOriginal: Number(produtoBanco.preco || 0),
+    precoOriginal: precoBase,
 
     custoNaVenda: Number(produtoBanco.custo || 0),
 
-    subtotal: Number(item.subtotal || 0),
+    subtotal: precoUnitarioSeguro * quantidadeItem,
 
     unidadeMedida:
       item.unidadeMedida ||
@@ -164,8 +176,11 @@ for (const item of produtos) {
       produtoBanco.imagem ||
       "",
 
-    configuracoes:
-      item.configuracoes || [],
+    configuracoes: personalizacao.configuracoes,
+
+    adicionais: Number(personalizacao.adicionais || 0),
+
+    observacaoItem: String(item.observacaoItem || "").trim(),
 
     dadosNutricionais:
       produtoBanco.informacoesNutricionais || {},
@@ -239,7 +254,7 @@ pagamentos: pagamentosRecebidos,
       dadosPedido.empresa = req.usuario.empresa;
     }
 
-    
+
     const pedidoCriado = await Pedido.create(dadosPedido);
 
     // GAMIFICAÇÃO DO CLUBE: não interrompe a venda caso o cliente não esteja cadastrado.
@@ -249,7 +264,7 @@ pagamentos: pagamentosRecebidos,
       pedidoId: pedidoCriado._id,
       itens: produtosSnapshot.map((item) => ({ produtoId: item.produtoId, categoria: item.categoria, quantidade: item.quantidade })),
     }).catch((erro) => console.error("ERRO GAMIFICAÇÃO DO PEDIDO:", erro.message));
-    
+
     // ===============================
 // FINANCEIRO AUTOMÁTICO
 // ===============================
@@ -393,7 +408,7 @@ console.log(
   `CMV DO ITEM ${item.nome}:`,
   resultadoFicha.custoTotal
 );
- 
+
   } catch (error) {
     console.log(
       `ERRO ATUALIZAR ESTOQUE PRODUTO ${item.produtoId}:`,
@@ -406,7 +421,7 @@ if (global.io) {
   global.io.emit("novo-pedido", pedidoCriado);
   global.io.emit("produto-atualizado");
 }
-  
+
 // ===============================
 // NFC-E AUTOMÁTICA
 // ===============================

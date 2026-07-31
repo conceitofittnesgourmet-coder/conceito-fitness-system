@@ -17,6 +17,9 @@ import {
   montarSelecoesPadrao,
   calcularAdicionais,
   validarGruposObrigatorios,
+  clonarSelecoes,
+  montarConfiguracoesPersistencia,
+  montarResumoConfiguracoes,
 } from "../ConfiguradorUniversal/configuradorUtils";
 
 function moeda(valor) {
@@ -35,6 +38,7 @@ function ProdutoModal({
   opcoes = [],
   onFechar,
   onAdicionar,
+  configuracaoInicial = null,
 }) {
   const [selecoes, setSelecoes] = useState({});
   const [observacaoItem, setObservacaoItem] = useState("");
@@ -63,9 +67,13 @@ function ProdutoModal({
 
   useEffect(() => {
     setImagemAtiva(imagensUnicas[0] || imagem || "");
-    setObservacaoItem("");
-    setSelecoes(montarSelecoesPadrao(gruposDoProduto, opcoes));
-  }, [produto?._id]);
+    setObservacaoItem(configuracaoInicial?.observacaoItem || "");
+    setSelecoes(
+      configuracaoInicial?.selecoes
+        ? clonarSelecoes(configuracaoInicial.selecoes)
+        : montarSelecoesPadrao(gruposDoProduto, opcoes)
+    );
+  }, [produto?._id, configuracaoInicial?.chaveCarrinho]);
 
   if (!produto) return null;
 
@@ -104,8 +112,19 @@ function ProdutoModal({
     return;
   }
 
+  const configuracoes = montarConfiguracoesPersistencia(
+    gruposDoProduto,
+    selecoes
+  );
+  const resumoConfiguracoes = montarResumoConfiguracoes(
+    gruposDoProduto,
+    selecoes
+  );
+
   onAdicionar({
-    selecoes,
+    selecoes: clonarSelecoes(selecoes),
+    configuracoes,
+    resumoConfiguracoes,
     adicionais,
     precoUnitario: Number(produto.preco || 0) + adicionais,
     observacaoItem: observacaoItem.trim(),
@@ -284,7 +303,7 @@ function ProdutoModal({
             </div>
 
             <button className="co-modal-add" onClick={confirmar}>
-              Adicionar {moeda(precoFinal)}
+              {configuracaoInicial ? "Atualizar" : "Adicionar"} {moeda(precoFinal)}
             </button>
           </div>
         </div>
