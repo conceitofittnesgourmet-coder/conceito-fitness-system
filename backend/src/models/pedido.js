@@ -395,6 +395,11 @@ ifoodPayloadUltimoEvento: {
   default: null,
 },
 
+ifoodUltimaAcao: { type: String, default: "" },
+ifoodUltimaAcaoEm: { type: Date, default: null },
+ifoodUltimaAcaoOk: { type: Boolean, default: null },
+ifoodUltimaAcaoErro: { type: String, default: "" },
+
   status: {
   type: String,
 

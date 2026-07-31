@@ -194,6 +194,29 @@ async function obterPedido(configuracao, orderId) {
   return response.data;
 }
 
+async function acaoPedido(configuracao, orderId, acao, data) {
+  const response = await requisicao(configuracao, {
+    method: "POST",
+    url: `${ORDER_URL}/orders/${orderId}/${acao}`,
+    ...(data ? { data } : {}),
+    headers: { "Content-Type": "application/json" },
+    validateStatus: (status) => status === 200 || status === 202 || status === 204,
+  });
+  return response.data || { status: "ACCEPTED" };
+}
+
+async function motivosCancelamento(configuracao, orderId) {
+  const response = await requisicao(configuracao, {
+    method: "GET",
+    url: `${ORDER_URL}/orders/${orderId}/cancellationReasons`,
+  });
+  return response.data;
+}
+
+async function solicitarCancelamento(configuracao, orderId, reason) {
+  return acaoPedido(configuracao, orderId, "requestCancellation", { reason: String(reason) });
+}
+
 module.exports = {
   obterConfiguracaoCompleta,
   obterToken,
@@ -204,4 +227,7 @@ module.exports = {
   reconhecerEventos,
   obterPedido,
   requisicao,
+  acaoPedido,
+  motivosCancelamento,
+  solicitarCancelamento,
 };

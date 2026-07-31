@@ -10,6 +10,11 @@ import {
   FaShoppingBag,
   FaHistory,
   FaPlay,
+  FaCheck,
+  FaFire,
+  FaBoxOpen,
+  FaTruck,
+  FaTimes,
 } from "react-icons/fa";
 import AdminLayout from "../layouts/AdminLayout";
 import api from "../services/api";
@@ -52,6 +57,10 @@ function IfoodIntegracao() {
   const [eventos, setEventos] = useState([]);
   const [pedidosImportados, setPedidosImportados] = useState([]);
   const [executandoPolling, setExecutandoPolling] = useState(false);
+  const [acaoEmAndamento, setAcaoEmAndamento] = useState("");
+  const [cancelamento, setCancelamento] = useState(null);
+  const [motivosCancelamento, setMotivosCancelamento] = useState([]);
+  const [motivoSelecionado, setMotivoSelecionado] = useState("");
 
   const prontoParaTeste = useMemo(
     () => Boolean(form.clientId && (form.clientSecret || form.clientSecretConfigurado)),
@@ -183,6 +192,73 @@ function dataHora(valor) {
   return new Date(valor).toLocaleString("pt-BR");
 }
 
+function statusNormalizado(item) {
+  return String(item?.status || "").toUpperCase();
+}
+
+function pode(item, acao) {
+  const status = statusNormalizado(item);
+  const tipo = String(item?.orderType || "").toUpperCase();
+  const encerrado = ["CANCELLED", "CAN", "CONCLUDED", "CON"].includes(status);
+  if (encerrado) return false;
+  if (acao === "confirmar") return ["PLACED", "PLC", "PENDING", ""].includes(status);
+  if (acao === "iniciar_preparo") return ["CONFIRMED", "CFM", "CONFIRMATION_REQUESTED"].includes(status);
+  if (acao === "pronto") return !["PLACED", "PLC", "PENDING"].includes(status);
+  if (acao === "despachar") return tipo === "DELIVERY" && !["PLACED", "PLC", "PENDING"].includes(status);
+  return true;
+}
+
+async function executarAcaoPedido(item, acao) {
+  const chave = `${item.orderId}:${acao}`;
+  setAcaoEmAndamento(chave);
+  setMensagem(null);
+  try {
+    const response = await api.post(`/ifood/pedidos/${item.orderId}/acao`, { acao });
+    setMensagem({ tipo: "ok", texto: response.data?.message || "Comando enviado ao iFood." });
+    await carregarOperacao();
+    setTimeout(() => executarPolling(), 1200);
+  } catch (error) {
+    setMensagem({ tipo: "erro", texto: error.response?.data?.message || "Não foi possível atualizar o pedido." });
+  } finally {
+    setAcaoEmAndamento("");
+  }
+}
+
+async function abrirCancelamento(item) {
+  setAcaoEmAndamento(`${item.orderId}:motivos`);
+  setMensagem(null);
+  try {
+    const response = await api.get(`/ifood/pedidos/${item.orderId}/motivos-cancelamento`);
+    const motivos = response.data?.motivos || [];
+    setMotivosCancelamento(motivos);
+    setMotivoSelecionado(motivos[0]?.code || motivos[0]?.id || "");
+    setCancelamento(item);
+  } catch (error) {
+    setMensagem({ tipo: "erro", texto: error.response?.data?.message || "Não foi possível carregar os motivos." });
+  } finally {
+    setAcaoEmAndamento("");
+  }
+}
+
+async function confirmarCancelamento() {
+  if (!cancelamento || !motivoSelecionado) return;
+  const chave = `${cancelamento.orderId}:cancelar`;
+  setAcaoEmAndamento(chave);
+  try {
+    const response = await api.post(`/ifood/pedidos/${cancelamento.orderId}/cancelar`, {
+      reason: motivoSelecionado,
+    });
+    setMensagem({ tipo: "ok", texto: response.data?.message || "Cancelamento solicitado." });
+    setCancelamento(null);
+    await carregarOperacao();
+    setTimeout(() => executarPolling(), 1200);
+  } catch (error) {
+    setMensagem({ tipo: "erro", texto: error.response?.data?.message || "Falha ao solicitar cancelamento." });
+  } finally {
+    setAcaoEmAndamento("");
+  }
+}
+
   return (
     <AdminLayout
       title="Integração iFood"
@@ -191,10 +267,10 @@ function dataHora(valor) {
       <div className="ifood-page">
         <section className="ifood-hero">
           <div>
-            <span className="ifood-kicker"><FaPlug /> V04.3.2</span>
-            <h2>Recebimento seguro de pedidos</h2>
+            <span className="ifood-kicker"><FaPlug /> V04.3.3</span>
+            <h2>Ciclo completo dos pedidos iFood</h2>
             <p>
-              Polling oficial, reconhecimento dos eventos e importação sem duplicidade para o ERP.
+              Confirme, inicie o preparo, informe que está pronto, despache ou solicite cancelamento com auditoria completa.
             </p>
           </div>
           <div className={`ifood-health ${form.ultimoTesteOk ? "ok" : "pendente"}`}>
@@ -309,12 +385,33 @@ function dataHora(valor) {
   <section className="ifood-card">
     <div className="ifood-card-title"><FaShoppingBag /><div><h3>Pedidos importados</h3><p>Pedidos vinculados ao fluxo interno do ERP.</p></div></div>
     <div className="ifood-table-wrap">
-      <table className="ifood-table"><thead><tr><th>iFood</th><th>ERP</th><th>Status</th><th>Importado</th></tr></thead>
-        <tbody>{pedidosImportados.length ? pedidosImportados.map((item) => <tr key={item._id}><td><strong>#{item.displayId || item.orderId?.slice(-6)}</strong><small>{item.orderType}</small></td><td>{item.pedidoErp?.numeroPedido ? `#${item.pedidoErp.numeroPedido}` : "—"}</td><td>{item.status}</td><td>{dataHora(item.importadoEm || item.createdAt)}</td></tr>) : <tr><td colSpan="4">Nenhum pedido importado.</td></tr>}</tbody>
+      <table className="ifood-table ifood-orders-table"><thead><tr><th>iFood</th><th>ERP</th><th>Status</th><th>Último comando</th><th>Ações</th></tr></thead>
+        <tbody>{pedidosImportados.length ? pedidosImportados.map((item) => <tr key={item._id}>
+          <td><strong>#{item.displayId || item.orderId?.slice(-6)}</strong><small>{item.orderType} · {item.orderTiming || "IMMEDIATE"}</small></td>
+          <td>{item.pedidoErp?.numeroPedido ? `#${item.pedidoErp.numeroPedido}` : "—"}<small>{item.pedidoErp?.cliente || ""}</small></td>
+          <td><span className={`ifood-order-status status-${statusNormalizado(item).toLowerCase()}`}>{item.status}</span>{item.statusSolicitado && <small>Aguardando: {item.statusSolicitado}</small>}</td>
+          <td>{item.ultimoComando || "—"}<small>{dataHora(item.ultimoComandoEm)}</small>{item.ultimoComandoErro && <small className="ifood-command-error">{item.ultimoComandoErro}</small>}</td>
+          <td><div className="ifood-order-actions">
+            {pode(item,"confirmar") && <button title="Confirmar pedido" onClick={() => executarAcaoPedido(item,"confirmar")} disabled={Boolean(acaoEmAndamento)}><FaCheck /> Confirmar</button>}
+            {pode(item,"iniciar_preparo") && <button title="Iniciar preparo" onClick={() => executarAcaoPedido(item,"iniciar_preparo")} disabled={Boolean(acaoEmAndamento)}><FaFire /> Preparar</button>}
+            {pode(item,"pronto") && <button title="Informar pedido pronto" onClick={() => executarAcaoPedido(item,"pronto")} disabled={Boolean(acaoEmAndamento)}><FaBoxOpen /> Pronto</button>}
+            {pode(item,"despachar") && <button title="Despachar entrega própria" onClick={() => executarAcaoPedido(item,"despachar")} disabled={Boolean(acaoEmAndamento)}><FaTruck /> Despachar</button>}
+            {pode(item,"cancelar") && <button className="danger" title="Solicitar cancelamento" onClick={() => abrirCancelamento(item)} disabled={Boolean(acaoEmAndamento)}><FaTimes /> Cancelar</button>}
+          </div></td>
+        </tr>) : <tr><td colSpan="5">Nenhum pedido importado.</td></tr>}</tbody>
       </table>
     </div>
   </section>
 </div>
+
+        {cancelamento && <div className="ifood-modal-backdrop" onMouseDown={() => setCancelamento(null)}>
+          <div className="ifood-modal" onMouseDown={(e) => e.stopPropagation()}>
+            <div className="ifood-modal-header"><div><span>Cancelamento iFood</span><h3>Pedido #{cancelamento.displayId || cancelamento.orderId?.slice(-6)}</h3></div><button onClick={() => setCancelamento(null)}><FaTimes /></button></div>
+            <p>O cancelamento é assíncrono. O pedido só será marcado como cancelado após o evento de confirmação do iFood.</p>
+            <label>Motivo aceito para este pedido<select value={motivoSelecionado} onChange={(e) => setMotivoSelecionado(e.target.value)}>{motivosCancelamento.map((motivo) => <option key={motivo.code || motivo.id} value={motivo.code || motivo.id}>{motivo.code || motivo.id} — {motivo.description || motivo.reason || motivo.name}</option>)}</select></label>
+            <div className="ifood-modal-actions"><button className="secondary" onClick={() => setCancelamento(null)}>Voltar</button><button className="danger" onClick={confirmarCancelamento} disabled={!motivoSelecionado || Boolean(acaoEmAndamento)}>Solicitar cancelamento</button></div>
+          </div>
+        </div>}
 
         <div className="ifood-actions">
           <button className="secondary" onClick={salvar} disabled={salvando || carregando}><FaSave /> {salvando ? "Salvando..." : "Salvar configuração"}</button>

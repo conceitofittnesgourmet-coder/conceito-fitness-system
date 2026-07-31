@@ -205,7 +205,7 @@ async function atualizarStatusPedido(evento) {
   const pedido = await Pedido.findOneAndUpdate({ ifoodOrderId: evento.orderId }, atualizacao, { new: true });
   await IfoodPedido.findOneAndUpdate(
     { orderId: evento.orderId },
-    { status: statusIfood, atualizadoNoIfoodEm: new Date() },
+    { status: statusIfood, statusSolicitado: "", atualizadoNoIfoodEm: new Date() },
     { upsert: false }
   );
   if (pedido && global.io) global.io.emit("pedido-atualizado", pedido);

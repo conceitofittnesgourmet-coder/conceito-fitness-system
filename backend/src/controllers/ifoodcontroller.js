@@ -2,6 +2,7 @@ const IfoodConfiguracao = require("../models/ifoodconfiguracao");
 const { criptografar } = require("../services/IfoodCryptoService");
 const IfoodApiService = require("../services/IfoodApiService");
 const IfoodPollingService = require("../services/IfoodPollingService");
+const IfoodOrderStatusService = require("../services/IfoodOrderStatusService");
 
 function publico(documento) {
   if (!documento) return null;
@@ -120,5 +121,36 @@ exports.listarPedidosImportados = async (req, res, next) => {
     return res.json({ success: true, pedidos });
   } catch (error) {
     next(error);
+  }
+};
+
+
+exports.executarAcaoPedido = async (req, res) => {
+  try {
+    const resultado = await IfoodOrderStatusService.executar(req.params.orderId, req.body?.acao);
+    return res.json({ success: true, message: resultado.aviso, resultado });
+  } catch (error) {
+    return res.status(400).json({ success: false, message: error.message });
+  }
+};
+
+exports.motivosCancelamento = async (req, res) => {
+  try {
+    const motivos = await IfoodOrderStatusService.motivosCancelamento(req.params.orderId);
+    return res.json({ success: true, motivos });
+  } catch (error) {
+    return res.status(400).json({ success: false, message: error.message });
+  }
+};
+
+exports.solicitarCancelamento = async (req, res) => {
+  try {
+    const resultado = await IfoodOrderStatusService.solicitarCancelamento(
+      req.params.orderId,
+      req.body?.reason
+    );
+    return res.json({ success: true, message: resultado.aviso, resultado });
+  } catch (error) {
+    return res.status(400).json({ success: false, message: error.message });
   }
 };

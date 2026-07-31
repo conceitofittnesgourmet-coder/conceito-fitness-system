@@ -16,6 +16,25 @@ const ifoodPedidoSchema = new mongoose.Schema(
     payload: { type: mongoose.Schema.Types.Mixed, default: {} },
     importadoEm: { type: Date, default: null },
     atualizadoNoIfoodEm: { type: Date, default: null },
+    statusSolicitado: { type: String, default: "" },
+    ultimoComando: { type: String, default: "" },
+    ultimoComandoEm: { type: Date, default: null },
+    ultimoComandoOk: { type: Boolean, default: null },
+    ultimoComandoErro: { type: String, default: "" },
+    motivoCancelamentoSolicitado: { type: String, default: "" },
+    historicoComandos: {
+      type: [
+        {
+          acao: String,
+          statusAntes: String,
+          solicitadoEm: Date,
+          aceito: Boolean,
+          resposta: mongoose.Schema.Types.Mixed,
+          erro: String,
+        },
+      ],
+      default: [],
+    },
   },
   { timestamps: true }
 );
