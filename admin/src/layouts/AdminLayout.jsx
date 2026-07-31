@@ -16,7 +16,7 @@ import {
 FaIndustry,
 FaClipboardList,
 FaFileAlt,
-FaFileInvoice, 
+FaFileInvoice,
 FaTruckLoading,
 FaGlobe,
 FaTags,
@@ -24,6 +24,7 @@ FaList,
 FaBuilding,
 FaFileSignature,
 FaGift,
+FaSlidersH,
 
 } from "react-icons/fa";
 
@@ -62,9 +63,10 @@ function AdminLayout({
     { label: "Painel", path: "/", icon: <FaChartLine /> },
     { label: "Produtos", path: "/produtos", icon: <FaBoxOpen /> },
     { label: "Cadastro Mestre", path: "/produtos/cadastro-mestre", icon: <FaClipboardList /> },
+    { label: "Opções por Produto", path: "/produtos/personalizacoes", icon: <FaSlidersH /> },
     { label: "Ingredientes", path: "/ingredientes", icon: <FaIndustry /> },
     { label: "Categorias", path: "/categorias", icon: <FaTags /> },
-    
+
   {
   label: "Grupos",
   path: "/admin/grupos-componentes",
@@ -83,7 +85,7 @@ function AdminLayout({
     { label: "Clube Conceito", path: "/clube-conceito", icon: <FaGift /> },
     { label: "Empresa", path: "/empresa", icon: <FaBuilding /> },
     { label: "Financeiro", path: "/financeiro", icon: <FaWallet /> },
-    
+
 
     {
   label: "Ordens de Produção",

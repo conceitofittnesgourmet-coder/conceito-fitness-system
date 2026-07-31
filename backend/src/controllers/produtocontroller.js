@@ -2,6 +2,7 @@ const cloudinary = require("../config/cloudinary");
 const fs = require("fs-extra");
 const Produto = require("../models/produto");
 const ProdutoService = require("../services/ProdutoService");
+const ConfiguracaoProdutoService = require("../services/ConfiguracaoProdutoService");
 
 async function uploadImagens(files = []) {
   const imagens = [];
@@ -566,6 +567,43 @@ const atualizarCadastroMestre = async (req, res) => {
   }
 };
 
+
+const buscarPersonalizacoesProduto = async (req, res) => {
+  try {
+    const dados = await ConfiguracaoProdutoService.buscarConfiguracao(req.params.id);
+    return res.json({ success: true, ...dados });
+  } catch (error) {
+    const status = error.status || 500;
+    return res.status(status).json({ success: false, message: error.message });
+  }
+};
+
+const salvarPersonalizacoesProduto = async (req, res) => {
+  try {
+    const usuario = String(req.admin?.nome || req.admin?.email || req.admin?.id || "Administrador");
+    const dados = await ConfiguracaoProdutoService.salvarConfiguracao(req.params.id, req.body || {}, usuario);
+    if (global.io) global.io.emit("produto-personalizacoes-atualizadas", { produtoId: req.params.id });
+    return res.json({ success: true, message: "Personalizações atualizadas com sucesso.", ...dados });
+  } catch (error) {
+    const status = error.status || (error.name === "ValidationError" ? 400 : 500);
+    return res.status(status).json({ success: false, message: error.message });
+  }
+};
+
+const copiarPersonalizacoesProduto = async (req, res) => {
+  try {
+    const origemId = String(req.body?.origemId || "");
+    if (!origemId) return res.status(400).json({ success: false, message: "Informe o produto de origem." });
+    const usuario = String(req.admin?.nome || req.admin?.email || req.admin?.id || "Administrador");
+    const dados = await ConfiguracaoProdutoService.copiarConfiguracao(origemId, req.params.id, usuario);
+    if (global.io) global.io.emit("produto-personalizacoes-atualizadas", { produtoId: req.params.id });
+    return res.json({ success: true, message: "Configuração copiada com sucesso.", ...dados });
+  } catch (error) {
+    const status = error.status || 500;
+    return res.status(status).json({ success: false, message: error.message });
+  }
+};
+
 const deletarProduto = async (req, res) => {
   try {
     const produto = await Produto.findById(req.params.id);
@@ -593,5 +631,8 @@ module.exports = {
   atualizarFiscalIndividual,
   listarCadastroMestre,
   atualizarCadastroMestre,
+  buscarPersonalizacoesProduto,
+  salvarPersonalizacoesProduto,
+  copiarPersonalizacoesProduto,
   deletarProduto,
 };

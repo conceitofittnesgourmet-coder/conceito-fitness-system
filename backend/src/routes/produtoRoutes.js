@@ -19,6 +19,9 @@ const {
   atualizarFiscalIndividual,
   listarCadastroMestre,
   atualizarCadastroMestre,
+  buscarPersonalizacoesProduto,
+  salvarPersonalizacoesProduto,
+  copiarPersonalizacoesProduto,
   deletarProduto,
 } = require("../controllers/produtocontroller");
 
@@ -95,6 +98,12 @@ router.patch("/:id/fiscal", authMiddleware, atualizarFiscalIndividual);
 // CADASTRO MESTRE DE PRODUTOS — PROTEGIDO
 router.get("/mestre/cadastro", authMiddleware, listarCadastroMestre);
 router.patch("/:id/mestre", authMiddleware, atualizarCadastroMestre);
+
+
+// PERSONALIZAÇÕES POR PRODUTO — PROTEGIDO
+router.get("/:id/personalizacoes", authMiddleware, buscarPersonalizacoesProduto);
+router.put("/:id/personalizacoes", authMiddleware, salvarPersonalizacoesProduto);
+router.post("/:id/personalizacoes/copiar", authMiddleware, copiarPersonalizacoesProduto);
 
 // BUSCAR PRODUTO POR ID — PÚBLICO
 router.get(

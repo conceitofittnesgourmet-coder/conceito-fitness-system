@@ -97,13 +97,14 @@ import CadastroFiscalProdutos from "./pages/CadastroFiscalProdutos";
 import CadastroMestreProdutos from "./pages/CadastroMestreProdutos";
 import Ingredientes from "./pages/Ingredientes";
 
-import CardapioOnlineAdmin from "./pages/cardapioonlineadmin"; 
+import CardapioOnlineAdmin from "./pages/cardapioonlineadmin";
 
 import Categorias from "./pages/Categorias";
 
 import GruposComponentes from "./pages/GruposComponentes";
 
 import OpcoesComponentes from "./pages/OpcoesComponentes";
+import ProdutosPersonalizacoes from "./pages/ProdutosPersonalizacoes";
 
 
 
@@ -370,7 +371,7 @@ function App() {
     </PrivateRoute>
   }
 />
-    
+
       {/* PDV */}
 
     <Route
@@ -402,7 +403,7 @@ function App() {
 
       />
 
-              
+
         <Route path="/cardapio-online-admin" element={<CardapioOnlineAdmin />} />
 
 
@@ -453,6 +454,16 @@ function App() {
   }
 />
 
+
+<Route
+  path="/produtos/personalizacoes"
+  element={
+    <PrivateRoute>
+      <ProdutosPersonalizacoes />
+    </PrivateRoute>
+  }
+/>
+
 <Route
   path="/admin/grupos-componentes"
   element={
@@ -489,7 +500,7 @@ function App() {
 
       />
 
-      
+
 
 
 
@@ -578,7 +589,7 @@ function App() {
   }
 />
 
- 
+
 <Route
   path="/compras"
   element={
@@ -641,7 +652,7 @@ function App() {
 
         element={<Entregador />}
 
-      /> 
+      />
 
       <Route
   path="/cardapio"
@@ -661,7 +672,7 @@ function App() {
 
   element={<Carrinho />}
 
-/> 
+/>
 
 <Route
 
@@ -753,7 +764,7 @@ function App() {
         path="*"
         element={<Navigate to="/" />}
       />
-      
+
     </Routes>
 
   );
