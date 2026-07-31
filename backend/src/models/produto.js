@@ -336,6 +336,23 @@ configuracaoGrupos: [
     },
 
     valorPreco: { type: Number, default: 0 },
+
+    // Permite limitar as opções deste grupo especificamente neste produto.
+    // Lista vazia = todas as opções ativas do grupo.
+    opcoesPermitidas: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "OpcaoComponente",
+      },
+    ],
+
+    // Opções pré-selecionadas ao abrir o configurador do produto.
+    opcoesPadrao: [
+      {
+        type: mongoose.Schema.Types.ObjectId,
+        ref: "OpcaoComponente",
+      },
+    ],
   },
 ],
 

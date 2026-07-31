@@ -1,4 +1,4 @@
-import { useMemo, useState } from "react";
+import { useEffect, useMemo, useState } from "react";
 import {
   X,
   Plus,
@@ -13,6 +13,8 @@ import {
 import GrupoConfiguracao from "./GrupoConfiguracao";
 import {
   obterGruposDoProduto,
+  obterOpcoesDoGrupo,
+  montarSelecoesPadrao,
   calcularAdicionais,
   validarGruposObrigatorios,
 } from "../ConfiguradorUniversal/configuradorUtils";
@@ -36,8 +38,7 @@ function ProdutoModal({
 }) {
   const [selecoes, setSelecoes] = useState({});
   const [observacaoItem, setObservacaoItem] = useState("");
-
-  if (!produto) return null;
+  const [imagemAtiva, setImagemAtiva] = useState("");
 
   const imagensProduto = [
     imagem,
@@ -47,15 +48,26 @@ function ProdutoModal({
   ].filter(Boolean);
 
   const imagensUnicas = [...new Set(imagensProduto)];
-  const [imagemAtiva, setImagemAtiva] = useState(imagensUnicas[0] || imagem);
 
-  const selos = produto.selos || {};
-  const alergenos = produto.alergenos || {};
-  const nutri = produto.informacoesNutricionais || {};
+  const selos = produto?.selos || {};
+  const alergenos = produto?.alergenos || {};
+  const nutri = produto?.informacoesNutricionais || {};
 
-  const gruposDoProduto = obterGruposDoProduto(produto, grupos).filter(
-  (grupo) => grupo.mostrarCardapio
-);
+  const gruposDoProduto = useMemo(
+    () =>
+      obterGruposDoProduto(produto, grupos).filter(
+        (grupo) => grupo.mostrarCardapio
+      ),
+    [produto, grupos]
+  );
+
+  useEffect(() => {
+    setImagemAtiva(imagensUnicas[0] || imagem || "");
+    setObservacaoItem("");
+    setSelecoes(montarSelecoesPadrao(gruposDoProduto, opcoes));
+  }, [produto?._id]);
+
+  if (!produto) return null;
 
   const adicionais = useMemo(() => {
   return calcularAdicionais(selecoes);
@@ -156,10 +168,11 @@ function ProdutoModal({
           </div>
 
           {gruposDoProduto.map((grupo) => {
-            const opcoesGrupo = opcoes.filter((opcao) => {
-              const grupoOpcao = opcao.grupo?._id || opcao.grupo;
-              return String(grupoOpcao) === String(grupo._id);
-            });
+            const opcoesGrupo = obterOpcoesDoGrupo(
+              grupo,
+              opcoes,
+              "cardapio"
+            );
 
             if (opcoesGrupo.length === 0) return null;
 

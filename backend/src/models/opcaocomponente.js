@@ -43,6 +43,27 @@ const opcaoComponenteSchema = new mongoose.Schema(
       type: Boolean,
       default: true,
     },
+
+    codigoExterno: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+
+    canais: {
+      pdv: { type: Boolean, default: true },
+      cardapio: { type: Boolean, default: true },
+      pwa: { type: Boolean, default: true },
+      ifood: { type: Boolean, default: false },
+    },
+
+    disponibilidade: {
+      disponivel: { type: Boolean, default: true },
+      motivo: { type: String, default: "", trim: true },
+      controlarEstoque: { type: Boolean, default: false },
+      estoque: { type: Number, default: 0 },
+      estoqueMinimo: { type: Number, default: 1 },
+    },
   },
   { timestamps: true }
 );

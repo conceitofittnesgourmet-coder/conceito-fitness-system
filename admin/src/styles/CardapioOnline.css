@@ -2266,3 +2266,18 @@ min-width:52px;
 .co-club-subscription{margin-top:12px;padding:10px 12px;border-radius:12px;background:rgba(255,255,255,.68);display:flex;justify-content:space-between;gap:12px;align-items:center}.co-club-subscription strong{font-size:13px}.co-club-subscription span{font-size:12px;opacity:.8;text-align:right}@media(max-width:520px){.co-club-subscription{align-items:flex-start;flex-direction:column}.co-club-subscription span{text-align:left}}
 
 .co-missions{margin-top:18px;padding:18px;border:1px solid #eadfd8;border-radius:18px;background:#fffaf7}.co-mission-list{display:grid;gap:10px;margin-top:13px}.co-mission-list article{display:grid;grid-template-columns:36px 1fr auto;align-items:center;gap:10px;padding:11px;border-radius:13px;background:#fff;border:1px solid #eee4de}.co-mission-list article>span{font-size:23px}.co-mission-list article>div{display:grid;gap:4px}.co-mission-list small{color:#85766e}.co-mission-list article>div>div{height:6px;background:#eadfd9;border-radius:99px;overflow:hidden}.co-mission-list i{display:block;height:100%;background:#4d725e}.co-mission-list article.done{background:#eef6f0}.co-mission-list article>b{font-size:12px;color:#486653}
+
+/* V04.2.1 — opções personalizáveis e disponibilidade */
+.co-config-options button.disabled,
+.co-config-options button:disabled {
+  cursor: not-allowed;
+  opacity: 0.58;
+  filter: grayscale(0.25);
+}
+
+.co-config-options button span small {
+  display: block;
+  margin-top: 3px;
+  font-size: 0.72rem;
+  font-weight: 600;
+}
