@@ -3,6 +3,8 @@ const controller = require("../controllers/orcamentocontroller");
 const router = express.Router();
 router.get("/resumo", controller.resumo);
 router.get("/", controller.listar);
+router.get("/:id/conversao", controller.inspecionarConversao);
+router.post("/:id/converter", controller.converter);
 router.get("/:id", controller.buscar);
 router.post("/", controller.criar);
 router.put("/:id", controller.atualizar);

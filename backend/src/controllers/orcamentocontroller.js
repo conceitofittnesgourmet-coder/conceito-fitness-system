@@ -1,3 +1,4 @@
+const ConversaoOrcamentoService = require("../services/ConversaoOrcamentoService");
 const Orcamento = require("../models/orcamento");
 
 function gerarNumero() {
@@ -30,7 +31,7 @@ exports.buscar = async (req, res, next) => {
 
 exports.criar = async (req, res, next) => {
   try {
-    const orcamento = await Orcamento.create({ ...req.body, numero: req.body.numero || gerarNumero() });
+    const orcamento = await Orcamento.create({ ...req.body, numero: req.body.numero || gerarNumero(), timeline: [{ tipo: "criado", titulo: "Orçamento criado", descricao: "Orçamento registrado no sistema.", usuario: req.usuario?.nome || req.usuario?.email || "Sistema" }] });
     res.status(201).json({ success: true, message: "Orçamento criado", orcamento });
   } catch (error) { next(error); }
 };
@@ -41,6 +42,7 @@ exports.atualizar = async (req, res, next) => {
     if (!orcamento) return res.status(404).json({ success: false, message: "Orçamento não encontrado" });
     Object.assign(orcamento, req.body, { numero: orcamento.numero });
     if (req.body.status === "aprovado" && !orcamento.aprovadoEm) orcamento.aprovadoEm = new Date();
+    orcamento.timeline.push({ tipo: "atualizado", titulo: "Orçamento atualizado", descricao: req.body.status ? `Status alterado para ${req.body.status}.` : "Dados do orçamento atualizados.", usuario: req.usuario?.nome || req.usuario?.email || "Sistema" });
     await orcamento.save();
     res.json({ success: true, message: "Orçamento atualizado", orcamento });
   } catch (error) { next(error); }
@@ -65,4 +67,21 @@ exports.resumo = async (req, res, next) => {
     ]);
     res.json({ success: true, resumo: totais || { quantidade: 0, valorTotal: 0, aprovados: 0, pendentes: 0 } });
   } catch (error) { next(error); }
+};
+
+exports.inspecionarConversao = async (req, res, next) => {
+  try {
+    const resultado = await ConversaoOrcamentoService.inspecionar(req.params.id, req.usuario?.empresa);
+    res.json({ success: true, ...resultado });
+  } catch (error) { next(error); }
+};
+
+exports.converter = async (req, res, next) => {
+  try {
+    const resultado = await ConversaoOrcamentoService.converter({ id: req.params.id, empresa: req.usuario?.empresa, usuario: req.usuario, dados: req.body || {} });
+    res.status(201).json({ success: true, message: "Orçamento convertido com sucesso.", ...resultado });
+  } catch (error) {
+    if (error.detalhes) return res.status(error.statusCode || 400).json({ success: false, message: error.message, validacao: error.detalhes });
+    next(error);
+  }
 };

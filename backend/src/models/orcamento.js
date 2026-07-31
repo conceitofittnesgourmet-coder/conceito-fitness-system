@@ -9,6 +9,14 @@ const itemSchema = new mongoose.Schema({
   subtotal: { type: Number, default: 0, min: 0 },
 }, { _id: true });
 
+const timelineSchema = new mongoose.Schema({
+  data: { type: Date, default: Date.now },
+  tipo: { type: String, required: true, trim: true },
+  titulo: { type: String, required: true, trim: true },
+  descricao: { type: String, default: "", trim: true },
+  usuario: { type: String, default: "Sistema", trim: true },
+}, { _id: true });
+
 const orcamentoSchema = new mongoose.Schema({
   numero: { type: String, unique: true, index: true },
   empresa: { type: mongoose.Schema.Types.ObjectId, ref: "Empresa", default: null, index: true },
@@ -37,6 +45,15 @@ const orcamentoSchema = new mongoose.Schema({
   observacoes: { type: String, default: "" },
   condicoes: { type: String, default: "" },
   pedidoId: { type: mongoose.Schema.Types.ObjectId, ref: "Pedido", default: null },
+  ordensProducaoIds: [{ type: mongoose.Schema.Types.ObjectId, ref: "OrdemProducao" }],
+  contasReceberIds: [{ type: mongoose.Schema.Types.ObjectId, ref: "ContaReceber" }],
+  timeline: { type: [timelineSchema], default: [] },
+  conversao: {
+    emProcessamento: { type: Boolean, default: false },
+    iniciadoEm: { type: Date, default: null },
+    concluidoEm: { type: Date, default: null },
+    usuario: { type: String, default: "" },
+  },
   aprovadoEm: { type: Date, default: null },
   convertidoEm: { type: Date, default: null },
 }, { timestamps: true });
