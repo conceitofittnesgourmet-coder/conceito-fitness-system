@@ -37,6 +37,7 @@ const opcaoComponenteRoutes = require("./routes/opcaoComponenteRoutes");
 const materiaPrimaRoutes = require("./routes/materiaPrimaRoutes");
 const fichaTecnicaRoutes = require("./routes/fichaTecnicaRoutes");
 const nfeRoutes = require("./routes/nfeRoutes");
+const ifoodRoutes = require("./routes/ifoodRoutes");
 
 const app = express();
 
@@ -131,6 +132,7 @@ app.use("/api/opcoes-componentes", opcaoComponenteRoutes);
 app.use("/api/materias-primas", materiaPrimaRoutes);
 app.use("/api/fichas-tecnicas", fichaTecnicaRoutes);
 app.use("/api/nfe", nfeRoutes);
+app.use("/api/ifood", ifoodRoutes);
 app.use("/api/orcamentos", orcamentoRoutes);
 app.use(errorHandler);
 

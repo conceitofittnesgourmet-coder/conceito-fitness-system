@@ -25,6 +25,7 @@ FaBuilding,
 FaFileSignature,
 FaGift,
 FaSlidersH,
+FaPlug,
 
 } from "react-icons/fa";
 
@@ -64,6 +65,7 @@ function AdminLayout({
     { label: "Produtos", path: "/produtos", icon: <FaBoxOpen /> },
     { label: "Cadastro Mestre", path: "/produtos/cadastro-mestre", icon: <FaClipboardList /> },
     { label: "Opções por Produto", path: "/produtos/personalizacoes", icon: <FaSlidersH /> },
+    { label: "Integração iFood", path: "/integracoes/ifood", icon: <FaPlug /> },
     { label: "Ingredientes", path: "/ingredientes", icon: <FaIndustry /> },
     { label: "Categorias", path: "/categorias", icon: <FaTags /> },
 

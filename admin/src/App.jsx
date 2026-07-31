@@ -105,6 +105,7 @@ import GruposComponentes from "./pages/GruposComponentes";
 
 import OpcoesComponentes from "./pages/OpcoesComponentes";
 import ProdutosPersonalizacoes from "./pages/ProdutosPersonalizacoes";
+import IfoodIntegracao from "./pages/IfoodIntegracao";
 
 
 
@@ -460,6 +461,15 @@ function App() {
   element={
     <PrivateRoute>
       <ProdutosPersonalizacoes />
+    </PrivateRoute>
+  }
+/>
+
+<Route
+  path="/integracoes/ifood"
+  element={
+    <PrivateRoute>
+      <IfoodIntegracao />
     </PrivateRoute>
   }
 />
