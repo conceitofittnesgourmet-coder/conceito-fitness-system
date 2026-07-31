@@ -6,6 +6,7 @@ const AUTH_URL = "https://merchant-api.ifood.com.br/authentication/v1.0/oauth/to
 const MERCHANT_URL = "https://merchant-api.ifood.com.br/merchant/v1.0";
 const EVENTS_URL = "https://merchant-api.ifood.com.br/events/v1.0";
 const ORDER_URL = "https://merchant-api.ifood.com.br/order/v1.0";
+const CATALOG_URL = "https://merchant-api.ifood.com.br/catalog/v2.0";
 
 let tokenCache = { accessToken: "", expiraEm: 0, chave: "" };
 
@@ -217,6 +218,83 @@ async function solicitarCancelamento(configuracao, orderId, reason) {
   return acaoPedido(configuracao, orderId, "requestCancellation", { reason: String(reason) });
 }
 
+
+async function listarCatalogos(configuracao) {
+  const response = await requisicao(configuracao, {
+    method: "GET",
+    url: `${CATALOG_URL}/merchants/${configuracao.merchantId}/catalogs`,
+  });
+  return Array.isArray(response.data) ? response.data : [];
+}
+
+async function listarCategoriasCatalogo(configuracao) {
+  const response = await requisicao(configuracao, {
+    method: "GET",
+    url: `${CATALOG_URL}/merchants/${configuracao.merchantId}/categories`,
+    params: { include_items: true },
+  });
+  return Array.isArray(response.data) ? response.data : response.data?.categories || [];
+}
+
+async function criarCategoria(configuracao, payload) {
+  const response = await requisicao(configuracao, {
+    method: "POST",
+    url: `${CATALOG_URL}/merchants/${configuracao.merchantId}/categories`,
+    data: payload,
+    headers: { "Content-Type": "application/json" },
+  });
+  return response.data;
+}
+
+async function salvarItemCatalogo(configuracao, payload) {
+  const response = await requisicao(configuracao, {
+    method: "PUT",
+    url: `${CATALOG_URL}/merchants/${configuracao.merchantId}/items`,
+    data: payload,
+    headers: { "Content-Type": "application/json" },
+    validateStatus: (status) => status === 200 || status === 201 || status === 202 || status === 204,
+  });
+  return response.data || { accepted: true };
+}
+
+async function atualizarStatusItem(configuracao, itemId, status) {
+  const response = await requisicao(configuracao, {
+    method: "PATCH",
+    url: `${CATALOG_URL}/merchants/${configuracao.merchantId}/items/status`,
+    data: { itemId, status },
+    headers: { "Content-Type": "application/json" },
+    validateStatus: (codigo) => codigo === 200 || codigo === 202 || codigo === 204,
+  });
+  return response.data || { accepted: true };
+}
+
+async function atualizarPrecoItem(configuracao, itemId, valor) {
+  const response = await requisicao(configuracao, {
+    method: "PATCH",
+    url: `${CATALOG_URL}/merchants/${configuracao.merchantId}/items/price`,
+    data: { itemId, price: { value: Number(valor) } },
+    headers: { "Content-Type": "application/json" },
+    validateStatus: (codigo) => codigo === 200 || codigo === 202 || codigo === 204,
+  });
+  return response.data || { accepted: true };
+}
+
+async function listarItensVendaveis(configuracao, catalogId) {
+  const response = await requisicao(configuracao, {
+    method: "GET",
+    url: `${CATALOG_URL}/merchants/${configuracao.merchantId}/catalogs/${catalogId}/sellableItems`,
+  });
+  return Array.isArray(response.data) ? response.data : [];
+}
+
+async function listarItensNaoVendaveis(configuracao, catalogId) {
+  const response = await requisicao(configuracao, {
+    method: "GET",
+    url: `${CATALOG_URL}/merchants/${configuracao.merchantId}/catalogs/${catalogId}/unsellableItems`,
+  });
+  return Array.isArray(response.data) ? response.data : response.data?.categories || [];
+}
+
 module.exports = {
   obterConfiguracaoCompleta,
   obterToken,
@@ -230,4 +308,12 @@ module.exports = {
   acaoPedido,
   motivosCancelamento,
   solicitarCancelamento,
+  listarCatalogos,
+  listarCategoriasCatalogo,
+  criarCategoria,
+  salvarItemCatalogo,
+  atualizarStatusItem,
+  atualizarPrecoItem,
+  listarItensVendaveis,
+  listarItensNaoVendaveis,
 };

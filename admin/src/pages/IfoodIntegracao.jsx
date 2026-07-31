@@ -18,6 +18,7 @@ import {
 } from "react-icons/fa";
 import AdminLayout from "../layouts/AdminLayout";
 import api from "../services/api";
+import IfoodCatalogoPanel from "../components/IfoodCatalogoPanel";
 import "../styles/ifood-integracao.css";
 
 const inicial = {
@@ -267,10 +268,10 @@ async function confirmarCancelamento() {
       <div className="ifood-page">
         <section className="ifood-hero">
           <div>
-            <span className="ifood-kicker"><FaPlug /> V04.3.3</span>
-            <h2>Ciclo completo dos pedidos iFood</h2>
+            <span className="ifood-kicker"><FaPlug /> V04.3.4</span>
+            <h2>Pedidos e catálogo integrados ao iFood</h2>
             <p>
-              Confirme, inicie o preparo, informe que está pronto, despache ou solicite cancelamento com auditoria completa.
+              Receba pedidos, controle os status e sincronize categorias, produtos, preços, disponibilidade e personalizações.
             </p>
           </div>
           <div className={`ifood-health ${form.ultimoTesteOk ? "ok" : "pendente"}`}>
@@ -403,6 +404,8 @@ async function confirmarCancelamento() {
     </div>
   </section>
 </div>
+
+        <IfoodCatalogoPanel configuracao={form} notificar={(tipo, texto) => setMensagem({ tipo, texto })} />
 
         {cancelamento && <div className="ifood-modal-backdrop" onMouseDown={() => setCancelamento(null)}>
           <div className="ifood-modal" onMouseDown={(e) => e.stopPropagation()}>

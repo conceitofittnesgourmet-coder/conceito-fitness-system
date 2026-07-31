@@ -16,4 +16,10 @@ router.post("/pedidos/:orderId/acao", controller.executarAcaoPedido);
 router.get("/pedidos/:orderId/motivos-cancelamento", controller.motivosCancelamento);
 router.post("/pedidos/:orderId/cancelar", controller.solicitarCancelamento);
 
+router.get("/catalogo/diagnostico", controller.diagnosticoCatalogo);
+router.post("/catalogo/simular", controller.simularCatalogo);
+router.post("/catalogo/sincronizar", controller.sincronizarCatalogo);
+router.patch("/catalogo/produtos/:produtoId/disponibilidade", controller.atualizarDisponibilidadeCatalogo);
+router.patch("/catalogo/produtos/:produtoId/preco", controller.atualizarPrecoCatalogo);
+
 module.exports = router;

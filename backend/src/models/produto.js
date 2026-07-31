@@ -336,23 +336,9 @@ configuracaoGrupos: [
     },
 
     valorPreco: { type: Number, default: 0 },
-
-    // Permite limitar as opções deste grupo especificamente neste produto.
-    // Lista vazia = todas as opções ativas do grupo.
-    opcoesPermitidas: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "OpcaoComponente",
-      },
-    ],
-
-    // Opções pré-selecionadas ao abrir o configurador do produto.
-    opcoesPadrao: [
-      {
-        type: mongoose.Schema.Types.ObjectId,
-        ref: "OpcaoComponente",
-      },
-    ],
+    opcoesPermitidas: [{ type: mongoose.Schema.Types.ObjectId, ref: "OpcaoComponente" }],
+    opcoesPadrao: [{ type: mongoose.Schema.Types.ObjectId, ref: "OpcaoComponente" }],
+    permiteObservacao: { type: Boolean, default: true },
   },
 ],
 
@@ -380,6 +366,17 @@ permiteMontagemCliente: {
   type: Boolean,
   default: false,
 },
+
+    integracoes: {
+      ifood: {
+        itemId: { type: String, default: "", trim: true },
+        produtoId: { type: String, default: "", trim: true },
+        categoryId: { type: String, default: "", trim: true },
+        status: { type: String, default: "", trim: true },
+        ultimaSincronizacaoEm: { type: Date, default: null },
+        ultimoErro: { type: String, default: "" },
+      },
+    },
 
     preco: {
       type: Number,

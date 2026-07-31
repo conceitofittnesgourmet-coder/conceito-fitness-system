@@ -3,6 +3,7 @@ const { criptografar } = require("../services/IfoodCryptoService");
 const IfoodApiService = require("../services/IfoodApiService");
 const IfoodPollingService = require("../services/IfoodPollingService");
 const IfoodOrderStatusService = require("../services/IfoodOrderStatusService");
+const IfoodCatalogoService = require("../services/IfoodCatalogoService");
 
 function publico(documento) {
   if (!documento) return null;
@@ -150,6 +151,52 @@ exports.solicitarCancelamento = async (req, res) => {
       req.body?.reason
     );
     return res.json({ success: true, message: resultado.aviso, resultado });
+  } catch (error) {
+    return res.status(400).json({ success: false, message: error.message });
+  }
+};
+
+
+exports.diagnosticoCatalogo = async (req, res) => {
+  try {
+    const resultado = await IfoodCatalogoService.diagnostico();
+    return res.json({ success: true, resultado });
+  } catch (error) {
+    return res.status(400).json({ success: false, message: error.message });
+  }
+};
+
+exports.simularCatalogo = async (req, res) => {
+  try {
+    const resultado = await IfoodCatalogoService.sincronizar({ modoSimulacao: true, produtoId: req.body?.produtoId || "" });
+    return res.json({ success: true, message: "Simulação concluída sem enviar dados ao iFood.", resultado });
+  } catch (error) {
+    return res.status(400).json({ success: false, message: error.message });
+  }
+};
+
+exports.sincronizarCatalogo = async (req, res) => {
+  try {
+    const resultado = await IfoodCatalogoService.sincronizar({ modoSimulacao: false, produtoId: req.body?.produtoId || "" });
+    return res.json({ success: true, message: "Sincronização de catálogo concluída.", resultado });
+  } catch (error) {
+    return res.status(400).json({ success: false, message: error.message });
+  }
+};
+
+exports.atualizarDisponibilidadeCatalogo = async (req, res) => {
+  try {
+    const resultado = await IfoodCatalogoService.atualizarDisponibilidade(req.params.produtoId, req.body?.status);
+    return res.json({ success: true, message: "Disponibilidade atualizada no iFood.", resultado });
+  } catch (error) {
+    return res.status(400).json({ success: false, message: error.message });
+  }
+};
+
+exports.atualizarPrecoCatalogo = async (req, res) => {
+  try {
+    const resultado = await IfoodCatalogoService.atualizarPreco(req.params.produtoId, req.body?.preco);
+    return res.json({ success: true, message: "Preço atualizado no iFood.", resultado });
   } catch (error) {
     return res.status(400).json({ success: false, message: error.message });
   }

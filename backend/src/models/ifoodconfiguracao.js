@@ -27,6 +27,10 @@ const ifoodConfiguracaoSchema = new mongoose.Schema(
     eventosRecebidos: { type: Number, default: 0 },
     eventosProcessados: { type: Number, default: 0 },
     pedidosImportados: { type: Number, default: 0 },
+    ultimaSincronizacaoCatalogoEm: { type: Date, default: null },
+    ultimaSincronizacaoCatalogoOk: { type: Boolean, default: false },
+    ultimaSincronizacaoCatalogoErro: { type: String, default: "" },
+    produtosCatalogoSincronizados: { type: Number, default: 0 },
   },
   { timestamps: true }
 );
