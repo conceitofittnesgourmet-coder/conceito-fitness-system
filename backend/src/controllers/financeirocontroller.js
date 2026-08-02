@@ -1,6 +1,7 @@
 const ContaPagar = require("../models/contapagar");
 const ContaReceber = require("../models/contareceber");
 const MovimentacaoFinanceira = require("../models/movimentacaofinanceira");
+const { inicioMesSaoPaulo, dataBrParaInicio, dataBrParaFim, filtroEmpresa } = require("../services/vendasMetricsService");
 
 function atualizarStatusVencimento(conta) {
   const hoje = new Date();
@@ -32,18 +33,21 @@ exports.resumoFinanceiro = async (req, res) => {
   tipo = "",
 } = req.query;
 
-const filtroData = {};
+const filtroData = { data: {} };
 
 if (inicio || fim) {
-  filtroData.data = {};
 
   if (inicio) {
-    filtroData.data.$gte = new Date(`${inicio}T00:00:00`);
+    filtroData.data.$gte = dataBrParaInicio(inicio);
   }
 
   if (fim) {
-    filtroData.data.$lte = new Date(`${fim}T23:59:59`);
+    filtroData.data.$lte = dataBrParaFim(fim);
   }
+}
+else {
+  filtroData.data.$gte = inicioMesSaoPaulo(new Date());
+  filtroData.data.$lte = new Date();
 }
 
 const filtroBusca = busca
@@ -56,7 +60,9 @@ const filtroBusca = busca
     }
   : {};
 
+const empresa = filtroEmpresa(req);
 const filtroMovimentacoes = {
+  ...empresa,
   ...filtroData,
   ...filtroBusca,
 };
@@ -69,8 +75,8 @@ if (tipo) {
   filtroMovimentacoes.tipo = tipo;
 }
 
-const contasPagar = await ContaPagar.find().sort({ vencimento: 1 });
-const contasReceber = await ContaReceber.find().sort({ vencimento: 1 });
+const contasPagar = await ContaPagar.find(empresa).sort({ vencimento: 1 });
+const contasReceber = await ContaReceber.find(empresa).sort({ vencimento: 1 });
 
 const movimentacoes = await MovimentacaoFinanceira.find(filtroMovimentacoes)
   .sort({ data: -1 })

@@ -4,6 +4,7 @@ const Cliente = require("../models/cliente");
 const ClubeGamificacao = require("../services/ClubeGamificacaoService");
 const ContaReceber = require("../models/contareceber");
 const MovimentacaoFinanceira = require("../models/movimentacaofinanceira");
+const Caixa = require("../models/caixa");
 const {
   gerarNfceDoPedido,
   transmitirNfce,
@@ -290,6 +291,11 @@ pagamentos: pagamentosSeguros,
       dadosPedido.empresa = req.usuario.empresa;
     }
 
+    // Vincula a venda ao caixa aberto. Assim o fechamento fica imutável e auditável.
+    const filtroCaixa = { status: "aberto" };
+    if (req.usuario?.empresa || req.admin?.empresa) filtroCaixa.empresa = req.usuario?.empresa || req.admin?.empresa;
+    const caixaAberto = await Caixa.findOne(filtroCaixa).sort({ abertoEm: -1 });
+    if (caixaAberto) dadosPedido.caixa = caixaAberto._id;
 
     const pedidoCriado = await Pedido.create(dadosPedido);
 

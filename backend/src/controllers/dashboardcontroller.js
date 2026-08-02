@@ -3,7 +3,7 @@ const { gerarDashboardExecutivo } = require("../services/DashboardExecutivoServi
 
 exports.dashboard = async (req, res) => {
   try {
-    const bi = await gerarBI();
+    const bi = await gerarBI({ empresa: req.usuario?.empresa || req.admin?.empresa });
     return res.status(200).json({ success: true, dashboard: bi });
   } catch (error) {
     console.log("ERRO DASHBOARD:", error);

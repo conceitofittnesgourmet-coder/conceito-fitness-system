@@ -6,18 +6,12 @@ const ContaReceber = require("../models/contareceber");
 const MovimentacaoFinanceira = require("../models/movimentacaofinanceira");
 const Compra = require("../models/compra");
 const MateriaPrima = require("../models/materiaprima");
+const { dataBrParaInicio, dataBrParaFim, inicioMesSaoPaulo, pagamentosDoPedido, filtroEmpresa } = require("../services/vendasMetricsService");
 
 function montarPeriodo(query) {
   const hoje = new Date();
-
-  const inicio = query.inicio
-    ? new Date(`${query.inicio}T00:00:00`)
-    : new Date(hoje.getFullYear(), hoje.getMonth(), 1);
-
-  const fim = query.fim
-  ? new Date(`${query.fim}T23:59:59.999`)
-  : hoje;
-
+  const inicio = query.inicio ? dataBrParaInicio(query.inicio) : inicioMesSaoPaulo(hoje);
+  const fim = query.fim ? dataBrParaFim(query.fim) : hoje;
   return { inicio, fim };
 }
 
@@ -28,8 +22,10 @@ function numero(valor) {
 exports.relatorioGeral = async (req, res) => {
   try {
     const { inicio, fim } = montarPeriodo(req.query);
+    const empresa = filtroEmpresa(req);
 
     const pedidos = await Pedido.find({
+  ...empresa,
   createdAt: {
     $gte: inicio,
     $lte: fim,
@@ -42,27 +38,27 @@ exports.relatorioGeral = async (req, res) => {
 });
 
     const contasPagar = await ContaPagar.find({
-      createdAt: { $gte: inicio, $lte: fim },
+      ...empresa, createdAt: { $gte: inicio, $lte: fim },
     }).sort({ createdAt: -1 });
 
     const contasReceber = await ContaReceber.find({
-      createdAt: { $gte: inicio, $lte: fim },
+      ...empresa, createdAt: { $gte: inicio, $lte: fim },
     }).sort({ createdAt: -1 });
 
     const movimentacoes = await MovimentacaoFinanceira.find({
-      createdAt: { $gte: inicio, $lte: fim },
+      ...empresa, data: { $gte: inicio, $lte: fim },
     }).sort({ createdAt: -1 });
 
     const compras = await Compra.find({
-      createdAt: { $gte: inicio, $lte: fim },
+      ...empresa, createdAt: { $gte: inicio, $lte: fim },
     })
       .populate("fornecedor")
       .populate("itens.materiaPrima")
       .sort({ createdAt: -1 });
 
-    const materias = await MateriaPrima.find({ ativo: true }).sort({ nome: 1 });
-    const produtos = await Produto.find({ ativo: true }).sort({ nome: 1 });
-    const clientes = await Cliente.find().sort({ createdAt: -1 }).limit(20);
+    const materias = await MateriaPrima.find({ ...empresa, ativo: true }).sort({ nome: 1 });
+    const produtos = await Produto.find({ ...empresa, ativo: true }).sort({ nome: 1 });
+    const clientes = await Cliente.find(empresa).sort({ createdAt: -1 }).limit(20);
 
     let faturamento = 0;
     let custoTotal = 0;
@@ -76,15 +72,15 @@ exports.relatorioGeral = async (req, res) => {
       const totalPedido = numero(pedido.total);
       faturamento += totalPedido;
 
-      const pagamento = pedido.pagamento || "Outros";
-      vendasPorPagamento[pagamento] =
-        numero(vendasPorPagamento[pagamento]) + totalPedido;
+      pagamentosDoPedido(pedido).forEach(({ forma, valor }) => {
+        vendasPorPagamento[forma] = numero(vendasPorPagamento[forma]) + numero(valor);
+      });
 
       pedido.produtos?.forEach((item) => {
         const nome = item.nome || "Produto";
         const quantidade = numero(item.quantidade || 1);
-        const preco = numero(item.preco);
-        const custo = numero(item.custo);
+        const preco = numero(item.precoUnitario ?? item.preco);
+        const custo = numero(item.custoNaVenda ?? item.custo);
 
         produtosVendidos[nome] =
           numero(produtosVendidos[nome]) + quantidade;
@@ -175,7 +171,7 @@ exports.relatorioGeral = async (req, res) => {
         contasPagarTotal: Number(contasPagarTotal.toFixed(2)),
         contasReceberTotal: Number(contasReceberTotal.toFixed(2)),
         totalProdutos: produtos.length,
-        totalClientes: await Cliente.countDocuments(),
+        totalClientes: await Cliente.countDocuments(empresa),
         estoqueBaixo: estoqueBaixo.length,
       },
 

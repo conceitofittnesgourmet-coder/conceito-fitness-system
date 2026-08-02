@@ -15,6 +15,8 @@ const pedidoSchema =
 
 },
 
+      caixa: { type: mongoose.Schema.Types.ObjectId, ref: "Caixa", default: null, index: true },
+
 
 
 

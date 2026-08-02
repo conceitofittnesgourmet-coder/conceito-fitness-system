@@ -2,7 +2,7 @@ const { gerarBI } = require("../services/biService");
 
 exports.getAnalytics = async (req, res) => {
   try {
-    const bi = await gerarBI();
+    const bi = await gerarBI({ empresa: req.usuario?.empresa || req.admin?.empresa });
 
     return res.json(bi);
   } catch (error) {

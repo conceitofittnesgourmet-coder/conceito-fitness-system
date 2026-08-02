@@ -2,6 +2,8 @@ const mongoose = require("mongoose");
 
 const caixaSchema = new mongoose.Schema(
   {
+    empresa: { type: mongoose.Schema.Types.ObjectId, ref: "Empresa", index: true },
+
     status: {
       type: String,
       enum: ["aberto", "fechado"],
@@ -42,6 +44,11 @@ const caixaSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+
+    totalOutros: { type: Number, default: 0 },
+    quantidadePedidos: { type: Number, default: 0 },
+    ticketMedio: { type: Number, default: 0 },
+    maiorVenda: { type: Number, default: 0 },
 
     sangrias: [
       {

@@ -1,266 +1,134 @@
 const Caixa = require("../models/caixa");
 const Pedido = require("../models/pedido");
+const {
+  filtroEmpresa,
+  filtroVendaValida,
+  inicioDiaSaoPaulo,
+  resumirPedidos,
+} = require("../services/vendasMetricsService");
+
+function filtroDoUsuario(req) {
+  return filtroEmpresa(req);
+}
+
+async function buscarPedidosDoCaixa(caixa, req) {
+  if (!caixa) return [];
+  const fim = caixa.fechadoEm || new Date();
+  return Pedido.find({
+    ...filtroDoUsuario(req),
+    ...filtroVendaValida(),
+    $or: [
+      { caixa: caixa._id },
+      { caixa: null, createdAt: { $gte: caixa.abertoEm, $lte: fim } },
+      { caixa: { $exists: false }, createdAt: { $gte: caixa.abertoEm, $lte: fim } },
+    ],
+  }).sort({ createdAt: -1 });
+}
 
 exports.caixaAtual = async (req, res) => {
   try {
-    let caixa = await Caixa.findOne({ status: "aberto" }).sort({
-      createdAt: -1,
-    });
-
-    return res.json({
-      success: true,
-      caixa,
-    });
+    const caixa = await Caixa.findOne({ ...filtroDoUsuario(req), status: "aberto" }).sort({ abertoEm: -1 });
+    return res.json({ success: true, caixa });
   } catch (error) {
-    console.log("ERRO CAIXA ATUAL:", error);
-
-    return res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 
 exports.abrirCaixa = async (req, res) => {
   try {
-    const caixaAberto = await Caixa.findOne({ status: "aberto" });
-
-    if (caixaAberto) {
-      return res.status(400).json({
-        success: false,
-        message: "Já existe um caixa aberto.",
-      });
-    }
+    const filtro = filtroDoUsuario(req);
+    const caixaAberto = await Caixa.findOne({ ...filtro, status: "aberto" });
+    if (caixaAberto) return res.status(400).json({ success: false, message: "Já existe um caixa aberto." });
 
     const caixa = await Caixa.create({
+      ...filtro,
       saldoInicial: Number(req.body.saldoInicial || 0),
-      operador: req.body.operador || "Administrador",
+      operador: req.body.operador || req.usuario?.nome || "Administrador",
       status: "aberto",
       abertoEm: new Date(),
     });
-
-    return res.status(201).json({
-      success: true,
-      caixa,
-    });
+    return res.status(201).json({ success: true, caixa });
   } catch (error) {
-    console.log("ERRO ABRIR CAIXA:", error);
-
-    return res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 
 exports.fecharCaixa = async (req, res) => {
   try {
-    const caixa = await Caixa.findOne({ status: "aberto" }).sort({
-      createdAt: -1,
+    const caixa = await Caixa.findOne({ ...filtroDoUsuario(req), status: "aberto" }).sort({ abertoEm: -1 });
+    if (!caixa) return res.status(404).json({ success: false, message: "Nenhum caixa aberto encontrado." });
+
+    const pedidos = await buscarPedidosDoCaixa(caixa, req);
+    const vendas = resumirPedidos(pedidos);
+    const totalSangrias = (caixa.sangrias || []).reduce((a, s) => a + Number(s.valor || 0), 0);
+    const totalSuprimentos = (caixa.suprimentos || []).reduce((a, s) => a + Number(s.valor || 0), 0);
+    const saldoEsperado = Number(caixa.saldoInicial || 0) + vendas.dinheiro + totalSuprimentos - totalSangrias;
+    const valorContado = Number(req.body.valorContado || 0);
+
+    Object.assign(caixa, {
+      totalVendas: vendas.total,
+      totalPix: vendas.pix,
+      totalCredito: vendas.credito,
+      totalDebito: vendas.debito,
+      totalDinheiro: vendas.dinheiro,
+      totalOutros: vendas.outros,
+      quantidadePedidos: vendas.quantidadePedidos,
+      ticketMedio: vendas.ticketMedio,
+      maiorVenda: vendas.maiorVenda,
+      valorContado,
+      diferencaFechamento: valorContado - saldoEsperado,
+      observacaoFechamento: req.body.observacao || "",
+      status: "fechado",
+      fechadoEm: new Date(),
     });
-
-    if (!caixa) {
-      return res.status(404).json({
-        success: false,
-        message: "Nenhum caixa aberto encontrado.",
-      });
-    }
-
-    const valorContado =
-  Number(req.body.valorContado || 0);
-
-const saldoEsperado =
-  Number(req.body.saldoEsperado || 0);
-
-caixa.valorContado = valorContado;
-
-caixa.diferencaFechamento =
-  valorContado - saldoEsperado;
-
-caixa.observacaoFechamento =
-  req.body.observacao || "";
-
-caixa.status = "fechado";
-caixa.fechadoEm = new Date();
-
     await caixa.save();
-
-    return res.json({
-      success: true,
-      caixa,
-    });
+    return res.json({ success: true, caixa, resumo: { ...vendas, totalSangrias, totalSuprimentos, saldoAtual: saldoEsperado } });
   } catch (error) {
-    console.log("ERRO FECHAR CAIXA:", error);
-
-    return res.status(500).json({
-      success: false,
-      message: error.message,
-    });
+    return res.status(500).json({ success: false, message: error.message });
   }
 };
 
 exports.registrarSangria = async (req, res) => {
   try {
-    const caixa = await Caixa.findOne({ status: "aberto" });
-
-    if (!caixa) {
-      return res.status(404).json({
-        success: false,
-        message: "Nenhum caixa aberto.",
-      });
-    }
-
-    caixa.sangrias.push({
-      valor: Number(req.body.valor || 0),
-      motivo: req.body.motivo || "Sangria",
-    });
-
+    const caixa = await Caixa.findOne({ ...filtroDoUsuario(req), status: "aberto" });
+    if (!caixa) return res.status(404).json({ success: false, message: "Nenhum caixa aberto." });
+    caixa.sangrias.push({ valor: Number(req.body.valor || 0), motivo: req.body.motivo || "Sangria" });
     await caixa.save();
-
-    return res.json({
-      success: true,
-      caixa,
-    });
-  } catch (error) {
-    console.log("ERRO SANGRIA:", error);
-
-    return res.status(500).json({
-      success: false,
-      message: error.message,
-    });
-  }
+    return res.json({ success: true, caixa });
+  } catch (error) { return res.status(500).json({ success: false, message: error.message }); }
 };
 
 exports.registrarSuprimento = async (req, res) => {
   try {
-    const caixa = await Caixa.findOne({ status: "aberto" });
-
-    if (!caixa) {
-      return res.status(404).json({
-        success: false,
-        message: "Nenhum caixa aberto.",
-      });
-    }
-
-    caixa.suprimentos.push({
-      valor: Number(req.body.valor || 0),
-      motivo: req.body.motivo || "Suprimento",
-    });
-
+    const caixa = await Caixa.findOne({ ...filtroDoUsuario(req), status: "aberto" });
+    if (!caixa) return res.status(404).json({ success: false, message: "Nenhum caixa aberto." });
+    caixa.suprimentos.push({ valor: Number(req.body.valor || 0), motivo: req.body.motivo || "Suprimento" });
     await caixa.save();
-
-    return res.json({
-      success: true,
-      caixa,
-    });
-  } catch (error) {
-    console.log("ERRO SUPRIMENTO:", error);
-
-    return res.status(500).json({
-      success: false,
-      message: error.message,
-    });
-  }
+    return res.json({ success: true, caixa });
+  } catch (error) { return res.status(500).json({ success: false, message: error.message }); }
 };
 
 exports.resumoCaixa = async (req, res) => {
   try {
-    const caixa = await Caixa.findOne({ status: "aberto" }).sort({
-      createdAt: -1,
-    });
-
-    const inicio = caixa?.abertoEm || new Date(new Date().setHours(0, 0, 0, 0));
-
-    const pedidos = await Pedido.find({
-      createdAt: {
-        $gte: inicio,
-      },
-      status: {
-        $ne: "cancelado",
-      },
-    }).sort({
-      createdAt: -1,
-    });
-
-    function somarPorForma(forma) {
-      return pedidos.reduce((acc, pedido) => {
-        if (Array.isArray(pedido.pagamentos) && pedido.pagamentos.length > 0) {
-          const totalForma = pedido.pagamentos
-            .filter((p) => String(p.forma || "").toUpperCase() === forma)
-            .reduce((soma, p) => soma + Number(p.valor || 0), 0);
-
-          return acc + totalForma;
-        }
-
-        if (String(pedido.pagamento || "").toUpperCase() === forma) {
-          return acc + Number(pedido.total || 0);
-        }
-
-        return acc;
-      }, 0);
+    const filtro = filtroDoUsuario(req);
+    const caixa = await Caixa.findOne({ ...filtro, status: "aberto" }).sort({ abertoEm: -1 });
+    if (!caixa) {
+      return res.json({ success: true, caixa: null, pedidos: [], resumo: { total: 0, pix: 0, credito: 0, debito: 0, dinheiro: 0, outros: 0, quantidadePedidos: 0, ticketMedio: 0, maiorVenda: 0, totalSangrias: 0, totalSuprimentos: 0, saldoAtual: 0 } });
     }
-
-    const total = pedidos.reduce((acc, p) => acc + Number(p.total || 0), 0);
-
-    const pix = somarPorForma("PIX");
-    const credito = somarPorForma("CREDITO");
-    const debito = somarPorForma("DEBITO");
-    const dinheiro = somarPorForma("DINHEIRO");
-
-    const totalSangrias =
-      caixa?.sangrias?.reduce((acc, s) => acc + Number(s.valor || 0), 0) || 0;
-
-    const totalSuprimentos =
-      caixa?.suprimentos?.reduce((acc, s) => acc + Number(s.valor || 0), 0) || 0;
-
-    const saldoInicial = Number(caixa?.saldoInicial || 0);
-
+    const pedidos = await buscarPedidosDoCaixa(caixa, req);
+    const vendas = resumirPedidos(pedidos);
+    const totalSangrias = (caixa.sangrias || []).reduce((a, s) => a + Number(s.valor || 0), 0);
+    const totalSuprimentos = (caixa.suprimentos || []).reduce((a, s) => a + Number(s.valor || 0), 0);
     return res.json({
-      success: true,
-      caixa,
-      pedidos,
-      resumo: {
-        total,
-        pix,
-        credito,
-        debito,
-        dinheiro,
-        quantidadePedidos: pedidos.length,
-        ticketMedio: pedidos.length ? total / pedidos.length : 0,
-        maiorVenda: pedidos.length
-          ? Math.max(...pedidos.map((p) => Number(p.total || 0)))
-          : 0,
-        totalSangrias,
-        totalSuprimentos,
-        saldoAtual: saldoInicial + dinheiro + totalSuprimentos - totalSangrias,
-      },
+      success: true, caixa, pedidos,
+      resumo: { ...vendas, totalSangrias, totalSuprimentos, saldoAtual: Number(caixa.saldoInicial || 0) + vendas.dinheiro + totalSuprimentos - totalSangrias },
     });
-  } catch (error) {
-    console.log("ERRO RESUMO CAIXA:", error);
-
-    return res.status(500).json({
-      success: false,
-      message: error.message,
-    });
-  }
+  } catch (error) { return res.status(500).json({ success: false, message: error.message }); }
 };
 
 exports.historicoCaixas = async (req, res) => {
   try {
-    const caixas = await Caixa.find()
-      .sort({ createdAt: -1 })
-      .limit(50);
-
-    return res.json({
-      success: true,
-      caixas,
-    });
-  } catch (error) {
-    console.log("ERRO HISTORICO CAIXAS:", error);
-
-    return res.status(500).json({
-      success: false,
-      message: error.message,
-    });
-  }
+    const caixas = await Caixa.find(filtroDoUsuario(req)).sort({ abertoEm: -1 }).limit(50);
+    return res.json({ success: true, caixas });
+  } catch (error) { return res.status(500).json({ success: false, message: error.message }); }
 };

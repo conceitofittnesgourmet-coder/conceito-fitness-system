@@ -1,217 +1,87 @@
 const Pedido = require("../models/pedido");
 const Produto = require("../models/produto");
 const Cliente = require("../models/cliente");
+const {
+  inicioDiaSaoPaulo, inicioMesSaoPaulo, filtroVendaValida,
+  pagamentosDoPedido, partesSaoPaulo, numero,
+} = require("./vendasMetricsService");
 
-function normalizarForma(valor) {
-  return String(valor || "NAO_INFORMADO").toUpperCase();
-}
+async function gerarBI({ empresa } = {}) {
+  const agora = new Date();
+  const inicioHoje = inicioDiaSaoPaulo(agora);
+  const inicioMes = inicioMesSaoPaulo(agora);
+  const inicioSemana = new Date(inicioHoje.getTime() - 6 * 86400000);
+  const escopo = empresa ? { empresa } : {};
 
-function somarPagamento(pagamentos, fallbackForma, fallbackValor) {
-  if (Array.isArray(pagamentos) && pagamentos.length > 0) {
-    return pagamentos.map((p) => ({
-      forma: normalizarForma(p.forma),
-      valor: Number(p.valor || 0),
-    }));
-  }
-
-  return [
-    {
-      forma: normalizarForma(fallbackForma || "PIX"),
-      valor: Number(fallbackValor || 0),
-    },
-  ];
-}
-
-async function gerarBI() {
-  const hoje = new Date();
-
-  const inicioHoje = new Date(
-    hoje.getFullYear(),
-    hoje.getMonth(),
-    hoje.getDate()
-  );
-
-  const inicioSemana = new Date();
-  inicioSemana.setDate(hoje.getDate() - 7);
-
-  const inicioMes = new Date(
-    hoje.getFullYear(),
-    hoje.getMonth(),
-    1
-  );
-
-  const [pedidos, produtos, clientes] = await Promise.all([
-    Pedido.find({ status: { $ne: "cancelado" } }),
-    Produto.find(),
-    Cliente.find().sort({ gasto: -1 }).limit(20),
+  const [pedidosMes, pedidosSemana, produtos, totalClientes, clientes] = await Promise.all([
+    Pedido.find({ ...escopo, ...filtroVendaValida(), createdAt: { $gte: inicioMes, $lte: agora } }).lean(),
+    Pedido.find({ ...escopo, ...filtroVendaValida(), createdAt: { $gte: inicioSemana, $lte: agora } }).lean(),
+    Produto.find(escopo).lean(),
+    Cliente.countDocuments(escopo),
+    Cliente.find(escopo).sort({ gasto: -1 }).limit(20).lean(),
   ]);
 
-  let faturamento = 0;
-  let faturamentoHoje = 0;
-  let faturamentoSemana = 0;
-  let faturamentoMes = 0;
-  let maiorVenda = 0;
+  let faturamentoMes = 0, faturamentoHoje = 0, faturamentoSemana = 0;
+  let maiorVenda = 0, lucroTotal = 0, custoTotal = 0;
+  const pagamentos = { pix: 0, credito: 0, debito: 0, dinheiro: 0, outros: 0 };
+  const produtosVendidos = {}, produtosLucrativos = {}, vendasPorHora = {}, vendasPorDiaSemana = {}, categorias = {};
 
-  let lucroTotal = 0;
-  let custoTotal = 0;
+  for (const pedido of pedidosSemana) faturamentoSemana += numero(pedido.total);
 
-  const pagamentos = {
-    pix: 0,
-    credito: 0,
-    debito: 0,
-    dinheiro: 0,
-    outros: 0,
-  };
+  for (const pedido of pedidosMes) {
+    const total = numero(pedido.total);
+    const partes = partesSaoPaulo(pedido.createdAt);
+    faturamentoMes += total;
+    if (new Date(pedido.createdAt) >= inicioHoje) faturamentoHoje += total;
+    maiorVenda = Math.max(maiorVenda, total);
 
-  const produtosVendidos = {};
-  const produtosLucrativos = {};
-  const vendasPorHora = {};
-  const vendasPorDiaSemana = {};
-  const categorias = {};
+    const hora = `${String(partes.hora).padStart(2, "0")}h`;
+    vendasPorHora[hora] = numero(vendasPorHora[hora]) + total;
+    const nomesDias = ["domingo", "segunda-feira", "terça-feira", "quarta-feira", "quinta-feira", "sexta-feira", "sábado"];
+    const dia = nomesDias[partes.semana];
+    vendasPorDiaSemana[dia] = numero(vendasPorDiaSemana[dia]) + total;
 
-  pedidos.forEach((pedido) => {
-    const total = Number(pedido.total || 0);
-    const dataPedido = new Date(pedido.createdAt);
-
-    faturamento += total;
-
-    if (total > maiorVenda) maiorVenda = total;
-
-    if (dataPedido >= inicioHoje) faturamentoHoje += total;
-    if (dataPedido >= inicioSemana) faturamentoSemana += total;
-    if (dataPedido >= inicioMes) faturamentoMes += total;
-
-    const hora = String(dataPedido.getHours()).padStart(2, "0") + "h";
-    vendasPorHora[hora] = (vendasPorHora[hora] || 0) + total;
-
-    const dia = dataPedido.toLocaleDateString("pt-BR", {
-      weekday: "long",
-    });
-
-    vendasPorDiaSemana[dia] =
-      (vendasPorDiaSemana[dia] || 0) + total;
-
-    somarPagamento(
-      pedido.pagamentos,
-      pedido.pagamento,
-      total
-    ).forEach((p) => {
+    for (const p of pagamentosDoPedido(pedido)) {
       if (p.forma === "PIX") pagamentos.pix += p.valor;
-      else if (p.forma === "CREDITO") pagamentos.credito += p.valor;
-      else if (p.forma === "DEBITO") pagamentos.debito += p.valor;
+      else if (["CREDITO", "CRÉDITO"].includes(p.forma)) pagamentos.credito += p.valor;
+      else if (["DEBITO", "DÉBITO"].includes(p.forma)) pagamentos.debito += p.valor;
       else if (p.forma === "DINHEIRO") pagamentos.dinheiro += p.valor;
       else pagamentos.outros += p.valor;
-    });
+    }
 
-    pedido.produtos?.forEach((produto) => {
-      const nome = produto.nome || "Produto";
-      const quantidade = Number(produto.quantidade || 1);
-      const precoVenda = Number(produto.preco || 0);
-      const custoProduto = Number(produto.custo || 0);
-      const categoria = produto.categoria || "Sem categoria";
+    for (const item of pedido.produtos || []) {
+      const nome = item.nome || "Produto";
+      const quantidade = numero(item.quantidade || 1);
+      const preco = numero(item.precoUnitario ?? item.preco);
+      const custo = numero(item.custoNaVenda ?? item.custo);
+      const categoria = item.categoria || "Sem categoria";
+      produtosVendidos[nome] = numero(produtosVendidos[nome]) + quantidade;
+      categorias[categoria] = numero(categorias[categoria]) + preco * quantidade;
+      custoTotal += custo * quantidade;
+      const lucro = (preco - custo) * quantidade;
+      lucroTotal += lucro;
+      produtosLucrativos[nome] = numero(produtosLucrativos[nome]) + lucro;
+    }
+  }
 
-      produtosVendidos[nome] =
-        (produtosVendidos[nome] || 0) + quantidade;
-
-      categorias[categoria] =
-        (categorias[categoria] || 0) + precoVenda * quantidade;
-
-      const lucroProduto =
-        (precoVenda - custoProduto) * quantidade;
-
-      const custoVenda = custoProduto * quantidade;
-
-      lucroTotal += lucroProduto;
-      custoTotal += custoVenda;
-
-      produtosLucrativos[nome] =
-        (produtosLucrativos[nome] || 0) + lucroProduto;
-    });
-  });
-
-  const totalPedidos = pedidos.length;
-
-  const ticketMedio =
-    totalPedidos > 0 ? faturamento / totalPedidos : 0;
-
-  const margemLucro =
-    faturamento > 0
-      ? Number(((lucroTotal / faturamento) * 100).toFixed(2))
-      : 0;
-
-  const topProdutos = Object.entries(produtosVendidos)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 20)
-    .map(([nome, quantidade]) => ({ nome, quantidade }));
-
-  const topProdutosLucrativos = Object.entries(produtosLucrativos)
-    .sort((a, b) => b[1] - a[1])
-    .slice(0, 20)
-    .map(([nome, lucro]) => ({
-      nome,
-      lucro: Number(lucro.toFixed(2)),
-    }));
-
-  const topCategorias = Object.entries(categorias)
-    .sort((a, b) => b[1] - a[1])
-    .map(([nome, valor]) => ({
-      nome,
-      valor: Number(valor.toFixed(2)),
-    }));
-
-  const topClientes = clientes.map((c) => ({
-    nome: c.nome,
-    telefone: c.telefone,
-    gasto: Number(c.gasto || 0),
-    clube: c.clube,
-    pontos: c.pontos || 0,
-    cashback: c.cashback || 0,
-  }));
-
+  const totalPedidos = pedidosMes.length;
+  const ticketMedio = totalPedidos ? faturamentoMes / totalPedidos : 0;
+  const margemLucro = faturamentoMes ? (lucroTotal / faturamentoMes) * 100 : 0;
+  const topProdutos = Object.entries(produtosVendidos).sort((a,b)=>b[1]-a[1]).slice(0,20).map(([nome,quantidade])=>({nome,quantidade}));
+  const topProdutosLucrativos = Object.entries(produtosLucrativos).sort((a,b)=>b[1]-a[1]).slice(0,20).map(([nome,lucro])=>({nome,lucro:Number(lucro.toFixed(2))}));
+  const topCategorias = Object.entries(categorias).sort((a,b)=>b[1]-a[1]).map(([nome,valor])=>({nome,valor:Number(valor.toFixed(2))}));
   const insights = [];
-
-  if (ticketMedio < 50 && totalPedidos > 0) {
-    insights.push("O ticket médio está abaixo de R$ 50,00. Avalie combos e adicionais no PDV.");
-  }
-
-  if (pagamentos.pix > pagamentos.credito && pagamentos.pix > pagamentos.dinheiro) {
-    insights.push("PIX é a principal forma de pagamento. Vale destacar essa opção no atendimento.");
-  }
-
-  if (topProdutos[0]) {
-    insights.push(`O produto mais vendido é ${topProdutos[0].nome}. Use ele como destaque em campanhas.`);
-  }
-
-  if (margemLucro < 40 && faturamento > 0) {
-    insights.push("A margem de lucro está abaixo de 40%. Revise CMV e precificação dos produtos.");
-  }
+  if (!totalPedidos) insights.push("Nenhuma venda registrada no mês atual.");
+  else if (ticketMedio < 50) insights.push("O ticket médio do mês está abaixo de R$ 50,00. Avalie combos e adicionais no PDV.");
+  if (topProdutos[0]) insights.push(`O produto mais vendido no mês é ${topProdutos[0].nome}.`);
 
   return {
-    faturamento,
-    faturamentoHoje,
-    faturamentoSemana,
-    faturamentoMes,
-    totalPedidos,
-    totalProdutos: produtos.length,
-    totalClientes: clientes.length,
-    ticketMedio,
-    maiorVenda,
-    custoTotal,
-    lucroTotal,
-    margemLucro,
-    pagamentos,
-    topProdutos,
-    topProdutosLucrativos,
-    topCategorias,
-    topClientes,
-    vendasPorHora,
-    vendasPorDiaSemana,
-    ia: {
-      insights,
-    },
+    periodo: { inicio: inicioMes, fim: agora, tipo: "mes_atual" },
+    faturamento: faturamentoMes, faturamentoHoje, faturamentoSemana, faturamentoMes,
+    totalPedidos, totalProdutos: produtos.length, totalClientes, ticketMedio, maiorVenda,
+    custoTotal, lucroTotal, margemLucro, pagamentos, topProdutos, topProdutosLucrativos,
+    topCategorias, topClientes: clientes.map(c=>({nome:c.nome,telefone:c.telefone,gasto:numero(c.gasto),clube:c.clube,pontos:numero(c.pontos),cashback:numero(c.cashback)})),
+    vendasPorHora, vendasPorDiaSemana, ia: { insights },
   };
 }
-
-module.exports = {
-  gerarBI,
-};
+module.exports = { gerarBI };

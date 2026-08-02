@@ -1,6 +1,9 @@
 const express = require("express");
 
 const router = express.Router();
+const authMiddleware = require("../middlewares/authmiddleware");
+
+router.use(authMiddleware);
 
 const {
   caixaAtual,
