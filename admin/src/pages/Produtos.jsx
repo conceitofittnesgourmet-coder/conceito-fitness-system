@@ -201,6 +201,7 @@ const [editDadosFiscais, setEditDadosFiscais] = useState({
   const [modalOpen, setModalOpen] = useState(false);
   const [produtoEditando, setProdutoEditando] = useState(null);
   const [abaCadastro, setAbaCadastro] = useState("basico");
+  const [abaEdicao, setAbaEdicao] = useState("basico");
   const [tipoWizard, setTipoWizard] = useState("simples");
   const templatesProduto = {
   simples: [],
@@ -526,6 +527,7 @@ setEditDadosFiscais({
 
     setPreviewEdit(getImagemUrl(produto.imagens?.[0]));
     setEditImagem(null);
+    setAbaEdicao("basico");
     setModalOpen(true);
   }
 
@@ -1096,135 +1098,204 @@ const progressoCadastro =
         {modalOpen && (
           <div className="modal-overlay">
             <div className="modal">
-              <h2>Editar Produto</h2>
+             <h2>Editar Produto</h2>
 
-              <input value={editNome} onChange={(e) => setEditNome(e.target.value)} />
-              <select
-  value={editCategoria}
-  onChange={(e) => setEditCategoria(e.target.value)}
->
-  <option value="">Selecione a categoria principal</option>
+             <div className="produto-edicao-tabs">
 
-  {categoriasDisponiveis.map((cat) => (
-    <option key={cat._id} value={cat.nome}>
-      {cat.nome}
-    </option>
-  ))}
-</select>
-              <div className="field-premium">
-  <label>Categorias extras</label>
+    <button
+        className={abaEdicao==="basico" ? "ativo" : ""}
+        onClick={()=>setAbaEdicao("basico")}
+        type="button"
+    >
+        Geral
+    </button>
 
-  <div className="chips-premium">
-    {categoriasDisponiveis.map((cat) => (
-      <label key={cat._id}>
-        <input
-          type="checkbox"
-          checked={editCategorias
-            .split(",")
-            .map((c) => c.trim())
-            .includes(cat.nome)}
-          onChange={(e) => {
-            const atuais = editCategorias
-              .split(",")
-              .map((c) => c.trim())
-              .filter(Boolean);
+    <button
+        className={abaEdicao==="venda" ? "ativo" : ""}
+        onClick={()=>setAbaEdicao("venda")}
+        type="button"
+    >
+        Venda
+    </button>
 
-            const novas = e.target.checked
-              ? [...atuais, cat.nome]
-              : atuais.filter((c) => c !== cat.nome);
+    <button
+        className={abaEdicao==="cardapio" ? "ativo" : ""}
+        onClick={()=>setAbaEdicao("cardapio")}
+        type="button"
+    >
+        Cardápio
+    </button>
 
-            setEditCategorias(novas.join(", "));
-          }}
-        />
-        {cat.nome}
-      </label>
-    ))}
-  </div>
+    <button
+        className={abaEdicao==="nutricional" ? "ativo" : ""}
+        onClick={()=>setAbaEdicao("nutricional")}
+        type="button"
+    >
+        Nutricional
+    </button>
+
+    <button
+        className={abaEdicao==="fiscal" ? "ativo" : ""}
+        onClick={()=>setAbaEdicao("fiscal")}
+        type="button"
+    >
+        Fiscal
+    </button>
+
+    <button
+        className={abaEdicao==="midia" ? "ativo" : ""}
+        onClick={()=>setAbaEdicao("midia")}
+        type="button"
+    >
+        Imagens
+    </button>
+
 </div>
-              <textarea value={editDescricao} onChange={(e) => setEditDescricao(e.target.value)} />
-              <input value={editPreco} onChange={(e) => setEditPreco(e.target.value)} />
-              <input
-  placeholder="Custo"
-  value={editCusto}
-  onChange={(e) =>
-    setEditCusto(e.target.value)
-  }
+
+<ProdutoStepper
+    abaCadastro={abaEdicao}
+    setAbaCadastro={setAbaEdicao}
+    progresso={100}
+    etapasConcluidas={[
+        "basico",
+        "venda",
+        "cardapio",
+        "nutricional",
+        "fiscal",
+        "midia"
+    ]}
 />
 
-<select
-  value={editTipoProduto}
-  onChange={(e) =>
-    setEditTipoProduto(e.target.value)
-  }
->
-  <option value="producao">
-    Produção Própria
-  </option>
+ {abaEdicao === "basico" && (
+    <ProdutoBasico
+        nome={editNome}
+        setNome={setEditNome}
+        categoria={editCategoria}
+        setCategoria={setEditCategoria}
+        categorias={editCategorias}
+        setCategorias={setEditCategorias}
+        categoriasDisponiveis={categoriasDisponiveis}
+        descricao={editDescricao}
+        setDescricao={setEditDescricao}
+    />
+)}
+ 
+{abaEdicao === "venda" && (
+    <ProdutoVenda
+        tipoWizard={tipoWizard}
+        preco={editPreco}
+        setPreco={setEditPreco}
+        custo={editCusto}
+        setCusto={setEditCusto}
+        estoque={editEstoque}
+        setEstoque={setEditEstoque}
+        peso={editPeso}
+        setPeso={setEditPeso}
+        unidadeMedida={editUnidadeMedida}
+        setUnidadeMedida={setEditUnidadeMedida}
+        vendaPorPeso={editVendaPorPeso}
+        setVendaPorPeso={setEditVendaPorPeso}
+        permiteFracionado={editPermiteFracionado}
+        setPermiteFracionado={setEditPermiteFracionado}
+        codigoBarras={editCodigoBarras}
+        setCodigoBarras={setEditCodigoBarras}
+        sku={editSku}
+        setSku={setEditSku}
+    />
+)}
 
-  <option value="revenda">
-    Revenda
-  </option>
+ {abaEdicao === "cardapio" && (
+    <ProdutoCardapio
+        tipoWizard={tipoWizard}
+        publicacao={editPublicacao}
+        setPublicacao={setEditPublicacao}
+        preco={editPreco}
+        tipoProduto={editTipoProduto}
+        setTipoProduto={setEditTipoProduto}
+        tempoPreparo={editTempoPreparo}
+        setTempoPreparo={setEditTempoPreparo}
+        restricoes={editRestricoes}
+        setRestricoes={setEditRestricoes}
+        gruposComponentes={gruposComponentes}
+        gruposSelecionados={editGruposSelecionados}
+        setGruposSelecionados={setEditGruposSelecionados}
+        configuracaoGrupos={editConfiguracaoGrupos}
+        setConfiguracaoGrupos={setEditConfiguracaoGrupos}
+    />
+)}
 
-  <option value="insumo">
-    Insumo
-  </option>
-</select>
-              <input value={editEstoque} onChange={(e) => setEditEstoque(e.target.value)} />
-              <input value={editTempoPreparo} onChange={(e) => setEditTempoPreparo(e.target.value)} />
-              <input value={editRestricoes} onChange={(e) => setEditRestricoes(e.target.value)} />
-              <input value={editPeso} onChange={(e) => setEditPeso(e.target.value)} />
-              <input
-  placeholder="Código de Barras"
-  value={editCodigoBarras}
-  onChange={(e) => setEditCodigoBarras(e.target.value)}
-/>
+ {abaEdicao === "nutricional" && (
+    <ProdutoNutricional
+        informacoesNutricionais={editInformacoesNutricionais}
+        setInformacoesNutricionais={setEditInformacoesNutricionais}
+        alergenos={editAlergenos}
+        setAlergenos={setEditAlergenos}
+        selos={editSelos}
+        setSelos={setEditSelos}
+    />
+)}
 
-<input
-  placeholder="SKU / Código Interno"
-  value={editSku}
-  onChange={(e) => setEditSku(e.target.value)}
-/>
+{abaEdicao === "fiscal" && (
+    <ProdutoFiscal
+        dadosFiscais={editDadosFiscais}
+        setDadosFiscais={setEditDadosFiscais}
+    />
+)}
 
-              <PublicacaoOnlineProduto
-  publicacao={editPublicacao}
-  setPublicacao={setEditPublicacao}
-  preco={editPreco}
-/>
+{abaEdicao === "midia" && (
+    <ProdutoImagem
+        previewCadastro={previewEdit}
+        isDragActive={false}
+        getRootProps={() => ({})}
+        getInputProps={() => ({
+            onChange: (e) => {
+                const file = e.target.files?.[0];
 
-              <input
-                type="file"
-                accept="image/*"
-                onChange={(e) => {
-                  const file = e.target.files?.[0];
-                  setEditImagem(file || null);
-                  if (file) setPreviewEdit(URL.createObjectURL(file));
-                }}
-              />
+                setEditImagem(file || null);
 
-              {previewEdit && <img src={previewEdit} alt="" className="preview-image" />}
+                if (file) {
+                    setPreviewEdit(URL.createObjectURL(file));
+                }
+            }
+        })}
+    />
+)}
 
-              <ProdutoConfigEngine
-  gruposComponentes={gruposComponentes}
-  gruposSelecionados={editGruposSelecionados}
-  setGruposSelecionados={setEditGruposSelecionados}
-  configuracaoGrupos={editConfiguracaoGrupos}
-  setConfiguracaoGrupos={setEditConfiguracaoGrupos}
-/>
+<div className="produto-diagnostico">
 
-              <DadosNutricionaisProduto
-  dados={editInformacoesNutricionais}
-  setDados={setEditInformacoesNutricionais}
-/>
+    <h3>Diagnóstico do Produto</h3>
 
-<AlergenosProduto
-  alergenos={editAlergenos}
-  setAlergenos={setEditAlergenos}
-/>
+    <div className="diagnostico-item">
+        {editNome ? "✅" : "❌"} Nome do produto
+    </div>
 
-<SelosProduto
-  selos={editSelos}
-  setSelos={setEditSelos}
-/>
+    <div className="diagnostico-item">
+        {editCategoria ? "✅" : "❌"} Categoria
+    </div>
+
+    <div className="diagnostico-item">
+        {Number(editPreco) > 0 ? "✅" : "❌"} Preço
+    </div>
+
+    <div className="diagnostico-item">
+        {String(editDadosFiscais.ncm || "").length === 8 ? "✅" : "❌"} NCM
+    </div>
+
+    <div className="diagnostico-item">
+        {editDadosFiscais.cfopInterno ? "✅" : "❌"} CFOP
+    </div>
+
+    <div className="diagnostico-item">
+        {(editDadosFiscais.csosn || editDadosFiscais.cstIcms)
+            ? "✅"
+            : "❌"} Tributação
+    </div>
+
+    <div className="diagnostico-item">
+        {editPublicacao?.publicado ? "✅" : "⚠️"} Publicado
+    </div>
+
+</div>
 
               <div className="modal-buttons">
                 <button className="btn-save" onClick={salvarEdicao}>
