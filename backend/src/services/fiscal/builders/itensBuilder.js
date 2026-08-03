@@ -8,8 +8,12 @@ const {
 
 const { montarXmlImpostosItem } = require("./impostosBuilder");
 
-function getProdutoNomeFiscal(nome) {
-    return String(nome || "Produto").trim() || "Produto";
+function getProdutoNomeFiscal(nome, index, ambiente) {
+  if (ambiente !== "producao" && index === 0) {
+    return "NOTA FISCAL EMITIDA EM AMBIENTE DE HOMOLOGACAO - SEM VALOR FISCAL";
+  }
+
+  return String(nome || "Produto").trim() || "Produto";
 }
 
 function obterDadosFiscaisItem(item = {}) {
