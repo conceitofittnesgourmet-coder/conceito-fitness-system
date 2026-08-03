@@ -1,9 +1,11 @@
 function calcularTotaisPedido(pedido = {}) {
   const valorTotal = Number(pedido.total || 0);
 
-  if (!Number.isFinite(valorTotal) || valorTotal <= 0) {
-    throw new Error("Valor total inválido para emissão da NFC-e.");
-  }
+if (!Number.isFinite(valorTotal) || valorTotal <= 0) {
+    throw new Error(
+        "Valor total inválido para emissão da NFC-e."
+    );
+}
 
   const valorProdutos = (pedido.produtos || []).reduce(
     (totalProdutos, item) => {
@@ -18,8 +20,60 @@ function calcularTotaisPedido(pedido = {}) {
     0
   );
 
-  const valorFrete = Number(pedido.taxaEntrega || 0);
-  const valorDesconto = Number(pedido.desconto || 0);
+ if (!Number.isFinite(valorProdutos)) {
+    throw new Error(
+        "Valor total dos produtos inválido."
+    );
+}
+
+  const valorFrete = Math.max(
+    0,
+    Number(pedido.taxaEntrega || 0)
+);
+const valorDesconto = Math.max(
+    0,
+    Number(pedido.desconto || 0)
+);
+
+const valorSeguro = 0;
+const valorOutros = 0;
+
+  const totalEsperado =
+    valorProdutos +
+    valorFrete +
+    valorSeguro +
+    valorOutros -
+    valorDesconto;
+
+if (Math.abs(totalEsperado - Number(valorTotal)) > 0.01) {
+
+    const diferenca =
+        Number(valorTotal) -
+        Number(totalEsperado);
+
+throw new Error(
+[
+    "Divergência nos totais da NFC-e.",
+    `Produtos : ${valorProdutos.toFixed(2)}`,
+    `Frete    : ${valorFrete.toFixed(2)}`,
+    `Desconto : ${valorDesconto.toFixed(2)}`,
+    `Total    : ${valorTotal.toFixed(2)}`,
+    `Esperado : ${totalEsperado.toFixed(2)}`,
+    `Diferença: ${diferenca.toFixed(2)}`
+].join("\n")
+);
+}
+  
+console.info(
+    "[FISCAL] Totais NFC-e OK",
+    {
+        produtos: valorProdutos,
+        frete: valorFrete,
+        desconto: valorDesconto,
+        esperado: totalEsperado,
+        total: valorTotal
+    }
+);
 
   return {
     valorTotal,
