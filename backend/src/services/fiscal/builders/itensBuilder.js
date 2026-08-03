@@ -8,12 +8,8 @@ const {
 
 const { montarXmlImpostosItem } = require("./impostosBuilder");
 
-function getProdutoNomeFiscal(nome, index, ambiente) {
-  if (ambiente !== "producao" && index === 0) {
-    return "NOTA FISCAL EMITIDA EM AMBIENTE DE HOMOLOGACAO - SEM VALOR FISCAL";
-  }
-
-  return String(nome || "Produto").trim() || "Produto";
+function getProdutoNomeFiscal(nome) {
+    return String(nome || "Produto").trim() || "Produto";
 }
 
 function obterDadosFiscaisItem(item = {}) {
@@ -107,7 +103,11 @@ function validarDadosFiscaisItem(fiscal, item, index) {
   }
 }
 
-function montarItensXml(produtos = [], ambiente) {
+function montarItensXml(
+    produtos = [],
+    pedido = {},
+    ambiente
+) {
   if (!Array.isArray(produtos) || produtos.length === 0) {
     throw new Error("Pedido sem produtos para emissão da NFC-e.");
   }
@@ -122,9 +122,10 @@ function montarItensXml(produtos = [], ambiente) {
         item.precoUnitario || item.preco || item.valorUnitario || 0
       );
       const valorProduto =
-        item.subtotal !== undefined
-          ? Number(item.subtotal || 0)
-          : quantidade * precoUnitario;
+    Number(
+        item.subtotal ??
+        (quantidade * precoUnitario)
+    );
 
       if (!Number.isFinite(quantidade) || quantidade <= 0) {
         throw new Error(`Quantidade inválida no item ${index + 1}.`);
@@ -159,7 +160,7 @@ function montarItensXml(produtos = [], ambiente) {
           <cProd>${escapeXml(codigoProduto)}</cProd>
           <cEAN>${cEAN}</cEAN>
           <xProd>${escapeXml(
-            getProdutoNomeFiscal(item.nome, index, ambiente)
+            getProdutoNomeFiscal(item.nome)
           )}</xProd>
           <NCM>${escapeXml(fiscal.ncm)}</NCM>
           ${cestXml}

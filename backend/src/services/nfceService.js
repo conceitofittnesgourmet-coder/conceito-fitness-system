@@ -380,7 +380,14 @@ async function consultarRetornoNfce(nfceId) {
   const nfce = await Nfce.findById(nfceId);
 
   if (!nfce) throw new Error("NFC-e não encontrada.");
-  if (!nfce.recibo) throw new Error("Recibo não encontrado para consulta.");
+  if (!nfce.recibo) {
+    throw new Error(
+        `Esta NFC-e não possui recibo da SEFAZ.
+Status atual: ${nfce.status}
+cStat: ${nfce.cStat}
+Mensagem: ${nfce.mensagemSefaz}`
+    );
+}
 
   const retorno = await consultarReciboSefaz(nfce.recibo);
 
