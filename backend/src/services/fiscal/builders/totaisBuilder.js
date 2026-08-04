@@ -18,14 +18,30 @@ function calcularTotaisPedido(pedido = {}) {
     0
   );
 
-  const totalEsperado =
-  Number(valorProdutos) +
-  Number(valorFrete) +
-  Number(valorSeguro || 0) +
-  Number(valorOutros || 0) -
-  Number(valorDesconto);
+  const valorFrete = Math.max(
+  0,
+  Number(pedido.taxaEntrega || 0)
+);
 
-if (Math.abs(totalEsperado - Number(valorTotal)) > 0.01) {
+const valorDesconto = Math.max(
+  0,
+  Number(pedido.desconto || 0)
+);
+
+const valorSeguro = 0;
+const valorOutros = 0;
+
+const totalEsperado =
+  valorProdutos +
+  valorFrete +
+  valorSeguro +
+  valorOutros -
+  valorDesconto;
+
+if (Math.abs(totalEsperado - valorTotal) > 0.01) {
+
+  const diferenca = valorTotal - totalEsperado;
+
   throw new Error(
     [
       "Divergência nos totais da NFC-e.",
@@ -33,20 +49,28 @@ if (Math.abs(totalEsperado - Number(valorTotal)) > 0.01) {
       `Frete    : ${valorFrete.toFixed(2)}`,
       `Desconto : ${valorDesconto.toFixed(2)}`,
       `Total    : ${valorTotal.toFixed(2)}`,
-      `Esperado : ${totalEsperado.toFixed(2)}`
+      `Esperado : ${totalEsperado.toFixed(2)}`,
+      `Diferença: ${diferenca.toFixed(2)}`
     ].join("\n")
   );
 }
 
-  const valorFrete = Number(pedido.taxaEntrega || 0);
-  const valorDesconto = Number(pedido.desconto || 0);
+console.info("[FISCAL] Totais NFC-e OK", {
+  produtos: valorProdutos,
+  frete: valorFrete,
+  desconto: valorDesconto,
+  esperado: totalEsperado,
+  total: valorTotal
+});
 
-  return {
-    valorTotal,
-    valorProdutos,
-    valorFrete,
-    valorDesconto,
-  };
+ return {
+  valorTotal,
+  valorProdutos,
+  valorFrete,
+  valorDesconto,
+  valorSeguro,
+  valorOutros,
+};
 }
 
 function montarXmlTotais({
@@ -54,6 +78,8 @@ function montarXmlTotais({
   valorProdutos,
   valorFrete,
   valorDesconto,
+  valorSeguro,
+  valorOutros
 }) {
   return `
     <total>
