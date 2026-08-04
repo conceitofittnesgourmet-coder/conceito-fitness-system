@@ -318,34 +318,46 @@ async function transmitirNfce(nfceId) {
     );
   }
 
-  /*
-   * Assina somente quando ainda não houver XML assinado.
-   * Uma NFC-e já assinada mantém exatamente o mesmo XML,
-   * chave, DigestValue e QR Code.
-   */
-  if (!nfce.xmlAssinado) {
-    nfce = await assinarNfce(nfceId);
-  }
+ /*
+ * Assina somente quando ainda não houver XML assinado.
+ * Uma NFC-e já assinada mantém exatamente o mesmo XML,
+ * chave, DigestValue e QR Code.
+ */
+if (!nfce.xmlAssinado) {
+  nfce = await assinarNfce(nfceId);
+}
 
-  if (!nfce.xmlAssinado) {
-    throw new Error(
-      "Não foi possível obter o XML assinado da NFC-e."
-    );
-  }
-
-  const idLote = String(nfce.numero).padStart(15, "0");
-
-  const retorno = await transmitirNfceParaSefaz(
-    nfce.xmlAssinado,
-    idLote
+if (!nfce.xmlAssinado) {
+  throw new Error(
+    "Não foi possível obter o XML assinado da NFC-e."
   );
+}
 
-  nfce.cStat = String(retorno.cStat || "");
-  nfce.recibo = retorno.nRec || nfce.recibo || "";
-  nfce.protocolo = retorno.nProt || nfce.protocolo || "";
-  nfce.mensagemSefaz =
-    retorno.xMotivo || "Retorno SEFAZ recebido.";
+const idLote = String(nfce.numero).padStart(15, "0");
 
+console.log("\n========================================");
+console.log("📄 XML ASSINADO ENVIADO PARA A SEFAZ");
+console.log("NFC-e:", nfce.numero);
+console.log("Lote :", idLote);
+console.log("========================================");
+console.log(nfce.xmlAssinado);
+console.log("========================================\n");
+
+const retorno = await transmitirNfceParaSefaz(
+  nfce.xmlAssinado,
+  idLote
+);
+
+console.log("\n========================================");
+console.log("📨 RETORNO DA SEFAZ");
+console.dir(retorno, { depth: null });
+console.log("========================================\n");
+
+nfce.cStat = String(retorno.cStat || "");
+nfce.recibo = retorno.nRec || nfce.recibo || "";
+nfce.protocolo = retorno.nProt || nfce.protocolo || "";
+nfce.mensagemSefaz =
+  retorno.xMotivo || "Retorno SEFAZ recebido.";
   if (nfce.cStat === "100") {
     nfce.status = "autorizada";
     nfce.dataAutorizacao = retorno.dhRecbto
