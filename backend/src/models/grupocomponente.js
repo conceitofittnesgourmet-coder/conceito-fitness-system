@@ -115,28 +115,31 @@ const grupoComponenteSchema = new mongoose.Schema(
   { timestamps: true }
 );
 
-grupoComponenteSchema.pre("validate", function normalizarRegras(next) {
-  this.minimoEscolhas = Math.max(0, Number(this.minimoEscolhas || 0));
-  this.maximoEscolhas = Math.max(1, Number(this.maximoEscolhas || 1));
-  this.quantidadeMaximaPorOpcao = Math.max(
-    1,
-    Number(this.quantidadeMaximaPorOpcao || 1)
-  );
+grupoComponenteSchema.pre("validate", function normalizarRegras() {
 
-  if (this.tipoSelecao === "unica") {
-    this.maximoEscolhas = 1;
-    this.minimoEscolhas = this.obrigatorio ? 1 : Math.min(this.minimoEscolhas, 1);
-  }
+    this.minimoEscolhas = Math.max(0, Number(this.minimoEscolhas || 0));
+    this.maximoEscolhas = Math.max(1, Number(this.maximoEscolhas || 1));
 
-  if (this.obrigatorio && this.minimoEscolhas < 1) {
-    this.minimoEscolhas = 1;
-  }
+    this.quantidadeMaximaPorOpcao = Math.max(
+        1,
+        Number(this.quantidadeMaximaPorOpcao || 1)
+    );
 
-  if (this.minimoEscolhas > this.maximoEscolhas) {
-    this.minimoEscolhas = this.maximoEscolhas;
-  }
+    if (this.tipoSelecao === "unica") {
+        this.maximoEscolhas = 1;
+        this.minimoEscolhas = this.obrigatorio
+            ? 1
+            : Math.min(this.minimoEscolhas, 1);
+    }
 
-  next();
+    if (this.obrigatorio && this.minimoEscolhas < 1) {
+        this.minimoEscolhas = 1;
+    }
+
+    if (this.minimoEscolhas > this.maximoEscolhas) {
+        this.minimoEscolhas = this.maximoEscolhas;
+    }
+
 });
 
 module.exports =
