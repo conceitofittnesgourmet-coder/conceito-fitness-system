@@ -94,7 +94,7 @@ function montarXmlTotais({
         <vFCPSTRet>0.00</vFCPSTRet>
         <vProd>${Number(valorProdutos).toFixed(2)}</vProd>
         <vFrete>${Number(valorFrete).toFixed(2)}</vFrete>
-        <vSeg>0.00</vSeg>
+        <vSeg>${Number(valorSeguro).toFixed(2)}</vSeg>
         <vDesc>${Number(valorDesconto).toFixed(2)}</vDesc>
         <vII>0.00</vII>
         <vIPI>0.00</vIPI>

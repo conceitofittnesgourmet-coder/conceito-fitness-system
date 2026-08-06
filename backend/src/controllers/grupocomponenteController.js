@@ -129,6 +129,28 @@ async function anexarContadores(grupos) {
   });
 }
 
+function tratarErro(res, erro, contexto) {
+  console.error("\n========================================");
+  console.error("ERRO:", contexto);
+  console.error("========================================");
+
+  console.error(erro);
+
+  if (erro.stack) {
+    console.error(erro.stack);
+  }
+
+  if (erro.errors) {
+    console.error("Validation Errors:");
+    console.error(erro.errors);
+  }
+
+  return res.status(500).json({
+    success: false,
+    message: erro.message,
+  });
+}
+
 exports.listar = async (req, res) => {
   try {
     const filtro = {};
@@ -143,8 +165,8 @@ exports.listar = async (req, res) => {
       grupos: await anexarContadores(grupos),
     });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
-  }
+    return tratarErro(res, err, "LISTAR GRUPOS");
+}
 };
 
 exports.buscar = async (req, res) => {
@@ -161,8 +183,8 @@ exports.buscar = async (req, res) => {
     const [grupoComContador] = await anexarContadores([grupo]);
     res.json({ success: true, grupo: grupoComContador });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
-  }
+    return tratarErro(res, err, "LISTAR GRUPOS");
+}
 };
 
 exports.criar = async (req, res) => {
@@ -184,8 +206,8 @@ exports.criar = async (req, res) => {
     const grupo = await Grupo.create(dados);
     res.status(201).json({ success: true, grupo });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
-  }
+    return tratarErro(res, err, "CRIAR GRUPO");
+}
 };
 
 exports.atualizar = async (req, res) => {
@@ -213,7 +235,7 @@ exports.atualizar = async (req, res) => {
 
     res.json({ success: true, grupo: atual });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    return tratarErro(res, err, "ATUALIZAR GRUPO");
   }
 };
 
@@ -243,8 +265,8 @@ exports.duplicar = async (req, res) => {
     const grupo = await Grupo.create({ ...dados, nome, slug, ativo: false });
     res.status(201).json({ success: true, grupo });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
-  }
+    return tratarErro(res, err, "DUPLICAR GRUPO");
+}
 };
 
 exports.reordenar = async (req, res) => {
@@ -265,8 +287,8 @@ exports.reordenar = async (req, res) => {
 
     res.json({ success: true });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
-  }
+    return tratarErro(res, err, "REORDENAR GRUPOS");
+}
 };
 
 exports.excluir = async (req, res) => {
@@ -298,6 +320,6 @@ exports.excluir = async (req, res) => {
     await grupo.deleteOne();
     res.json({ success: true });
   } catch (err) {
-    res.status(500).json({ success: false, message: err.message });
+    return tratarErro(res, err, "EXCLUIR GRUPO");
   }
 };
