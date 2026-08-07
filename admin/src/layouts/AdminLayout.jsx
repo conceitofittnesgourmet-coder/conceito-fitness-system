@@ -2,6 +2,7 @@ import { Link } from "react-router-dom";
 import { ShoppingCart } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { FaLayerGroup } from "react-icons/fa";
+import { FaUtensils } from "react-icons/fa";
 import {
   FaChartLine,
   FaBoxOpen,
@@ -63,6 +64,11 @@ function AdminLayout({
 },
     { label: "Painel", path: "/", icon: <FaChartLine /> },
     { label: "Produtos", path: "/produtos", icon: <FaBoxOpen /> },
+    {
+    label: "FoodCore",
+    path: "/foodcore",
+    icon: <FaUtensils />
+},
     { label: "Cadastro Mestre", path: "/produtos/cadastro-mestre", icon: <FaClipboardList /> },
     { label: "Opções por Produto", path: "/produtos/personalizacoes", icon: <FaSlidersH /> },
     { label: "Integração iFood", path: "/integracoes/ifood", icon: <FaPlug /> },

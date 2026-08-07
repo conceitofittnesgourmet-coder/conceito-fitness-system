@@ -106,6 +106,7 @@ import GruposComponentes from "./pages/GruposComponentes";
 import OpcoesComponentes from "./pages/OpcoesComponentes";
 import ProdutosPersonalizacoes from "./pages/ProdutosPersonalizacoes";
 import IfoodIntegracao from "./pages/IfoodIntegracao";
+import FoodCore from "./pages/FoodCore";
 
 
 
@@ -427,6 +428,14 @@ function App() {
 
       />
 
+<Route
+    path="/foodcore"
+    element={
+        <PrivateRoute>
+            <FoodCore />
+        </PrivateRoute>
+    }
+/>
 
 <Route
   path="/ingredientes"
