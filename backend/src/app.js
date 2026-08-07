@@ -11,6 +11,7 @@ const errorHandler = require("./middlewares/errorhandler");
 
 const authRoutes = require("./routes/authRoutes");
 const produtoRoutes = require("./routes/produtoRoutes");
+const recipeRoutes = require("./routes/recipeRoutes");
 const pedidoRoutes = require("./routes/pedidoRoutes");
 const dashboardRoutes = require("./routes/dashboardRoutes");
 const analyticsRoutes = require("./routes/analyticsRoutes");
@@ -109,6 +110,7 @@ app.get("/", (req, res) => {
 
 app.use("/api/auth", authRoutes);
 app.use("/api/produtos", produtoRoutes);
+app.use("/api/recipes", recipeRoutes);
 app.use("/api/categorias", categoriaRoutes);
 app.use("/api/pedidos", pedidoRoutes);
 app.use("/api/dashboard", dashboardRoutes);

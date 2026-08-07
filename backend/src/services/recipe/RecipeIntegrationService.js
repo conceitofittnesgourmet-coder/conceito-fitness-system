@@ -2,13 +2,13 @@
 
 const FoodCoreFacade =
     require("../../core/food/FoodCoreFacade");
-const Produto = require("../../models/Produto");
+const Produto = require("../../models/produto");
 
 class RecipeIntegrationService {
 
     async processar(recipe) {
 
-        const resultado = FoodCore.processar(recipe);
+        const resultado = FoodCoreFacade.processarReceita(recipe);
 
         await Produto.findByIdAndUpdate(
 
