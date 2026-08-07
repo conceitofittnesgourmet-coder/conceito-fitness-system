@@ -1,4 +1,7 @@
 const mongoose = require("mongoose");
+const NutricaoSchema = require("./schemas/NutricaoSchema");
+const ProducaoSchema = require("./schemas/ProducaoSchema");
+const FoodCoreSchema = require("./schemas/FoodCoreSchema");
 
 const produtoSchema = new mongoose.Schema(
   {
@@ -737,6 +740,26 @@ tipoProduto: {
         mensagemErro: { type: String, default: "" },
       },
     },
+
+    food: {
+
+    nutricao: {
+        type: NutricaoSchema,
+        default: () => ({})
+    },
+
+    producao: {
+        type: ProducaoSchema,
+        default: () => ({})
+    },
+
+    core: {
+        type: FoodCoreSchema,
+        default: () => ({})
+    }
+
+},
+
 
     imagens: [
       {
