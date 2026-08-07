@@ -1,95 +1,57 @@
 import React from "react";
 
+import ReceitaEditor from "./ReceitaEditor";
+import IngredientesGrid from "./IngredientesGrid";
+import NutricaoResumo from "./NutricaoResumo";
+import CMVResumo from "./CMVResumo";
+import ProducaoResumo from "./ProducaoResumo";
+import RotuloPreview from "./RotuloPreview";
+
 export default function FoodCoreTab() {
+
     return (
 
-        <div className="produto-aba-card">
+        <div className="space-y-6">
 
-            <h2>🍳 FoodCore</h2>
+            <div className="rounded-lg border bg-white p-6 shadow-sm">
 
-            <p>
+                <h2 className="text-2xl font-bold">
 
-                Central inteligente de produção.
+                    🍳 FoodCore
 
-            </p>
+                </h2>
 
-            <div className="foodcore-grid">
+                <p className="mt-2 text-gray-600">
 
-                <div className="foodcore-card">
+                    Central inteligente de receitas, produção,
+                    CMV, ficha técnica e rotulagem.
 
-                    <h3>Receita</h3>
+                </p>
 
-                    <p>
+            </div>
 
-                        Cadastro dos ingredientes.
+            <ReceitaEditor />
 
-                    </p>
+            <IngredientesGrid />
 
-                </div>
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
 
-                <div className="foodcore-card">
+                <NutricaoResumo />
 
-                    <h3>CMV</h3>
+                <CMVResumo />
 
-                    <p>
+            </div>
 
-                        Calculado automaticamente.
+            <div className="grid grid-cols-1 gap-6 lg:grid-cols-2">
 
-                    </p>
+                <ProducaoResumo />
 
-                </div>
-
-                <div className="foodcore-card">
-
-                    <h3>Tabela Nutricional</h3>
-
-                    <p>
-
-                        Calculada automaticamente.
-
-                    </p>
-
-                </div>
-
-                <div className="foodcore-card">
-
-                    <h3>Produção</h3>
-
-                    <p>
-
-                        Peso, rendimento e perdas.
-
-                    </p>
-
-                </div>
-
-                <div className="foodcore-card">
-
-                    <h3>Ficha Técnica</h3>
-
-                    <p>
-
-                        Gerada automaticamente.
-
-                    </p>
-
-                </div>
-
-                <div className="foodcore-card">
-
-                    <h3>Rótulos</h3>
-
-                    <p>
-
-                        Impressão pronta.
-
-                    </p>
-
-                </div>
+                <RotuloPreview />
 
             </div>
 
         </div>
 
     );
+
 }

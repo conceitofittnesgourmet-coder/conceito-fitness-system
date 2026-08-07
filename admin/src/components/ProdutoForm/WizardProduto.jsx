@@ -45,7 +45,7 @@ function WizardProduto({
 
     if (["bolo", "torta", "combo", "kit", "cesta"].includes(id)) {
       setTipoProduto("producao");
-      setAbaCadastro("cardapio");
+      setAbaCadastro("producao");
     }
 
     if (id === "cafe") {

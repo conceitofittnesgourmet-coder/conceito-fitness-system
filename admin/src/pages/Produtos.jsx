@@ -35,6 +35,7 @@ import ProdutoFiscal from "../components/ProdutoForm/ProdutoFiscal";
 import ProdutoImagem from "../components/ProdutoForm/ProdutoImagem";
 import ProdutoConfigEngine from "../components/ProdutoConfig/ProdutoConfigEngine";
 import PublicacaoOnlineProduto from "../components/ProdutoForm/PublicacaoOnlineProduto";
+import FoodCoreTab from "../components/ProdutoForm/FoodCore/FoodCoreTab";
 
 const API_URL = "https://conceito-fitness-system.onrender.com";
 
@@ -908,6 +909,14 @@ const progressoCadastro =
     dadosFiscais={dadosFiscais}
     setDadosFiscais={setDadosFiscais}
   />
+)}
+
+{abaCadastro === "producao" && (
+
+    <FoodCoreTab
+        tipoProduto={tipoProduto}
+    />
+
 )}
 
 {abaCadastro === "midia" && (

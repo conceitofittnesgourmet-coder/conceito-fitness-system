@@ -1,6 +1,7 @@
 "use strict";
 
-const FoodCore = require("../../core/food/FoodCore");
+const FoodCoreFacade =
+    require("../../core/food/FoodCoreFacade");
 const Produto = require("../../models/Produto");
 
 class RecipeIntegrationService {
