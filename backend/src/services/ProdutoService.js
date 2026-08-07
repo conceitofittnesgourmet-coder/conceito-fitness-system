@@ -1,5 +1,7 @@
 const Produto = require("../models/produto");
 const generateSlug = require("../utils/generateslug");
+const FoodCadastroService =
+    require("./food/FoodCadastroService");
 
 function parseJsonSeguro(valor, padrao = {}) {
   if (valor === undefined || valor === null || valor === "") return padrao;
@@ -318,12 +320,42 @@ function montarDadosProduto(body = {}, atual = null) {
   copiarNumero("quantidadeMaxima", 1);
 
   copiarJson("dadosFiscais", {});
-  copiarJson("itensComposicao", []);
-  copiarJson("informacoesNutricionais", {});
-  copiarJson("alergenos", {});
-  copiarJson("selos", {});
-  copiarJson("gruposComponentes", []);
-  copiarJson("configuracaoGrupos", []);
+copiarJson("itensComposicao", []);
+copiarJson("informacoesNutricionais", {});
+copiarJson("alergenos", {});
+copiarJson("selos", {});
+copiarJson("gruposComponentes", []);
+copiarJson("configuracaoGrupos", []);
+
+/* ======================================================
+   FOOD CORE
+====================================================== */
+
+dados.cadastroMestre = {
+
+    ...(dadosAtuais.cadastroMestre || {}),
+
+    ...(body.cadastroMestre || {})
+
+};
+
+dados.cadastroMestre.nutricional =
+    FoodCadastroService.normalizarNutricional(
+        dados.cadastroMestre.nutricional
+    );
+
+dados.cadastroMestre.alergenicos =
+    FoodCadastroService.normalizarAlergenicos(
+        dados.cadastroMestre.alergenicos
+    );
+
+dados.cadastroMestre.foodCore =
+    FoodCadastroService.normalizarFoodCore(
+        dados.cadastroMestre.foodCore
+    );
+
+/* ====================================================== */
+
 
   const financeiro = calcularFinanceiro(
     body.preco !== undefined ? body.preco : dadosAtuais.preco,

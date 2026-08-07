@@ -200,7 +200,147 @@ dadosFiscais: {
       },
       atualizadoEm: { type: Date, default: null },
       atualizadoPor: { type: String, default: "", trim: true },
+      nutricional: {
+
+    porcaoGramas: {
+        type: Number,
+        default: 100
     },
+
+    energia: {
+        type: Number,
+        default: 0
+    },
+
+    carboidratos: {
+        type: Number,
+        default: 0
+    },
+
+    acucaresTotais: {
+        type: Number,
+        default: 0
+    },
+
+    acucaresAdicionados: {
+        type: Number,
+        default: 0
+    },
+
+    proteinas: {
+        type: Number,
+        default: 0
+    },
+
+    gordurasTotais: {
+        type: Number,
+        default: 0
+    },
+
+    gordurasSaturadas: {
+        type: Number,
+        default: 0
+    },
+
+    gordurasTrans: {
+        type: Number,
+        default: 0
+    },
+
+    fibras: {
+        type: Number,
+        default: 0
+    },
+
+    sodio: {
+        type: Number,
+        default: 0
+    }
+
+},
+alergenicos: {
+
+    contemGluten: {
+        type: Boolean,
+        default: false
+    },
+
+    contemLeite: {
+        type: Boolean,
+        default: false
+    },
+
+    contemOvos: {
+        type: Boolean,
+        default: false
+    },
+
+    contemSoja: {
+        type: Boolean,
+        default: false
+    },
+
+    contemCastanhas: {
+        type: Boolean,
+        default: false
+    },
+
+    contemAmendoim: {
+        type: Boolean,
+        default: false
+    },
+
+    podeConter: {
+        type: String,
+        default: ""
+    }
+
+},
+foodCore: {
+
+    calcularAutomaticamente: {
+
+        type: Boolean,
+
+        default: true
+
+    },
+
+    usarTabelaNutricional: {
+
+        type: Boolean,
+
+        default: true
+
+    },
+
+    usarReceita: {
+
+        type: Boolean,
+
+        default: true
+
+    },
+
+    gerarFichaTecnica: {
+
+        type: Boolean,
+
+        default: true
+
+    },
+
+    gerarRotulo: {
+
+        type: Boolean,
+
+        default: true
+
+    }
+
+},
+    },
+
 
     historicoCadastroMestre: [
       {
@@ -402,8 +542,27 @@ margem: {
 },
 
 tipoProduto: {
-  type: String,
-  default: "producao",
+    type: String,
+
+    enum: [
+        "producao",
+        "materia_prima",
+        "embalagem",
+        "semiacabado",
+        "servico",
+        "kit",
+        "receita_base"
+    ],
+
+    default: "producao",
+},
+
+descricaoTipo: {
+
+    type: String,
+
+    default: ""
+
 },
 
     estoque: {

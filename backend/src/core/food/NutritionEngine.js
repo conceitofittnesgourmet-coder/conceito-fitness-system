@@ -35,10 +35,25 @@ class NutritionEngine {
 
         for (const ingrediente of receita.ingredientes) {
 
-            const quantidade = Number(ingrediente.quantidade || 0);
+           const quantidade =
+
+    Number(
+
+        ingrediente.pesoFinal ??
+
+        ingrediente.quantidade ??
+
+        0
+
+    );
 
             const tabela =
-                ingrediente.produto?.informacaoNutricional || {};
+
+    ingrediente.produto?.cadastroMestre?.nutricional ||
+
+    ingrediente.produto?.informacaoNutricional ||
+
+    {};
 
             Object.keys(resultado).forEach(campo => {
 
@@ -51,7 +66,29 @@ class NutritionEngine {
 
         }
 
-        return resultado;
+        const pesoFinal =
+
+    Number(receita.pesoTotal || 0);
+
+const porcao =
+
+    Number(receita.rendimento || 1);
+
+const pesoPorPorcao =
+
+    porcao > 0
+
+        ? pesoFinal / porcao
+
+        : pesoFinal;
+
+resultado.pesoTotal = pesoFinal;
+
+resultado.rendimento = porcao;
+
+resultado.pesoPorPorcao = pesoPorPorcao;
+
+return resultado;
 
     }
 

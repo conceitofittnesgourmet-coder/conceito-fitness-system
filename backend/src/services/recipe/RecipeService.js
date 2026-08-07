@@ -1,6 +1,8 @@
 "use strict";
 
 const Recipe = require("../../models/Recipe");
+const RecipeIntegrationService =
+    require("./RecipeIntegrationService");
 
 class RecipeService {
 
@@ -28,24 +30,49 @@ class RecipeService {
 
     async criar(dados) {
 
-        const recipe = new Recipe(dados);
+    const recipe =
+        await new Recipe(dados).save();
 
-        return recipe.save();
+    await RecipeIntegrationService.processar(
+        recipe
+    );
 
-    }
+    return Recipe
+        .findById(recipe._id)
+        .populate("produto")
+        .populate("ingredientes.produto");
+
+}
 
     async atualizar(id, dados) {
 
-        return Recipe.findByIdAndUpdate(
+    const recipe =
+        await Recipe.findByIdAndUpdate(
+
             id,
+
             dados,
+
             {
+
                 new: true,
+
                 runValidators: true
+
             }
+
         );
 
-    }
+    await RecipeIntegrationService.processar(
+        recipe
+    );
+
+    return Recipe
+        .findById(recipe._id)
+        .populate("produto")
+        .populate("ingredientes.produto");
+
+}
 
     async excluir(id) {
 

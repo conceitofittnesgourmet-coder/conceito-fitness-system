@@ -5,6 +5,8 @@ const NutritionEngine = require("./NutritionEngine");
 const CostEngine = require("./CostEngine");
 const ProductionEngine =
     require("./ProductionEngine");
+const AnvisaLabelEngine =
+    require("./AnvisaLabelEngine");
 
 class FoodCore {
 
@@ -21,6 +23,11 @@ class FoodCore {
     const producao =
     ProductionEngine.calcular(receita);
 
+    const rotulo =
+    AnvisaLabelEngine.gerar(
+        nutricional
+    );
+
     return {
 
     receita,
@@ -30,6 +37,8 @@ class FoodCore {
     custos,
 
     producao,
+
+    rotulo,
 
     fichaTecnica: {
 

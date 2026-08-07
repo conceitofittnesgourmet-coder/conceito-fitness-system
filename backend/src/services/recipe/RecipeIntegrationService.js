@@ -15,19 +15,35 @@ class RecipeIntegrationService {
 
             {
 
-                fichaTecnica: resultado.fichaTecnica,
+    /* ==========================================
+       CAMPOS LEGADOS
+    ========================================== */
 
-                informacaoNutricional: resultado.nutricional,
+    fichaTecnica: resultado.fichaTecnica,
 
-                custoProducao: resultado.custos.custoTotal,
+    informacaoNutricional: resultado.nutricional,
 
-                custoPorPorcao: resultado.custos.custoPorPorcao,
+    custoProducao: resultado.custos.custoTotal,
 
-                atualizadoEm: new Date()
+    custoPorPorcao: resultado.custos.custoPorPorcao,
 
-            },
+    /* ==========================================
+       NOVO CADASTRO MESTRE
+    ========================================== */
 
-            {
+    "cadastroMestre.nutricional": resultado.nutricional,
+
+    "cadastroMestre.producao.pesoFinalGramas":
+        resultado.producao.pesoFinal,
+
+    "cadastroMestre.producao.rendimentoPadrao":
+        resultado.producao.rendimento,
+
+    atualizadoEm: new Date()
+
+},
+
+{
 
                 new: true
 
