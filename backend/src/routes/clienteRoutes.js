@@ -3,13 +3,11 @@ const express = require("express");
 const router = express.Router();
 
 const {
-  listarClientes,
-  criarCliente,
-  atualizarCliente,
-  deletarCliente,
-  acessarCardapio,
-  perfilCardapio,
-  atualizarFavoritosCardapio,
+    listarClientes,
+    criarCliente,
+    atualizarCliente,
+    excluirCliente,
+    buscarClientes
 } = require("../controllers/clientecontroller");
 
 router.post("/cardapio/acessar", acessarCardapio);

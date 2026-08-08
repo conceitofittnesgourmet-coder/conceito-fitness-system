@@ -214,3 +214,30 @@ exports.atualizarFavoritosCardapio = async (req, res) => {
     return res.status(500).json({ success: false, message: error.message });
   }
 };
+
+exports.buscarClientes = async (req, res) => {
+
+    try {
+
+        const termo = req.query.q || "";
+
+        const clientes = await Cliente.find({
+            nome: {
+                $regex: termo,
+                $options: "i"
+            }
+        })
+        .sort({ nome: 1 })
+        .limit(10);
+
+        res.json(clientes);
+
+    } catch (err) {
+
+        res.status(500).json({
+            erro: err.message
+        });
+
+    }
+
+};
