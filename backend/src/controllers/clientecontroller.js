@@ -99,6 +99,31 @@ exports.atualizarCliente = async (req, res) => {
   }
 };
 
+exports.buscarClientes = async (req, res) => {
+    try {
+
+        const termo = req.query.q || "";
+
+        const clientes = await Cliente.find({
+            nome: {
+                $regex: termo,
+                $options: "i"
+            }
+        })
+        .limit(10)
+        .sort({ nome: 1 });
+
+        res.json(clientes);
+
+    } catch (err) {
+
+        res.status(500).json({
+            erro: err.message
+        });
+
+    }
+};
+
 exports.deletarCliente = async (req, res) => {
   try {
     await Cliente.findByIdAndDelete(req.params.id);

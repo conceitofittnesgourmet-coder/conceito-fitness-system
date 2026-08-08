@@ -20,5 +20,6 @@ router.get("/", listarClientes);
 router.post("/", criarCliente);
 router.put("/:id", atualizarCliente);
 router.delete("/:id", deletarCliente);
+router.get("/buscar", buscarClientes);
 
 module.exports = router;

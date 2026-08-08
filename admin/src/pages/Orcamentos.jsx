@@ -4,7 +4,14 @@ import AdminLayout from "../layouts/AdminLayout";
 import api from "../services/api";
 import "../styles/orcamentos.css";
 
-const criarVazio = () => ({ cliente: "", telefone: "", email: "", tipoEvento: "Encomenda", dataEvento: "", dataValidade: "", percentualSinal: 50, desconto: 0, taxaEntrega: 0, status: "rascunho", observacoes: "", condicoes: "", itens: [{ produtoId: "", nome: "", quantidade: 1, valorUnitario: 0 }] });
+const criarVazio = () => ({ clienteId: "", cliente: "", telefone: "", email: "",cpfCnpj: "",
+cep: "",
+endereco: "",
+numero: "",
+bairro: "",
+cidade: "",
+estado: "",
+complemento: "", tipoEvento: "Encomenda", dataEvento: "", dataValidade: "", percentualSinal: 50, desconto: 0, taxaEntrega: 0, status: "rascunho", observacoes: "", condicoes: "", itens: [{ produtoId: "", nome: "", quantidade: 1, valorUnitario: 0 }] });
 const moeda = (v) => Number(v || 0).toLocaleString("pt-BR", { style: "currency", currency: "BRL" });
 const dataBR = (v) => v ? new Date(v).toLocaleDateString("pt-BR") : "Sem data";
 const statusDisponiveis = ["rascunho", "enviado", "aprovado", "recusado", "expirado", "convertido", "cancelado"];
@@ -13,6 +20,8 @@ export default function Orcamentos() {
   const [lista, setLista] = useState([]);
   const [produtos, setProdutos] = useState([]);
   const [resumo, setResumo] = useState({});
+  const [clientes, setClientes] = useState([]);
+  const [clientesEncontrados, setClientesEncontrados] = useState([]);
   const [busca, setBusca] = useState("");
   const [status, setStatus] = useState("");
   const [form, setForm] = useState(criarVazio());
@@ -42,8 +51,18 @@ export default function Orcamentos() {
     }
   }
 
+  async function carregarClientes() {
+    try {
+        const resposta = await api.get("/clientes");
+        setClientes(resposta.data?.clientes || resposta.data || []);
+    } catch (err) {
+        console.error(err);
+    }
+}
+
   useEffect(() => { carregar().catch(console.error); }, [status]);
   useEffect(() => { carregarProdutos(); }, []);
+  useEffect(() => { carregarClientes(); }, []);
 
   const totais = useMemo(() => {
     const subtotal = form.itens.reduce((s, i) => s + Number(i.quantidade || 0) * Number(i.valorUnitario || 0), 0);
@@ -77,6 +96,67 @@ export default function Orcamentos() {
   function removerItem(index) {
     setForm((f) => ({ ...f, itens: f.itens.filter((_, n) => n !== index) }));
   }
+  
+  function pesquisarCliente(valor) {
+
+    setForm({
+        ...form,
+        cliente: valor
+    });
+
+    if (!valor) {
+        setClientesEncontrados([]);
+        return;
+    }
+
+    const encontrados = clientes
+        .filter(c => {    
+            const texto = (
+    `${c.nome} ${c.telefone} ${c.email} ${c.cpfCnpj}`
+).toLowerCase();
+
+return texto.includes(valor.toLowerCase());
+        })
+        .slice(0,8);
+
+    setClientesEncontrados(encontrados);
+}
+
+function selecionarCliente(cliente){
+
+    setForm({
+
+        ...form,
+
+        clienteId: cliente._id || "",
+
+        cliente: cliente.nome || "",
+
+        telefone: cliente.telefone || "",
+
+        email: cliente.email || "",
+
+        cpfCnpj: cliente.cpfCnpj || "",
+
+        cep: cliente.cep || "",
+
+        endereco: cliente.endereco || "",
+
+        numero: cliente.numero || "",
+
+        bairro: cliente.bairro || "",
+
+        cidade: cliente.cidade || "",
+
+        estado: cliente.estado || "",
+
+        complemento: cliente.complemento || ""
+
+    });
+
+    setClientesEncontrados([]);
+
+}
 
   async function salvar(e) {
     e.preventDefault();
@@ -183,7 +263,141 @@ export default function Orcamentos() {
     </div>
 
     {modal && <div className="orc-modal-bg"><form className="orc-modal" onSubmit={salvar}><header><div><h2>{editando ? "Editar orçamento" : "Novo orçamento"}</h2><p>Vincule os itens aos produtos para habilitar a conversão inteligente.</p></div><button type="button" onClick={() => setModal(false)}><FaTimes /></button></header>
-      <div className="orc-grid"><label>Cliente<input required value={form.cliente} onChange={e => setForm({ ...form, cliente: e.target.value })} /></label><label>Telefone<input value={form.telefone} onChange={e => setForm({ ...form, telefone: e.target.value })} /></label><label>E-mail<input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} /></label><label>Tipo de evento<input value={form.tipoEvento} onChange={e => setForm({ ...form, tipoEvento: e.target.value })} /></label><label>Data do evento<input type="date" value={form.dataEvento || ""} onChange={e => setForm({ ...form, dataEvento: e.target.value })} /></label><label>Validade<input type="date" value={form.dataValidade || ""} onChange={e => setForm({ ...form, dataValidade: e.target.value })} /></label></div>
+      <div className="orc-grid"><label className="cliente-autocomplete">
+
+    Cliente
+
+    <input
+        required
+        value={form.cliente}
+        onChange={(e)=>pesquisarCliente(e.target.value)}
+        autoComplete="off"
+    />
+
+    {clientesEncontrados.length > 0 && (
+
+        <div className="cliente-sugestoes">
+
+            {clientesEncontrados.map(cliente=>(
+
+                <div
+                    key={cliente._id}
+                    className="cliente-item"
+                    onClick={()=>selecionarCliente(cliente)}
+                >
+
+                    <strong>{cliente.nome}</strong>
+
+                    <small>
+
+{cliente.telefone}
+
+{cliente.cpfCnpj
+    ? ` • ${cliente.cpfCnpj}`
+    : ""}
+
+</small>
+
+                </div>
+
+            ))}
+
+        </div>
+
+    )}
+
+</label><label>Telefone<input value={form.telefone} onChange={e => setForm({ ...form, telefone: e.target.value })} /></label><label>E-mail<input type="email" value={form.email} onChange={e => setForm({ ...form, email: e.target.value })} /></label><label>Tipo de evento<input value={form.tipoEvento} onChange={e => setForm({ ...form, tipoEvento: e.target.value })} /></label><label>Data do evento<input type="date" value={form.dataEvento || ""} onChange={e => setForm({ ...form, dataEvento: e.target.value })} /></label><label>Validade<input type="date" value={form.dataValidade || ""} onChange={e => setForm({ ...form, dataValidade: e.target.value })} /></label></div>
+<div className="orc-grid">
+
+<label>
+
+CPF / CNPJ
+
+<input
+value={form.cpfCnpj}
+onChange={e=>setForm({...form,cpfCnpj:e.target.value})}
+/>
+
+</label>
+
+<label>
+
+CEP
+
+<input
+value={form.cep}
+onChange={e=>setForm({...form,cep:e.target.value})}
+/>
+
+</label>
+
+<label>
+
+Endereço
+
+<input
+value={form.endereco}
+onChange={e=>setForm({...form,endereco:e.target.value})}
+/>
+
+</label>
+
+<label>
+
+Número
+
+<input
+value={form.numero}
+onChange={e=>setForm({...form,numero:e.target.value})}
+/>
+
+</label>
+
+<label>
+
+Bairro
+
+<input
+value={form.bairro}
+onChange={e=>setForm({...form,bairro:e.target.value})}
+/>
+
+</label>
+
+<label>
+
+Cidade
+
+<input
+value={form.cidade}
+onChange={e=>setForm({...form,cidade:e.target.value})}
+/>
+
+</label>
+
+<label>
+
+Estado
+
+<input
+value={form.estado}
+onChange={e=>setForm({...form,estado:e.target.value})}
+/>
+
+</label>
+
+<label>
+
+Complemento
+
+<input
+value={form.complemento}
+onChange={e=>setForm({...form,complemento:e.target.value})}
+/>
+
+</label>
+
+</div>
       <div className="items-head"><h3>Itens</h3><button type="button" onClick={() => setForm({ ...form, itens: [...form.itens, { produtoId: "", nome: "", quantidade: 1, valorUnitario: 0 }] })}><FaPlus /> Item</button></div>
       {form.itens.map((i, n) => <div className="item-row item-row-v041" key={i._id || n}>
         <select value={i.produtoId || ""} onChange={e => selecionarProduto(n, e.target.value)}><option value="">Produto cadastrado</option>{produtos.map(p => <option key={p._id} value={p._id}>{p.nome}</option>)}</select>
