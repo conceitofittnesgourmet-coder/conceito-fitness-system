@@ -2,7 +2,6 @@ import { Link } from "react-router-dom";
 import { ShoppingCart } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { FaLayerGroup } from "react-icons/fa";
-import { FaUtensils } from "react-icons/fa";
 import {
   FaChartLine,
   FaBoxOpen,

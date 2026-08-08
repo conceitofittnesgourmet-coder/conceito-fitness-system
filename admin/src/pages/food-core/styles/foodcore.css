@@ -1,0 +1,45 @@
+.fc-header{
+
+display:flex;
+
+justify-content:space-between;
+
+align-items:center;
+
+padding:30px;
+
+border-radius:20px;
+
+background:#1b1d22;
+
+color:white;
+
+margin-bottom:30px;
+
+box-shadow:0 20px 60px rgba(0,0,0,.25);
+
+}
+
+.fc-header h1{
+
+font-size:38px;
+
+margin:0;
+
+}
+
+.fc-header p{
+
+margin-top:8px;
+
+opacity:.7;
+
+}
+
+.fc-header div:last-child{
+
+font-size:18px;
+
+opacity:.8;
+
+}
