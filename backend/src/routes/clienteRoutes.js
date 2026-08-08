@@ -6,8 +6,11 @@ const {
     listarClientes,
     criarCliente,
     atualizarCliente,
-    excluirCliente,
-    buscarClientes
+    deletarCliente,
+    buscarClientes,
+    acessarCardapio,
+    perfilCardapio,
+    atualizarFavoritosCardapio
 } = require("../controllers/clientecontroller");
 
 router.post("/cardapio/acessar", acessarCardapio);

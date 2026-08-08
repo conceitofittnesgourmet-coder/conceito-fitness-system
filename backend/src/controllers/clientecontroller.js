@@ -100,6 +100,7 @@ exports.atualizarCliente = async (req, res) => {
 };
 
 exports.buscarClientes = async (req, res) => {
+
     try {
 
         const termo = req.query.q || "";
@@ -110,8 +111,8 @@ exports.buscarClientes = async (req, res) => {
                 $options: "i"
             }
         })
-        .limit(10)
-        .sort({ nome: 1 });
+        .sort({ nome: 1 })
+        .limit(10);
 
         res.json(clientes);
 
@@ -122,6 +123,7 @@ exports.buscarClientes = async (req, res) => {
         });
 
     }
+
 };
 
 exports.deletarCliente = async (req, res) => {
@@ -213,31 +215,4 @@ exports.atualizarFavoritosCardapio = async (req, res) => {
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
   }
-};
-
-exports.buscarClientes = async (req, res) => {
-
-    try {
-
-        const termo = req.query.q || "";
-
-        const clientes = await Cliente.find({
-            nome: {
-                $regex: termo,
-                $options: "i"
-            }
-        })
-        .sort({ nome: 1 })
-        .limit(10);
-
-        res.json(clientes);
-
-    } catch (err) {
-
-        res.status(500).json({
-            erro: err.message
-        });
-
-    }
-
 };
