@@ -1,10 +1,20 @@
 import { FaCloudUploadAlt, FaImage } from "react-icons/fa";
+import Gallery from "./ProdutoGallery/Gallery";
 
 function ProdutoImagem({
+
   getRootProps,
+
   getInputProps,
+
   isDragActive,
+
   previewCadastro,
+
+  imagens,
+
+  setImagens,
+
 }) {
   return (
     <div className="produto-aba-card imagem-grid-produto">
@@ -30,6 +40,24 @@ function ProdutoImagem({
           <FaImage />
           Prévia da imagem
         </h3>
+
+        <div className="premium-box">
+
+    <h3>
+
+        Galeria do Produto
+
+    </h3>
+
+    <Gallery
+
+        images={imagens}
+
+        setImages={setImagens}
+
+    />
+
+</div>
 
         {previewCadastro ? (
           <img src={previewCadastro} alt="Prévia" />

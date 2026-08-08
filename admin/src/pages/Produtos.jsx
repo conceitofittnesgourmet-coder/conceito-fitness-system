@@ -411,8 +411,38 @@ formData.append(
       
 
       imagens.forEach((img) => {
-        formData.append("imagens", img);
-      });
+
+    if (img.file) {
+
+        formData.append("imagens", img.file);
+
+    }
+
+});
+
+formData.append(
+
+    "galeria",
+
+    JSON.stringify(
+
+        imagens.map(img => ({
+
+            principal: img.principal,
+
+            ordem: img.ordem,
+
+            legenda: img.legenda,
+
+            alt: img.alt,
+
+            nome: img.nome
+
+        }))
+
+    )
+
+);
 
       await api.post("/produtos", formData, {
         headers: { "Content-Type": "multipart/form-data" },
@@ -925,7 +955,10 @@ const progressoCadastro =
     getInputProps={getInputProps}
     isDragActive={isDragActive}
     previewCadastro={previewCadastro}
-  />
+
+    imagens={imagens}
+    setImagens={setImagens}
+/>
 )}
           
           <div className="form-actions-premium">
