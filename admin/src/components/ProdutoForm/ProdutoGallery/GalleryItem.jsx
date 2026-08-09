@@ -1,56 +1,65 @@
+import { useSortable } from "@dnd-kit/sortable";
+
+import { CSS } from "@dnd-kit/utilities";
+
 export default function GalleryItem({
 
     image,
 
     index,
 
-    images,
+    onPrincipal,
 
-    setImages
+    onRemover,
+
+    onLegenda,
+
+    onAlt
 
 }) {
 
-    function definirPrincipal() {
+    const {
 
-        const novaLista = images.map((img, i) => ({
+    attributes,
 
-            ...img,
+    listeners,
 
-            principal: i === index
+    setNodeRef,
 
-        }));
+    transform,
 
-        setImages(novaLista);
+    transition
 
-    }
+} = useSortable({
 
-    function remover() {
+    id: image.id
 
-        const novaLista = images.filter(
+});
 
-            (_, i) => i !== index
+const style = {
 
-        );
+    transform: CSS.Transform.toString(transform),
 
-        if (
+    transition
 
-            novaLista.length > 0 &&
+};
 
-            !novaLista.some(i => i.principal)
-
-        ) {
-
-            novaLista[0].principal = true;
-
-        }
-
-        setImages(novaLista);
-
-    }
-
+ 
     return (
 
-    <div className="gallery-item">
+    <div
+
+    ref={setNodeRef}
+
+    style={style}
+
+    {...attributes}
+
+    {...listeners}
+
+    className="gallery-item"
+
+>
 
         <div className="gallery-image">
 
@@ -77,25 +86,77 @@ export default function GalleryItem({
 
         <div className="gallery-info">
 
-            <strong>
+    <strong>
 
-                {image.nome}
+        {image.nome}
 
-            </strong>
+    </strong>
 
-            <small>
+    <small>
 
-                {(image.tamanho / 1024 / 1024).toFixed(2)} MB
+        {(image.tamanho / 1024 / 1024).toFixed(2)} MB
 
-            </small>
+    </small>
 
-            <small>
+    <small>
 
-                {image.tipo}
+        {image.tipo}
 
-            </small>
+    </small>
 
-        </div>
+    <label>
+
+        Legenda
+
+    </label>
+
+    <input
+
+        type="text"
+
+        value={image.legenda}
+
+        onChange={(e) =>
+
+    onLegenda(
+
+        e.target.value
+
+    )
+
+}
+
+        placeholder="Ex.: Bolo de Cacau"
+
+    />
+
+    <label>
+
+        Texto Alternativo (ALT)
+
+    </label>
+
+    <input
+
+        type="text"
+
+        value={image.alt}
+
+        onChange={(e) =>
+
+    onAlt(
+
+        e.target.value
+
+    )
+
+}
+
+        placeholder="Descrição da imagem"
+
+    />
+
+</div>
 
         <div className="gallery-actions">
 
@@ -103,7 +164,7 @@ export default function GalleryItem({
 
                 type="button"
 
-                onClick={definirPrincipal}
+                onClick={onPrincipal}
 
             >
 
@@ -115,7 +176,7 @@ export default function GalleryItem({
 
                 type="button"
 
-                onClick={remover}
+                onClick={onRemover}
 
             >
 

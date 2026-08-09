@@ -269,6 +269,36 @@ function calcularFinanceiro(preco, custo) {
   return { preco: precoVenda, custo: custoProduto, lucro, margem };
 }
 
+function montarGaleria(imagensCloudinary = [], galeriaFrontend = []) {
+
+    return imagensCloudinary.map((imagem, index) => {
+
+        const meta = galeriaFrontend[index] || {};
+
+        return {
+
+            url: imagem.url,
+
+            public_id: imagem.public_id,
+
+            filename: imagem.filename,
+
+            principal: Boolean(meta.principal),
+
+            ordem: Number(meta.ordem ?? index),
+
+            legenda: meta.legenda || "",
+
+            alt: meta.alt || "",
+
+            nome: meta.nome || imagem.filename
+
+        };
+
+    });
+
+}
+
 function montarDadosProduto(body = {}, atual = null) {
   const dadosAtuais = atual?.toObject ? atual.toObject() : atual || {};
   const criar = !atual;
@@ -463,14 +493,69 @@ function formatarProdutoPublico(produto) {
 }
 
 async function criarProduto(dados, imagens = []) {
-  return Produto.create({ ...montarDadosProduto(dados), imagens });
+
+    const galeriaFrontend = JSON.parse(
+
+        dados.galeria || "[]"
+
+    );
+
+    const galeria = montarGaleria(
+
+        imagens,
+
+        galeriaFrontend
+
+    );
+
+    return Produto.create({
+
+        ...montarDadosProduto(dados),
+
+        imagens: galeria
+
+    });
+
 }
 
 async function atualizarProduto(produto, body, imagens) {
-  const dados = montarDadosProduto(body, produto);
-  if (imagens !== undefined) dados.imagens = imagens;
-  Object.assign(produto, dados);
-  return produto.save();
+
+    const dados = montarDadosProduto(
+
+        body,
+
+        produto
+
+    );
+
+    if (imagens !== undefined) {
+
+        const galeriaFrontend = JSON.parse(
+
+            body.galeria || "[]"
+
+        );
+
+        dados.imagens = montarGaleria(
+
+            imagens,
+
+            galeriaFrontend
+
+        );
+
+    }
+
+    Object.assign(
+
+        produto,
+
+        dados
+
+    );
+
+    return produto.save();
+
 }
 
 module.exports = {

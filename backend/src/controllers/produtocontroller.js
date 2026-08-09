@@ -209,17 +209,40 @@ const atualizarProduto = async (req, res) => {
     const produto = await Produto.findById(req.params.id);
     if (!produto) return res.status(404).json({ success: false, message: "Produto não encontrado" });
 
-    let novasImagens;
-    const imagensAntigas = produto.imagens || [];
-    if (req.files?.length) novasImagens = await uploadImagens(req.files);
+    let novasImagens = [];
 
-    const produtoAtualizado = await ProdutoService.atualizarProduto(
-      produto,
-      req.body || {},
-      novasImagens
+const imagensAntigas = produto.imagens || [];
+
+if (req.files?.length) {
+
+    novasImagens = await uploadImagens(
+
+        req.files
+
     );
 
-    if (novasImagens) await removerImagensCloudinary(imagensAntigas);
+}
+
+    const galeriaCompleta = [
+
+    ...imagensAntigas,
+
+    ...novasImagens
+
+];
+
+const produtoAtualizado =
+    await ProdutoService.atualizarProduto(
+
+        produto,
+
+        req.body || {},
+
+        galeriaCompleta
+
+    );
+
+    
     if (global.io) global.io.emit("produto-atualizado", produtoAtualizado);
 
     return res.status(200).json({
