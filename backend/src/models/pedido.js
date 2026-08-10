@@ -43,7 +43,23 @@ const pedidoSchema =
   default: "",
 },
 
+documentoFiscal: {
 
+  type: String,
+
+  enum: [
+
+    "nenhum",
+
+    "nfce",
+
+    "nfe"
+
+  ],
+
+  default: "nfce"
+
+},
 
 
 
