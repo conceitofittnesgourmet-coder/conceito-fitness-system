@@ -17,11 +17,17 @@ exports.listarClientes = async (req, res) => {
       clientes,
     });
   } catch (error) {
-    return res.status(500).json({
-      success: false,
-      message: error.message,
-    });
-  }
+
+  console.error("========== ERRO AO CRIAR CLIENTE ==========");
+  console.error(error);
+  console.error("BODY RECEBIDO:");
+  console.dir(req.body, { depth: null });
+
+  return res.status(500).json({
+    success: false,
+    message: error.message,
+  });
+}
 };
 
 exports.criarCliente = async (req, res) => {
@@ -121,11 +127,17 @@ exports.criarCliente = async (req, res) => {
       });
     }
 
+    let nomeCliente = nome;
+
+if (tipoPessoa === "juridica") {
+    nomeCliente = razaoSocial;
+}
+
     const cliente = await Cliente.create({
 
   tipoPessoa: tipoPessoa || "fisica",
 
-  nome,
+  nome: nomeCliente,
 
   razaoSocial,
 
