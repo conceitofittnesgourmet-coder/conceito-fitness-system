@@ -72,7 +72,21 @@ exports.buscarPedido = async (req, res) => {
 // CRIAR
 exports.criarPedido = async (req, res) => {
   try {
-   const { cliente, telefone, cpfNota, produtos, total } = req.body || {};
+   const {
+
+    cliente,
+
+    telefone,
+
+    cpfNota,
+
+    documentoFiscal,
+
+    produtos,
+
+    total
+
+} = req.body || {};
 
 const pagamentosRecebidos = Array.isArray(req.body.pagamentos)
   ? req.body.pagamentos
@@ -242,6 +256,10 @@ if (Math.abs(totalPagamentos - totalSeguro) > 0.01) {
   telefone: telefone || "",
 
   cpfNota: cpfNota || "",
+
+  documentoFiscal:
+
+    documentoFiscal || "nfce",
 
   produtos: produtosSnapshot,
 
@@ -466,7 +484,9 @@ if (global.io) {
 // ===============================
 let nfceAutomatica = null;
 
-try {
+if (pedidoCriado.documentoFiscal === "nfce") {
+
+    try {
   const nfceExistente = await Nfce.findOne({
     pedido: pedidoCriado._id,
   });
@@ -484,6 +504,8 @@ try {
     "ERRO NFC-E AUTOMATICA:",
     nfceError.message
   );
+}
+
 }
 
 return res.status(201).json({
