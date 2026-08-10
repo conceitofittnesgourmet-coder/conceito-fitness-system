@@ -18,6 +18,8 @@ export default function ClienteFormPF({
 
     }
 
+    console.log("ClienteFormPF renderizado");
+
     return(
 
         <div className="cliente-form-grid">
