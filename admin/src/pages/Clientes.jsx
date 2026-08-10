@@ -2,6 +2,17 @@ import { useEffect, useMemo, useState } from "react";
 import api from "../services/api";
 import socket from "../services/socket";
 import AdminLayout from "../layouts/AdminLayout";
+import {
+
+  ClienteFormPF,
+
+  ClienteFormPJ,
+
+  ClienteEndereco,
+
+  ClienteFiscal
+
+} from "../components/Clientes";
 
 import {
   FaUsers,
@@ -26,12 +37,41 @@ function Clientes() {
   const [clienteSelecionado, setClienteSelecionado] = useState(null);
 
   const [novoCliente, setNovoCliente] = useState({
-    nome: "",
-    email: "",
-    telefone: "",
+  tipoPessoa: "fisica",
+
+  nome: "",
+
+  razaoSocial: "",
+  nomeFantasia: "",
+
+  cpf: "",
+  cnpj: "",
+
+  inscricaoEstadual: "",
+  inscricaoMunicipal: "",
+
+  indicadorIe: 9,
+
+  telefone: "",
+  whatsapp: "",
+
+  email: "",
+
+  clube: "Básico",
+
+  endereco: {
+    cep: "",
+    logradouro: "",
+    numero: "",
+    complemento: "",
+    bairro: "",
     cidade: "",
-    clube: "Básico",
-  });
+    uf: "",
+    codigoMunicipioIbge: "",
+  },
+
+  observacaoFiscal: "",
+});
 
   async function carregarPedidos() {
     try {
@@ -155,31 +195,137 @@ async function carregarClientes() {
   async function cadastrarCliente() {
     
   try {
-    if (
-      !novoCliente.nome ||
-      !novoCliente.telefone
-    ) {
-      alert(
-        "Preencha nome e telefone"
-      );
-      return;
-    }
+   if (novoCliente.tipoPessoa === "fisica") {
+
+  if (
+
+    !novoCliente.nome ||
+
+    !novoCliente.cpf ||
+
+    !novoCliente.telefone
+
+  ) {
+
+    alert(
+
+      "Preencha Nome, CPF e Telefone."
+
+    );
+
+    return;
+
+  }
+
+} else {
+
+  if (
+
+    !novoCliente.razaoSocial ||
+
+    !novoCliente.cnpj ||
+
+    !novoCliente.telefone
+
+  ) {
+
+    alert(
+
+      "Preencha Razão Social, CNPJ e Telefone."
+
+    );
+
+    return;
+
+  }
+
+}
 
     await api.post("/clientes", {
-      nome: novoCliente.nome,
-      email: novoCliente.email,
-      telefone: novoCliente.telefone,
-      cidade: novoCliente.cidade,
-      clube: novoCliente.clube,
-    });
 
-    setNovoCliente({
-      nome: "",
-      email: "",
-      telefone: "",
-      cidade: "",
-      clube: "Básico",
-    });
+  tipoPessoa: novoCliente.tipoPessoa,
+
+  nome: novoCliente.nome,
+
+  razaoSocial: novoCliente.razaoSocial,
+
+  nomeFantasia: novoCliente.nomeFantasia,
+
+  cpf: novoCliente.cpf,
+
+  cnpj: novoCliente.cnpj,
+
+  inscricaoEstadual: novoCliente.inscricaoEstadual,
+
+  inscricaoMunicipal: novoCliente.inscricaoMunicipal,
+
+  indicadorIe: novoCliente.indicadorIe,
+
+  telefone: novoCliente.telefone,
+
+  whatsapp: novoCliente.whatsapp,
+
+  email: novoCliente.email,
+
+  clube: novoCliente.clube,
+
+  endereco: novoCliente.endereco,
+
+  observacaoFiscal: novoCliente.observacaoFiscal
+
+});
+
+   setNovoCliente({
+
+  tipoPessoa: "fisica",
+
+  nome: "",
+
+  razaoSocial: "",
+
+  nomeFantasia: "",
+
+  cpf: "",
+
+  cnpj: "",
+
+  inscricaoEstadual: "",
+
+  inscricaoMunicipal: "",
+
+  indicadorIe: 9,
+
+  telefone: "",
+
+  whatsapp: "",
+
+  email: "",
+
+  clube: "Básico",
+
+  endereco: {
+
+    cep: "",
+
+    logradouro: "",
+
+    numero: "",
+
+    complemento: "",
+
+    bairro: "",
+
+    cidade: "",
+
+    uf: "",
+
+    codigoMunicipioIbge: "",
+
+  },
+
+  observacaoFiscal: ""
+
+});
 
     await carregarClientes();
 
@@ -267,44 +413,134 @@ async function carregarClientes() {
             <span>Cadastro rápido</span>
           </div>
 
-          <div className="cliente-form-grid">
-            <input
-              placeholder="Nome do cliente"
-              value={novoCliente.nome}
-              onChange={(e) => setNovoCliente({ ...novoCliente, nome: e.target.value })}
-            />
+          <div className="cliente-tipo">
 
-            <input
-              placeholder="E-mail"
-              value={novoCliente.email}
-              onChange={(e) => setNovoCliente({ ...novoCliente, email: e.target.value })}
-            />
+    <label>
 
-            <input
-              placeholder="Telefone / WhatsApp"
-              value={novoCliente.telefone}
-              onChange={(e) => setNovoCliente({ ...novoCliente, telefone: e.target.value })}
-            />
+        <input
+            type="radio"
+            checked={novoCliente.tipoPessoa === "fisica"}
+            onChange={() =>
+                setNovoCliente({
+                    ...novoCliente,
+                    tipoPessoa: "fisica"
+                })
+            }
+        />
 
-            <input
-              placeholder="Cidade / Endereço"
-              value={novoCliente.cidade}
-              onChange={(e) => setNovoCliente({ ...novoCliente, cidade: e.target.value })}
-            />
+        Pessoa Física
 
-            <select
-  value={novoCliente.clube}
-  onChange={(e) => setNovoCliente({ ...novoCliente, clube: e.target.value })}
->
-  <option>Básico</option>
-  <option>Prata</option>
-  <option>Ouro</option>
-  <option>Premium</option>
-  <option>Black</option>
-</select>
+    </label>
 
-            <button onClick={cadastrarCliente}>Cadastrar Cliente</button>
-          </div>
+    <label>
+
+        <input
+            type="radio"
+            checked={novoCliente.tipoPessoa === "juridica"}
+            onChange={() =>
+                setNovoCliente({
+                    ...novoCliente,
+                    tipoPessoa: "juridica"
+                })
+            }
+        />
+
+        Pessoa Jurídica
+
+    </label>
+
+</div>
+
+          <div className="cliente-tipo-selector">
+
+    <label>
+
+        <input
+            type="radio"
+            name="tipoPessoa"
+            checked={novoCliente.tipoPessoa === "fisica"}
+            onChange={() =>
+                setNovoCliente({
+                    ...novoCliente,
+                    tipoPessoa: "fisica"
+                })
+            }
+        />
+
+        Pessoa Física
+
+    </label>
+
+    <label>
+
+        <input
+            type="radio"
+            name="tipoPessoa"
+            checked={novoCliente.tipoPessoa === "juridica"}
+            onChange={() =>
+                setNovoCliente({
+                    ...novoCliente,
+                    tipoPessoa: "juridica"
+                })
+            }
+        />
+
+        Pessoa Jurídica
+
+    </label>
+
+</div>
+
+         <>
+
+    {
+
+        novoCliente.tipoPessoa === "fisica"
+
+            ? (
+
+                <ClienteFormPF
+
+                    novoCliente={novoCliente}
+
+                    setNovoCliente={setNovoCliente}
+
+                />
+
+            )
+
+            : (
+
+                <ClienteFormPJ
+
+                    novoCliente={novoCliente}
+
+                    setNovoCliente={setNovoCliente}
+
+                />
+
+            )
+
+    }
+
+    <ClienteEndereco
+
+        novoCliente={novoCliente}
+
+        setNovoCliente={setNovoCliente}
+
+    />
+
+    <ClienteFiscal
+
+        novoCliente={novoCliente}
+
+        setNovoCliente={setNovoCliente}
+
+    />
+
+</>
+
         </section>
 
         <section className="clientes-layout">
@@ -326,6 +562,7 @@ async function carregarClientes() {
 }`}
                   onClick={() => setClienteSelecionado(cliente)}
                 >
+                                    
                   <div className="cliente-avatar">
                     {cliente.nome?.charAt(0) || "C"}
                   </div>

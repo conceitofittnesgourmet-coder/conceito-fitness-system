@@ -26,14 +26,91 @@ exports.listarClientes = async (req, res) => {
 
 exports.criarCliente = async (req, res) => {
   try {
-    const { nome, telefone, email, cidade, aniversario } = req.body || {};
+    const {
 
-    if (!nome || !telefone) {
-      return res.status(400).json({
-        success: false,
-        message: "Nome e telefone são obrigatórios.",
-      });
-    }
+  tipoPessoa,
+
+  nome,
+
+  razaoSocial,
+
+  nomeFantasia,
+
+  cpf,
+
+  cnpj,
+
+  inscricaoEstadual,
+
+  inscricaoMunicipal,
+
+  indicadorIe,
+
+  telefone,
+
+  whatsapp,
+
+  email,
+
+  endereco,
+
+  observacaoFiscal,
+
+  cidade,
+
+  aniversario,
+
+  clube
+
+} = req.body || {};
+
+    if (tipoPessoa === "juridica") {
+
+  if (
+
+    !razaoSocial ||
+
+    !cnpj ||
+
+    !telefone
+
+  ) {
+
+    return res.status(400).json({
+
+      success: false,
+
+      message:
+
+        "Razão Social, CNPJ e telefone são obrigatórios.",
+
+    });
+
+  }
+
+} else {
+
+  if (
+
+    !nome ||
+
+    !telefone
+
+  ) {
+
+    return res.status(400).json({
+
+      success: false,
+
+      message:
+
+        "Nome e telefone são obrigatórios.",
+
+    });
+
+  }
+
+}
 
     const clienteExistente = await Cliente.findOne({ telefone });
 
@@ -45,13 +122,50 @@ exports.criarCliente = async (req, res) => {
     }
 
     const cliente = await Cliente.create({
-      nome,
-      telefone,
-      email: email || "",
-      cidade: cidade || "",
-      aniversario: aniversario || "",
-      origem: "manual",
-    });
+
+  tipoPessoa: tipoPessoa || "fisica",
+
+  nome,
+
+  razaoSocial,
+
+  nomeFantasia,
+
+  cpf,
+
+  cnpj,
+
+  inscricaoEstadual,
+
+  inscricaoMunicipal,
+
+  indicadorIe,
+
+  telefone,
+
+  whatsapp: whatsapp || telefone,
+
+  email: email || "",
+
+  endereco: endereco || {},
+
+  observacaoFiscal: observacaoFiscal || "",
+
+  cidade:
+
+    cidade ||
+
+    endereco?.cidade ||
+
+    "",
+
+  aniversario: aniversario || "",
+
+  clube: clube || "Básico",
+
+  origem: "manual",
+
+});
 
     return res.status(201).json({
       success: true,
