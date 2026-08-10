@@ -1,3 +1,5 @@
+import { consultarCEP } from "../../services/external";
+
 export default function ClienteEndereco({
 
     novoCliente,
@@ -24,29 +26,61 @@ export default function ClienteEndereco({
 
     }
 
+    async function buscarCEP(cep) {
+
+    try {
+
+        const endereco = await consultarCEP(cep);
+
+        setNovoCliente({
+
+            ...novoCliente,
+
+            endereco: {
+
+                ...novoCliente.endereco,
+
+                ...endereco
+
+            }
+
+        });
+
+    } catch (error) {
+
+        console.error(error);
+
+    }
+
+}
+
     return(
 
         <div className="cliente-form-grid">
 
             <input
 
-                placeholder="CEP"
+    placeholder="CEP"
 
-                value={novoCliente.endereco.cep}
+    value={novoCliente.endereco.cep}
 
-                onChange={(e)=>
+    onChange={(e) => {
 
-                    atualizar(
+        const valor = e.target.value;
 
-                        "cep",
+        atualizar("cep", valor);
 
-                        e.target.value
+        const cep = valor.replace(/\D/g, "");
 
-                    )
+        if (cep.length === 8) {
 
-                }
+            buscarCEP(cep);
 
-            />
+        }
+
+    }}
+
+/>
 
             <input
 
