@@ -412,45 +412,7 @@ async function carregarClientes() {
             </h2>
             <span>Cadastro rápido</span>
           </div>
-
-          <div className="cliente-tipo">
-
-    <label>
-
-        <input
-            type="radio"
-            checked={novoCliente.tipoPessoa === "fisica"}
-            onChange={() =>
-                setNovoCliente({
-                    ...novoCliente,
-                    tipoPessoa: "fisica"
-                })
-            }
-        />
-
-        Pessoa Física
-
-    </label>
-
-    <label>
-
-        <input
-            type="radio"
-            checked={novoCliente.tipoPessoa === "juridica"}
-            onChange={() =>
-                setNovoCliente({
-                    ...novoCliente,
-                    tipoPessoa: "juridica"
-                })
-            }
-        />
-
-        Pessoa Jurídica
-
-    </label>
-
-</div>
-
+         
           <div className="cliente-tipo-selector">
 
     <label>
@@ -540,6 +502,23 @@ async function carregarClientes() {
     />
 
 </>
+
+    <div
+    style={{
+        display: "flex",
+        justifyContent: "flex-end",
+        marginTop: 24,
+    }}
+>
+
+    <button
+        className="btn-primary"
+        onClick={cadastrarCliente}
+    >
+        Cadastrar Cliente
+    </button>
+
+</div>
 
         </section>
 
