@@ -257,9 +257,7 @@ if (Math.abs(totalPagamentos - totalSeguro) > 0.01) {
 
   cpfNota: cpfNota || "",
 
-  documentoFiscal:
-
-    documentoFiscal || "nfce",
+  documentoFiscal: "nfce",
 
   produtos: produtosSnapshot,
 
@@ -484,27 +482,44 @@ if (global.io) {
 // ===============================
 let nfceAutomatica = null;
 
-if (pedidoCriado.documentoFiscal === "nfce") {
+try {
 
-    try {
-  const nfceExistente = await Nfce.findOne({
-    pedido: pedidoCriado._id,
-  });
+    const nfceExistente = await Nfce.findOne({
+        pedido: pedidoCriado._id,
+    });
 
-  if (!nfceExistente) {
-    const nfceGerada = await gerarNfceDoPedido(pedidoCriado._id);
-    nfceAutomatica = await transmitirNfce(nfceGerada._id);
-  } else if (nfceExistente.status !== "autorizada") {
-    nfceAutomatica = await transmitirNfce(nfceExistente._id);
-  } else {
-    nfceAutomatica = nfceExistente;
-  }
+    if (!nfceExistente) {
+
+        const nfceGerada = await gerarNfceDoPedido(
+            pedidoCriado._id
+        );
+
+        nfceAutomatica =
+            await transmitirNfce(
+                nfceGerada._id
+            );
+
+    } else if (
+        nfceExistente.status !== "autorizada"
+    ) {
+
+        nfceAutomatica =
+            await transmitirNfce(
+                nfceExistente._id
+            );
+
+    } else {
+
+        nfceAutomatica = nfceExistente;
+
+    }
+
 } catch (nfceError) {
-  console.log(
-    "ERRO NFC-E AUTOMATICA:",
-    nfceError.message
-  );
-}
+
+    console.log(
+        "ERRO NFC-E:",
+        nfceError.message
+    );
 
 }
 

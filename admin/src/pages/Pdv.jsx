@@ -65,8 +65,7 @@ export default function Pdv() {
   const [mesa, setMesa] = useState("Balcão");
   const [cliente, setCliente] = useState("Cliente Balcão");
   const [telefone, setTelefone] = useState("");
-  const [cpfNota, setCpfNota] = useState("");
-  const [documentoFiscal, setDocumentoFiscal] = useState("nenhum");
+  const [cpfNota, setCpfNota] = useState("");  
   const [observacao, setObservacao] = useState("");
   const [clientes, setClientes] = useState([]);
   const [buscaCliente, setBuscaCliente] = useState("");
@@ -605,7 +604,7 @@ if (pagamentosFinalizados.some((p) => Number(p.valor || 0) <= 0)) {
 
       telefone,
       cpfNota,
-      documentoFiscal,
+      documentoFiscal: "nfce",
       tipo: tipoPedido,
 
 mesa:
@@ -723,9 +722,7 @@ total: totalPedido,
     setTelefone("");
 
     setCpfNota("");
-
-    setDocumentoFiscal("nenhum");
-
+    
     setObservacao("");
 
     setMesa("Balcão");
@@ -1069,27 +1066,6 @@ total: totalPedido,
 />
 
   <div className="pdv-documento-fiscal">
-
-    <label>Documento Fiscal</label>
-
-    <select
-        value={documentoFiscal}
-        onChange={(e) => setDocumentoFiscal(e.target.value)}
-    >
-
-        <option value="nenhum">
-            Não emitir
-        </option>
-
-        <option value="nfce">
-            NFC-e (Consumidor Final)
-        </option>
-
-        <option value="nfe">
-            NF-e (Empresa)
-        </option>
-
-    </select>
 
 </div>
 
