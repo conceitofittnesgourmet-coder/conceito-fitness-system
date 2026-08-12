@@ -3,17 +3,24 @@ const { validarCertificadoA1 } = require("../services/certificadoservice");
 
 exports.buscarConfiguracao = async (req, res) => {
   try {
-    const filtro = {};
 
-    if (req.usuario?.empresa) {
-      filtro.empresa = req.usuario.empresa;
-    }
+    if (!req.usuario?.empresa) {
+    return res.status(401).json({
+        success: false,
+        message: "Empresa não identificada."
+    });
+}
 
+    const filtro = {
+    empresa: req.usuario.empresa
+};
+
+    
     let config = await ConfiguracaoFiscal.findOne(filtro);
 
     if (!config) {
       config = await ConfiguracaoFiscal.create({
-        empresa: req.usuario?.empresa || null,
+        empresa: req.usuario.empresa,
       });
     }
 
@@ -33,12 +40,18 @@ exports.buscarConfiguracao = async (req, res) => {
 
 exports.salvarConfiguracao = async (req, res) => {
   try {
-    const filtro = {};
 
-    if (req.usuario?.empresa) {
-      filtro.empresa = req.usuario.empresa;
-    }
+    if (!req.usuario?.empresa) {
+    return res.status(401).json({
+        success: false,
+        message: "Empresa não identificada."
+    });
+}
 
+    const filtro = {
+    empresa: req.usuario.empresa
+};
+    
     const dados = {
       ambiente: req.body.ambiente || "homologacao",
       serieNfce: Number(req.body.serieNfce || 1),
@@ -51,7 +64,7 @@ exports.salvarConfiguracao = async (req, res) => {
       credenciadoNfce: Boolean(req.body.credenciadoNfce),
       credenciadoNfe: Boolean(req.body.credenciadoNfe),
       observacao: req.body.observacao || "",
-      empresa: req.usuario?.empresa || null,
+      empresa: req.usuario.empresa,
     };
 
     const config = await ConfiguracaoFiscal.findOneAndUpdate(

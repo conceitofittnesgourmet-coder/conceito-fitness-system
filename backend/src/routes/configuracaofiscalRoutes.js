@@ -1,10 +1,23 @@
-const express = require("express");
-const router = express.Router();
+const verifyToken = require("../middlewares/verifytoken");
+const empresa = require("../middlewares/empresa");
 
-const controller = require("../controllers/configuracaofiscalcontroller");
+router.get(
+    "/",
+    verifyToken,
+    empresa,
+    controller.buscarConfiguracao
+);
 
-router.get("/", controller.buscarConfiguracao);
-router.get("/status", controller.statusFiscal);
-router.put("/", controller.salvarConfiguracao);
+router.get(
+    "/status",
+    verifyToken,
+    empresa,
+    controller.statusFiscal
+);
 
-module.exports = router;
+router.put(
+    "/",
+    verifyToken,
+    empresa,
+    controller.salvarConfiguracao
+);
