@@ -580,13 +580,19 @@ exports.atualizarStatus = async (req, res) => {
           nfce = await gerarNfceDoPedido(pedido._id);
         }
       } catch (nfceError) {
-        erroFiscal = nfceError.message;
 
-        console.log(
-          "ERRO GERAR NFC-E AO FINALIZAR PEDIDO:",
-          nfceError
-        );
-      }
+    console.error("================================");
+    console.error("ERRO NFC-E AUTOMÁTICA");
+    console.error(nfceError);
+    console.error(nfceError.stack);
+
+    if (nfceError.response) {
+        console.error(nfceError.response.data);
+    }
+
+    console.error("================================");
+
+}
     }
 
     if (global.io) {
