@@ -30,49 +30,43 @@ import {
   FaPlus,
 } from "react-icons/fa";
 
+const CLIENTE_INICIAL = {
+    tipoPessoa: "fisica",
+    nome: "",
+    razaoSocial: "",
+    nomeFantasia: "",
+    cpf: "",
+    cnpj: "",
+    telefone: "",
+    whatsapp: "",
+    email: "",
+    aniversario: "",
+    clube: "Básico",
+
+    inscricaoEstadual: "",
+    inscricaoMunicipal: "",
+    indicadorIe: 9,
+    observacaoFiscal: "",
+
+    endereco: {
+        cep: "",
+        logradouro: "",
+        numero: "",
+        complemento: "",
+        bairro: "",
+        cidade: "",
+        uf: "",
+        codigoMunicipioIbge: ""
+    }
+};
+
 function Clientes() {
   const [pedidos, setPedidos] = useState([]);
   const [clientesBanco, setClientesBanco] = useState([]);
   const [busca, setBusca] = useState("");
   const [clienteSelecionado, setClienteSelecionado] = useState(null);
-
-  const [novoCliente, setNovoCliente] = useState({
-  tipoPessoa: "fisica",
-
-  nome: "",
-
-  razaoSocial: "",
-  nomeFantasia: "",
-
-  cpf: "",
-  cnpj: "",
-
-  inscricaoEstadual: "",
-  inscricaoMunicipal: "",
-
-  indicadorIe: 9,
-
-  telefone: "",
-  whatsapp: "",
-
-  email: "",
-
-  clube: "Básico",
-
-  endereco: {
-    cep: "",
-    logradouro: "",
-    numero: "",
-    complemento: "",
-    bairro: "",
-    cidade: "",
-    uf: "",
-    codigoMunicipioIbge: "",
-  },
-
-  observacaoFiscal: "",
-});
-
+  const [novoCliente, setNovoCliente] = useState(CLIENTE_INICIAL);
+  
   async function carregarPedidos() {
     try {
       const response = await api.get("/pedidos");
@@ -153,15 +147,26 @@ async function carregarClientes() {
     }));
   }, [pedidos]);
 
-  const clientes = [...clientesPedidos, ...clientesBanco];
+  const mapa = new Map();
+
+clientesPedidos.forEach(c => mapa.set(c.telefone, c));
+
+clientesBanco.forEach(c => mapa.set(c.telefone, {
+    ...mapa.get(c.telefone),
+    ...c
+}));
+
+const clientes = [...mapa.values()];
   const clientesFiltrados = clientes.filter((cliente) => {
     const termo = busca.toLowerCase();
 
     return (
-      cliente.nome?.toLowerCase().includes(termo) ||
-      cliente.telefone?.toLowerCase().includes(termo) ||
-      cliente.email?.toLowerCase().includes(termo)
-    );
+    (
+        cliente.tipoPessoa === "juridica"
+            ? cliente.razaoSocial
+            : cliente.nome
+    )?.toLowerCase().includes(termo)
+);
   });
 
   const totalClientes = clientes.length;
@@ -241,97 +246,50 @@ async function carregarClientes() {
 
 }
 
-    await api.post("/clientes", {
-
+    const dados = {
   tipoPessoa: novoCliente.tipoPessoa,
-
   nome: novoCliente.nome,
-
   razaoSocial: novoCliente.razaoSocial,
-
   nomeFantasia: novoCliente.nomeFantasia,
-
   cpf: novoCliente.cpf,
-
   cnpj: novoCliente.cnpj,
-
   inscricaoEstadual: novoCliente.inscricaoEstadual,
-
   inscricaoMunicipal: novoCliente.inscricaoMunicipal,
-
   indicadorIe: novoCliente.indicadorIe,
-
   telefone: novoCliente.telefone,
-
   whatsapp: novoCliente.whatsapp,
-
   email: novoCliente.email,
-
   clube: novoCliente.clube,
-
   endereco: novoCliente.endereco,
-
   observacaoFiscal: novoCliente.observacaoFiscal
+};
 
-});
+if (clienteSelecionado?._id) {
 
-   setNovoCliente({
+    await api.put(
+        `/clientes/${clienteSelecionado._id}`,
+        dados
+    );
 
-  tipoPessoa: "fisica",
+} else {
 
-  nome: "",
+    await api.post(
+        "/clientes",
+        dados
+    );
 
-  razaoSocial: "",
+}
 
-  nomeFantasia: "",
+  setNovoCliente(CLIENTE_INICIAL);
 
-  cpf: "",
-
-  cnpj: "",
-
-  inscricaoEstadual: "",
-
-  inscricaoMunicipal: "",
-
-  indicadorIe: 9,
-
-  telefone: "",
-
-  whatsapp: "",
-
-  email: "",
-
-  clube: "Básico",
-
-  endereco: {
-
-    cep: "",
-
-    logradouro: "",
-
-    numero: "",
-
-    complemento: "",
-
-    bairro: "",
-
-    cidade: "",
-
-    uf: "",
-
-    codigoMunicipioIbge: "",
-
-  },
-
-  observacaoFiscal: ""
-
-});
-
+  setClienteSelecionado(null);
     await carregarClientes();
 
     alert(
-      "Cliente cadastrado com sucesso!"
-    );
+clienteSelecionado
+? "Cliente atualizado com sucesso!"
+: "Cliente cadastrado com sucesso!"
+);
   } catch (error) {
     console.log(error);
 
@@ -422,7 +380,7 @@ async function carregarClientes() {
             name="tipoPessoa"
             checked={novoCliente.tipoPessoa === "fisica"}
             onChange={() =>
-                setNovoCliente({
+                setNovoCliente({                
                     ...novoCliente,
                     tipoPessoa: "fisica"
                 })
@@ -515,7 +473,11 @@ async function carregarClientes() {
         className="btn-primary"
         onClick={cadastrarCliente}
     >
-        Cadastrar Cliente
+        {
+clienteSelecionado
+    ? "Salvar Alterações"
+    : "Cadastrar Cliente"
+}
     </button>
 
 </div>
@@ -539,15 +501,37 @@ async function carregarClientes() {
     ? "active"
     : ""
 }`}
-                  onClick={() => setClienteSelecionado(cliente)}
+                  onClick={() => {
+
+    setClienteSelecionado(cliente);
+
+    setNovoCliente({
+    ...CLIENTE_INICIAL,
+    ...cliente,
+    endereco: {
+        ...CLIENTE_INICIAL.endereco,
+        ...(cliente.endereco || {})
+    }
+});
+
+}}
                 >
                                     
                   <div className="cliente-avatar">
-                    {cliente.nome?.charAt(0) || "C"}
+                    {
+(cliente.tipoPessoa === "juridica"
+    ? cliente.razaoSocial
+    : cliente.nome
+)?.charAt(0) || "C"
+}
                   </div>
 
                   <div>
-                    <strong>{cliente.nome}</strong>
+                    <strong>
+    {cliente.tipoPessoa === "juridica"
+        ? cliente.razaoSocial
+        : cliente.nome}
+</strong>
                     <span>{cliente.email || cliente.telefone}</span>
                   </div>
 
@@ -571,11 +555,20 @@ async function carregarClientes() {
               <>
                 <div className="cliente-detalhes-header">
                   <div className="cliente-avatar grande">
-                    {clienteAtivo.nome?.charAt(0) || "C"}
+                    {
+(clienteAtivo.tipoPessoa === "juridica"
+    ? clienteAtivo.razaoSocial
+    : clienteAtivo.nome
+)?.charAt(0) || "C"
+}
                   </div>
 
                   <div>
-                    <h2>{clienteAtivo.nome}</h2>
+                    <h2>
+    {clienteAtivo.tipoPessoa === "juridica"
+        ? clienteAtivo.razaoSocial
+        : clienteAtivo.nome}
+</h2>
                     <span className="badge-ativo">Ativo</span>
                   </div>
 
@@ -610,7 +603,9 @@ async function carregarClientes() {
                   </p>
 
                   <p>
-                    <FaMapMarkerAlt /> {clienteAtivo.cidade || "Não informado"}
+                    <FaMapMarkerAlt /> {clienteAtivo.endereco?.cidade ||
+clienteAtivo.cidade ||
+"Não informado"}
                   </p>
 
                   <p>
