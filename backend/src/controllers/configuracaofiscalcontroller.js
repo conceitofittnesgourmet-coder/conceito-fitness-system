@@ -3,11 +3,18 @@ const { validarCertificadoA1 } = require("../services/certificadoservice");
 
 exports.buscarConfiguracao = async (req, res) => {
   try {
+
+    console.log("=== CONFIG FISCAL ===");
+    console.log("REQ.USUARIO:", req.usuario);
+    console.log("REQ.EMPRESA:", req.empresa);
     
    const filtro = {};
 
     
     let config = await ConfiguracaoFiscal.findOne(filtro);
+    
+    console.log("FILTRO:", filtro);
+    console.log("CONFIG ENCONTRADA:", config);
 
     if (!config) {
       config = await ConfiguracaoFiscal.create({});
