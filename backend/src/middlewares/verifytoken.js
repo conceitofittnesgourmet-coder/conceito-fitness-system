@@ -25,15 +25,16 @@ function verifyToken(
 
     try {
 
-        const decoded =
-            jwt.verify(
-                token,
-                process.env.JWT_SECRET
-            );
+        const decoded = jwt.verify(
+    token,
+    process.env.JWT_SECRET
+);
 
-        req.usuario = decoded;
+console.log("JWT DECODED:", decoded);
 
-        next();
+req.usuario = decoded;
+
+next();
 
     } catch (error) {
 
