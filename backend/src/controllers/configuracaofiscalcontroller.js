@@ -1,4 +1,5 @@
 const ConfiguracaoFiscal = require("../models/configuracaofiscal");
+const Empresa = require("../models/empresa");
 const { validarCertificadoA1 } = require("../services/certificadoservice");
 
 exports.buscarConfiguracao = async (req, res) => {
@@ -12,7 +13,24 @@ exports.buscarConfiguracao = async (req, res) => {
 
     
     let config = await ConfiguracaoFiscal.findOne(filtro);
-    
+
+    // Migra automaticamente a configuração antiga (empresa: null)
+// para a empresa cadastrada no sistema.
+if (!config) {
+  const empresa = await Empresa.findOne().lean();
+
+  const configLegada = await ConfiguracaoFiscal.findOne({
+    empresa: null,
+  });
+
+  if (empresa && configLegada) {
+    configLegada.empresa = empresa._id;
+    await configLegada.save();
+
+    config = configLegada;
+  }
+}
+
     console.log("FILTRO:", filtro);
     console.log("CONFIG ENCONTRADA:", config);
 
