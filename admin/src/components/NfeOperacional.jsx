@@ -31,6 +31,7 @@ function dinheiro(valor) {
 
 function NfeOperacional() {
   const [pedidos, setPedidos] = useState([]);
+  const [clientes, setClientes] = useState([]);
   const [nfes, setNfes] = useState([]);
   const [diagnostico, setDiagnostico] = useState(null);
   const [pedidoId, setPedidoId] = useState("");
@@ -47,22 +48,31 @@ function NfeOperacional() {
   );
 
   async function carregar() {
-    const resultados = await Promise.allSettled([
-      api.get("/pedidos"),
-      api.get("/nfe"),
-      api.get("/nfe/diagnostico/status"),
-    ]);
+  const resultados = await Promise.allSettled([
+    api.get("/pedidos"),
+    api.get("/clientes"),
+    api.get("/nfe"),
+    api.get("/nfe/diagnostico/status"),
+  ]);
 
-    if (resultados[0].status === "fulfilled") {
-      setPedidos(resultados[0].value.data.pedidos || []);
-    }
-    if (resultados[1].status === "fulfilled") {
-      setNfes(resultados[1].value.data.nfes || []);
-    }
-    if (resultados[2].status === "fulfilled") {
-      setDiagnostico(resultados[2].value.data.diagnostico || null);
-    }
+  if (resultados[0].status === "fulfilled") {
+    setPedidos(resultados[0].value.data.pedidos || []);
   }
+
+  if (resultados[1].status === "fulfilled") {
+    setClientes(resultados[1].value.data.clientes || []);
+  }
+
+  if (resultados[2].status === "fulfilled") {
+    setNfes(resultados[2].value.data.nfes || []);
+  }
+
+  if (resultados[3].status === "fulfilled") {
+    setDiagnostico(
+      resultados[3].value.data.diagnostico || null
+    );
+  }
+}
 
   useEffect(() => {
     carregar();
@@ -85,6 +95,112 @@ function NfeOperacional() {
     }));
   }
 
+  function selecionarPedido(id) {
+  setPedidoId(id);
+  invalidarValidacao();
+
+  if (!id) {
+    setDestinatario(destinatarioVazio);
+    return;
+  }
+
+  const pedido = pedidos.find(
+    (item) => item._id === id
+  );
+
+  if (!pedido) {
+    return;
+  }
+
+  const normalizar = (texto) =>
+    String(texto || "")
+      .trim()
+      .toLowerCase()
+      .replace(/\s+/g, " ");
+
+  const nomePedido = normalizar(pedido.cliente);
+
+  const cliente = clientes.find((item) => {
+    return (
+      normalizar(item.nome) === nomePedido ||
+      normalizar(item.razaoSocial) === nomePedido ||
+      normalizar(item.nomeFantasia) === nomePedido
+    );
+  });
+
+  if (!cliente) {
+    setDestinatario(destinatarioVazio);
+    return;
+  }
+
+  setDestinatario({
+    tipoPessoa: cliente.tipoPessoa || "juridica",
+
+    nomeRazaoSocial:
+      cliente.razaoSocial ||
+      cliente.nome ||
+      "",
+
+    nomeFantasia:
+      cliente.nomeFantasia ||
+      "",
+
+    cnpj:
+      cliente.cnpj ||
+      "",
+
+    inscricaoEstadual:
+      cliente.inscricaoEstadual ||
+      "",
+
+    indicadorIe:
+      Number(cliente.indicadorIe || 9),
+
+    email:
+      cliente.email ||
+      "",
+
+    telefone:
+      cliente.telefone ||
+      cliente.whatsapp ||
+      "",
+
+    endereco: {
+      cep:
+        cliente.endereco?.cep ||
+        "",
+
+      logradouro:
+        cliente.endereco?.logradouro ||
+        "",
+
+      numero:
+        cliente.endereco?.numero ||
+        "",
+
+      complemento:
+        cliente.endereco?.complemento ||
+        "",
+
+      bairro:
+        cliente.endereco?.bairro ||
+        "",
+
+      cidade:
+        cliente.endereco?.cidade ||
+        cliente.cidade ||
+        "",
+
+      codigoMunicipioIbge:
+        cliente.endereco?.codigoMunicipioIbge ||
+        "",
+
+      uf:
+        cliente.endereco?.uf ||
+        "PR",
+    },
+  });
+}
 
   async function validarNfe() {
     if (!pedidoId) {
@@ -233,7 +349,10 @@ function NfeOperacional() {
       <div className="nfe-form-grid">
         <label className="nfe-campo nfe-campo-largo">
           <span>Pedido</span>
-          <select value={pedidoId} onChange={(e) => { setPedidoId(e.target.value); invalidarValidacao(); }}>
+          <select
+  value={pedidoId}
+  onChange={(e) => selecionarPedido(e.target.value)}
+>
             <option value="">Selecione um pedido</option>
             {pedidos.map((pedido) => (
               <option key={pedido._id} value={pedido._id}>
