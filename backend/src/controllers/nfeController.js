@@ -15,13 +15,14 @@ function obterEmpresaId(req) {
   return (
     req.body?.empresaId ||
     req.query?.empresaId ||
+    req.usuario?.empresa ||
+    req.admin?.empresa ||
     req.user?.empresa ||
     req.empresa?._id ||
     req.empresaId ||
     null
   );
 }
-
 
 exports.diagnostico = async (req, res) => {
   try {
