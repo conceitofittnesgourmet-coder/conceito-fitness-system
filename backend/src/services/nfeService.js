@@ -86,14 +86,108 @@ function destinatarioDoPedido(pedido, informado={}) {
   };
 }
 
-function itensDoPedido(pedido, ufEmitente, ufDestinatario) {
-  if (!pedido.produtos?.length) throw new Error("Pedido sem produtos.");
-  return pedido.produtos.map((p,idx)=>{
-    const f=p.dadosFiscais || {};
-    const q=num(p.quantidade); const vu=num(p.precoUnitario ?? p.preco); const vp=r2(p.subtotal || q*vu);
-    const ncm=nums(f.ncm); if (!ncm) throw new Error(`NCM não cadastrado no item ${idx+1}: ${p.nome}.`);
-    const cfop=nums(ufEmitente === ufDestinatario ? f.cfopInterno : f.cfopInterestadual); if (!cfop) throw new Error(`CFOP não cadastrado no item ${idx+1}: ${p.nome}.`);
-    return { produto:p.produtoId || null, codigo:p.sku || p.codigoBarras || String(idx+1), descricao:p.nome, ncm, cest:nums(f.cest), cfop, unidadeComercial:f.unidadeComercial || p.unidadeMedida || "UN", quantidadeComercial:q, valorUnitarioComercial:vu, valorProduto:vp, unidadeTributavel:f.unidadeTributavel || p.unidadeMedida || "UN", quantidadeTributavel:q, valorUnitarioTributavel:vu, gtin:f.gtin || p.codigoBarras || "SEM GTIN", gtinTributavel:f.gtinTributavel || f.gtin || p.codigoBarras || "SEM GTIN", origem:f.origemMercadoria || "0", csosn:f.csosn || "102", cstIcms:f.cstIcms || "", aliquotaIcms:num(f.aliquotaIcms), valorIcms:0, cstPis:f.cstPis || "99", aliquotaPis:num(f.aliquotaPis), valorPis:0, cstCofins:f.cstCofins || "99", aliquotaCofins:num(f.aliquotaCofins), valorCofins:0, cstIpi:f.cstIpi || "", aliquotaIpi:num(f.aliquotaIpi), valorIpi:0, codigoBeneficioFiscal:f.codigoBeneficioFiscal || "" };
+
+  function itensDoPedido(pedido, ufEmitente, ufDestinatario, crt = 1) {
+  const usaCsosn = [1, 4].includes(Number(crt));
+
+  if (!pedido.produtos?.length) {
+    throw new Error("Pedido sem produtos.");
+  }
+
+  return pedido.produtos.map((p, idx) => {
+    const f = p.dadosFiscais || {};
+
+    const q = num(p.quantidade);
+    const vu = num(p.precoUnitario ?? p.preco);
+    const vp = r2(p.subtotal || q * vu);
+
+    const ncm = nums(f.ncm);
+
+    if (!ncm) {
+      throw new Error(
+        `NCM não cadastrado no item ${idx + 1}: ${p.nome}.`
+      );
+    }
+
+    const cfop = nums(
+      ufEmitente === ufDestinatario
+        ? f.cfopInterno
+        : f.cfopInterestadual
+    );
+
+    if (!cfop) {
+      throw new Error(
+        `CFOP não cadastrado no item ${idx + 1}: ${p.nome}.`
+      );
+    }
+
+    return {
+      produto: p.produtoId || null,
+      codigo: p.sku || p.codigoBarras || String(idx + 1),
+      descricao: p.nome,
+
+      ncm,
+      cest: nums(f.cest),
+      cfop,
+
+      unidadeComercial:
+        f.unidadeComercial ||
+        p.unidadeMedida ||
+        "UN",
+
+      quantidadeComercial: q,
+      valorUnitarioComercial: vu,
+      valorProduto: vp,
+
+      unidadeTributavel:
+        f.unidadeTributavel ||
+        p.unidadeMedida ||
+        "UN",
+
+      quantidadeTributavel: q,
+      valorUnitarioTributavel: vu,
+
+      gtin:
+        f.gtin ||
+        p.codigoBarras ||
+        "SEM GTIN",
+
+      gtinTributavel:
+        f.gtinTributavel ||
+        f.gtin ||
+        p.codigoBarras ||
+        "SEM GTIN",
+
+      origem: f.origemMercadoria || "0",
+
+      // Simples Nacional
+      csosn: usaCsosn
+        ? (f.csosn || "102")
+        : "",
+
+      // Regime Normal
+      cstIcms: usaCsosn
+        ? ""
+        : (f.cstIcms || "00"),
+
+      aliquotaIcms: num(f.aliquotaIcms),
+      valorIcms: 0,
+
+      cstPis: f.cstPis || "99",
+      aliquotaPis: num(f.aliquotaPis),
+      valorPis: 0,
+
+      cstCofins: f.cstCofins || "99",
+      aliquotaCofins: num(f.aliquotaCofins),
+      valorCofins: 0,
+
+      cstIpi: f.cstIpi || "",
+      aliquotaIpi: num(f.aliquotaIpi),
+      valorIpi: 0,
+
+      codigoBeneficioFiscal:
+        f.codigoBeneficioFiscal || "",
+    };
   });
 }
 
@@ -140,7 +234,12 @@ empresaId = empresa._id;
 
   const destinatario = destinatarioDoPedido(pedido, dados.destinatario || {});
   const ufEmitente = estadoEmpresa(empresa);
-  const itens = itensDoPedido(pedido, ufEmitente, destinatario.endereco.uf);
+const itens = itensDoPedido(
+  pedido,
+  ufEmitente,
+  destinatario.endereco.uf,
+  empresa.crt || empresa.regimeTributarioCodigo || 1
+);
   const resumoTotais = totais(itens, {
     ...dados,
     valorDesconto: dados.valorDesconto ?? pedido.desconto ?? 0,
