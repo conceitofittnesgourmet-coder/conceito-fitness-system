@@ -15,7 +15,7 @@ function montarXmlIdentificacao({
   destinoOperacao = 1,
   consumidorFinal = 1,
   indicadorPresenca = 1,
-  versaoProcesso = "ConceitoFitERP-1.0",
+  versaoProcesso = "ConceitoFitERP1.0",
 }) {
   if (!identificacaoFiscal?.chaveDados) {
     throw new Error("Identificação fiscal não informada para montagem do XML.");
