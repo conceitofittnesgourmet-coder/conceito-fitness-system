@@ -36,13 +36,42 @@ function validarEndereco(end, rotulo) {
   if (faltantes.length) throw new Error(`${rotulo}: faltam ${faltantes.join(", ")}.`);
 }
 
-function montarImposto(item) {
-  const icms = item.csosn
-    ? `<ICMSSN102><orig>${esc(item.origem || "0")}</orig><CSOSN>${esc(item.csosn)}</CSOSN></ICMSSN102>`
-    : `<ICMS00><orig>${esc(item.origem || "0")}</orig><CST>${esc(item.cstIcms || "00")}</CST><modBC>3</modBC><vBC>${n2(item.valorProduto)}</vBC><pICMS>${n2(item.aliquotaIcms)}</pICMS><vICMS>${n2(item.valorIcms)}</vICMS></ICMS00>`;
-  const pis = `<PISOutr><CST>${esc(item.cstPis || "99")}</CST><vBC>${n2(item.valorProduto)}</vBC><pPIS>${n4(item.aliquotaPis)}</pPIS><vPIS>${n2(item.valorPis)}</vPIS></PISOutr>`;
-  const cofins = `<COFINSOutr><CST>${esc(item.cstCofins || "99")}</CST><vBC>${n2(item.valorProduto)}</vBC><pCOFINS>${n4(item.aliquotaCofins)}</pCOFINS><vCOFINS>${n2(item.valorCofins)}</vCOFINS></COFINSOutr>`;
-  return `<imposto><ICMS>${icms}</ICMS><PIS>${pis}</PIS><COFINS>${cofins}</COFINS></imposto>`;
+function montarImposto(item, crt = 1) {
+  const usaCsosn = [1, 4].includes(Number(crt));
+
+  const icms = usaCsosn
+    ? `<ICMSSN102>
+        <orig>${esc(item.origem || "0")}</orig>
+        <CSOSN>${esc(item.csosn || "102")}</CSOSN>
+      </ICMSSN102>`
+    : `<ICMS00>
+        <orig>${esc(item.origem || "0")}</orig>
+        <CST>${esc(item.cstIcms || "00")}</CST>
+        <modBC>3</modBC>
+        <vBC>${n2(item.valorProduto)}</vBC>
+        <pICMS>${n2(item.aliquotaIcms)}</pICMS>
+        <vICMS>${n2(item.valorIcms)}</vICMS>
+      </ICMS00>`;
+
+  const pis = `<PISOutr>
+    <CST>${esc(item.cstPis || "99")}</CST>
+    <vBC>${n2(item.valorProduto)}</vBC>
+    <pPIS>${n4(item.aliquotaPis)}</pPIS>
+    <vPIS>${n2(item.valorPis)}</vPIS>
+  </PISOutr>`;
+
+  const cofins = `<COFINSOutr>
+    <CST>${esc(item.cstCofins || "99")}</CST>
+    <vBC>${n2(item.valorProduto)}</vBC>
+    <pCOFINS>${n4(item.aliquotaCofins)}</pCOFINS>
+    <vCOFINS>${n2(item.valorCofins)}</vCOFINS>
+  </COFINSOutr>`;
+
+  return `<imposto>
+    <ICMS>${icms}</ICMS>
+    <PIS>${pis}</PIS>
+    <COFINS>${cofins}</COFINS>
+  </imposto>`;
 }
 
 function gerarXmlNfe({ nfe, empresa }) {
@@ -67,7 +96,10 @@ function gerarXmlNfe({ nfe, empresa }) {
   const indIEDest = Number(dest.indicadorIe || 9);
   const ieDest = dest.inscricaoEstadual ? `<IE>${somenteNumeros(dest.inscricaoEstadual)}</IE>` : "";
 
-  const itensXml = nfe.itens.map((item, i) => `<det nItem="${i+1}"><prod><cProd>${esc(item.codigo || i+1)}</cProd><cEAN>${esc(item.gtin || "SEM GTIN")}</cEAN><xProd>${esc(item.descricao)}</xProd><NCM>${somenteNumeros(item.ncm)}</NCM>${item.cest ? `<CEST>${somenteNumeros(item.cest)}</CEST>` : ""}<CFOP>${somenteNumeros(item.cfop)}</CFOP><uCom>${esc(item.unidadeComercial || "UN")}</uCom><qCom>${n4(item.quantidadeComercial)}</qCom><vUnCom>${n4(item.valorUnitarioComercial)}</vUnCom><vProd>${n2(item.valorProduto)}</vProd><cEANTrib>${esc(item.gtinTributavel || "SEM GTIN")}</cEANTrib><uTrib>${esc(item.unidadeTributavel || "UN")}</uTrib><qTrib>${n4(item.quantidadeTributavel)}</qTrib><vUnTrib>${n4(item.valorUnitarioTributavel)}</vUnTrib><indTot>1</indTot></prod>${montarImposto(item)}</det>`).join("");
+  const itensXml = nfe.itens.map((item, i) => `<det nItem="${i+1}"><prod><cProd>${esc(item.codigo || i+1)}</cProd><cEAN>${esc(item.gtin || "SEM GTIN")}</cEAN><xProd>${esc(item.descricao)}</xProd><NCM>${somenteNumeros(item.ncm)}</NCM>${item.cest ? `<CEST>${somenteNumeros(item.cest)}</CEST>` : ""}<CFOP>${somenteNumeros(item.cfop)}</CFOP><uCom>${esc(item.unidadeComercial || "UN")}</uCom><qCom>${n4(item.quantidadeComercial)}</qCom><vUnCom>${n4(item.valorUnitarioComercial)}</vUnCom><vProd>${n2(item.valorProduto)}</vProd><cEANTrib>${esc(item.gtinTributavel || "SEM GTIN")}</cEANTrib><uTrib>${esc(item.unidadeTributavel || "UN")}</uTrib><qTrib>${n4(item.quantidadeTributavel)}</qTrib><vUnTrib>${n4(item.valorUnitarioTributavel)}</vUnTrib><indTot>1</indTot></prod>${montarImposto(
+  item,
+  Number(empresa.crt || empresa.regimeTributarioCodigo || 1)
+)}</det>`).join("");
 
   const t=nfe.totais;
   const xml=`<?xml version="1.0" encoding="UTF-8"?><NFe xmlns="http://www.portalfiscal.inf.br/nfe"><infNFe Id="${id}" versao="4.00"><ide><cUF>41</cUF><cNF>${cNF}</cNF><natOp>${esc(nfe.naturezaOperacao || "Venda de mercadoria")}</natOp><mod>55</mod><serie>${nfe.serie}</serie><nNF>${nfe.numero}</nNF><dhEmi>${dhEmi}</dhEmi><tpNF>1</tpNF><idDest>${nfe.destinoOperacao || 1}</idDest><cMunFG>${esc(endEmit.codigoMunicipioIbge || endEmit.codigoIbge)}</cMunFG><tpImp>1</tpImp><tpEmis>1</tpEmis><cDV>${chave.slice(-1)}</cDV><tpAmb>${nfe.ambiente === "producao" ? 1 : 2}</tpAmb><finNFe>${nfe.finalidade || 1}</finNFe><indFinal>${nfe.consumidorFinal ? 1 : 0}</indFinal>
