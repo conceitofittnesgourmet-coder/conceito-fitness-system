@@ -48,8 +48,9 @@ function montarXmlIdentificacao({
     <tpAmb>${identificacaoFiscal.tpAmb}</tpAmb>
     <finNFe>1</finNFe>
     <indFinal>${consumidorFinal}</indFinal>
-    <indPres>${indicadorPresenca}</indPres>
-    <procEmi>0</procEmi>
+<indPres>${indicadorPresenca}</indPres>
+<indIntermed>0</indIntermed>
+<procEmi>0</procEmi>
     <verProc>${escapeXml(versaoProcesso)}</verProc>
   </ide>`;
 }
