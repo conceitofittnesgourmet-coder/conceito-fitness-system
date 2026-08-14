@@ -117,11 +117,21 @@ async function prevalidarNfeDoPedido(dados) {
   if (!pedido) throw new Error("Pedido não encontrado.");
   if (pedido.status === "cancelado") throw new Error("Não é permitido emitir NF-e para pedido cancelado.");
 
-  const empresaId = dados.empresaId || pedido.empresa;
-  if (!empresaId) throw new Error("Empresa emissora não identificada no pedido nem na requisição.");
+  let empresaId = dados.empresaId || pedido.empresa;
 
-  const empresa = await Empresa.findById(empresaId);
-  if (!empresa) throw new Error("Empresa emissora não encontrada.");
+let empresa;
+
+if (empresaId) {
+  empresa = await Empresa.findById(empresaId);
+} else {
+  empresa = await Empresa.findOne();
+}
+
+if (!empresa) {
+  throw new Error("Empresa emissora não encontrada. Cadastre os dados da empresa antes de emitir a NF-e.");
+}
+
+empresaId = empresa._id;
 
   const existente = await Nfe.findOne({ empresa: empresaId, pedido: pedido._id });
   if (existente && !["rejeitada", "erro"].includes(existente.status)) {
@@ -190,9 +200,23 @@ async function gerarNfeDoPedido(dados) {
   const pedido=await Pedido.findById(dados.pedidoId);
   if (!pedido) throw new Error("Pedido não encontrado.");
   if (pedido.status === "cancelado") throw new Error("Não é permitido emitir NF-e para pedido cancelado.");
-  const empresaId=dados.empresaId || pedido.empresa;
-  if (!empresaId) throw new Error("Empresa emissora não identificada no pedido nem na requisição.");
-  const empresa=await Empresa.findById(empresaId); if (!empresa) throw new Error("Empresa emissora não encontrada.");
+  let empresaId = dados.empresaId || pedido.empresa;
+
+let empresa;
+
+if (empresaId) {
+  empresa = await Empresa.findById(empresaId);
+} else {
+  empresa = await Empresa.findOne();
+}
+
+if (!empresa) {
+  throw new Error("Empresa emissora não encontrada. Cadastre os dados da empresa antes de emitir a NF-e.");
+}
+
+empresaId = empresa._id;
+
+if (!empresa) throw new Error("Empresa emissora não encontrada.");
   const existente=await Nfe.findOne({ empresa:empresaId, pedido:pedido._id }); if (existente) throw new Error("Já existe uma NF-e vinculada a este pedido.");
   const dest=destinatarioDoPedido(pedido,dados.destinatario || {});
   const itens=itensDoPedido(pedido,estadoEmpresa(empresa),dest.endereco.uf);
