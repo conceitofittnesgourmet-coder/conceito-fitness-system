@@ -160,6 +160,10 @@ function destinatarioDoPedido(pedido, informado={}) {
 
       origem: f.origemMercadoria || "0",
 
+      // Reforma Tributária - IBS/CBS
+cstIbsCbs: f.cstIbsCbs || "000",
+cClassTrib: f.cClassTrib || "",
+
       // Simples Nacional
       csosn: usaCsosn
         ? (f.csosn || "102")
@@ -234,10 +238,10 @@ empresaId = empresa._id;
 
   const destinatario = destinatarioDoPedido(pedido, dados.destinatario || {});
   const ufEmitente = estadoEmpresa(empresa);
-const itens = itensDoPedido(
+  const itens = itensDoPedido(
   pedido,
-  ufEmitente,
-  destinatario.endereco.uf,
+  estadoEmpresa(empresa),
+  dest.endereco.uf,
   empresa.crt || empresa.regimeTributarioCodigo || 1
 );
   const resumoTotais = totais(itens, {
@@ -317,9 +321,22 @@ empresaId = empresa._id;
 
 if (!empresa) throw new Error("Empresa emissora não encontrada.");
   const existente=await Nfe.findOne({ empresa:empresaId, pedido:pedido._id }); if (existente) throw new Error("Já existe uma NF-e vinculada a este pedido.");
-  const dest=destinatarioDoPedido(pedido,dados.destinatario || {});
-  const itens=itensDoPedido(pedido,estadoEmpresa(empresa),dest.endereco.uf);
-  const t=totais(itens,{ ...dados, valorDesconto:dados.valorDesconto ?? pedido.desconto ?? 0 });
+  const dest = destinatarioDoPedido(
+  pedido,
+  dados.destinatario || {}
+);
+
+const itens = itensDoPedido(
+  pedido,
+  estadoEmpresa(empresa),
+  dest.endereco.uf,
+  empresa.crt || empresa.regimeTributarioCodigo || 1
+);
+
+const t = totais(itens, {
+  ...dados,
+  valorDesconto: dados.valorDesconto ?? pedido.desconto ?? 0
+});
 
   // Valida todos os dados antes de reservar numeração, criar a NF-e e gerar o XML.
   // Assim, erros de CPF/CNPJ, endereço, produtos ou certificado não consomem número fiscal.

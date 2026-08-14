@@ -53,19 +53,53 @@ function montarImposto(item, crt = 1) {
         <vICMS>${n2(item.valorIcms)}</vICMS>
       </ICMS00>`;
 
-  const pis = `<PISOutr>
-    <CST>${esc(item.cstPis || "99")}</CST>
-    <vBC>${n2(item.valorProduto)}</vBC>
-    <pPIS>${n4(item.aliquotaPis)}</pPIS>
-    <vPIS>${n2(item.valorPis)}</vPIS>
-  </PISOutr>`;
+  let pis;
 
-  const cofins = `<COFINSOutr>
-    <CST>${esc(item.cstCofins || "99")}</CST>
-    <vBC>${n2(item.valorProduto)}</vBC>
-    <pCOFINS>${n4(item.aliquotaCofins)}</pCOFINS>
-    <vCOFINS>${n2(item.valorCofins)}</vCOFINS>
-  </COFINSOutr>`;
+  const cstPis = String(item.cstPis || "99");
+
+  if (["04", "05", "06", "07", "08", "09"].includes(cstPis)) {
+    pis = `<PISNT>
+      <CST>${esc(cstPis)}</CST>
+    </PISNT>`;
+  } else if (["01", "02"].includes(cstPis)) {
+    pis = `<PISAliq>
+      <CST>${esc(cstPis)}</CST>
+      <vBC>${n2(item.valorProduto)}</vBC>
+      <pPIS>${n4(item.aliquotaPis)}</pPIS>
+      <vPIS>${n2(item.valorPis)}</vPIS>
+    </PISAliq>`;
+  } else {
+    pis = `<PISOutr>
+      <CST>${esc(cstPis)}</CST>
+      <vBC>${n2(item.valorProduto)}</vBC>
+      <pPIS>${n4(item.aliquotaPis)}</pPIS>
+      <vPIS>${n2(item.valorPis)}</vPIS>
+    </PISOutr>`;
+  }
+
+  let cofins;
+
+  const cstCofins = String(item.cstCofins || "99");
+
+  if (["04", "05", "06", "07", "08", "09"].includes(cstCofins)) {
+    cofins = `<COFINSNT>
+      <CST>${esc(cstCofins)}</CST>
+    </COFINSNT>`;
+  } else if (["01", "02"].includes(cstCofins)) {
+    cofins = `<COFINSAliq>
+      <CST>${esc(cstCofins)}</CST>
+      <vBC>${n2(item.valorProduto)}</vBC>
+      <pCOFINS>${n4(item.aliquotaCofins)}</pCOFINS>
+      <vCOFINS>${n2(item.valorCofins)}</vCOFINS>
+    </COFINSAliq>`;
+  } else {
+    cofins = `<COFINSOutr>
+      <CST>${esc(cstCofins)}</CST>
+      <vBC>${n2(item.valorProduto)}</vBC>
+      <pCOFINS>${n4(item.aliquotaCofins)}</pCOFINS>
+      <vCOFINS>${n2(item.valorCofins)}</vCOFINS>
+    </COFINSOutr>`;
+  }
 
   return `<imposto>
     <ICMS>${icms}</ICMS>
