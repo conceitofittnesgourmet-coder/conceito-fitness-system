@@ -5,6 +5,7 @@ function somenteNumeros(v) { return String(v || "").replace(/\D/g, ""); }
 function esc(v) { return String(v ?? "").replace(/&/g, "&amp;").replace(/</g, "&lt;").replace(/>/g, "&gt;").replace(/"/g, "&quot;").replace(/'/g, "&apos;"); }
 function n2(v) { return Number(v || 0).toFixed(2); }
 function n4(v) { return Number(v || 0).toFixed(4); }
+function num(v) { return Number(v ?? 0); }
 function z(v, t) { return String(v || "").padStart(t, "0"); }
 function dataSp(date = new Date()) {
   const p = new Intl.DateTimeFormat("sv-SE", { timeZone: "America/Sao_Paulo", year:"numeric", month:"2-digit", day:"2-digit", hour:"2-digit", minute:"2-digit", second:"2-digit", hour12:false }).formatToParts(date);
@@ -100,14 +101,7 @@ function montarImposto(item, crt = 1) {
       <vCOFINS>${n2(item.valorCofins)}</vCOFINS>
     </COFINSOutr>`;
   }
-
- const ibsCbs = `
-  <IBSCBS>
-    <CST>${esc(item.cstIbsCbs || "000")}</CST>
-    <cClassTrib>${esc(item.cClassTrib || "000001")}</cClassTrib>
-  </IBSCBS>
-`;
-
+ 
   // ==============================
   // IBS / CBS - Reforma Tributária
   // ==============================
