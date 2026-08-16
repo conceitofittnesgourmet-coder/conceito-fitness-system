@@ -285,6 +285,64 @@ const totalVProd = nfe.itens.reduce(
   0
 );
 
+const totalVBCIBSCBS = nfe.itens.reduce(
+  (total, item) => total + Number(item.valorProduto || 0),
+  0
+);
+
+const totalVIBSUF = nfe.itens.reduce((total, item) => {
+  const base = Number(item.valorProduto || 0);
+  const aliquota = Number(item.aliquotaIbs ?? 0.1);
+
+  const reducao =
+    String(item.cClassTrib || "000001") === "200047"
+      ? 40
+      : 0;
+
+  const aliquotaEfetiva =
+    aliquota * (1 - reducao / 100);
+
+  const valor = Number(
+    (base * aliquotaEfetiva / 100).toFixed(2)
+  );
+
+  return total + valor;
+}, 0);
+
+const totalVIBSMun = nfe.itens.reduce((total, item) => {
+  const base = Number(item.valorProduto || 0);
+  const aliquota = 0;
+
+  const valor = Number(
+    (base * aliquota / 100).toFixed(2)
+  );
+
+  return total + valor;
+}, 0);
+
+const totalVIBS = Number(
+  (totalVIBSUF + totalVIBSMun).toFixed(2)
+);
+
+const totalVCBS = nfe.itens.reduce((total, item) => {
+  const base = Number(item.valorProduto || 0);
+  const aliquota = Number(item.aliquotaCbs ?? 0.9);
+
+  const reducao =
+    String(item.cClassTrib || "000001") === "200047"
+      ? 40
+      : 0;
+
+  const aliquotaEfetiva =
+    aliquota * (1 - reducao / 100);
+
+  const valor = Number(
+    (base * aliquotaEfetiva / 100).toFixed(2)
+  );
+
+  return total + valor;
+}, 0);
+
   const itensXml = nfe.itens.map((item, i) => `<det nItem="${i+1}"><prod><cProd>${esc(item.codigo || i+1)}</cProd><cEAN>${esc(item.gtin || "SEM GTIN")}</cEAN><xProd>${esc(item.descricao)}</xProd><NCM>${somenteNumeros(item.ncm)}</NCM>${somenteNumeros(item.cest) ? `<CEST>${somenteNumeros(item.cest)}</CEST>` : ""}<CFOP>${somenteNumeros(item.cfop)}</CFOP><uCom>${esc(item.unidadeComercial || "UN")}</uCom><qCom>${n4(item.quantidadeComercial)}</qCom><vUnCom>${n4(item.valorUnitarioComercial)}</vUnCom><vProd>${n2(item.valorProduto)}</vProd><cEANTrib>${esc(item.gtinTributavel || "SEM GTIN")}</cEANTrib><uTrib>${esc(item.unidadeTributavel || "UN")}</uTrib><qTrib>${n4(item.quantidadeTributavel)}</qTrib><vUnTrib>${n4(item.valorUnitarioTributavel)}</vUnTrib><indTot>1</indTot></prod>${montarImposto(
   item,
   Number(empresa.crt || empresa.regimeTributarioCodigo || 1)
@@ -296,7 +354,37 @@ const totalVProd = nfe.itens.reduce(
 <indIntermed>${nfe.indicadorIntermediador ?? 0}</indIntermed>
 <procEmi>0</procEmi><verProc>ConceitoFitERP1.0</verProc></ide><emit><CNPJ>${cnpj}</CNPJ><xNome>${esc(empresa.razaoSocial || empresa.nome || "CONCEITO FITNESS")}</xNome><xFant>${esc(empresa.nomeFantasia || empresa.fantasia || "CONCEITO FITNESS")}</xFant><enderEmit><xLgr>${esc(endEmit.logradouro || endEmit.rua)}</xLgr><nro>${esc(endEmit.numero)}</nro>${endEmit.complemento ? `<xCpl>${esc(endEmit.complemento)}</xCpl>` : ""}<xBairro>${esc(endEmit.bairro)}</xBairro><cMun>${esc(endEmit.codigoMunicipioIbge || endEmit.codigoIbge)}</cMun><xMun>${esc(endEmit.cidade || endEmit.municipio)}</xMun><UF>${esc(endEmit.uf)}</UF>${endEmit.cep ? `<CEP>${somenteNumeros(endEmit.cep)}</CEP>` : ""}<cPais>1058</cPais><xPais>Brasil</xPais></enderEmit><IE>${ie}</IE><CRT>${Number(empresa.crt || empresa.regimeTributarioCodigo || 1)}</CRT></emit><dest>${docDest}<xNome>${esc(nfe.ambiente === "homologacao" ? "NF-E EMITIDA EM AMBIENTE DE HOMOLOGACAO - SEM VALOR FISCAL" : dest.nomeRazaoSocial)}</xNome><enderDest><xLgr>${esc(dest.endereco.logradouro)}</xLgr><nro>${esc(dest.endereco.numero)}</nro>${dest.endereco.complemento ? `<xCpl>${esc(dest.endereco.complemento)}</xCpl>` : ""}<xBairro>${esc(dest.endereco.bairro)}</xBairro><cMun>${esc(dest.endereco.codigoMunicipioIbge)}</cMun><xMun>${esc(dest.endereco.cidade)}</xMun><UF>${esc(dest.endereco.uf)}</UF>${dest.endereco.cep ? `<CEP>${somenteNumeros(dest.endereco.cep)}</CEP>` : ""}<cPais>${esc(dest.endereco.codigoPais || "1058")}</cPais><xPais>${esc(dest.endereco.pais || "Brasil")}</xPais>${dest.telefone ? `<fone>${somenteNumeros(dest.telefone)}</fone>` : ""}</enderDest><indIEDest>${indIEDest}</indIEDest>${ieDest}${dest.email ? `<email>${esc(dest.email)}</email>` : ""}</dest>${itensXml}<total><ICMSTot><vBC>${n2(totalVBC)}</vBC>
 <vICMS>${n2(totalVICMS)}</vICMS><vICMSDeson>0.00</vICMSDeson><vFCP>0.00</vFCP><vBCST>0.00</vBCST><vST>0.00</vST><vFCPST>0.00</vFCPST><vFCPSTRet>0.00</vFCPSTRet><vProd>${n2(totalVProd)}</vProd><vFrete>${n2(t.valorFrete)}</vFrete><vSeg>${n2(t.valorSeguro)}</vSeg><vDesc>${n2(t.valorDesconto)}</vDesc><vII>0.00</vII><vIPI>${n2(t.valorIpi)}</vIPI><vIPIDevol>0.00</vIPIDevol><vPIS>${n2(totalVPIS)}</vPIS>
-<vCOFINS>${n2(totalVCOFINS)}</vCOFINS><vOutro>${n2(t.outrasDespesas)}</vOutro><vNF>${n2(t.valorTotal)}</vNF></ICMSTot></total><transp><modFrete>${nfe.modalidadeFrete ?? 9}</modFrete></transp><pag><detPag><indPag>0</indPag><tPag>${esc(nfe.pagamento?.forma || "17")}</tPag><vPag>${n2(nfe.pagamento?.valor || t.valorTotal)}</vPag></detPag></pag>${nfe.informacoesComplementares ? `<infAdic><infCpl>${esc(nfe.informacoesComplementares)}</infCpl></infAdic>` : ""}</infNFe></NFe>`;
+<vCOFINS>${n2(totalVCOFINS)}</vCOFINS><vOutro>${n2(t.outrasDespesas)}</vOutro><vNF>${n2(t.valorTotal)}</vNF></ICMSTot>
+<IBSCBSTot>
+  <vBCIBSCBS>${n2(totalVBCIBSCBS)}</vBCIBSCBS>
+
+  <gIBS>
+    <gIBSUF>
+      <vDif>0.00</vDif>
+      <vDevTrib>0.00</vDevTrib>
+      <vIBSUF>${n2(totalVIBSUF)}</vIBSUF>
+    </gIBSUF>
+
+    <gIBSMun>
+      <vDif>0.00</vDif>
+      <vDevTrib>0.00</vDevTrib>
+      <vIBSMun>${n2(totalVIBSMun)}</vIBSMun>
+    </gIBSMun>
+
+    <vIBS>${n2(totalVIBS)}</vIBS>
+    <vCredPres>0.00</vCredPres>
+    <vCredPresCondSus>0.00</vCredPresCondSus>
+  </gIBS>
+
+  <gCBS>
+    <vDif>0.00</vDif>
+    <vDevTrib>0.00</vDevTrib>
+    <vCBS>${n2(totalVCBS)}</vCBS>
+    <vCredPres>0.00</vCredPres>
+    <vCredPresCondSus>0.00</vCredPresCondSus>
+  </gCBS>
+</IBSCBSTot>
+</total><transp><modFrete>${nfe.modalidadeFrete ?? 9}</modFrete></transp><pag><detPag><indPag>0</indPag><tPag>${esc(nfe.pagamento?.forma || "17")}</tPag><vPag>${n2(nfe.pagamento?.valor || t.valorTotal)}</vPag></detPag></pag>${nfe.informacoesComplementares ? `<infAdic><infCpl>${esc(nfe.informacoesComplementares)}</infCpl></infAdic>` : ""}</infNFe></NFe>`;
   return { xml, chaveAcesso:chave, idDocumento:id };
 }
 
