@@ -241,7 +241,7 @@ empresaId = empresa._id;
   const itens = itensDoPedido(
   pedido,
   estadoEmpresa(empresa),
-  dest.endereco.uf,
+  destinatario.endereco.uf,
   empresa.crt || empresa.regimeTributarioCodigo || 1
 );
   const resumoTotais = totais(itens, {
