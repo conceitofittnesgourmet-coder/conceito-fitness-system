@@ -160,9 +160,12 @@ function destinatarioDoPedido(pedido, informado={}) {
 
       origem: f.origemMercadoria || "0",
 
-      // Reforma Tributária - IBS/CBS
+     // Reforma Tributária - IBS/CBS
 cstIbsCbs: f.cstIbsCbs || "000",
-cClassTrib: f.cClassTrib || "",
+cClassTrib: f.cClassTrib || "000001",
+
+aliquotaIbs: num(f.aliquotaIbs),
+aliquotaCbs: num(f.aliquotaCbs),
 
       // Simples Nacional
       csosn: usaCsosn

@@ -101,8 +101,145 @@ function montarImposto(item, crt = 1) {
     </COFINSOutr>`;
   }
 
-  return `<imposto>
+ const ibsCbs = `
+  <IBSCBS>
+    <CST>${esc(item.cstIbsCbs || "000")}</CST>
+    <cClassTrib>${esc(item.cClassTrib || "000001")}</cClassTrib>
+  </IBSCBS>
+`;
+
+  // ==============================
+  // IBS / CBS - Reforma Tributária
+  // ==============================
+
+  const cstIbsCbs = String(item.cstIbsCbs || "000");
+  const cClassTrib = String(item.cClassTrib || "000001");
+
+  const pIBSUF = num(
+    item.aliquotaIbs ?? 0.1
+  );
+
+  const pIBSMun = 0;
+
+  const pCBS = num(
+    item.aliquotaCbs ?? 0.9
+  );
+
+  const reducao =
+    cClassTrib === "200047"
+      ? 40
+      : 0;
+
+  const pIBSUFEfet =
+    pIBSUF * (1 - reducao / 100);
+
+  const pIBSMunEfet =
+    pIBSMun * (1 - reducao / 100);
+
+  const pCBSEfet =
+    pCBS * (1 - reducao / 100);
+
+  const vBCIBSCBS = n2(item.valorProduto);
+
+  const vIBSUF =
+    Number(
+      (
+        vBCIBSCBS *
+        pIBSUFEfet /
+        100
+      ).toFixed(2)
+    );
+
+  const vIBSMun =
+    Number(
+      (
+        vBCIBSCBS *
+        pIBSMunEfet /
+        100
+      ).toFixed(2)
+    );
+
+  const vIBS =
+    Number(
+      (vIBSUF + vIBSMun).toFixed(2)
+    );
+
+  const vCBS =
+    Number(
+      (
+        vBCIBSCBS *
+        pCBSEfet /
+        100
+      ).toFixed(2)
+    );
+
+  const ibsCbs = `
+    <IBSCBS>
+      <CST>${esc(cstIbsCbs)}</CST>
+      <cClassTrib>${esc(cClassTrib)}</cClassTrib>
+
+      <gIBSCBS>
+        <vBC>${n2(vBCIBSCBS)}</vBC>
+
+        <gIBSUF>
+          <pIBSUF>${n4(pIBSUF)}</pIBSUF>
+
+          ${
+            reducao > 0
+              ? `
+          <gRed>
+            <pRedAliq>${n4(reducao)}</pRedAliq>
+            <pAliqEfet>${n4(pIBSUFEfet)}</pAliqEfet>
+          </gRed>
+          `
+              : ""
+          }
+
+          <vIBSUF>${n2(vIBSUF)}</vIBSUF>
+        </gIBSUF>
+
+        <gIBSMun>
+          <pIBSMun>${n4(pIBSMun)}</pIBSMun>
+
+          ${
+            reducao > 0
+              ? `
+          <gRed>
+            <pRedAliq>${n4(reducao)}</pRedAliq>
+            <pAliqEfet>${n4(pIBSMunEfet)}</pAliqEfet>
+          </gRed>
+          `
+              : ""
+          }
+
+          <vIBSMun>${n2(vIBSMun)}</vIBSMun>
+        </gIBSMun>
+
+        <vIBS>${n2(vIBS)}</vIBS>
+
+        <gCBS>
+          <pCBS>${n4(pCBS)}</pCBS>
+
+          ${
+            reducao > 0
+              ? `
+          <gRed>
+            <pRedAliq>${n4(reducao)}</pRedAliq>
+            <pAliqEfet>${n4(pCBSEfet)}</pAliqEfet>
+          </gRed>
+          `
+              : ""
+          }
+
+          <vCBS>${n2(vCBS)}</vCBS>
+        </gCBS>
+
+      </gIBSCBS>
+    </IBSCBS>`;
+
+return `<imposto>
     <ICMS>${icms}</ICMS>
+    ${ibsCbs}
     <PIS>${pis}</PIS>
     <COFINS>${cofins}</COFINS>
   </imposto>`;
@@ -130,7 +267,7 @@ function gerarXmlNfe({ nfe, empresa }) {
   const indIEDest = Number(dest.indicadorIe || 9);
   const ieDest = dest.inscricaoEstadual ? `<IE>${somenteNumeros(dest.inscricaoEstadual)}</IE>` : "";
 
-  const itensXml = nfe.itens.map((item, i) => `<det nItem="${i+1}"><prod><cProd>${esc(item.codigo || i+1)}</cProd><cEAN>${esc(item.gtin || "SEM GTIN")}</cEAN><xProd>${esc(item.descricao)}</xProd><NCM>${somenteNumeros(item.ncm)}</NCM>${item.cest ? `<CEST>${somenteNumeros(item.cest)}</CEST>` : ""}<CFOP>${somenteNumeros(item.cfop)}</CFOP><uCom>${esc(item.unidadeComercial || "UN")}</uCom><qCom>${n4(item.quantidadeComercial)}</qCom><vUnCom>${n4(item.valorUnitarioComercial)}</vUnCom><vProd>${n2(item.valorProduto)}</vProd><cEANTrib>${esc(item.gtinTributavel || "SEM GTIN")}</cEANTrib><uTrib>${esc(item.unidadeTributavel || "UN")}</uTrib><qTrib>${n4(item.quantidadeTributavel)}</qTrib><vUnTrib>${n4(item.valorUnitarioTributavel)}</vUnTrib><indTot>1</indTot></prod>${montarImposto(
+  const itensXml = nfe.itens.map((item, i) => `<det nItem="${i+1}"><prod><cProd>${esc(item.codigo || i+1)}</cProd><cEAN>${esc(item.gtin || "SEM GTIN")}</cEAN><xProd>${esc(item.descricao)}</xProd><NCM>${somenteNumeros(item.ncm)}</NCM>${somenteNumeros(item.cest) ? `<CEST>${somenteNumeros(item.cest)}</CEST>` : ""}<CFOP>${somenteNumeros(item.cfop)}</CFOP><uCom>${esc(item.unidadeComercial || "UN")}</uCom><qCom>${n4(item.quantidadeComercial)}</qCom><vUnCom>${n4(item.valorUnitarioComercial)}</vUnCom><vProd>${n2(item.valorProduto)}</vProd><cEANTrib>${esc(item.gtinTributavel || "SEM GTIN")}</cEANTrib><uTrib>${esc(item.unidadeTributavel || "UN")}</uTrib><qTrib>${n4(item.quantidadeTributavel)}</qTrib><vUnTrib>${n4(item.valorUnitarioTributavel)}</vUnTrib><indTot>1</indTot></prod>${montarImposto(
   item,
   Number(empresa.crt || empresa.regimeTributarioCodigo || 1)
 )}</det>`).join("");
