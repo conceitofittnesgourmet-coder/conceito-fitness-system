@@ -231,10 +231,11 @@ function montarImposto(item, crt = 1) {
       </gIBSCBS>
     </IBSCBS>`;
 
-return `<imposto>
+  return `<imposto>
     <ICMS>${icms}</ICMS>
     <PIS>${pis}</PIS>
     <COFINS>${cofins}</COFINS>
+    ${ibsCbs}
   </imposto>`;
 }
 
