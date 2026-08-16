@@ -383,8 +383,36 @@ const totalVCBS = nfe.itens.reduce((total, item) => {
     <vCredPres>0.00</vCredPres>
     <vCredPresCondSus>0.00</vCredPresCondSus>
   </gCBS>
-</IBSCBSTot>
-</total><transp><modFrete>${nfe.modalidadeFrete ?? 9}</modFrete></transp><pag><detPag><indPag>0</indPag><tPag>${esc(nfe.pagamento?.forma || "17")}</tPag><vPag>${n2(nfe.pagamento?.valor || t.valorTotal)}</vPag></detPag></pag>${nfe.informacoesComplementares ? `<infAdic><infCpl>${esc(nfe.informacoesComplementares)}</infCpl></infAdic>` : ""}</infNFe></NFe>`;
+ </IBSCBSTot>
+</total>
+
+
+<transp>
+  <modFrete>${nfe.modalidadeFrete ?? 9}</modFrete>
+</transp>
+
+<pag>
+  <detPag>
+    <indPag>0</indPag>
+    <tPag>${esc(nfe.pagamento?.forma || "17")}</tPag>
+    <vPag>${n2(nfe.pagamento?.valor || t.valorTotal)}</vPag>
+  </detPag>
+</pag>
+
+<infRespTec>
+  <CNPJ>67199298000181</CNPJ>
+  <xContato>J. André Correa</xContato>
+  <email>conceitofittnesgourmet@gmail.com</email>
+  <fone>44991030076</fone>
+</infRespTec>
+
+${nfe.informacoesComplementares
+  ? `<infAdic><infCpl>${esc(nfe.informacoesComplementares)}</infCpl></infAdic>`
+  : ""}
+
+</infNFe>
+</NFe>
+`;
   return { xml, chaveAcesso:chave, idDocumento:id };
 }
 
