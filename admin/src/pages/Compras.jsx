@@ -35,6 +35,28 @@ function Compras() {
     observacao: "",
   });
 
+  const [novoItem, setNovoItem] = useState({
+  nome: "",
+  tipoItem: "materia_prima",
+  codigo: "",
+  codigoBarras: "",
+  categoria: "",
+  unidade: "unidade",
+  estoqueAtual: "",
+  estoqueMinimo: "",
+  estoqueMaximo: "",
+  custoUnitario: "",
+  fornecedor: "",
+  marca: "",
+  tamanho: "",
+  capacidade: "",
+  cor: "",
+  localizacao: "",
+  controlaLote: false,
+  controlaValidade: false,
+  observacoes: "",
+});
+
   async function carregarTudo() {
     try {
       const fornecedoresRes = await api.get("/compras/fornecedores");
@@ -74,6 +96,53 @@ function Compras() {
 
     carregarTudo();
   }
+
+  async function cadastrarItemEstoque() {
+  if (!novoItem.nome.trim()) {
+    alert("Informe o nome do item.");
+    return;
+  }
+
+  try {
+    await api.post("/materias-primas", {
+      ...novoItem,
+      estoqueAtual: Number(novoItem.estoqueAtual || 0),
+      estoqueMinimo: Number(novoItem.estoqueMinimo || 0),
+      estoqueMaximo: Number(novoItem.estoqueMaximo || 0),
+      custoUnitario: Number(novoItem.custoUnitario || 0),
+    });
+
+    setNovoItem({
+      nome: "",
+      tipoItem: "materia_prima",
+      codigo: "",
+      codigoBarras: "",
+      categoria: "",
+      unidade: "unidade",
+      estoqueAtual: "",
+      estoqueMinimo: "",
+      estoqueMaximo: "",
+      custoUnitario: "",
+      fornecedor: "",
+      marca: "",
+      tamanho: "",
+      capacidade: "",
+      cor: "",
+      localizacao: "",
+      controlaLote: false,
+      controlaValidade: false,
+      observacoes: "",
+    });
+
+    alert("Item de estoque cadastrado com sucesso.");
+    carregarTudo();
+  } catch (error) {
+    alert(
+      error.response?.data?.message ||
+        "Erro ao cadastrar item de estoque."
+    );
+  }
+}
 
   async function registrarCompra() {
     if (
@@ -170,6 +239,251 @@ function Compras() {
         </section>
 
         <section className="financeiro-grid">
+          <div className="financeiro-card">
+  <h2>
+    <FaBoxes /> Novo Item de Estoque
+  </h2>
+
+  <select
+    value={novoItem.tipoItem}
+    onChange={(e) =>
+      setNovoItem({
+        ...novoItem,
+        tipoItem: e.target.value,
+      })
+    }
+  >
+    <option value="materia_prima">Matéria-prima</option>
+    <option value="embalagem">Embalagem</option>
+    <option value="material_consumo">
+      Material de consumo
+    </option>
+  </select>
+
+  <input
+    placeholder="Nome do item"
+    value={novoItem.nome}
+    onChange={(e) =>
+      setNovoItem({
+        ...novoItem,
+        nome: e.target.value,
+      })
+    }
+  />
+
+  <input
+    placeholder="Código interno"
+    value={novoItem.codigo}
+    onChange={(e) =>
+      setNovoItem({
+        ...novoItem,
+        codigo: e.target.value,
+      })
+    }
+  />
+
+  <input
+    placeholder="Código de barras"
+    value={novoItem.codigoBarras}
+    onChange={(e) =>
+      setNovoItem({
+        ...novoItem,
+        codigoBarras: e.target.value,
+      })
+    }
+  />
+
+  <input
+    placeholder="Categoria"
+    value={novoItem.categoria}
+    onChange={(e) =>
+      setNovoItem({
+        ...novoItem,
+        categoria: e.target.value,
+      })
+    }
+  />
+
+  <select
+    value={novoItem.unidade}
+    onChange={(e) =>
+      setNovoItem({
+        ...novoItem,
+        unidade: e.target.value,
+      })
+    }
+  >
+    <option value="unidade">Unidade</option>
+    <option value="g">Grama</option>
+    <option value="kg">Quilograma</option>
+    <option value="ml">Mililitro</option>
+    <option value="litro">Litro</option>
+    <option value="pacote">Pacote</option>
+    <option value="caixa">Caixa</option>
+  </select>
+
+  <input
+    type="number"
+    placeholder="Estoque inicial"
+    value={novoItem.estoqueAtual}
+    onChange={(e) =>
+      setNovoItem({
+        ...novoItem,
+        estoqueAtual: e.target.value,
+      })
+    }
+  />
+
+  <input
+    type="number"
+    placeholder="Estoque mínimo"
+    value={novoItem.estoqueMinimo}
+    onChange={(e) =>
+      setNovoItem({
+        ...novoItem,
+        estoqueMinimo: e.target.value,
+      })
+    }
+  />
+
+  <input
+    type="number"
+    placeholder="Estoque máximo"
+    value={novoItem.estoqueMaximo}
+    onChange={(e) =>
+      setNovoItem({
+        ...novoItem,
+        estoqueMaximo: e.target.value,
+      })
+    }
+  />
+
+  <input
+    type="number"
+    step="0.01"
+    placeholder="Custo unitário"
+    value={novoItem.custoUnitario}
+    onChange={(e) =>
+      setNovoItem({
+        ...novoItem,
+        custoUnitario: e.target.value,
+      })
+    }
+  />
+
+  <input
+    placeholder="Fornecedor / marca"
+    value={novoItem.fornecedor}
+    onChange={(e) =>
+      setNovoItem({
+        ...novoItem,
+        fornecedor: e.target.value,
+      })
+    }
+  />
+
+  <input
+    placeholder="Marca"
+    value={novoItem.marca}
+    onChange={(e) =>
+      setNovoItem({
+        ...novoItem,
+        marca: e.target.value,
+      })
+    }
+  />
+
+  {novoItem.tipoItem === "embalagem" && (
+    <>
+      <input
+        placeholder="Tamanho"
+        value={novoItem.tamanho}
+        onChange={(e) =>
+          setNovoItem({
+            ...novoItem,
+            tamanho: e.target.value,
+          })
+        }
+      />
+
+      <input
+        placeholder="Capacidade (ex.: 170 ml)"
+        value={novoItem.capacidade}
+        onChange={(e) =>
+          setNovoItem({
+            ...novoItem,
+            capacidade: e.target.value,
+          })
+        }
+      />
+
+      <input
+        placeholder="Cor"
+        value={novoItem.cor}
+        onChange={(e) =>
+          setNovoItem({
+            ...novoItem,
+            cor: e.target.value,
+          })
+        }
+      />
+    </>
+  )}
+
+  <input
+    placeholder="Localização no estoque"
+    value={novoItem.localizacao}
+    onChange={(e) =>
+      setNovoItem({
+        ...novoItem,
+        localizacao: e.target.value,
+      })
+    }
+  />
+
+  <label>
+    <input
+      type="checkbox"
+      checked={novoItem.controlaLote}
+      onChange={(e) =>
+        setNovoItem({
+          ...novoItem,
+          controlaLote: e.target.checked,
+        })
+      }
+    />
+    Controlar lote
+  </label>
+
+  <label>
+    <input
+      type="checkbox"
+      checked={novoItem.controlaValidade}
+      onChange={(e) =>
+        setNovoItem({
+          ...novoItem,
+          controlaValidade: e.target.checked,
+        })
+      }
+    />
+    Controlar validade
+  </label>
+
+  <textarea
+    placeholder="Observações"
+    value={novoItem.observacoes}
+    onChange={(e) =>
+      setNovoItem({
+        ...novoItem,
+        observacoes: e.target.value,
+      })
+    }
+  />
+
+  <button onClick={cadastrarItemEstoque}>
+    Cadastrar Item
+  </button>
+</div>
           <div className="financeiro-card">
             <h2>
               <FaPlus /> Novo Fornecedor
