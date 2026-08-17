@@ -105,7 +105,33 @@ exports.atualizar = async (req, res) => {
     if (!materia) return res.status(404).json({ success: false, message: "Ingrediente não encontrado." });
     const custoAnterior = numero(materia.custoUnitario);
     const custoNovo = req.body.custoUnitario === undefined ? custoAnterior : numero(req.body.custoUnitario);
-    const camposPermitidos = ["nome", "codigo", "codigoBarras", "categoria", "unidade", "estoqueMinimo", "estoqueMaximo", "custoUnitario", "ultimoCusto", "fornecedor", "fornecedorPrincipal", "localizacao", "marca", "observacoes", "controlaLote", "controlaValidade", "diasAlertaValidade", "ativo"];
+    const camposPermitidos = [
+  "nome",
+  "codigo",
+  "codigoBarras",
+  "categoria",
+  "unidade",
+  "estoqueMinimo",
+  "estoqueMaximo",
+  "custoUnitario",
+  "ultimoCusto",
+  "fornecedor",
+  "fornecedorPrincipal",
+  "localizacao",
+  "marca",
+  "observacoes",
+  "controlaLote",
+  "controlaValidade",
+  "diasAlertaValidade",
+  "ativo",
+
+  // Insumos / embalagens / materiais de consumo
+  "tipoItem",
+  "tamanho",
+  "capacidade",
+  "cor",
+  "observacaoEstoque",
+];
     camposPermitidos.forEach((campo) => { if (req.body[campo] !== undefined) materia[campo] = req.body[campo]; });
     if (custoNovo !== custoAnterior) {
       materia.ultimoCusto = custoNovo;

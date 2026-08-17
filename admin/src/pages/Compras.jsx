@@ -81,7 +81,7 @@ function Compras() {
       !novaCompra.quantidade ||
       !novaCompra.custoUnitario
     ) {
-      alert("Informe matéria-prima, quantidade e custo unitário.");
+      alert("Informe o insumo ou embalagem, quantidade e custo unitário.");
       return;
     }
 
@@ -134,7 +134,7 @@ function Compras() {
           <div>
             <h1>Compras</h1>
             <p>
-              Controle fornecedores, compras de matéria-prima e entrada de estoque.
+              Controle fornecedores, compras de insumos, embalagens e entrada de estoque.
             </p>
           </div>
         </section>
@@ -149,9 +149,9 @@ function Compras() {
 
           <div className="financeiro-kpi blue">
             <FaBoxes />
-            <span>Matérias-primas</span>
+            <span>Insumos e Embalagens</span>
             <strong>{materias.length}</strong>
-            <p>Insumos disponíveis</p>
+            <p>Itens em estoque</p>
           </div>
 
           <div className="financeiro-kpi yellow">
@@ -293,7 +293,7 @@ function Compras() {
                 });
               }}
             >
-              <option value="">Selecione a matéria-prima</option>
+              <option value="">Selecione o insumo ou embalagem</option>
               {materias.map((materia) => (
                 <option key={materia._id} value={materia._id}>
                   {materia.nome} - Estoque: {materia.estoqueAtual}{" "}
@@ -301,6 +301,7 @@ function Compras() {
                 </option>
               ))}
             </select>
+
 
             <input
               type="number"
@@ -418,32 +419,42 @@ function Compras() {
           </div>
 
           <div className="financeiro-card movimentacoes grande">
-            <h2>Matérias-primas</h2>
+  <h2>Insumos e Embalagens</h2>
 
-            <table>
-              <thead>
-                <tr>
-                  <th>Nome</th>
-                  <th>Estoque</th>
-                  <th>Mínimo</th>
-                  <th>Custo</th>
-                  <th>Unidade</th>
-                </tr>
-              </thead>
+  <table>
+    <thead>
+      <tr>
+        <th>Nome</th>
+        <th>Tipo</th>
+        <th>Estoque</th>
+        <th>Mínimo</th>
+        <th>Custo</th>
+        <th>Unidade</th>
+      </tr>
+    </thead>
 
-              <tbody>
-                {materias.map((materia) => (
-                  <tr key={materia._id}>
-                    <td>{materia.nome}</td>
-                    <td>{materia.estoqueAtual}</td>
-                    <td>{materia.estoqueMinimo}</td>
-                    <td>{dinheiro(materia.custoUnitario)}</td>
-                    <td>{materia.unidade}</td>
-                  </tr>
-                ))}
-              </tbody>
-            </table>
-          </div>
+    <tbody>
+      {materias.map((materia) => (
+        <tr key={materia._id}>
+          <td>{materia.nome}</td>
+
+          <td>
+            {materia.tipoItem === "embalagem"
+              ? "Embalagem"
+              : materia.tipoItem === "material_consumo"
+              ? "Material de consumo"
+              : "Matéria-prima"}
+          </td>
+
+          <td>{materia.estoqueAtual}</td>
+          <td>{materia.estoqueMinimo}</td>
+          <td>{dinheiro(materia.custoUnitario)}</td>
+          <td>{materia.unidade}</td>
+        </tr>
+      ))}
+    </tbody>
+  </table>
+</div>
         </section>
       </div>
     </AdminLayout>

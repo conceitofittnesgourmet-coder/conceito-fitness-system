@@ -60,6 +60,37 @@ const materiaPrimaSchema = new mongoose.Schema({
   historicoCustos: { type: [historicoCustoSchema], default: [] },
   movimentacoes: { type: [movimentacaoSchema], default: [] },
   ativo: { type: Boolean, default: true },
+
+      tipoItem: {
+    type: String,
+    enum: ["materia_prima", "embalagem", "material_consumo"],
+    default: "materia_prima",
+    index: true,
+  },
+
+  tamanho: {
+    type: String,
+    default: "",
+    trim: true,
+  },
+
+  capacidade: {
+    type: String,
+    default: "",
+    trim: true,
+  },
+
+  cor: {
+    type: String,
+    default: "",
+    trim: true,
+  },
+
+  observacaoEstoque: {
+    type: String,
+    default: "",
+    trim: true,
+  },
 }, { timestamps: true });
 
 materiaPrimaSchema.index({ nome: 1 });
