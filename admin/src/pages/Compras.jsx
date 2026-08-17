@@ -38,7 +38,7 @@ function Compras() {
   async function carregarTudo() {
     try {
       const fornecedoresRes = await api.get("/compras/fornecedores");
-      const materiasRes = await api.get("/producao/materias-primas");
+      const materiasRes = await api.get("/materias-primas");
       const comprasRes = await api.get("/compras");
 
       setFornecedores(fornecedoresRes.data.fornecedores || []);
