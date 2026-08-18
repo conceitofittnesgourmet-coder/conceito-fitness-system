@@ -155,6 +155,7 @@ function Produtos() {
   ...PUBLICACAO_INICIAL,
 });
   const [imagens, setImagens] = useState([]);
+  const [editImagens, setEditImagens] = useState([]);
   const [loading, setLoading] = useState(false);
   const [codigoBarras, setCodigoBarras] = useState("");
   const [sku, setSku] = useState("");
@@ -556,10 +557,19 @@ setEditDadosFiscais({
   ...(produto.dadosFiscais || {}),
 });
 
-    setPreviewEdit(getImagemUrl(produto.imagens?.[0]));
-    setEditImagem(null);
-    setAbaEdicao("basico");
-    setModalOpen(true);
+    setEditImagens(
+  Array.isArray(produto.imagens)
+    ? produto.imagens
+    : []
+);
+
+setPreviewEdit(
+  getImagemUrl(produto.imagens?.[0])
+);
+
+setEditImagem(null);
+setAbaEdicao("basico");
+setModalOpen(true);
   }
 
   async function salvarEdicao() {
@@ -1285,22 +1295,24 @@ const progressoCadastro =
 )}
 
 {abaEdicao === "midia" && (
-    <ProdutoImagem
-        previewCadastro={previewEdit}
-        isDragActive={false}
-        getRootProps={() => ({})}
-        getInputProps={() => ({
-            onChange: (e) => {
-                const file = e.target.files?.[0];
+  <ProdutoImagem
+    previewCadastro={previewEdit}
+    isDragActive={false}
+    imagens={editImagens || []}
+    setImagens={setEditImagens}
+    getRootProps={() => ({})}
+    getInputProps={() => ({
+      onChange: (e) => {
+        const file = e.target.files?.[0];
 
-                setEditImagem(file || null);
+        setEditImagem(file || null);
 
-                if (file) {
-                    setPreviewEdit(URL.createObjectURL(file));
-                }
-            }
-        })}
-    />
+        if (file) {
+          setPreviewEdit(URL.createObjectURL(file));
+        }
+      },
+    })}
+  />
 )}
 
 <div className="produto-diagnostico">
