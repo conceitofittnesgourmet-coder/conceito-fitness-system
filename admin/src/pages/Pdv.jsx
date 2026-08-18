@@ -282,38 +282,83 @@ function adicionarProduto(produto) {
   const precoUnitario = Number(produto.preco || 0);
 
   const produtoFormatado = {
-    id,
-    produtoId,
-    nome: produto.nome,
-    preco: precoUnitario,
-    precoUnitario,
-    unidadeMedida,
-    vendaPorPeso,
-    permiteFracionado,
-    quantidade: quantidadeInicial,
-    subtotal: precoUnitario * quantidadeInicial,
-    imagem: getImagemProduto(produto),
-    configuracoes: produto.configuracoes || [],
-  };
+  id,
+  produtoId,
 
-  if (existe) {
-    atualizarCarrinhoComanda(
-      cart.map((item) =>
-        item.id === id
-          ? {
-              ...item,
-              quantidade:
-                Number(item.quantidade || 0) + quantidadeInicial,
-              subtotal:
-                Number(item.preco || 0) *
-                (Number(item.quantidade || 0) + quantidadeInicial),
-            }
-          : item
-      )
+  nome: produto.nome,
+
+  preco: precoUnitario,
+  precoUnitario,
+
+  precoOriginal: Number(
+    produto.precoOriginal ?? produto.preco ?? 0
+  ),
+
+  adicionais: Number(produto.adicionais || 0),
+
+  unidadeMedida,
+  vendaPorPeso,
+  permiteFracionado,
+
+  quantidade: quantidadeInicial,
+  subtotal: precoUnitario * quantidadeInicial,
+
+  imagem: getImagemProduto(produto),
+
+  configuracoes: configuracoes.map((config) => ({
+    grupoId: String(config.grupoId || ""),
+    grupo: String(config.grupo || ""),
+    opcaoId: String(config.opcaoId || ""),
+    opcao: String(config.opcao || ""),
+    quantidade: Number(config.quantidade || 1),
+    valorUnitario: Number(config.valorUnitario || 0),
+    valor: Number(config.valor || 0),
+  })),
+};
+
+console.log(
+  "ITEM FORMATADO PARA O CARRINHO:",
+  produtoFormatado
+);
+
+  setComandas((anteriores) => {
+  const carrinhoAtual =
+    anteriores[comandaAtiva] || [];
+
+  const existente = carrinhoAtual.find(
+    (item) => item.id === id
+  );
+
+  let novoCarrinho;
+
+  if (existente) {
+    novoCarrinho = carrinhoAtual.map((item) =>
+      item.id === id
+        ? {
+            ...item,
+            quantidade:
+              Number(item.quantidade || 0) +
+              quantidadeInicial,
+
+            subtotal:
+              Number(item.preco || 0) *
+              (Number(item.quantidade || 0) +
+                quantidadeInicial),
+          }
+        : item
     );
   } else {
-    atualizarCarrinhoComanda([...cart, produtoFormatado]);
+    novoCarrinho = [
+      ...carrinhoAtual,
+      produtoFormatado,
+    ];
   }
+
+  return {
+    ...anteriores,
+    [comandaAtiva]: novoCarrinho,
+  };
+});
 }
  
   function confirmarProdutoConfigurado({
@@ -373,9 +418,7 @@ function confirmarProdutoPeso() {
     alert("Informe uma quantidade válida.");
     return;
   }
-
   
-  const existe = cart.find((item) => item.id === id);
   const precoUnitario = Number(produto.preco || 0);
 
   const itemFormatado = {
