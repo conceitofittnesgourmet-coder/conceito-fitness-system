@@ -322,23 +322,41 @@ function adicionarProduto(produto) {
   precoFinal,
   adicionais,
 }) {
+  const configuracoesNormalizadas = Array.isArray(escolhas)
+    ? escolhas.map((item) => ({
+        grupoId: String(item.grupoId || ""),
+        grupo: String(item.grupo || ""),
+        opcaoId: String(item.opcaoId || ""),
+        opcao: String(item.opcao || ""),
+        quantidade: Number(item.quantidade || 1),
+        valorUnitario: Number(
+          item.valorUnitario ?? item.valor ?? 0
+        ),
+        valor: Number(item.valor || 0),
+      }))
+    : [];
 
   const novoProduto = {
     ...produto,
 
-    preco: precoFinal,
+    preco: Number(precoFinal || produto.preco || 0),
 
-    precoOriginal: produto.preco,
+    precoOriginal: Number(produto.preco || 0),
 
-    adicionais,
+    adicionais: Number(adicionais || 0),
 
-    configuracoes: escolhas,
+    configuracoes: configuracoesNormalizadas,
   };
+
+  console.log(
+    "PERSONALIZAÇÃO ADICIONADA AO PDV:",
+    novoProduto.nome,
+    configuracoesNormalizadas
+  );
 
   setProdutoConfigModal(null);
 
   adicionarProdutoSemConfiguracao(novoProduto);
-
 }
 
 function confirmarProdutoPeso() {
@@ -673,7 +691,19 @@ pagamentos: pagamentosFinalizados.map((p) => ({
       ? Number(item.subtotal || 0)
       : Number(item.preco || 0) * Number(item.quantidade || 1),
   imagem: item.imagem,
-  configuracoes: item.configuracoes || [],
+  configuracoes: Array.isArray(item.configuracoes)
+  ? item.configuracoes.map((config) => ({
+      grupoId: String(config.grupoId || ""),
+      grupo: String(config.grupo || ""),
+      opcaoId: String(config.opcaoId || ""),
+      opcao: String(config.opcao || ""),
+      quantidade: Number(config.quantidade || 1),
+      valorUnitario: Number(
+        config.valorUnitario ?? config.valor ?? 0
+      ),
+      valor: Number(config.valor || 0),
+    }))
+  : [],
 })),
 
     subtotal: subtotalPedido,
@@ -982,6 +1012,24 @@ total: totalPedido,
 
                   <div className="cart-product-name">
   <span>{item.nome}</span>
+
+  {Array.isArray(item.configuracoes) &&
+  item.configuracoes.length > 0 && (
+    <div
+      style={{
+        fontSize: "12px",
+        marginTop: "4px",
+        fontWeight: "600",
+      }}
+    >
+      {item.configuracoes.map((config, index) => (
+        <div key={`${config.grupoId}-${config.opcaoId}-${index}`}>
+          {config.grupo || "Personalização"}:{" "}
+          {config.opcao || "Opção"}
+        </div>
+      ))}
+    </div>
+  )}
 
   <div className="controle-quantidade">
     <button
