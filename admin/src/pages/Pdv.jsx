@@ -276,9 +276,6 @@ function adicionarProduto(produto) {
   return;
 }
 
-
-  const existe = cart.find((item) => item.id === id);
-
   const precoUnitario = Number(produto.preco || 0);
 
   const produtoFormatado = {
@@ -418,7 +415,8 @@ function confirmarProdutoPeso() {
     alert("Informe uma quantidade válida.");
     return;
   }
-  
+
+  const existe = cart.find((item) => item.id === id);
   const precoUnitario = Number(produto.preco || 0);
 
   const itemFormatado = {
