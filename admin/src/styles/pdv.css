@@ -287,11 +287,28 @@
 
 .cart-product-name {
   display: flex;
-  gap: 8px;
+  flex-direction: column;
+  align-items: flex-start;
+  gap: 4px;
+  min-width: 0;
 }
 
 .cart-product-name span {
   color: white;
+}
+
+.cart-product-name > div:not(.controle-quantidade) {
+  color: #22c55e;
+  font-size: 12px;
+  line-height: 1.35;
+  width: 100%;
+}
+
+.controle-quantidade {
+  display: flex;
+  align-items: center;
+  gap: 6px;
+  margin-top: 4px;
 }
 
 .pdv-cart-row small {
