@@ -2,6 +2,10 @@ import { useEffect, useMemo, useRef, useState } from "react";
 import { useParams } from "react-router-dom";
 import api from "../services/api";
 import "../styles/cupom.css";
+import {
+  configuracoesAgrupadas,
+  resumoOpcao,
+} from "../utils/personalizacaoPedido";
 
 export default function Cupom() {
   const { id } = useParams();
@@ -74,6 +78,9 @@ setNfce(nfceDoPedido);
           item.valorTotal ||
           qtd * preco
       );
+
+      const grupos = configuracoesAgrupadas(item);
+      const observacaoItem = String(item.observacaoItem || "").trim();
 
       return acc + totalItem;
     }, 0);
@@ -217,18 +224,47 @@ setNfce(nfceDoPedido);
           );
 
           return (
-            <div className="cupom-item" key={index}>
-              <span>
-                {qtd}x{" "}
-                {item.nome ||
-                  item.produtoNome ||
-                  item.produto ||
-                  "Produto"}
-              </span>
+  <div className="cupom-item" key={index}>
+    <div style={{ flex: 1 }}>
+      <div>
+        {qtd}x{" "}
+        {item.nome ||
+          item.produtoNome ||
+          item.produto ||
+          "Produto"}
+      </div>
 
-              <strong>{moeda(totalItem)}</strong>
-            </div>
-          );
+      {grupos.map(({ grupo, opcoes }) => (
+        <div
+          key={grupo}
+          style={{
+            fontSize: "11px",
+            marginTop: "2px",
+            paddingLeft: "8px",
+          }}
+        >
+          <strong>{grupo}:</strong>{" "}
+          {opcoes.map((opcao) => resumoOpcao(opcao)).join(", ")}
+        </div>
+      ))}
+
+      {observacaoItem && (
+        <div
+          style={{
+            fontSize: "11px",
+            marginTop: "2px",
+            paddingLeft: "8px",
+            fontWeight: "bold",
+          }}
+        >
+          OBS: {observacaoItem}
+        </div>
+      )}
+    </div>
+
+    <strong>{moeda(totalItem)}</strong>
+  </div>
+);
         })}
 
         {produtos.length === 0 && (

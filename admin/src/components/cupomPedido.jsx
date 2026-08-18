@@ -1,4 +1,8 @@
 import React from "react";
+import {
+  configuracoesAgrupadas,
+  resumoOpcao,
+} from "../utils/personalizacaoPedido";
 
 const CupomPedido = React.forwardRef(({ pedido }, ref) => {
   if (!pedido) return null;
@@ -86,12 +90,43 @@ const CupomPedido = React.forwardRef(({ pedido }, ref) => {
         const quantidade = Number(produto.quantidade || 1);
         const preco = Number(produto.preco || 0);
         const subtotal = quantidade * preco;
+        const grupos = configuracoesAgrupadas(produto);
+        const observacaoItem = String(produto.observacaoItem || "").trim();
 
         return (
           <div key={index} style={{ marginBottom: "4px" }}>
             <div>
-              {quantidade}x {produto.nome}
-            </div>
+  <div>
+    {quantidade}x {produto.nome}
+  </div>
+
+  {grupos.map(({ grupo, opcoes }) => (
+    <div
+      key={grupo}
+      style={{
+        fontSize: "10px",
+        paddingLeft: "8px",
+        marginTop: "2px",
+      }}
+    >
+      <strong>{grupo}:</strong>{" "}
+      {opcoes.map((opcao) => resumoOpcao(opcao)).join(", ")}
+    </div>
+  ))}
+
+  {observacaoItem && (
+    <div
+      style={{
+        fontSize: "10px",
+        paddingLeft: "8px",
+        marginTop: "2px",
+        fontWeight: "bold",
+      }}
+    >
+      OBS: {observacaoItem}
+    </div>
+  )}
+</div>
             <div style={{ textAlign: "right" }}>
               R$ {subtotal.toFixed(2)}
             </div>

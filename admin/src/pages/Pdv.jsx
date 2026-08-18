@@ -243,7 +243,26 @@ function adicionarProduto(produto) {
 }
 
  function adicionarProdutoSemConfiguracao(produto) {
-  const id = produto._id || produto.id;
+  const produtoId = produto._id || produto.produtoId || produto.id;
+
+  const configuracoes = Array.isArray(produto.configuracoes)
+    ? produto.configuracoes
+    : [];
+
+  const assinaturaConfiguracao = configuracoes
+    .map((config) =>
+      [
+        String(config.grupoId || ""),
+        String(config.opcaoId || ""),
+        Number(config.quantidade || 1),
+      ].join(":")
+    )
+    .sort()
+    .join("|");
+
+  const id = assinaturaConfiguracao
+    ? `${produtoId}::${assinaturaConfiguracao}`
+    : String(produtoId);
 
   const vendaPorPeso = Boolean(produto.vendaPorPeso);
   const permiteFracionado = Boolean(produto.permiteFracionado);
@@ -264,7 +283,7 @@ function adicionarProduto(produto) {
 
   const produtoFormatado = {
     id,
-    produtoId: produto._id || produto.id,
+    produtoId,
     nome: produto.nome,
     preco: precoUnitario,
     precoUnitario,
