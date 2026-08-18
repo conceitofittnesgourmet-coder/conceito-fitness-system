@@ -217,13 +217,20 @@ setNfce(nfceDoPedido);
         <hr />
 
         {produtos.map((item, index) => {
-          const qtd = Number(item.quantidade || 1);
-          const preco = Number(item.preco || item.valorUnitario || 0);
-          const totalItem = Number(
-            item.subtotal || item.total || qtd * preco
-          );
+  const qtd = Number(item.quantidade || 1);
+  const preco = Number(item.preco || item.valorUnitario || 0);
 
-          return (
+  const totalItem = Number(
+    item.subtotal || item.total || qtd * preco
+  );
+
+  const grupos = configuracoesAgrupadas(item);
+
+  const observacaoItem = String(
+    item.observacaoItem || ""
+  ).trim();
+
+  return (
   <div className="cupom-item" key={index}>
     <div style={{ flex: 1 }}>
       <div>
