@@ -173,10 +173,36 @@ setNfce(nfceDoPedido);
           {pedido.tipo || pedido.mesa || "Balcão"}
         </p>
 
-        <p>
-          <strong>Pagamento:</strong>{" "}
-          {pedido.pagamento || pedido.formaPagamento || "-"}
-        </p>
+        {Array.isArray(pedido.pagamentos) &&
+pedido.pagamentos.length > 0 ? (
+  <>
+    <p>
+      <strong>Pagamentos:</strong>
+    </p>
+
+    {pedido.pagamentos.map((pagamento, index) => (
+      <p key={`${pagamento.forma}-${index}`}>
+        {pagamento.forma === "DINHEIRO"
+          ? "Dinheiro"
+          : pagamento.forma === "PIX"
+          ? "PIX"
+          : pagamento.forma === "CREDITO"
+          ? "Cartão Crédito"
+          : pagamento.forma === "DEBITO"
+          ? "Cartão Débito"
+          : pagamento.forma === "CREDIARIO"
+          ? "Crediário / A Prazo"
+          : pagamento.forma}
+        : {moeda(pagamento.valor)}
+      </p>
+    ))}
+  </>
+) : (
+  <p>
+    <strong>Pagamento:</strong>{" "}
+    {pedido.pagamento || pedido.formaPagamento || "-"}
+  </p>
+)}
 
         {pedido.observacao && (
           <>

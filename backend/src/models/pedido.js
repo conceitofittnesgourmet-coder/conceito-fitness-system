@@ -289,6 +289,36 @@ pagamento: {
   default: "PIX",
 },
 
+pagamentos: {
+  type: [
+    {
+      forma: {
+        type: String,
+        required: true,
+        trim: true,
+      },
+
+      valor: {
+        type: Number,
+        required: true,
+        min: 0,
+      },
+
+      vencimento: {
+        type: Date,
+        default: null,
+      },
+
+      status: {
+        type: String,
+        enum: ["pago", "pendente"],
+        default: "pago",
+      },
+    },
+  ],
+  default: [],
+},
+
 tipo: {
   type: String,
   default: "balcao",

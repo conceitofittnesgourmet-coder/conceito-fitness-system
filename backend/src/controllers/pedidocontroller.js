@@ -90,10 +90,24 @@ exports.criarPedido = async (req, res) => {
 
 const pagamentosRecebidos = Array.isArray(req.body.pagamentos)
   ? req.body.pagamentos
-      .map((p) => ({
-        forma: String(p.forma || "").toUpperCase(),
-        valor: Number(p.valor || 0),
-      }))
+      .map((p) => {
+        const forma = String(p.forma || "").toUpperCase();
+        const ehCrediario = forma === "CREDIARIO";
+
+        return {
+          forma,
+          valor: Number(p.valor || 0),
+
+          vencimento:
+  p.vencimento
+    ? new Date(`${p.vencimento}T12:00:00-03:00`)
+    : null,
+
+          status: ehCrediario
+            ? "pendente"
+            : "pago",
+        };
+      })
       .filter((p) => p.forma && p.valor > 0)
   : [];
 
@@ -332,31 +346,67 @@ try {
 const pagamentosFinanceiro = pagamentosSeguros;
 
   for (const pagamentoItem of pagamentosFinanceiro) {
+  const ehCrediario =
+    String(pagamentoItem.forma || "").toUpperCase() === "CREDIARIO";
+
   const contaReceber = await ContaReceber.create({
-    descricao: `Pedido #${pedidoCriado._id.toString().slice(-6)} - ${pagamentoItem.forma}`,
+    descricao: `Pedido #${pedidoCriado._id
+      .toString()
+      .slice(-6)} - ${pagamentoItem.forma}`,
+
     cliente: cliente || "Cliente",
+
     valor: Number(pagamentoItem.valor || 0),
-    vencimento: new Date(),
-    dataRecebimento: new Date(),
-    status: "recebida",
+
+    vencimento:
+      pagamentoItem.vencimento
+        ? new Date(pagamentoItem.vencimento)
+        : new Date(),
+
+    dataRecebimento: ehCrediario
+      ? null
+      : new Date(),
+
+    status: ehCrediario
+      ? "pendente"
+      : "recebida",
+
     formaRecebimento: pagamentoItem.forma,
+
     pedido: pedidoCriado._id,
-    observacao: "Gerado automaticamente pelo pedido.",
+
+    observacao: ehCrediario
+      ? "Venda realizada a prazo pelo PDV."
+      : "Gerado automaticamente pelo pedido.",
+
     empresa: dadosPedido.empresa,
   });
 
-  await MovimentacaoFinanceira.create({
-    tipo: "entrada",
-    origem: "pedido",
-    descricao: `Venda: Pedido #${pedidoCriado._id.toString().slice(-6)} - ${pagamentoItem.forma}`,
-    categoria: "Vendas",
-    valor: Number(pagamentoItem.valor || 0),
-    formaPagamento: pagamentoItem.forma,
-    pedido: pedidoCriado._id,
-    contaReceber: contaReceber._id,
-    observacao: "Entrada automática gerada pelo pedido.",
-    empresa: dadosPedido.empresa,
-  });
+  if (!ehCrediario) {
+    await MovimentacaoFinanceira.create({
+      tipo: "entrada",
+      origem: "pedido",
+
+      descricao: `Venda: Pedido #${pedidoCriado._id
+        .toString()
+        .slice(-6)} - ${pagamentoItem.forma}`,
+
+      categoria: "Vendas",
+
+      valor: Number(pagamentoItem.valor || 0),
+
+      formaPagamento: pagamentoItem.forma,
+
+      pedido: pedidoCriado._id,
+
+      contaReceber: contaReceber._id,
+
+      observacao:
+        "Entrada automática gerada pelo pedido.",
+
+      empresa: dadosPedido.empresa,
+    });
+  }
 }
 } catch (financeiroError) {
   console.log(

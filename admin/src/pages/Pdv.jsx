@@ -83,10 +83,11 @@ export default function Pdv() {
   const [produtoPesoModal, setProdutoPesoModal] = useState(null);
   const [quantidadePeso, setQuantidadePeso] = useState("1");
   const [pagamentos, setPagamentos] = useState([
-   {
-    id: crypto.randomUUID(),
+  {
+    id: Date.now(),
     forma: "PIX",
     valor: "",
+    vencimento: "",
   },
 ]);
 const [produtoConfigModal, setProdutoConfigModal] = useState(null);
@@ -515,14 +516,15 @@ function adicionarPagamento() {
     return;
   }
 
-  setPagamentos((lista) => [
-    ...lista,
-    {
-      id: crypto.randomUUID(),
-      forma: "PIX",
-      valor: "",
-    },
-  ]);
+ setPagamentos((lista) => [
+  ...lista,
+  {
+    id: Date.now(),
+    forma: "PIX",
+    valor: "",
+    vencimento: "",
+  },
+]);
 }
 
 function removerPagamento(id) {
@@ -677,6 +679,20 @@ if (pagamentosFinalizados.some((p) => Number(p.valor || 0) <= 0)) {
   return;
 }
 
+const crediarioSemVencimento =
+  pagamentosFinalizados.some(
+    (p) =>
+      p.forma === "CREDIARIO" &&
+      !p.vencimento
+  );
+
+if (crediarioSemVencimento) {
+  alert(
+    "Informe a data de vencimento do pagamento a prazo."
+  );
+  return;
+}
+
     const novoPedido = {
       cliente,
 
@@ -711,11 +727,13 @@ troco: Number(troco || 0),
 
       status: "pendente",
 
-      pagamento: pagamentosFinalizados[0]?.forma || "PIX",
-
-pagamentos: pagamentosFinalizados.map((p) => ({
+      pagamentos: pagamentosFinalizados.map((p) => ({
   forma: p.forma,
   valor: Number(p.valor || 0),
+  vencimento:
+    p.forma === "CREDIARIO" && p.vencimento
+      ? p.vencimento
+      : null,
 })),
 
       produtos: cart.map((item) => ({
@@ -829,6 +847,7 @@ total: totalPedido,
     id: crypto.randomUUID(),
     forma: "PIX",
     valor: "",
+    vencimento: "",
   },
 ]);
 
@@ -1359,6 +1378,10 @@ total: totalPedido,
           Cartão Débito
         </option>
 
+        <option value="CREDIARIO">
+          Crediário / A Prazo
+        </option>
+
       </select>
 
       <input
@@ -1374,6 +1397,22 @@ total: totalPedido,
           )
         }
       />
+
+      {pagamentoItem.forma === "CREDIARIO" && (
+  <input
+    type="date"
+    value={pagamentoItem.vencimento || ""}
+    onChange={(e) =>
+      atualizarPagamento(
+        pagamentoItem.id,
+        "vencimento",
+        e.target.value
+      )
+    }
+    required
+    title="Data de vencimento do crediário"
+  />
+)}
 
       <button
         type="button"
