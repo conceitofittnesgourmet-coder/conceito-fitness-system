@@ -57,18 +57,26 @@ function pagamentosDoPedido(pedido) {
 function resumirPedidos(pedidos = []) {
   const resumo = {
     total: 0, quantidadePedidos: pedidos.length, ticketMedio: 0, maiorVenda: 0,
-    pix: 0, credito: 0, debito: 0, dinheiro: 0, outros: 0,
+    pix: 0, credito: 0, debito: 0, dinheiro: 0, crediario: 0, outros: 0,
   };
   for (const pedido of pedidos) {
     const total = numero(pedido.total);
     resumo.total += total;
     resumo.maiorVenda = Math.max(resumo.maiorVenda, total);
     for (const pagamento of pagamentosDoPedido(pedido)) {
-      if (pagamento.forma === "PIX") resumo.pix += pagamento.valor;
-      else if (["CREDITO", "CRÉDITO"].includes(pagamento.forma)) resumo.credito += pagamento.valor;
-      else if (["DEBITO", "DÉBITO"].includes(pagamento.forma)) resumo.debito += pagamento.valor;
-      else if (pagamento.forma === "DINHEIRO") resumo.dinheiro += pagamento.valor;
-      else resumo.outros += pagamento.valor;
+      if (pagamento.forma === "PIX") {
+  resumo.pix += pagamento.valor;
+} else if (["CREDITO", "CRÉDITO"].includes(pagamento.forma)) {
+  resumo.credito += pagamento.valor;
+} else if (["DEBITO", "DÉBITO"].includes(pagamento.forma)) {
+  resumo.debito += pagamento.valor;
+} else if (pagamento.forma === "DINHEIRO") {
+  resumo.dinheiro += pagamento.valor;
+} else if (pagamento.forma === "CREDIARIO") {
+  resumo.crediario += pagamento.valor;
+} else {
+  resumo.outros += pagamento.valor;
+}
     }
   }
   resumo.ticketMedio = resumo.quantidadePedidos ? resumo.total / resumo.quantidadePedidos : 0;

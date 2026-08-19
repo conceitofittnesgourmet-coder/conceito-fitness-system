@@ -128,6 +128,7 @@ function Caixa() {
     credito: Number(resumoApi?.credito || 0),
     debito: Number(resumoApi?.debito || 0),
     dinheiro: Number(resumoApi?.dinheiro || 0),
+    crediario: Number(resumoApi?.crediario || 0),
     ticketMedio: Number(resumoApi?.ticketMedio || 0),
     maiorVenda: Number(resumoApi?.maiorVenda || 0),
     totalSangrias: Number(resumoApi?.totalSangrias || 0),
@@ -166,8 +167,12 @@ const totalConferido =
   debitoConferidoValor +
   dinheiroVendasConferido;
 
+const totalRecebidoEsperado =
+  Number(resumo.total || 0) -
+  Number(resumo.crediario || 0);
+
 const diferencaVendas =
-  totalConferido - Number(resumo.total || 0);
+  totalConferido - totalRecebidoEsperado;
 
 const diferencaDinheiro =
   dinheiroContadoValor - dinheiroEsperado;
