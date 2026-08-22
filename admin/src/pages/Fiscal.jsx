@@ -465,6 +465,47 @@ async function cancelarNfceEmitida(nfce) {
   }
 }
 
+async function processarEstoqueNota(nota) {
+  try {
+    if (nota.estoqueProcessado) {
+      alert(
+        "Esta nota já foi processada no estoque."
+      );
+      return;
+    }
+
+    const confirmar = window.confirm(
+      `Processar a NF-e ${nota.numero} no estoque?\n\n` +
+      "O sistema criará o fornecedor quando necessário, " +
+      "cadastrará os insumos ainda inexistentes, atualizará " +
+      "o estoque e registrará a compra."
+    );
+
+    if (!confirmar) return;
+
+    const response = await api.post(
+      `/fiscal/notas-entrada/${nota._id}/processar-estoque`
+    );
+
+    alert(
+      response.data.message ||
+      "Nota processada com sucesso."
+    );
+
+    await carregarDados();
+  } catch (error) {
+    console.log(
+      "Erro ao processar estoque da NF-e:",
+      error
+    );
+
+    alert(
+      error.response?.data?.message ||
+      "Erro ao processar estoque da nota."
+    );
+  }
+}
+
   async function cancelarNota(id) {
     if (!window.confirm("Deseja cancelar esta nota no sistema?")) return;
 
@@ -765,6 +806,23 @@ async function cancelarNfceEmitida(nfce) {
                   visualizarXmlNfce(nfce._id)
                 }
               >
+                {!nota.estoqueProcessado ? (
+  <button
+    className="btn-fiscal salvar"
+    onClick={() =>
+      processarEstoqueNota(nota)
+    }
+  >
+    Processar Estoque
+  </button>
+) : (
+  <button
+    className="btn-fiscal"
+    disabled
+  >
+    Estoque Processado
+  </button>
+)}
                 XML
               </button>
 

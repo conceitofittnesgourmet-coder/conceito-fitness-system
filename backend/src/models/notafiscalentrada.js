@@ -125,6 +125,17 @@ const notaFiscalEntradaSchema = new mongoose.Schema(
       default: false,
     },
 
+    estoqueProcessado: {
+  type: Boolean,
+  default: false,
+},
+
+compraGerada: {
+  type: mongoose.Schema.Types.ObjectId,
+  ref: "Compra",
+  default: null,
+},
+
     observacao: {
       type: String,
       default: "",

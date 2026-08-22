@@ -17,6 +17,7 @@ const {
   excluirNotaEntrada,
   resumoFiscal,
   importarXmlNotaEntrada,
+  processarNotaNoEstoque,
 } = require("../controllers/fiscalcontroller");
 
 router.get("/resumo", authMiddleware, resumoFiscal);
@@ -30,6 +31,11 @@ router.post(
 
 router.get("/notas-entrada", authMiddleware, listarNotasEntrada);
 router.post("/notas-entrada", authMiddleware, criarNotaEntrada);
+router.post(
+  "/notas-entrada/:id/processar-estoque",
+  authMiddleware,
+  processarNotaNoEstoque
+);
 router.get("/notas-entrada/:id", authMiddleware, buscarNotaEntrada);
 router.patch("/notas-entrada/:id/cancelar", authMiddleware, cancelarNotaEntrada);
 router.delete("/notas-entrada/:id", authMiddleware, excluirNotaEntrada);
