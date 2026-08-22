@@ -2,8 +2,10 @@ const zlib = require("zlib");
 
 const Empresa = require("../models/empresa");
 
+const axios = require("axios");
+
 const {
-  enviarMensagemSefaz,
+  criarHttpsAgent,
   somenteNumeros,
   extrairTag,
   extrairTodosBlocos,
@@ -15,6 +17,9 @@ const URL_DISTRIBUICAO =
 
 const NAMESPACE_DISTRIBUICAO =
   "http://www.portalfiscal.inf.br/nfe/wsdl/NFeDistribuicaoDFe";
+
+const SOAP_ACTION_DISTRIBUICAO =
+  "http://www.portalfiscal.inf.br/nfe/wsdl/NFeDistribuicaoDFe/nfeDistDFeInteresse";
 
 const NAMESPACE_NFE =
   "http://www.portalfiscal.inf.br/nfe";
@@ -72,6 +77,24 @@ function montarConsultaPorChave({
   </consChNFe>
 </distDFeInt>
   `.trim();
+}
+
+function montarEnvelopeDistribuicao(xmlMensagem) {
+  return (
+    '<?xml version="1.0" encoding="UTF-8"?>' +
+    '<soap12:Envelope ' +
+    'xmlns:xsi="http://www.w3.org/2001/XMLSchema-instance" ' +
+    'xmlns:xsd="http://www.w3.org/2001/XMLSchema" ' +
+    'xmlns:soap12="http://www.w3.org/2003/05/soap-envelope">' +
+    "<soap12:Body>" +
+    `<nfeDistDFeInteresse xmlns="${NAMESPACE_DISTRIBUICAO}">` +
+    `<nfeDadosMsg xmlns="${NAMESPACE_DISTRIBUICAO}">` +
+    xmlMensagem +
+    "</nfeDadosMsg>" +
+    "</nfeDistDFeInteresse>" +
+    "</soap12:Body>" +
+    "</soap12:Envelope>"
+  );
 }
 
 function descompactarDocZip(base64) {
@@ -157,20 +180,91 @@ async function buscarNfePorChave(chaveInformada) {
       chave,
     });
 
-  const resposta =
-    await enviarMensagemSefaz({
-      url: URL_DISTRIBUICAO,
+  const envelope =
+  montarEnvelopeDistribuicao(
+    xmlMensagem
+  );
 
-      namespaceWsdl:
-        NAMESPACE_DISTRIBUICAO,
+const httpsAgent =
+  criarHttpsAgent();
 
-      xmlMensagem,
+let response;
 
-      nomeServico:
-        "Distribuição de NF-e",
+try {
+  response = await axios.post(
+    URL_DISTRIBUICAO,
+    envelope,
+    {
+      httpsAgent,
 
       timeout: 60000,
-    });
+
+      responseType: "text",
+
+      transformResponse: [
+        (data) => data,
+      ],
+
+      maxContentLength: Infinity,
+      maxBodyLength: Infinity,
+
+      headers: {
+        "Content-Type":
+          `application/soap+xml; charset=utf-8; action="${SOAP_ACTION_DISTRIBUICAO}"`,
+
+        Accept:
+          "application/soap+xml, application/xml, text/xml, */*",
+
+        "User-Agent":
+          "Conceito-Fitness-Gourmet-NFe/1.0",
+      },
+
+      validateStatus(status) {
+        return status >= 200 &&
+          status < 500;
+      },
+    }
+  );
+} catch (error) {
+  throw new Error(
+    `Distribuição de NF-e: ${
+      error?.message ||
+      "falha na comunicação com o Ambiente Nacional."
+    }`
+  );
+}
+
+const xmlSoap =
+  String(response.data || "");
+
+if (
+  response.status < 200 ||
+  response.status >= 300
+) {
+  const motivo =
+    extrairTag(
+      xmlSoap,
+      "faultstring"
+    ) ||
+    extrairTag(
+      xmlSoap,
+      "Text"
+    ) ||
+    extrairTag(
+      xmlSoap,
+      "xMotivo"
+    );
+
+  throw new Error(
+    `Distribuição de NF-e retornou HTTP ${response.status}` +
+      `${motivo ? ` — ${motivo}` : "."}`
+  );
+}
+
+const resposta = {
+  xmlSoap,
+  xmlConteudo: xmlSoap,
+};
 
   const xmlRetorno =
     String(
