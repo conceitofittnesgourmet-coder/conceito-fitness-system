@@ -806,23 +806,7 @@ async function processarEstoqueNota(nota) {
                   visualizarXmlNfce(nfce._id)
                 }
               >
-                {!nota.estoqueProcessado ? (
-  <button
-    className="btn-fiscal salvar"
-    onClick={() =>
-      processarEstoqueNota(nota)
-    }
-  >
-    Processar Estoque
-  </button>
-) : (
-  <button
-    className="btn-fiscal"
-    disabled
-  >
-    Estoque Processado
-  </button>
-)}
+
                 XML
               </button>
 
@@ -1200,6 +1184,22 @@ async function processarEstoqueNota(nota) {
                         >
                           <FaEye /> Ver
                         </button>
+
+                        {!nota.estoqueProcessado ? (
+  <button
+    className="btn-fiscal salvar"
+    onClick={() => processarEstoqueNota(nota)}
+  >
+    Processar Estoque
+  </button>
+) : (
+  <button
+    className="btn-fiscal"
+    disabled
+  >
+    Estoque Processado
+  </button>
+)}
 
                         <button
   className="btn-excluir"
