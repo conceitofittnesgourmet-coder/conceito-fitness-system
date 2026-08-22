@@ -69,6 +69,23 @@ const configuracaoFiscalSchema = new mongoose.Schema(
       default: false,
     },
 
+    ultimoNsuDistribuicao: {
+  type: String,
+  default: "000000000000000",
+  trim: true,
+},
+
+maxNsuDistribuicao: {
+  type: String,
+  default: "",
+  trim: true,
+},
+
+ultimaConsultaDistribuicao: {
+  type: Date,
+  default: null,
+},
+
     observacao: {
       type: String,
       default: "",

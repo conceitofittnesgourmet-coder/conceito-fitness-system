@@ -7,7 +7,10 @@ const MovimentacaoFinanceira = require("../models/movimentacaofinanceira");
 const xml2js = require("xml2js");
 const {
   buscarNfePorChave,
+  buscarDocumentosPorNsu,
 } = require("../services/nfeDistribuicaoService");
+
+
 
 function toNumber(valor) {
   return Number(valor || 0);
@@ -316,6 +319,51 @@ exports.buscarNfePelaChave = async (
       message:
         error.message ||
         "Erro ao consultar NF-e.",
+    });
+  }
+};
+
+exports.buscarNfesRecebidas = async (
+  req,
+  res
+) => {
+  try {
+    const resultado =
+      await buscarDocumentosPorNsu();
+
+    return res.json({
+      success: true,
+
+      cStat:
+        resultado.cStat,
+
+      xMotivo:
+        resultado.xMotivo,
+
+      ultNSU:
+        resultado.ultNSU,
+
+      maxNSU:
+        resultado.maxNSU,
+
+      documentos:
+        resultado.documentos,
+
+      message:
+        resultado.xMotivo ||
+        "Consulta realizada com sucesso.",
+    });
+  } catch (error) {
+    console.log(
+      "ERRO BUSCAR NF-E RECEBIDAS:",
+      error
+    );
+
+    return res.status(500).json({
+      success: false,
+      message:
+        error.message ||
+        "Erro ao consultar NF-e recebidas.",
     });
   }
 };

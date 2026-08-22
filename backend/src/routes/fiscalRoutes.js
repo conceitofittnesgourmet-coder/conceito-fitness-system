@@ -19,6 +19,7 @@ const {
   importarXmlNotaEntrada,
   processarNotaNoEstoque,
   buscarNfePelaChave,
+  buscarNfesRecebidas,
 } = require("../controllers/fiscalcontroller");
 
 router.get("/resumo", authMiddleware, resumoFiscal);
@@ -41,6 +42,11 @@ router.post(
   "/notas-entrada/buscar-chave",
   authMiddleware,
   buscarNfePelaChave
+);
+router.get(
+  "/notas-entrada/recebidas",
+  authMiddleware,
+  buscarNfesRecebidas
 );
 router.get("/notas-entrada/:id", authMiddleware, buscarNotaEntrada);
 router.patch("/notas-entrada/:id/cancelar", authMiddleware, cancelarNotaEntrada);
