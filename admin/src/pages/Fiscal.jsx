@@ -131,12 +131,17 @@ const [
       response.data;
 
     if (!dados.encontrouXml) {
-      alert(
-        dados.message ||
-        "XML completo ainda não disponível."
-      );
-      return;
-    }
+  const detalhes = [
+    dados.message || "XML completo ainda não disponível.",
+    dados.cStat ? `cStat: ${dados.cStat}` : "",
+    dados.xMotivo ? `Motivo: ${dados.xMotivo}` : "",
+  ]
+    .filter(Boolean)
+    .join("\n");
+
+  alert(detalhes);
+  return;
+}
 
     const xml =
       dados.xml;
