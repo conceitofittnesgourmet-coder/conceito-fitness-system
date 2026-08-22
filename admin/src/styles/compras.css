@@ -1,0 +1,268 @@
+/* =========================================================
+   COMPRAS - LAYOUT ORGANIZADO
+   ========================================================= */
+
+.compras-page {
+  width: 100%;
+  max-width: 1700px;
+  margin: 0 auto;
+  padding: 0 4px 32px;
+}
+
+/* ---------- KPIs ---------- */
+
+.compras-page .financeiro-kpis {
+  display: grid;
+  grid-template-columns: repeat(4, minmax(0, 1fr));
+  gap: 16px;
+  margin-bottom: 18px;
+}
+
+.compras-page .financeiro-kpi {
+  min-height: 135px;
+  padding: 20px;
+  border-radius: 16px;
+}
+
+/* =========================================================
+   FORMULÁRIOS
+   ========================================================= */
+
+.compras-form-grid {
+  display: grid;
+  grid-template-columns:
+    minmax(360px, 1.15fr)
+    minmax(330px, 1fr)
+    minmax(330px, 1fr);
+  gap: 16px;
+  align-items: start;
+  margin-bottom: 18px;
+}
+
+.compras-card {
+  min-width: 0;
+  height: auto !important;
+  align-self: start;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.compras-card h2 {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  margin: 0 0 16px;
+}
+
+/* Campos de todos os formulários */
+
+.compras-card input:not([type="checkbox"]),
+.compras-card select,
+.compras-card textarea {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  box-sizing: border-box;
+  margin: 0;
+}
+
+.compras-card input:not([type="checkbox"]),
+.compras-card select {
+  min-height: 44px;
+}
+
+.compras-card textarea {
+  min-height: 78px;
+  resize: vertical;
+}
+
+.compras-card button {
+  width: 100%;
+  min-height: 45px;
+  margin-top: 4px;
+  border-radius: 10px;
+}
+
+/* ---------- Novo Item ---------- */
+
+.compras-item-card {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 11px 12px;
+}
+
+.compras-item-card h2 {
+  grid-column: 1 / -1;
+}
+
+.compras-item-card > select:first-of-type,
+.compras-item-card > input:nth-of-type(1),
+.compras-item-card > textarea,
+.compras-item-card > button {
+  grid-column: 1 / -1;
+}
+
+/*
+  Os checkboxes ficam lado a lado,
+  sem virar aqueles quadrados gigantes.
+*/
+.compras-item-card > label {
+  display: flex;
+  align-items: center;
+  gap: 9px;
+  min-height: 38px;
+  margin: 0;
+  font-size: 14px;
+}
+
+.compras-item-card > label input[type="checkbox"] {
+  width: 18px !important;
+  height: 18px !important;
+  min-width: 18px;
+  margin: 0;
+  accent-color: #12d83f;
+}
+
+/* ---------- Fornecedor ---------- */
+
+.compras-fornecedor-card {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 11px;
+}
+
+/* ---------- Nova Compra ---------- */
+
+.compras-compra-card {
+  display: grid;
+  grid-template-columns: 1fr;
+  gap: 11px;
+}
+
+/*
+  Resolve especificamente o problema dos dois selects
+  "Fornecedor opcional" e "Selecione o insumo..."
+  que estavam sobrepostos.
+*/
+.compras-compra-card select {
+  position: relative;
+  z-index: 1;
+  margin: 0 !important;
+  padding-right: 36px;
+}
+
+.compras-compra-card input,
+.compras-compra-card textarea {
+  margin: 0 !important;
+}
+
+/* =========================================================
+   LISTAS
+   ========================================================= */
+
+.compras-listas-grid {
+  display: grid;
+  grid-template-columns: repeat(2, minmax(0, 1fr));
+  gap: 16px;
+  align-items: start;
+}
+
+.compras-lista-card {
+  min-width: 0;
+  border-radius: 16px;
+  overflow: hidden;
+}
+
+.compras-lista-card h2 {
+  margin-bottom: 14px;
+}
+
+.compras-lista-card table {
+  width: 100%;
+  table-layout: auto;
+  border-collapse: collapse;
+}
+
+.compras-lista-card th,
+.compras-lista-card td {
+  padding: 11px 10px;
+  vertical-align: middle;
+  text-align: left;
+  line-height: 1.3;
+}
+
+.compras-lista-card tbody tr {
+  border-top: 1px solid rgba(255, 255, 255, 0.06);
+}
+
+/* A lista de estoque ocupa toda a largura */
+
+.compras-estoque-card {
+  grid-column: 1 / -1;
+}
+
+.compras-estoque-card table {
+  table-layout: fixed;
+}
+
+.compras-estoque-card th:first-child,
+.compras-estoque-card td:first-child {
+  width: 34%;
+}
+
+.compras-estoque-card td:first-child {
+  word-break: normal;
+  overflow-wrap: break-word;
+}
+
+/* Evita a tabela virar uma coluna muito estreita */
+
+.compras-table-scroll {
+  width: 100%;
+  overflow-x: auto;
+  overflow-y: auto;
+}
+
+/* =========================================================
+   RESPONSIVO
+   ========================================================= */
+
+@media (max-width: 1350px) {
+  .compras-form-grid {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .compras-item-card {
+    grid-column: 1 / -1;
+  }
+}
+
+@media (max-width: 1000px) {
+  .compras-page .financeiro-kpis {
+    grid-template-columns: repeat(2, minmax(0, 1fr));
+  }
+
+  .compras-form-grid,
+  .compras-listas-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .compras-estoque-card {
+    grid-column: auto;
+  }
+}
+
+@media (max-width: 650px) {
+  .compras-page .financeiro-kpis {
+    grid-template-columns: 1fr;
+  }
+
+  .compras-item-card {
+    grid-template-columns: 1fr;
+  }
+
+  .compras-item-card > * {
+    grid-column: 1 !important;
+  }
+}

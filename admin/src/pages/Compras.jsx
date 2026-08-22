@@ -1,6 +1,7 @@
 import { useEffect, useState } from "react";
 import AdminLayout from "../layouts/AdminLayout";
 import api from "../services/api";
+import "../styles/compras.css";
 
 import {
   FaTruckLoading,
@@ -198,7 +199,7 @@ function Compras() {
       title="Compras"
       subtitle="Fornecedores, compras de insumos e entrada automática no estoque"
     >
-      <div className="financeiro-premium-page">
+      <div className="financeiro-premium-page compras-page">
         <section className="financeiro-topbar">
           <div>
             <h1>Compras</h1>
@@ -238,8 +239,8 @@ function Compras() {
           </div>
         </section>
 
-        <section className="financeiro-grid">
-          <div className="financeiro-card">
+        <section className="compras-form-grid">
+          <div className="financeiro-card compras-card compras-item-card">
   <h2>
     <FaBoxes /> Novo Item de Estoque
   </h2>
@@ -484,7 +485,7 @@ function Compras() {
     Cadastrar Item
   </button>
 </div>
-          <div className="financeiro-card">
+          <div className="financeiro-card compras-card compras-fornecedor-card">
             <h2>
               <FaPlus /> Novo Fornecedor
             </h2>
@@ -571,7 +572,7 @@ function Compras() {
             </button>
           </div>
 
-          <div className="financeiro-card">
+          <div className="financeiro-card compras-card compras-compra-card">
             <h2>
               <FaTruckLoading /> Nova Compra
             </h2>
@@ -672,7 +673,11 @@ function Compras() {
             <button onClick={registrarCompra}>Registrar Compra</button>
           </div>
 
-          <div className="financeiro-card movimentacoes grande">
+          </section>
+
+<section className="compras-listas-grid">
+
+          <div className="financeiro-card movimentacoes grande compras-lista-card">
             <h2>Fornecedores</h2>
 
             <table>
@@ -698,7 +703,7 @@ function Compras() {
             </table>
           </div>
 
-          <div className="financeiro-card movimentacoes grande">
+          <div className="financeiro-card movimentacoes grande compras-lista-card">
             <h2>Compras Registradas</h2>
 
             <table>
@@ -732,7 +737,7 @@ function Compras() {
             </table>
           </div>
 
-          <div className="financeiro-card movimentacoes grande">
+          <div className="financeiro-card movimentacoes grande compras-lista-card compras-estoque-card">
   <h2>Insumos e Embalagens</h2>
 
   <table>
