@@ -27,6 +27,13 @@ function Fiscal() {
   const [nfces, setNfces] = useState([]);
   const [carregandoNfce, setCarregandoNfce] = useState(false);
   const [xmlNome, setXmlNome] = useState("");
+  const [chaveBuscaNfe, setChaveBuscaNfe] =
+  useState("");
+
+const [
+  buscandoNfeChave,
+  setBuscandoNfeChave,
+] = useState(false);
   const [configFiscal, setConfigFiscal] = useState({
   ambiente: "homologacao",
   serieNfce: 1,
@@ -96,6 +103,129 @@ function Fiscal() {
     if (!data) return "-";
     return new Date(data).toLocaleDateString("pt-BR");
   }
+
+  async function buscarNfePorChave() {
+  const chave =
+    String(chaveBuscaNfe || "")
+      .replace(/\D/g, "");
+
+  if (chave.length !== 44) {
+    alert(
+      "Informe uma chave de acesso com 44 dígitos."
+    );
+    return;
+  }
+
+  try {
+    setBuscandoNfeChave(true);
+
+    const response =
+      await api.post(
+        "/fiscal/notas-entrada/buscar-chave",
+        {
+          chave,
+        }
+      );
+
+    const dados =
+      response.data;
+
+    if (!dados.encontrouXml) {
+      alert(
+        dados.message ||
+        "XML completo ainda não disponível."
+      );
+      return;
+    }
+
+    const xml =
+      dados.xml;
+
+    if (!xml) {
+      alert(
+        "A SEFAZ não retornou o XML completo."
+      );
+      return;
+    }
+
+    /*
+     * Reutiliza exatamente o fluxo
+     * já existente de importação.
+     */
+
+    const arquivo =
+      new File(
+        [xml],
+        `NFE-${chave}.xml`,
+        {
+          type: "application/xml",
+        }
+      );
+
+    const formData =
+      new FormData();
+
+    formData.append(
+      "xml",
+      arquivo
+    );
+
+    const importacao =
+      await api.post(
+        "/fiscal/notas-entrada/importar-xml",
+        formData,
+        {
+          headers: {
+            "Content-Type":
+              "multipart/form-data",
+          },
+        }
+      );
+
+    const resultado =
+      importacao.data;
+
+    setXmlNome(
+      `NF-e ${chave}`
+    );
+
+    if (resultado.nota) {
+      setNota((atual) => ({
+        ...atual,
+        ...resultado.nota,
+      }));
+    }
+
+    if (
+      Array.isArray(
+        resultado.itens
+      )
+    ) {
+      setItens(
+        resultado.itens
+      );
+    }
+
+    alert(
+      "NF-e localizada e XML importado. Confira os dados antes de salvar."
+    );
+  } catch (error) {
+    console.log(
+      "Erro ao buscar NF-e pela chave:",
+      error
+    );
+
+    alert(
+      error.response?.data
+        ?.message ||
+      "Não foi possível buscar a NF-e."
+    );
+  } finally {
+    setBuscandoNfeChave(
+      false
+    );
+  }
+}
 
   async function selecionarXML(e) {
   try {
@@ -894,6 +1024,61 @@ async function processarEstoqueNota(nota) {
             <p>Notas canceladas</p>
           </div>
         </section>
+
+        <section className="xml-upload-card">
+  <div>
+    <FaFileInvoice />
+
+    <strong>
+      Buscar NF-e pela chave
+    </strong>
+
+    <span>
+      Digite os 44 números da chave de acesso
+      impressa no DANFE para consultar a NF-e.
+    </span>
+  </div>
+
+  <div
+    style={{
+      display: "flex",
+      gap: "10px",
+      width: "100%",
+      flexWrap: "wrap",
+    }}
+  >
+    <input
+      type="text"
+      inputMode="numeric"
+      maxLength={54}
+      placeholder="Chave de acesso da NF-e"
+      value={chaveBuscaNfe}
+      onChange={(e) =>
+        setChaveBuscaNfe(
+          e.target.value
+        )
+      }
+      style={{
+        flex: "1 1 420px",
+      }}
+    />
+
+    <button
+      type="button"
+      className="btn-fiscal salvar"
+      onClick={
+        buscarNfePorChave
+      }
+      disabled={
+        buscandoNfeChave
+      }
+    >
+      {buscandoNfeChave
+        ? "Consultando..."
+        : "Buscar NF-e"}
+    </button>
+  </div>
+</section>
 
         <section className="xml-upload-card">
           <div>

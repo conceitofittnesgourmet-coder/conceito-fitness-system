@@ -5,6 +5,9 @@ const Compra = require("../models/compra");
 const ContaPagar = require("../models/contapagar");
 const MovimentacaoFinanceira = require("../models/movimentacaofinanceira");
 const xml2js = require("xml2js");
+const {
+  buscarNfePorChave,
+} = require("../services/nfeDistribuicaoService");
 
 function toNumber(valor) {
   return Number(valor || 0);
@@ -230,6 +233,89 @@ exports.buscarNotaEntrada = async (req, res) => {
     return res.status(500).json({
       success: false,
       message: error.message,
+    });
+  }
+};
+
+exports.buscarNfePelaChave = async (
+  req,
+  res
+) => {
+  try {
+    const chave =
+      String(
+        req.body?.chave || ""
+      ).replace(/\D/g, "");
+
+    if (chave.length !== 44) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Informe uma chave de acesso válida com 44 dígitos.",
+      });
+    }
+
+    const resultado =
+      await buscarNfePorChave(
+        chave
+      );
+
+    if (
+      !resultado.encontrouXml
+    ) {
+      return res.json({
+        success: true,
+
+        encontrouXml: false,
+
+        encontrouResumo:
+          resultado.encontrouResumo,
+
+        cStat:
+          resultado.cStat,
+
+        xMotivo:
+          resultado.xMotivo,
+
+        resumoXml:
+          resultado.resumoXml || "",
+
+        message:
+          resultado.encontrouResumo
+            ? "A NF-e foi localizada, mas o XML completo ainda não está disponível."
+            : resultado.xMotivo ||
+              "A NF-e não foi disponibilizada para download.",
+      });
+    }
+
+    return res.json({
+      success: true,
+
+      encontrouXml: true,
+
+      xml:
+        resultado.xml,
+
+      cStat:
+        resultado.cStat,
+
+      xMotivo:
+        resultado.xMotivo,
+
+      message:
+        "XML da NF-e localizado com sucesso.",
+    });
+  } catch (error) {
+    console.log(
+      "ERRO BUSCAR NF-E PELA CHAVE:",
+      error
+    );
+
+    return res.status(500).json({
+      success: false,
+      message:
+        error.message ||
+        "Erro ao consultar NF-e.",
     });
   }
 };
