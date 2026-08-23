@@ -75,8 +75,37 @@ if (tipo) {
   filtroMovimentacoes.tipo = tipo;
 }
 
-const contasPagar = await ContaPagar.find(empresa).sort({ vencimento: 1 });
-const contasReceber = await ContaReceber.find(empresa).sort({ vencimento: 1 });
+const filtroVencimento = {};
+
+if (inicio || fim) {
+  filtroVencimento.vencimento = {};
+
+  if (inicio) {
+    filtroVencimento.vencimento.$gte =
+      dataBrParaInicio(inicio);
+  }
+
+  if (fim) {
+    filtroVencimento.vencimento.$lte =
+      dataBrParaFim(fim);
+  }
+}
+
+const contasPagar =
+  await ContaPagar.find({
+    ...empresa,
+    ...filtroVencimento,
+  }).sort({
+    vencimento: 1,
+  });
+
+const contasReceber =
+  await ContaReceber.find({
+    ...empresa,
+    ...filtroVencimento,
+  }).sort({
+    vencimento: 1,
+  });
 
 const movimentacoes = await MovimentacaoFinanceira.find(filtroMovimentacoes)
   .sort({ data: -1 })
@@ -181,10 +210,18 @@ exports.criarContaPagar = async (req, res) => {
       });
     }
 
-    const conta = await ContaPagar.create({
-      ...req.body,
-      valor: Number(valor),
-    });
+    const empresa =
+  filtroEmpresa(req);
+
+    const conta =
+  await ContaPagar.create({
+    ...req.body,
+
+    ...empresa,
+
+    valor:
+      Number(valor),
+  });
 
     return res.status(201).json({
       success: true,
@@ -225,6 +262,7 @@ exports.pagarConta = async (req, res) => {
       valor: Number(conta.valor || 0),
       formaPagamento: conta.formaPagamento,
       contaPagar: conta._id,
+      empresa: conta.empresa,
     });
 
     return res.json({
@@ -284,10 +322,18 @@ exports.criarContaReceber = async (req, res) => {
       });
     }
 
-    const conta = await ContaReceber.create({
-      ...req.body,
-      valor: Number(valor),
-    });
+    const empresa =
+  filtroEmpresa(req);
+
+const conta =
+  await ContaReceber.create({
+    ...req.body,
+
+    ...empresa,
+
+    valor:
+      Number(valor),
+  });
 
     return res.status(201).json({
       success: true,
@@ -329,6 +375,8 @@ exports.receberConta = async (req, res) => {
       valor: Number(conta.valor || 0),
       formaPagamento: conta.formaRecebimento,
       contaReceber: conta._id,
+      empresa:
+  conta.empresa,
     });
 
     return res.json({

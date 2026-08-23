@@ -136,6 +136,33 @@ compraGerada: {
   default: null,
 },
 
+vencimentoPagamento: {
+  type: Date,
+  default: null,
+},
+
+parcelas: {
+  type: [
+    {
+      numero: {
+        type: String,
+        default: "",
+      },
+
+      vencimento: {
+        type: Date,
+        default: null,
+      },
+
+      valor: {
+        type: Number,
+        default: 0,
+      },
+    },
+  ],
+  default: [],
+},
+
     observacao: {
       type: String,
       default: "",

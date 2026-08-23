@@ -13,7 +13,16 @@ exports.dashboard = async (req, res) => {
 
 exports.dashboardExecutivo = async (req, res) => {
   try {
-    const dashboard = await gerarDashboardExecutivo({ dias: req.query.dias });
+    const dashboard =
+  await gerarDashboardExecutivo({
+    dias:
+      req.query.dias,
+
+    empresa:
+      req.usuario?.empresa ||
+      req.admin?.empresa ||
+      null,
+  });
     return res.status(200).json({ success: true, dashboard });
   } catch (error) {
     console.log("ERRO DASHBOARD EXECUTIVO:", error);

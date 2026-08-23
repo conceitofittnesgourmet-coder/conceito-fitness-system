@@ -3,6 +3,12 @@ const Produto = require("../models/produto");
 const Cliente = require("../models/cliente");
 const CmvProducao = require("../models/cmvproducao");
 const OrdemProducao = require("../models/ordemproducao");
+const {
+  filtroVendaValida,
+  inicioDiaSaoPaulo,
+  partesSaoPaulo,
+} =
+  require("./vendasMetricsService");
 
 function numero(valor) {
   const n = Number(valor || 0);
@@ -25,12 +31,6 @@ function criarFaixa(dias) {
   return { inicio, fim };
 }
 
-function statusValidoPedido(status) {
-  return !["cancelado", "cancelada", "estornado", "estornada"].includes(
-    String(status || "").toLowerCase()
-  );
-}
-
 function custoItem(item) {
   return numero(item.custoNaVenda ?? item.custo ?? 0);
 }
@@ -47,23 +47,71 @@ function formatarDia(data) {
   return data.toLocaleDateString("pt-BR", { day: "2-digit", month: "2-digit" });
 }
 
-async function gerarDashboardExecutivo({ dias = 30 } = {}) {
+async function gerarDashboardExecutivo({
+  dias = 30,
+  empresa = null,
+} = {}) {
+  const escopoEmpresa =
+  empresa
+    ? { empresa }
+    : {};
   const periodo = Math.min(365, Math.max(7, Number(dias) || 30));
   const { inicio, fim } = criarFaixa(periodo);
   const inicioAnterior = new Date(inicio);
   inicioAnterior.setDate(inicioAnterior.getDate() - periodo);
 
-  const [pedidosPeriodo, pedidosAnterior, produtos, totalClientes, cmvProduzido, ordensAtivas] = await Promise.all([
-    Pedido.find({ createdAt: { $gte: inicio, $lte: fim } }).lean(),
-    Pedido.find({ createdAt: { $gte: inicioAnterior, $lt: inicio } }).lean(),
-    Produto.find({}).lean(),
-    Cliente.countDocuments(),
-    CmvProducao.find({ dataProducao: { $gte: inicio, $lte: fim } }).lean(),
-    OrdemProducao.find({ status: { $in: ["aberta", "em_producao"] } }).lean(),
-  ]);
+  const [
+  pedidosPeriodo,
+  pedidosAnterior,
+  produtos,
+  totalClientes,
+  cmvProduzido,
+  ordensAtivas,
+] = await Promise.all([
+  Pedido.find({
+    ...escopoEmpresa,
+    ...filtroVendaValida(),
+    createdAt: {
+      $gte: inicio,
+      $lte: fim,
+    },
+  }).lean(),
 
-  const pedidosValidos = pedidosPeriodo.filter((pedido) => statusValidoPedido(pedido.status));
-  const pedidosValidosAnterior = pedidosAnterior.filter((pedido) => statusValidoPedido(pedido.status));
+  Pedido.find({
+    ...escopoEmpresa,
+    ...filtroVendaValida(),
+    createdAt: {
+      $gte: inicioAnterior,
+      $lt: inicio,
+    },
+  }).lean(),
+
+  Produto.find({
+    ...escopoEmpresa,
+  }).lean(),
+
+  Cliente.countDocuments({
+    ...escopoEmpresa,
+  }),
+
+  CmvProducao.find({
+    ...escopoEmpresa,
+    dataProducao: {
+      $gte: inicio,
+      $lte: fim,
+    },
+  }).lean(),
+
+  OrdemProducao.find({
+    ...escopoEmpresa,
+    status: {
+      $in: ["aberta", "em_producao"],
+    },
+  }).lean(),
+]);
+
+  const pedidosValidos = pedidosPeriodo;
+const pedidosValidosAnterior = pedidosAnterior;
 
   const diasSerie = [];
   const mapaSerie = {};
@@ -84,6 +132,7 @@ async function gerarDashboardExecutivo({ dias = 30 } = {}) {
   for (const pedido of pedidosValidos) {
     const total = numero(pedido.total);
     const data = new Date(pedido.createdAt);
+    const partes = partesSaoPaulo(data);
     const key = dataKey(data);
     faturamento += total;
 
@@ -92,7 +141,7 @@ async function gerarDashboardExecutivo({ dias = 30 } = {}) {
       mapaSerie[key].pedidos += 1;
     }
 
-    const hora = `${String(data.getHours()).padStart(2, "0")}h`;
+    const hora = `${String(partes.hora).padStart(2, "0")}h`;
     vendasPorHora.set(hora, (vendasPorHora.get(hora) || 0) + 1);
 
     for (const item of pedido.produtos || []) {

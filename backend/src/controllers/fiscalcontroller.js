@@ -75,6 +75,8 @@ exports.criarNotaEntrada = async (req, res) => {
       formaPagamento,
       observacao,
       itens,
+      parcelas,
+      vencimentoPagamento,
     } = req.body || {};
 
     if (!numero) {
@@ -175,29 +177,213 @@ itensCalculados.push(itemCalculado);
       itens: itensCalculados,
       xmlImportado: false,
       observacao: observacao || "",
+      parcelas:
+  Array.isArray(parcelas)
+    ? parcelas.map((parcela) => ({
+        numero:
+          parcela.numero || "",
+
+        vencimento:
+          parcela.vencimento
+            ? new Date(
+                parcela.vencimento
+              )
+            : null,
+
+            vencimentoPagamento:
+  vencimentoPagamento
+    ? new Date(vencimentoPagamento)
+    : null,
+
+        valor:
+          toNumber(
+            parcela.valor
+          ),
+      }))
+    : [],
     });
+
+    const empresaId =
+  req.usuario?.empresa ||
+  req.admin?.empresa ||
+  null;
+
+const forma =
+  String(
+    nota.formaPagamento || ""
+  ).toUpperCase();
+
+const formasAPrazo = [
+  "BOLETO",
+  "CREDIARIO",
+  "A_PRAZO",
+  "PRAZO",
+];
+
+const ehAPrazo =
+  formasAPrazo.includes(forma) ||
+  nota.parcelas.length > 0;
+
+/*
+ * ==================================================
+ * CONTAS A PAGAR DA NF-e
+ * ==================================================
+ */
+
+if (nota.parcelas.length > 0) {
+  for (
+    let indice = 0;
+    indice < nota.parcelas.length;
+    indice += 1
+  ) {
+    const parcela =
+      nota.parcelas[indice];
 
     await ContaPagar.create({
-      descricao: `NF Entrada ${numero}${serie ? "/" + serie : ""}`,
-      categoria: "Nota Fiscal Entrada",
-      fornecedor: nota.fornecedorNome,
-      valor: nota.valorTotal,
-      vencimento: new Date(),
-      dataPagamento: new Date(),
-      status: "paga",
-      formaPagamento: nota.formaPagamento,
-      observacao: "Gerado automaticamente pela entrada de nota fiscal.",
+      descricao:
+        `NF Entrada ${nota.numero}` +
+        `${nota.serie ? "/" + nota.serie : ""}` +
+        ` - Parcela ${
+          parcela.numero ||
+          indice + 1
+        }`,
+
+      categoria:
+        "Nota Fiscal Entrada",
+
+      fornecedor:
+        nota.fornecedorNome,
+
+      valor:
+        toNumber(
+          parcela.valor
+        ),
+
+      vencimento:
+        parcela.vencimento ||
+        new Date(),
+
+      dataPagamento: null,
+
+      status: "pendente",
+
+      formaPagamento:
+        forma || "BOLETO",
+
+      observacao:
+        "Gerado automaticamente pela NF-e. Aguardando pagamento.",
+
+      empresa:
+        empresaId,
     });
+  }
+} else {
+  /*
+   * Não há duplicatas no XML.
+   */
+
+  if (ehAPrazo) {
+    await ContaPagar.create({
+      descricao:
+        `NF Entrada ${nota.numero}` +
+        `${nota.serie ? "/" + nota.serie : ""}`,
+
+      categoria:
+        "Nota Fiscal Entrada",
+
+      fornecedor:
+        nota.fornecedorNome,
+
+      valor:
+        nota.valorTotal,
+
+      vencimento:
+  nota.vencimentoPagamento ||
+  new Date(),
+
+      dataPagamento: null,
+
+      status: "pendente",
+
+      formaPagamento:
+        forma || "BOLETO",
+
+      observacao:
+        "NF-e a prazo sem vencimento informado no XML. Confira o vencimento.",
+
+      empresa:
+        empresaId,
+    });
+  } else {
+    /*
+     * Pagamento imediato.
+     */
+
+    const conta =
+      await ContaPagar.create({
+        descricao:
+          `NF Entrada ${nota.numero}` +
+          `${
+            nota.serie
+              ? "/" + nota.serie
+              : ""
+          }`,
+
+        categoria:
+          "Nota Fiscal Entrada",
+
+        fornecedor:
+          nota.fornecedorNome,
+
+        valor:
+          nota.valorTotal,
+
+        vencimento:
+          new Date(),
+
+        dataPagamento:
+          new Date(),
+
+        status: "paga",
+
+        formaPagamento:
+          forma || "PIX",
+
+        observacao:
+          "Pagamento à vista gerado automaticamente pela NF-e.",
+
+        empresa:
+          empresaId,
+      });
 
     await MovimentacaoFinanceira.create({
-  tipo: "saida",
-  origem: "compra",
-  descricao: `NF Entrada ${numero}${serie ? "/" + serie : ""}`,
-  categoria: "Fiscal",
-  valor: nota.valorTotal,
-  formaPagamento: nota.formaPagamento,
-  observacao: "Saída automática gerada pela entrada de nota fiscal.",
-});
+      tipo: "saida",
+
+      origem: "conta_pagar",
+
+      descricao:
+        `Pagamento NF Entrada ${nota.numero}`,
+
+      categoria:
+        "Compras",
+
+      valor:
+        nota.valorTotal,
+
+      formaPagamento:
+        forma || "PIX",
+
+      contaPagar:
+        conta._id,
+
+      empresa:
+        empresaId,
+
+      observacao:
+        "Saída automática referente à NF-e paga à vista.",
+    });
+  }
+}
 
     return res.status(201).json({
       success: true,
@@ -507,6 +693,36 @@ exports.importarXmlNotaEntrada = async (req, res) => {
     const emit = nfe.emit || {};
     const total = nfe.total?.ICMSTot || {};
 
+    const cobr = nfe.cobr || {};
+const pag = nfe.pag || {};
+
+const duplicatasRaw =
+  cobr.dup || [];
+
+const duplicatas =
+  Array.isArray(duplicatasRaw)
+    ? duplicatasRaw
+    : duplicatasRaw
+    ? [duplicatasRaw]
+    : [];
+
+const parcelas = duplicatas
+  .map((dup) => ({
+    numero: String(
+      dup.nDup || ""
+    ),
+
+    vencimento:
+      dup.dVenc || null,
+
+    valor:
+      Number(dup.vDup || 0),
+  }))
+  .filter(
+    (parcela) =>
+      parcela.valor > 0
+  );
+
     const chaveAcesso =
       nfe.Id?.replace("NFe", "") ||
       resultado?.nfeProc?.protNFe?.infProt?.chNFe ||
@@ -533,6 +749,44 @@ exports.importarXmlNotaEntrada = async (req, res) => {
       };
     });
 
+    const pagamentosRaw =
+  pag.detPag || [];
+
+const pagamentosXml =
+  Array.isArray(pagamentosRaw)
+    ? pagamentosRaw
+    : pagamentosRaw
+    ? [pagamentosRaw]
+    : [];
+
+function traduzirPagamentoNfe(codigo) {
+  const valor =
+    String(codigo || "");
+
+  const formas = {
+    "01": "DINHEIRO",
+    "03": "CREDITO",
+    "04": "DEBITO",
+    "15": "BOLETO",
+    "17": "PIX",
+    "90": "SEM_PAGAMENTO",
+    "99": "OUTROS",
+  };
+
+  return formas[valor] || "OUTROS";
+}
+
+let formaPagamentoXml =
+  pagamentosXml.length
+    ? traduzirPagamentoNfe(
+        pagamentosXml[0]?.tPag
+      )
+    : "OUTROS";
+
+if (parcelas.length > 0) {
+  formaPagamentoXml = "BOLETO";
+}
+
     const nota = {
       numero: ide.nNF || "",
       serie: ide.serie || "",
@@ -548,7 +802,10 @@ exports.importarXmlNotaEntrada = async (req, res) => {
       valorDesconto: Number(total.vDesc || 0),
       valorProdutos: Number(total.vProd || 0),
       valorTotal: Number(total.vNF || 0),
-      formaPagamento: "BOLETO",
+      formaPagamento:
+  formaPagamentoXml,
+
+parcelas,
       observacao: "Importado automaticamente por XML.",
       itens,
     };

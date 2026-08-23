@@ -6,7 +6,15 @@ const ContaReceber = require("../models/contareceber");
 const MovimentacaoFinanceira = require("../models/movimentacaofinanceira");
 const Compra = require("../models/compra");
 const MateriaPrima = require("../models/materiaprima");
-const { dataBrParaInicio, dataBrParaFim, inicioMesSaoPaulo, pagamentosDoPedido, filtroEmpresa } = require("../services/vendasMetricsService");
+const {
+  dataBrParaInicio,
+  dataBrParaFim,
+  inicioMesSaoPaulo,
+  pagamentosDoPedido,
+  filtroEmpresa,
+  filtroVendaValida,
+} =
+  require("../services/vendasMetricsService");
 
 function montarPeriodo(query) {
   const hoje = new Date();
@@ -26,31 +34,45 @@ exports.relatorioGeral = async (req, res) => {
 
     const pedidos = await Pedido.find({
   ...empresa,
+  ...filtroVendaValida(),
   createdAt: {
     $gte: inicio,
     $lte: fim,
   },
-  status: {
-    $ne: "cancelado",
-  },
+
 }).sort({
   createdAt: -1,
 });
 
-    const contasPagar = await ContaPagar.find({
-      ...empresa, createdAt: { $gte: inicio, $lte: fim },
-    }).sort({ createdAt: -1 });
+    const contasPagar =
+  await ContaPagar.find({
+    ...empresa,
 
-    const contasReceber = await ContaReceber.find({
-      ...empresa, createdAt: { $gte: inicio, $lte: fim },
-    }).sort({ createdAt: -1 });
+    vencimento: {
+      $gte: inicio,
+      $lte: fim,
+    },
+  });
+
+    const contasReceber =
+  await ContaReceber.find({
+    ...empresa,
+
+    vencimento: {
+      $gte: inicio,
+      $lte: fim,
+    },
+  });
 
     const movimentacoes = await MovimentacaoFinanceira.find({
       ...empresa, data: { $gte: inicio, $lte: fim },
     }).sort({ createdAt: -1 });
 
     const compras = await Compra.find({
-      ...empresa, createdAt: { $gte: inicio, $lte: fim },
+      ...empresa, dataCompra: {
+  $gte: inicio,
+  $lte: fim,
+},
     })
       .populate("fornecedor")
       .populate("itens.materiaPrima")

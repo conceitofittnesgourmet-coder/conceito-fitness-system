@@ -58,6 +58,8 @@ const [
     valorFrete: "",
     valorDesconto: "",
     formaPagamento: "PIX",
+    vencimentoPagamento: "",
+parcelas: [],
     observacao: "",
   });
 
@@ -266,6 +268,15 @@ const [
       valorFrete: notaXml.valorFrete || "",
       valorDesconto: notaXml.valorDesconto || "",
       formaPagamento: notaXml.formaPagamento || "BOLETO",
+      parcelas:
+  Array.isArray(notaXml.parcelas)
+    ? notaXml.parcelas
+    : [],
+    vencimentoPagamento:
+  Array.isArray(notaXml.parcelas) &&
+  notaXml.parcelas.length > 0
+    ? ""
+    : "",
       observacao: notaXml.observacao || "Importado por XML.",
     });
 
@@ -337,6 +348,24 @@ const [
       return;
     }
 
+    const ehBoleto =
+  String(nota.formaPagamento || "").toUpperCase() === "BOLETO";
+
+const possuiParcelas =
+  Array.isArray(nota.parcelas) &&
+  nota.parcelas.length > 0;
+
+if (
+  ehBoleto &&
+  !possuiParcelas &&
+  !nota.vencimentoPagamento
+) {
+  alert(
+    "Informe a data de vencimento do boleto."
+  );
+  return;
+}
+
     const payload = {
       ...nota,
       fornecedor: nota.fornecedor || null,
@@ -372,6 +401,8 @@ const [
       valorFrete: "",
       valorDesconto: "",
       formaPagamento: "PIX",
+      vencimentoPagamento: "",
+      parcelas: [],
       observacao: "",
     });
 
@@ -1189,6 +1220,21 @@ async function processarEstoqueNota(nota) {
                 <option value="DEBITO">Cartão Débito</option>
                 <option value="BOLETO">Boleto</option>
               </select>
+
+                {nota.formaPagamento === "BOLETO" &&
+  (!Array.isArray(nota.parcelas) || nota.parcelas.length === 0) && (
+    <input
+      type="date"
+      value={nota.vencimentoPagamento || ""}
+      onChange={(e) =>
+        setNota({
+          ...nota,
+          vencimentoPagamento: e.target.value,
+        })
+      }
+      title="Vencimento do boleto"
+    />
+  )}
 
               <input
                 type="number"
