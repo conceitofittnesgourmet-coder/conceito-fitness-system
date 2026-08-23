@@ -625,9 +625,24 @@ formData.append(
   JSON.stringify(editDadosFiscais)
 );
 
-      if (editImagem) {
-        formData.append("imagens", editImagem);
-      }
+      editImagens.forEach((img) => {
+  if (img.file) {
+    formData.append("imagens", img.file);
+  }
+});
+
+formData.append(
+  "galeria",
+  JSON.stringify(
+    editImagens.map((img) => ({
+      principal: Boolean(img.principal),
+      ordem: Number(img.ordem || 0),
+      legenda: img.legenda || "",
+      alt: img.alt || "",
+      nome: img.nome || img.filename || "",
+    }))
+  )
+);
 
       await api.put(`/produtos/${produtoEditando._id}`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
@@ -1302,16 +1317,35 @@ const progressoCadastro =
     setImagens={setEditImagens}
     getRootProps={() => ({})}
     getInputProps={() => ({
-      onChange: (e) => {
-        const file = e.target.files?.[0];
+  type: "file",
+  accept: "image/*",
+  onChange: (e) => {
+    const file = e.target.files?.[0];
 
-        setEditImagem(file || null);
+    if (!file) return;
 
-        if (file) {
-          setPreviewEdit(URL.createObjectURL(file));
-        }
-      },
-    })}
+    const novaImagem = {
+      id: crypto.randomUUID(),
+      file,
+      nome: file.name,
+      tamanho: file.size,
+      tipo: file.type,
+      preview: URL.createObjectURL(file),
+      principal: editImagens.length === 0,
+      ordem: editImagens.length,
+      legenda: "",
+      alt: "",
+      upload: false,
+    };
+
+    setEditImagens((atuais) => [
+      ...atuais,
+      novaImagem,
+    ]);
+
+    setPreviewEdit(novaImagem.preview);
+  },
+})}
   />
 )}
 
