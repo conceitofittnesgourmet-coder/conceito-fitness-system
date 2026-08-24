@@ -11,10 +11,29 @@ const CATALOG_URL = "https://merchant-api.ifood.com.br/catalog/v2.0";
 let tokenCache = { accessToken: "", expiraEm: 0, chave: "" };
 
 function mensagemErro(error) {
+  const data = error.response?.data;
+
+  if (typeof data?.message === "string") {
+    return data.message;
+  }
+
+  if (typeof data?.error_description === "string") {
+    return data.error_description;
+  }
+
+  if (typeof data?.error === "string") {
+    return data.error;
+  }
+
+  if (data?.error && typeof data.error === "object") {
+    return JSON.stringify(data.error);
+  }
+
+  if (data && typeof data === "object") {
+    return JSON.stringify(data);
+  }
+
   return (
-    error.response?.data?.message ||
-    error.response?.data?.error_description ||
-    error.response?.data?.error ||
     error.message ||
     "Falha desconhecida na API do iFood."
   );
