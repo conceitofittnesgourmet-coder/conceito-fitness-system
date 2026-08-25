@@ -37,6 +37,8 @@ import ProdutoConfigEngine from "../components/ProdutoConfig/ProdutoConfigEngine
 import PublicacaoOnlineProduto from "../components/ProdutoForm/PublicacaoOnlineProduto";
 import FoodCoreTab from "../components/ProdutoForm/FoodCore/FoodCoreTab";
 import "../styles/produto-edicao.css";
+import ProdutoMarketing
+  from "../components/ProdutoForm/ProdutoMarketing";
 
 const API_URL = "https://conceito-fitness-system.onrender.com";
 
@@ -262,6 +264,17 @@ const [editDadosFiscais, setEditDadosFiscais] = useState({
   ],
 };
 
+const [marketing, setMarketing] =
+  useState({
+    seo: {
+      titulo: "",
+      descricao: "",
+      palavrasChave: [],
+      slug: "",
+      indexar: true,
+    },
+  });
+
   const [editNome, setEditNome] = useState("");
   const [editCategoria, setEditCategoria] = useState("");
   const [editCategorias, setEditCategorias] = useState("");
@@ -311,6 +324,19 @@ const [editSelos, setEditSelos] = useState({
   lowCarb: false,
   vegano: false,
   fit: false,
+});
+
+const [
+  editMarketing,
+  setEditMarketing
+] = useState({
+  seo: {
+    titulo: "",
+    descricao: "",
+    palavrasChave: [],
+    slug: "",
+    indexar: true,
+  },
 });
 
   const { getRootProps, getInputProps, isDragActive } = useDropzone({
@@ -396,6 +422,10 @@ const [editSelos, setEditSelos] = useState({
 formData.append(
   "destaque",
   Boolean(publicacao.destaque)
+);
+formData.append(
+  "marketing",
+  JSON.stringify(marketing)
 );
       formData.append("codigoBarras", codigoBarras);
       formData.append("sku", sku);
@@ -583,6 +613,31 @@ setAbaEdicao("basico");
 setModalOpen(true);
   }
 
+setEditMarketing({
+  seo: {
+    titulo:
+      produto.marketing?.seo?.titulo || "",
+
+    descricao:
+      produto.marketing?.seo?.descricao || "",
+
+    palavrasChave:
+      Array.isArray(
+        produto.marketing?.seo?.palavrasChave
+      )
+        ? produto.marketing.seo.palavrasChave
+        : [],
+
+    slug:
+      produto.marketing?.seo?.slug || "",
+
+    indexar:
+      produto.marketing?.seo?.indexar !== false,
+  },
+
+  ...(produto.marketing || {}),
+});
+
   async function salvarEdicao() {
     try {
       setLoadingEditar(true);
@@ -606,6 +661,11 @@ setModalOpen(true);
       formData.append(
   "publicacao",
   JSON.stringify(editPublicacao)
+);
+
+formData.append(
+  "marketing",
+  JSON.stringify(editMarketing)
 );
 
 /*
@@ -1248,6 +1308,20 @@ const progressoCadastro =
   Produção
 </button>
 
+<button
+  className={
+    abaEdicao === "marketing"
+      ? "ativo"
+      : ""
+  }
+  onClick={() =>
+    setAbaEdicao("marketing")
+  }
+  type="button"
+>
+  Marketing
+</button>
+
     <button
         className={abaEdicao==="midia" ? "ativo" : ""}
         onClick={()=>setAbaEdicao("midia")}
@@ -1263,14 +1337,15 @@ const progressoCadastro =
     setAbaCadastro={setAbaEdicao}
     progresso={100}
     etapasConcluidas={[
-        "basico",
-        "venda",
-        "cardapio",
-        "nutricional",
-        "fiscal",
-        "producao",
-        "midia"
-    ]}
+  "basico",
+  "venda",
+  "cardapio",
+  "nutricional",
+  "fiscal",
+  "producao",
+  "marketing",
+  "midia"
+]}
 />
 
  {abaEdicao === "basico" && (
@@ -1352,6 +1427,13 @@ const progressoCadastro =
 {abaEdicao === "producao" && (
   <FoodCoreTab
     tipoProduto={editTipoProduto}
+  />
+)}
+
+{abaEdicao === "marketing" && (
+  <ProdutoMarketing
+    marketing={editMarketing}
+    setMarketing={setEditMarketing}
   />
 )}
 

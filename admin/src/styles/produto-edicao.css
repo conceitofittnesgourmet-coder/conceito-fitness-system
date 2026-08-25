@@ -881,3 +881,611 @@ input[type="checkbox"] {
     width: 100%;
   }
 }
+
+/* =========================================================
+   ETAPA FISCAL
+   ========================================================= */
+
+.produto-edit-modal .produto-fiscal-page {
+  width: 100%;
+  max-width: none;
+}
+
+.produto-edit-modal .produto-fiscal-status {
+  width: 100%;
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 20px;
+
+  margin-bottom: 18px;
+  padding: 18px 20px;
+
+  border-radius: 15px;
+  border: 1px solid rgba(255,255,255,.08);
+
+  background:
+    linear-gradient(
+      135deg,
+      rgba(17,36,56,.95),
+      rgba(8,23,39,.95)
+    );
+}
+
+.produto-edit-modal .produto-fiscal-status.completo {
+  border-color: rgba(52,255,98,.26);
+  background:
+    linear-gradient(
+      135deg,
+      rgba(29,114,55,.18),
+      rgba(8,23,39,.95)
+    );
+}
+
+.produto-edit-modal .produto-fiscal-status.incompleto {
+  border-color: rgba(255,193,73,.24);
+}
+
+.produto-edit-modal .produto-fiscal-status > div > span {
+  display: block;
+  margin-bottom: 4px;
+
+  color: rgba(255,255,255,.55);
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .7px;
+}
+
+.produto-edit-modal .produto-fiscal-status h3 {
+  margin: 0 0 4px;
+
+  color: #fff;
+  font-size: 19px;
+}
+
+.produto-edit-modal .produto-fiscal-status p {
+  margin: 0;
+  color: rgba(255,255,255,.58);
+  font-size: 12px;
+}
+
+.produto-edit-modal .produto-fiscal-status > strong {
+  flex: 0 0 48px;
+
+  width: 48px;
+  height: 48px;
+
+  display: grid;
+  place-items: center;
+
+  border-radius: 13px;
+
+  background: rgba(64,255,103,.10);
+  border: 1px solid rgba(64,255,103,.20);
+
+  color: #48ff70;
+  font-size: 19px;
+}
+
+/* GRID PRINCIPAL */
+
+.produto-edit-modal .produto-fiscal-grid {
+  display: grid;
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+
+  gap: 16px;
+  align-items: start;
+}
+
+/* CARD FISCAL */
+
+.produto-edit-modal .produto-fiscal-card {
+  min-width: 0;
+
+  padding: 20px;
+
+  border-radius: 16px;
+  border: 1px solid rgba(255,255,255,.075);
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(17,35,54,.88),
+      rgba(9,23,39,.88)
+    );
+
+  box-shadow:
+    0 8px 24px rgba(0,0,0,.12);
+}
+
+.produto-edit-modal .produto-fiscal-title {
+  display: flex;
+  align-items: flex-start;
+  gap: 12px;
+
+  margin-bottom: 18px;
+  padding-bottom: 14px;
+
+  border-bottom:
+    1px solid rgba(255,255,255,.07);
+}
+
+.produto-edit-modal .produto-fiscal-title > svg {
+  flex: 0 0 36px;
+
+  width: 36px;
+  height: 36px;
+
+  padding: 9px;
+
+  border-radius: 10px;
+
+  color: #42ff6b;
+  background: rgba(66,255,107,.08);
+}
+
+.produto-edit-modal .produto-fiscal-title h3 {
+  margin: 0 0 3px;
+
+  color: #fff;
+  font-size: 16px;
+}
+
+.produto-edit-modal .produto-fiscal-title p {
+  margin: 0;
+
+  color: rgba(255,255,255,.50);
+  font-size: 11px;
+  line-height: 1.4;
+}
+
+/* CAMPOS */
+
+.produto-edit-modal .produto-fiscal-fields {
+  display: grid;
+
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+
+  gap: 14px;
+}
+
+.produto-edit-modal .produto-fiscal-field {
+  min-width: 0;
+}
+
+.produto-edit-modal .produto-fiscal-field label {
+  display: block;
+
+  margin-bottom: 6px;
+
+  color: rgba(255,255,255,.83);
+  font-size: 11px;
+  font-weight: 800;
+}
+
+.produto-edit-modal .produto-fiscal-field input,
+.produto-edit-modal .produto-fiscal-field select {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  height: 43px;
+
+  padding: 0 11px;
+
+  border:
+    1px solid rgba(255,255,255,.09);
+
+  border-radius: 9px;
+
+  background: rgba(2,13,26,.70);
+
+  color: #fff;
+
+  outline: none;
+}
+
+.produto-edit-modal .produto-fiscal-field input:focus,
+.produto-edit-modal .produto-fiscal-field select:focus {
+  border-color: rgba(57,255,94,.52);
+
+  box-shadow:
+    0 0 0 3px rgba(57,255,94,.06);
+}
+
+.produto-edit-modal .produto-fiscal-field small {
+  display: block;
+
+  margin-top: 5px;
+
+  color: rgba(255,255,255,.40);
+  font-size: 10px;
+  line-height: 1.35;
+}
+
+.produto-edit-modal .fiscal-obrigatorio {
+  color: #ffb747;
+}
+
+/* IBS/CBS pode ocupar toda largura */
+
+.produto-edit-modal .produto-fiscal-reforma {
+  grid-column: 1 / -1;
+}
+
+/* CHECKBOXES FISCAIS */
+
+.produto-edit-modal .produto-fiscal-page input[type="checkbox"] {
+  width: 17px;
+  height: 17px;
+}
+
+/* RESPONSIVO */
+
+@media (max-width: 1050px) {
+  .produto-edit-modal .produto-fiscal-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .produto-edit-modal .produto-fiscal-reforma {
+    grid-column: auto;
+  }
+}
+
+@media (max-width: 650px) {
+  .produto-edit-modal .produto-fiscal-fields {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* =========================================================
+   FOODCORE / PRODUÇÃO
+   ========================================================= */
+
+.produto-edit-modal .foodcore-page {
+  width: 100%;
+}
+
+.produto-edit-modal .foodcore-hero {
+  display: flex;
+  align-items: center;
+  gap: 16px;
+
+  margin-bottom: 18px;
+  padding: 20px;
+
+  border:
+    1px solid rgba(72,255,112,.16);
+
+  border-radius: 16px;
+
+  background:
+    radial-gradient(
+      circle at right top,
+      rgba(57,255,97,.09),
+      transparent 32%
+    ),
+    linear-gradient(
+      145deg,
+      rgba(18,38,58,.96),
+      rgba(9,24,40,.96)
+    );
+}
+
+.produto-edit-modal .foodcore-hero-icon {
+  flex: 0 0 58px;
+
+  width: 58px;
+  height: 58px;
+
+  display: grid;
+  place-items: center;
+
+  border-radius: 16px;
+
+  background:
+    rgba(55,255,96,.08);
+
+  border:
+    1px solid rgba(55,255,96,.18);
+
+  font-size: 27px;
+}
+
+.produto-edit-modal .foodcore-hero span {
+  display: block;
+
+  margin-bottom: 2px;
+
+  color: #45ff6d;
+  font-size: 11px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: .8px;
+}
+
+.produto-edit-modal .foodcore-hero h2 {
+  margin: 0 0 4px;
+
+  color: #fff;
+  font-size: 23px;
+}
+
+.produto-edit-modal .foodcore-hero p {
+  margin: 0;
+
+  color: rgba(255,255,255,.55);
+  font-size: 12px;
+}
+
+/* GRID */
+
+.produto-edit-modal .foodcore-grid {
+  display: grid;
+
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+
+  gap: 16px;
+
+  margin-bottom: 16px;
+}
+
+.produto-edit-modal .foodcore-grid-top {
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+}
+
+.produto-edit-modal .foodcore-module {
+  min-width: 0;
+
+  padding: 18px;
+
+  border-radius: 15px;
+
+  border:
+    1px solid rgba(255,255,255,.075);
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(16,34,53,.88),
+      rgba(8,22,38,.88)
+    );
+
+  overflow: hidden;
+}
+
+.produto-edit-modal .foodcore-module-title {
+  display: flex;
+  align-items: center;
+  gap: 11px;
+
+  margin-bottom: 14px;
+  padding-bottom: 13px;
+
+  border-bottom:
+    1px solid rgba(255,255,255,.07);
+}
+
+.produto-edit-modal .foodcore-module-title > span {
+  flex: 0 0 35px;
+
+  width: 35px;
+  height: 35px;
+
+  display: grid;
+  place-items: center;
+
+  border-radius: 10px;
+
+  color: #48ff70;
+
+  background:
+    rgba(72,255,112,.08);
+
+  border:
+    1px solid rgba(72,255,112,.15);
+
+  font-size: 11px;
+  font-weight: 900;
+}
+
+.produto-edit-modal .foodcore-module-title h3 {
+  margin: 0;
+
+  color: #fff;
+  font-size: 15px;
+}
+
+.produto-edit-modal .foodcore-module-title p {
+  margin: 3px 0 0;
+
+  color: rgba(255,255,255,.48);
+  font-size: 10px;
+}
+
+/*
+ * Os componentes antigos usam classes utilitárias
+ * que não estão estilizadas no projeto.
+ * Dentro do FoodCore neutralizamos o branco deles.
+ */
+
+.produto-edit-modal .foodcore-module > div:not(.foodcore-module-title) {
+  border: 0 !important;
+  box-shadow: none !important;
+
+  background: transparent !important;
+
+  padding: 0 !important;
+
+  color: #fff !important;
+}
+
+.produto-edit-modal .foodcore-module h2,
+.produto-edit-modal .foodcore-module h3,
+.produto-edit-modal .foodcore-module strong {
+  color: #fff !important;
+}
+
+.produto-edit-modal .foodcore-module p,
+.produto-edit-modal .foodcore-module span {
+  color: rgba(255,255,255,.55) !important;
+}
+
+@media (max-width: 900px) {
+  .produto-edit-modal .foodcore-grid,
+  .produto-edit-modal .foodcore-grid-top {
+    grid-template-columns: 1fr;
+  }
+}
+
+/* =========================================================
+   MARKETING
+   ========================================================= */
+
+.produto-edit-modal
+.produto-marketing-page {
+  width: 100%;
+}
+
+.produto-edit-modal
+.marketing-hero {
+  display: flex;
+  align-items: center;
+  gap: 15px;
+
+  margin-bottom: 18px;
+  padding: 20px;
+
+  border-radius: 16px;
+
+  border:
+    1px solid rgba(72,255,112,.15);
+
+  background:
+    radial-gradient(
+      circle at right top,
+      rgba(66,255,102,.09),
+      transparent 35%
+    ),
+    linear-gradient(
+      145deg,
+      rgba(17,36,55,.94),
+      rgba(8,23,39,.94)
+    );
+}
+
+.produto-edit-modal
+.marketing-hero-icon {
+  flex: 0 0 54px;
+
+  width: 54px;
+  height: 54px;
+
+  display: grid;
+  place-items: center;
+
+  border-radius: 15px;
+
+  background:
+    rgba(70,255,108,.08);
+
+  border:
+    1px solid rgba(70,255,108,.16);
+
+  color: #47ff6d;
+
+  font-size: 22px;
+}
+
+.produto-edit-modal
+.marketing-hero span {
+  color: #48ff70;
+
+  font-size: 11px;
+  font-weight: 900;
+  text-transform: uppercase;
+}
+
+.produto-edit-modal
+.marketing-hero h2 {
+  margin: 3px 0;
+
+  color: #fff;
+  font-size: 21px;
+}
+
+.produto-edit-modal
+.marketing-hero p {
+  margin: 0;
+
+  color: rgba(255,255,255,.52);
+  font-size: 11px;
+}
+
+.produto-edit-modal
+.marketing-grid {
+  display: grid;
+
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+
+  gap: 16px;
+}
+
+.produto-edit-modal
+.marketing-grid .premium-box {
+  margin: 0;
+}
+
+.produto-edit-modal
+.marketing-preview {
+  padding: 16px;
+
+  border-radius: 12px;
+
+  border:
+    1px solid rgba(255,255,255,.07);
+
+  background:
+    rgba(2,13,25,.60);
+}
+
+.produto-edit-modal
+.marketing-preview span {
+  display: block;
+
+  margin-bottom: 5px;
+
+  color: #52d875;
+  font-size: 11px;
+}
+
+.produto-edit-modal
+.marketing-preview strong {
+  display: block;
+
+  margin-bottom: 5px;
+
+  color: #e6efff;
+  font-size: 17px;
+}
+
+.produto-edit-modal
+.marketing-preview p {
+  margin: 0;
+
+  color: rgba(255,255,255,.53);
+  font-size: 11px;
+  line-height: 1.5;
+}
+
+@media (max-width: 850px) {
+  .produto-edit-modal
+  .marketing-grid {
+    grid-template-columns: 1fr;
+  }
+}
