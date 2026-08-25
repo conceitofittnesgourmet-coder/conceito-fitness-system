@@ -1,5 +1,6 @@
 const Pedido = require("../models/pedido");
 const { enriquecerPedido } = require("./PersonalizacaoProducaoService");
+const IfoodOrderStatusService = require("./IfoodOrderStatusService");
 
 const STATUS_PRODUCAO = [
   "aguardando",
@@ -191,6 +192,29 @@ async function buscarPedidoDetalhado({ pedidoId, empresa } = {}) {
   return enriquecerPedido(pedido);
 }
 
+function acaoIfoodPorStatus(statusDestino) {
+  switch (statusDestino) {
+    case "producao":
+      return "confirmar";
+
+    case "pronto":
+      return "pronto";
+
+    case "entregue":
+      return "despachar";
+
+    default:
+      return null;
+  }
+}
+
+function ehPedidoIfood(pedido) {
+  return (
+    String(pedido?.canalVenda || "").toLowerCase() === "ifood" &&
+    Boolean(pedido?.ifoodOrderId)
+  );
+}
+
 async function atualizarStatus({
   pedidoId,
   empresa,
@@ -216,6 +240,18 @@ async function atualizarStatus({
   const statusDestino = normalizarStatus(novoStatus);
 
   validarTransicao(statusAtual, statusDestino);
+
+  if (ehPedidoIfood(pedido)) {
+  const acaoIfood =
+    acaoIfoodPorStatus(statusDestino);
+
+  if (acaoIfood) {
+    await IfoodOrderStatusService.executar(
+      pedido.ifoodOrderId,
+      acaoIfood
+    );
+  }
+}
 
   const agora = new Date();
 

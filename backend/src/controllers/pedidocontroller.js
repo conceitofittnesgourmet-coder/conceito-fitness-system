@@ -14,6 +14,8 @@ const {
   consumirFichaDoItemPedido,
 } = require("../services/fichaTecnicaService");
 const { validarPersonalizacao } = require("../services/PersonalizacaoPedidoService");
+const IfoodOrderStatusService =
+  require("../services/IfoodOrderStatusService");
 
 
 // LISTAR
@@ -589,6 +591,35 @@ return res.status(201).json({
   }
 };
 
+function acaoIfoodPorStatusPedido(status) {
+  switch (
+    String(status || "")
+      .trim()
+      .toLowerCase()
+  ) {
+    case "producao":
+      return "confirmar";
+
+    case "pronto":
+      return "pronto";
+
+    case "entregue":
+      return "despachar";
+
+    default:
+      return null;
+  }
+}
+
+function ehPedidoIfood(pedido) {
+  return (
+    String(
+      pedido?.canalVenda || ""
+    ).toLowerCase() === "ifood" &&
+    Boolean(pedido?.ifoodOrderId)
+  );
+}
+
 // ATUALIZAR STATUS
 exports.atualizarStatus = async (req, res) => {
   try {
@@ -603,23 +634,48 @@ exports.atualizarStatus = async (req, res) => {
       });
     }
 
-    const pedido = await Pedido.findByIdAndUpdate(
-      req.params.id,
-      {
-        status: novoStatus,
-      },
-      {
-        new: true,
-        runValidators: true,
-      }
+    let pedido =
+  await Pedido.findById(
+    req.params.id
+  );
+
+if (!pedido) {
+  return res.status(404).json({
+    success: false,
+    message: "Pedido não encontrado.",
+  });
+}
+
+if (ehPedidoIfood(pedido)) {
+  const acaoIfood =
+    acaoIfoodPorStatusPedido(
+      novoStatus
     );
 
-    if (!pedido) {
-      return res.status(404).json({
-        success: false,
-        message: "Pedido não encontrado.",
-      });
-    }
+  if (acaoIfood) {
+    await IfoodOrderStatusService.executar(
+      pedido.ifoodOrderId,
+      acaoIfood
+    );
+  }
+}
+
+pedido.status = novoStatus;
+
+if (novoStatus === "producao") {
+  pedido.statusProducao =
+    "producao";
+}
+
+if (novoStatus === "pronto") {
+  pedido.statusProducao =
+    "pronto";
+}
+
+if (novoStatus === "entregue") {
+  pedido.statusProducao =
+    "entregue";
+}
 
     let nfce = null;
     let erroFiscal = null;
