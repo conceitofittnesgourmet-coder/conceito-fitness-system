@@ -929,7 +929,7 @@ const progressoCadastro =
           </button>
         </div>
 
-        <section className="produto-form-premium">
+        <section className="produto-form-premium produto-cadastro-enterprise">
           <div className="form-title-premium">
             <FaBoxOpen />
             <h2>Cadastro de Produto</h2>
@@ -1043,6 +1043,13 @@ const progressoCadastro =
         tipoProduto={tipoProduto}
     />
 
+)}
+
+{abaCadastro === "marketing" && (
+  <ProdutoMarketing
+    marketing={marketing}
+    setMarketing={setMarketing}
+  />
 )}
 
 {abaCadastro === "midia" && (
