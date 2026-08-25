@@ -195,20 +195,122 @@ async function importarPedido(order, evento) {
 
 async function atualizarStatusPedido(evento) {
   if (!evento.orderId) return null;
-  const statusIfood = String(evento.fullCode || evento.code || "");
-  const statusErp = STATUS_ERP[evento.code] || STATUS_ERP[statusIfood];
-  const atualizacao = { ifoodStatus: statusIfood, ifoodPayloadUltimoEvento: evento };
-  if (statusErp) {
-    atualizacao.status = statusErp;
-    atualizacao.statusProducao = statusErp === "producao" ? "producao" : statusErp === "pronto" ? "pronto" : statusErp === "entregue" ? "entregue" : "aguardando";
+
+  const codigo =
+    String(
+      evento.fullCode ||
+      evento.code ||
+      ""
+    ).toUpperCase();
+
+  const codigoCurto =
+    String(
+      evento.code || ""
+    ).toUpperCase();
+
+  const statusErp =
+    STATUS_ERP[codigoCurto] ||
+    STATUS_ERP[codigo];
+
+  /*
+   * Eventos como DELIVERY_DROP_CODE_REQUESTED
+   * pertencem à logística e não podem substituir
+   * o status principal do pedido.
+   */
+  const ehEventoDeStatusPedido =
+    Boolean(statusErp);
+
+  const atualizacao = {
+    ifoodPayloadUltimoEvento:
+      evento,
+  };
+
+  if (ehEventoDeStatusPedido) {
+    atualizacao.ifoodStatus =
+      codigo;
+
+    atualizacao.status =
+      statusErp;
+
+    atualizacao.statusProducao =
+      statusErp === "producao"
+        ? "producao"
+        : statusErp === "pronto"
+        ? "pronto"
+        : statusErp === "entregue"
+        ? "entregue"
+        : "aguardando";
   }
-  const pedido = await Pedido.findOneAndUpdate({ ifoodOrderId: evento.orderId }, atualizacao, { new: true });
-  await IfoodPedido.findOneAndUpdate(
-    { orderId: evento.orderId },
-    { status: statusIfood, statusSolicitado: "", atualizadoNoIfoodEm: new Date() },
-    { upsert: false }
-  );
-  if (pedido && global.io) global.io.emit("pedido-atualizado", pedido);
+
+  const pedido =
+    await Pedido.findOneAndUpdate(
+      {
+        ifoodOrderId:
+          evento.orderId,
+      },
+      atualizacao,
+      {
+        new: true,
+      }
+    );
+
+  /*
+   * O registro interno do pedido iFood
+   * também só deve mudar de status quando
+   * o evento representar um estado real
+   * do pedido.
+   */
+  if (ehEventoDeStatusPedido) {
+    await IfoodPedido.findOneAndUpdate(
+      {
+        orderId:
+          evento.orderId,
+      },
+      {
+        status:
+          codigo,
+
+        statusSolicitado:
+          "",
+
+        atualizadoNoIfoodEm:
+          new Date(),
+      },
+      {
+        upsert: false,
+      }
+    );
+  } else {
+    /*
+     * Evento paralelo/logístico:
+     * apenas registramos a data,
+     * sem destruir o status atual.
+     */
+    await IfoodPedido.findOneAndUpdate(
+      {
+        orderId:
+          evento.orderId,
+      },
+      {
+        atualizadoNoIfoodEm:
+          new Date(),
+      },
+      {
+        upsert: false,
+      }
+    );
+  }
+
+  if (
+    pedido &&
+    global.io
+  ) {
+    global.io.emit(
+      "pedido-atualizado",
+      pedido
+    );
+  }
+
   return pedido;
 }
 
