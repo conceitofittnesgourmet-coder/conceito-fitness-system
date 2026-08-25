@@ -608,11 +608,6 @@ setPreviewEdit(
   getImagemUrl(produto.imagens?.[0])
 );
 
-setEditImagem(null);
-setAbaEdicao("basico");
-setModalOpen(true);
-  }
-
 setEditMarketing({
   seo: {
     titulo:
@@ -637,6 +632,11 @@ setEditMarketing({
 
   ...(produto.marketing || {}),
 });
+
+setEditImagem(null);
+setAbaEdicao("basico");
+setModalOpen(true);
+}
 
   async function salvarEdicao() {
     try {
