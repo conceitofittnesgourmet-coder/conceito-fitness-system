@@ -72,3 +72,273 @@
   .ifood-audit-issue { grid-template-columns: auto 1fr; }
   .ifood-audit-issue > button { grid-column: 1 / -1; justify-content: center; }
 }
+
+/* =========================================================
+   CORRECAO RESPONSIVA - INTEGRACAO IFOOD
+   ========================================================= */
+
+.ifood-page {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: hidden;
+  box-sizing: border-box;
+}
+
+.ifood-page *,
+.ifood-page *::before,
+.ifood-page *::after {
+  box-sizing: border-box;
+  min-width: 0;
+}
+
+/* HERO */
+.ifood-hero {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.ifood-hero > div:first-child {
+  min-width: 0;
+  flex: 1 1 auto;
+}
+
+.ifood-hero h2,
+.ifood-hero p,
+.ifood-card-title h3,
+.ifood-card-title p {
+  overflow-wrap: anywhere;
+}
+
+/* CARDS PRINCIPAIS */
+.ifood-grid {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+}
+
+.ifood-card {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow: hidden;
+}
+
+.ifood-card-title {
+  min-width: 0;
+}
+
+.ifood-card-title > div {
+  min-width: 0;
+}
+
+/* FORMULARIOS */
+.ifood-form,
+.ifood-form label {
+  min-width: 0;
+  max-width: 100%;
+}
+
+.ifood-form input,
+.ifood-form select,
+.ifood-form textarea {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+/* IDs E TEXTOS GRANDES */
+.ifood-page small,
+.ifood-page strong,
+.ifood-page span,
+.ifood-page p {
+  overflow-wrap: anywhere;
+}
+
+/* SWITCHES */
+.ifood-switches {
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+}
+
+.ifood-switches label {
+  min-width: 0;
+}
+
+/* METRICAS */
+.ifood-metrics {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.ifood-metrics > div {
+  min-width: 0;
+}
+
+/* TABELAS:
+   somente a tabela rola horizontalmente,
+   nunca a pagina inteira */
+.ifood-table-wrap {
+  display: block;
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+  overflow-x: auto;
+  overflow-y: hidden;
+  -webkit-overflow-scrolling: touch;
+}
+
+.ifood-table {
+  width: 100%;
+  max-width: none;
+}
+
+.ifood-orders-table {
+  min-width: 760px;
+}
+
+/* CATALOGO */
+.ifood-catalog-card,
+.ifood-catalog-head {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+}
+
+.ifood-catalog-head > * {
+  min-width: 0;
+}
+
+.ifood-catalog-buttons {
+  max-width: 100%;
+}
+
+.ifood-catalog-table {
+  width: 100%;
+  max-width: none;
+  min-width: 760px;
+}
+
+/* BOTOES DOS PEDIDOS */
+.ifood-order-actions {
+  display: flex;
+  flex-wrap: wrap;
+  gap: 6px;
+  min-width: 0;
+}
+
+.ifood-order-actions button {
+  max-width: 100%;
+  white-space: normal;
+}
+
+/* ACOES GERAIS */
+.ifood-actions {
+  width: 100%;
+  max-width: 100%;
+  flex-wrap: wrap;
+}
+
+/* MODAL */
+.ifood-modal {
+  width: min(600px, calc(100vw - 32px));
+  max-width: 100%;
+}
+
+/* =========================================================
+   NOTEBOOK / TELAS MENORES
+   ========================================================= */
+
+@media (max-width: 1200px) {
+  .ifood-grid {
+    grid-template-columns: 1fr;
+  }
+
+  .ifood-switches {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+
+  .ifood-hero {
+    align-items: flex-start;
+  }
+}
+
+/* =========================================================
+   TABLET
+   ========================================================= */
+
+@media (max-width: 800px) {
+  .ifood-hero {
+    flex-direction: column;
+  }
+
+  .ifood-health {
+    width: 100%;
+    min-width: 0;
+  }
+
+  .ifood-switches {
+    grid-template-columns: 1fr;
+  }
+
+  .ifood-catalog-head {
+    flex-direction: column;
+  }
+
+  .ifood-catalog-buttons {
+    width: 100%;
+  }
+
+  .ifood-catalog-buttons button {
+    flex: 1 1 180px;
+    justify-content: center;
+  }
+}
+
+/* =========================================================
+   CELULAR / TELAS ESTREITAS
+   ========================================================= */
+
+@media (max-width: 560px) {
+  .ifood-page {
+    gap: 12px;
+  }
+
+  .ifood-card,
+  .ifood-hero {
+    padding: 15px;
+    border-radius: 16px;
+  }
+
+  .ifood-card-title {
+    gap: 9px;
+  }
+
+  .ifood-actions {
+    flex-direction: column;
+  }
+
+  .ifood-actions button {
+    width: 100%;
+    justify-content: center;
+  }
+
+  .ifood-status-box {
+    flex-direction: column;
+  }
+
+  .ifood-catalog-buttons {
+    flex-direction: column;
+  }
+
+  .ifood-catalog-buttons button {
+    width: 100%;
+    flex: none;
+  }
+}
