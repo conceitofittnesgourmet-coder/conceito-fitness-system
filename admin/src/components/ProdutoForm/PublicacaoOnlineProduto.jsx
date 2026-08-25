@@ -34,6 +34,17 @@ function PublicacaoOnlineProduto({
     }));
   }
 
+  function alterarPrecoCanal(canal, valor) {
+  setPublicacao((atual) => ({
+    ...atual,
+
+    precosCanais: {
+      ...(atual?.precosCanais || {}),
+      [canal]: valor,
+    },
+  }));
+}
+
   function alterarDia(dia, valor) {
     setPublicacao((atual) => ({
       ...atual,
@@ -165,6 +176,92 @@ function PublicacaoOnlineProduto({
           </label>
         </div>
       </section>
+
+      <section className="premium-box">
+  <h3>Preços por canal de venda</h3>
+
+  <p
+    style={{
+      marginTop: 0,
+      marginBottom: 18,
+      opacity: 0.75,
+    }}
+  >
+    Defina preços específicos para marketplaces.
+    Se o campo ficar vazio, será utilizado o preço
+    normal do ERP.
+  </p>
+
+  <div className="mini-grid">
+    <div className="field-premium">
+      <label>Preço ERP / Loja</label>
+
+      <input
+        type="number"
+        step="0.01"
+        min="0"
+        value={preco || ""}
+        disabled
+      />
+
+      <small>
+        Preço principal cadastrado no produto.
+      </small>
+    </div>
+
+    <div className="field-premium">
+      <label>Preço iFood</label>
+
+      <input
+        type="number"
+        step="0.01"
+        min="0"
+        placeholder={`Mesmo do ERP: R$ ${Number(
+          preco || 0
+        ).toFixed(2)}`}
+        value={
+          dados.precosCanais?.ifood ?? ""
+        }
+        onChange={(e) =>
+          alterarPrecoCanal(
+            "ifood",
+            e.target.value
+          )
+        }
+      />
+
+      <small>
+        Valor que será enviado ao iFood.
+      </small>
+    </div>
+
+    <div className="field-premium">
+      <label>Preço aiqfome</label>
+
+      <input
+        type="number"
+        step="0.01"
+        min="0"
+        placeholder={`Mesmo do ERP: R$ ${Number(
+          preco || 0
+        ).toFixed(2)}`}
+        value={
+          dados.precosCanais?.aiqfome ?? ""
+        }
+        onChange={(e) =>
+          alterarPrecoCanal(
+            "aiqfome",
+            e.target.value
+          )
+        }
+      />
+
+      <small>
+        Valor reservado para sincronização com o aiqfome.
+      </small>
+    </div>
+  </div>
+</section>
 
       <section className="premium-box">
         <h3>Disponibilidade</h3>

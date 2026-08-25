@@ -694,6 +694,20 @@ descricaoTipo: {
         aiqfome: { type: Boolean, default: false },
       },
 
+      precosCanais: {
+  ifood: {
+    type: Number,
+    default: null,
+    min: 0,
+  },
+
+  aiqfome: {
+    type: Number,
+    default: null,
+    min: 0,
+  },
+},
+
       destaques: {
         destaque: { type: Boolean, default: false },
         novidade: { type: Boolean, default: false },

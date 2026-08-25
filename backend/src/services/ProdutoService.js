@@ -90,6 +90,12 @@ function normalizarPublicacao(body = {}, atual = {}) {
       ifood: false,
       aiqfome: false,
     },
+
+    precosCanais: {
+  ifood: null,
+  aiqfome: null,
+},
+
     destaques: {
       destaque: false,
       novidade: false,
@@ -190,6 +196,23 @@ function normalizarPublicacao(body = {}, atual = {}) {
   promocaoDetalhada.prioridade = parseNumero(promocaoDetalhada.prioridade, 0);
   resultado.promocaoDetalhada = promocaoDetalhada;
   resultado.promocao = promocaoDetalhada.ativa;
+  resultado.precosCanais = {
+  ...(resultado.precosCanais || {}),
+
+  ifood:
+    resultado.precosCanais?.ifood === "" ||
+    resultado.precosCanais?.ifood === null ||
+    resultado.precosCanais?.ifood === undefined
+      ? null
+      : parseNumero(resultado.precosCanais.ifood, null),
+
+  aiqfome:
+    resultado.precosCanais?.aiqfome === "" ||
+    resultado.precosCanais?.aiqfome === null ||
+    resultado.precosCanais?.aiqfome === undefined
+      ? null
+      : parseNumero(resultado.precosCanais.aiqfome, null),
+};
 
   return resultado;
 }

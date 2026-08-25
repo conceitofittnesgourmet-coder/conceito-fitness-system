@@ -44,14 +44,56 @@ function disponivel(produto) {
 }
 
 function precoVenda(produto) {
-  const promocao = produto?.publicacao?.promocaoDetalhada;
+  /*
+   * O preço específico do iFood tem prioridade.
+   */
+  const precoIfood =
+    Number(
+      produto?.publicacao
+        ?.precosCanais
+        ?.ifood || 0
+    );
+
+  if (
+    Number.isFinite(precoIfood) &&
+    precoIfood > 0
+  ) {
+    return dinheiro(precoIfood);
+  }
+
+  /*
+   * Se não existir preço específico,
+   * mantém o comportamento atual do ERP.
+   */
+  const promocao =
+    produto?.publicacao
+      ?.promocaoDetalhada;
+
   const agora = Date.now();
+
   const promocaoValida =
     promocao?.ativa &&
-    (!promocao.inicio || new Date(promocao.inicio).getTime() <= agora) &&
-    (!promocao.fim || new Date(promocao.fim).getTime() >= agora) &&
-    Number(promocao.precoPromocional || 0) > 0;
-  return dinheiro(promocaoValida ? promocao.precoPromocional : produto.preco);
+    (
+      !promocao.inicio ||
+      new Date(
+        promocao.inicio
+      ).getTime() <= agora
+    ) &&
+    (
+      !promocao.fim ||
+      new Date(
+        promocao.fim
+      ).getTime() >= agora
+    ) &&
+    Number(
+      promocao.precoPromocional || 0
+    ) > 0;
+
+  return dinheiro(
+    promocaoValida
+      ? promocao.precoPromocional
+      : produto.preco
+  );
 }
 
 function tipoGrupoIfood(tipo) {

@@ -90,6 +90,11 @@ const PUBLICACAO_INICIAL = {
     aiqfome: false,
   },
 
+  precosCanais: {
+  ifood: "",
+  aiqfome: "",
+},
+
   promocao: {
     ativa: false,
     precoOriginal: "",
@@ -505,6 +510,11 @@ formData.append(
     ...PUBLICACAO_INICIAL.canais,
     ...(produto.publicacao?.canais || {}),
   },
+
+  precosCanais: {
+  ...PUBLICACAO_INICIAL.precosCanais,
+  ...(produto.publicacao?.precosCanais || {}),
+},
 
   promocao: {
     ...PUBLICACAO_INICIAL.promocao,
