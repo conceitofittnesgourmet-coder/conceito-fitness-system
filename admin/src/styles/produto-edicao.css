@@ -1,0 +1,883 @@
+/* =========================================================
+   EDIÇÃO DE PRODUTO - LAYOUT ENTERPRISE
+   ========================================================= */
+
+.produto-edit-overlay {
+  position: fixed;
+  inset: 0;
+  z-index: 9999;
+
+  display: flex;
+  align-items: center;
+  justify-content: center;
+
+  padding: 20px;
+
+  background:
+    radial-gradient(
+      circle at top right,
+      rgba(30, 255, 70, 0.07),
+      transparent 28%
+    ),
+    rgba(4, 10, 18, 0.86);
+
+  backdrop-filter: blur(8px);
+  overflow: hidden;
+}
+
+.produto-edit-modal {
+  width: min(1440px, calc(100vw - 40px)) !important;
+  max-width: 1440px !important;
+  height: min(94vh, 980px);
+  max-height: 94vh;
+
+  margin: 0 !important;
+  padding: 0 !important;
+
+  display: flex;
+  flex-direction: column;
+
+  border: 1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 22px;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(14, 27, 43, 0.99),
+      rgba(6, 16, 30, 0.99)
+    );
+
+  box-shadow:
+    0 30px 80px rgba(0, 0, 0, 0.48);
+
+  overflow: hidden;
+}
+
+/* HEADER */
+
+.produto-edit-header {
+  flex: 0 0 auto;
+
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+
+  padding: 22px 26px 18px;
+
+  border-bottom:
+    1px solid rgba(255, 255, 255, 0.08);
+
+  background:
+    rgba(7, 16, 29, 0.98);
+}
+
+.produto-edit-header-info h2 {
+  margin: 0 0 4px;
+
+  color: #fff;
+
+  font-size: clamp(22px, 2vw, 30px);
+  font-weight: 800;
+  letter-spacing: -0.4px;
+}
+
+.produto-edit-header-info p {
+  margin: 0;
+
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 13px;
+}
+
+.produto-edit-close {
+  width: 42px;
+  height: 42px;
+
+  display: grid;
+  place-items: center;
+
+  border:
+    1px solid rgba(255, 255, 255, 0.1);
+  border-radius: 12px;
+
+  background:
+    rgba(255, 255, 255, 0.04);
+
+  color: #fff;
+  font-size: 24px;
+
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.produto-edit-close:hover {
+  border-color: rgba(58, 255, 87, 0.45);
+  background: rgba(58, 255, 87, 0.08);
+  color: #39ff57;
+}
+
+/* ÁREA QUE REALMENTE ROLA */
+
+.produto-edit-scroll {
+  flex: 1 1 auto;
+
+  min-height: 0;
+  overflow-y: auto;
+  overflow-x: hidden;
+
+  padding: 0 26px 26px;
+
+  scrollbar-width: thin;
+  scrollbar-color:
+    #28e65b rgba(255, 255, 255, 0.08);
+}
+
+.produto-edit-scroll::-webkit-scrollbar {
+  width: 8px;
+}
+
+.produto-edit-scroll::-webkit-scrollbar-track {
+  background:
+    rgba(255, 255, 255, 0.04);
+}
+
+.produto-edit-scroll::-webkit-scrollbar-thumb {
+  background:
+    linear-gradient(
+      #21e556,
+      #45ff80
+    );
+
+  border-radius: 999px;
+}
+
+/* =========================================================
+   ABAS PRINCIPAIS
+   ========================================================= */
+
+.produto-edit-modal .produto-edicao-tabs {
+  position: sticky;
+  top: 0;
+  z-index: 20;
+
+  display: flex;
+  gap: 8px;
+
+  width: 100%;
+
+  margin: 0 -2px 20px;
+  padding: 16px 2px 12px;
+
+  overflow-x: auto;
+
+  background:
+    rgba(7, 17, 30, 0.97);
+
+  border-bottom:
+    1px solid rgba(255, 255, 255, 0.07);
+
+  scrollbar-width: none;
+}
+
+.produto-edit-modal
+.produto-edicao-tabs::-webkit-scrollbar {
+  display: none;
+}
+
+.produto-edit-modal
+.produto-edicao-tabs button {
+  flex: 0 0 auto;
+
+  min-height: 42px;
+
+  padding: 0 16px;
+
+  border:
+    1px solid transparent;
+  border-radius: 10px;
+
+  background: transparent;
+
+  color: rgba(255, 255, 255, 0.68);
+
+  font-size: 13px;
+  font-weight: 700;
+
+  cursor: pointer;
+  transition: 0.2s;
+}
+
+.produto-edit-modal
+.produto-edicao-tabs button:hover {
+  color: #fff;
+
+  background:
+    rgba(255, 255, 255, 0.045);
+}
+
+.produto-edit-modal
+.produto-edicao-tabs button.ativo {
+  color: #50ff70;
+
+  border-color:
+    rgba(80, 255, 112, 0.24);
+
+  background:
+    linear-gradient(
+      180deg,
+      rgba(76, 255, 110, 0.11),
+      rgba(76, 255, 110, 0.04)
+    );
+
+  box-shadow:
+    inset 0 -2px 0 #42f96d;
+}
+
+/* =========================================================
+   STEPPER
+   ========================================================= */
+
+.produto-edit-modal .produto-stepper {
+  width: 100%;
+  max-width: none;
+
+  margin: 0 0 22px;
+  padding: 20px;
+
+  border:
+    1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 18px;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(18, 38, 59, 0.96),
+      rgba(11, 27, 45, 0.96)
+    );
+}
+
+.produto-edit-modal
+.produto-stepper-header {
+  display: flex;
+  align-items: flex-start;
+  justify-content: space-between;
+  gap: 20px;
+
+  margin-bottom: 16px;
+}
+
+.produto-edit-modal
+.produto-stepper-header > div:first-child span {
+  display: block;
+
+  margin-bottom: 4px;
+
+  color: #3dff69;
+  font-size: 12px;
+  font-weight: 800;
+  text-transform: uppercase;
+  letter-spacing: 0.7px;
+}
+
+.produto-edit-modal
+.produto-stepper-header h3 {
+  margin: 0 0 4px;
+
+  color: #fff;
+  font-size: 22px;
+}
+
+.produto-edit-modal
+.produto-stepper-header p {
+  margin: 0;
+
+  color: rgba(255, 255, 255, 0.58);
+}
+
+.produto-edit-modal
+.produto-stepper-percentual {
+  min-width: 110px;
+
+  padding: 12px 16px;
+
+  display: flex;
+  flex-direction: column;
+  align-items: center;
+
+  border-radius: 14px;
+
+  background:
+    rgba(30, 255, 70, 0.1);
+
+  border:
+    1px solid rgba(30, 255, 70, 0.16);
+}
+
+.produto-edit-modal
+.produto-stepper-percentual strong {
+  color: #43ff69;
+  font-size: 25px;
+}
+
+.produto-edit-modal
+.produto-stepper-percentual span {
+  color: rgba(255, 255, 255, 0.62);
+  font-size: 11px;
+}
+
+.produto-edit-modal
+.produto-stepper-barra {
+  width: 100%;
+  height: 7px;
+
+  margin-bottom: 18px;
+
+  border-radius: 999px;
+  overflow: hidden;
+
+  background:
+    rgba(255, 255, 255, 0.07);
+}
+
+.produto-edit-modal
+.produto-stepper-barra-preenchida {
+  height: 100%;
+
+  border-radius: inherit;
+
+  background:
+    linear-gradient(
+      90deg,
+      #19d64c,
+      #4cff82
+    );
+}
+
+.produto-edit-modal
+.produto-stepper-etapas {
+  display: grid;
+
+  grid-template-columns:
+    repeat(4, minmax(0, 1fr));
+
+  gap: 10px;
+}
+
+.produto-edit-modal
+.produto-stepper-item {
+  min-width: 0;
+
+  display: flex;
+  align-items: center;
+  gap: 10px;
+
+  padding: 12px;
+
+  border:
+    1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 12px;
+
+  background:
+    rgba(255, 255, 255, 0.025);
+
+  color: rgba(255, 255, 255, 0.7);
+
+  text-align: left;
+
+  cursor: pointer;
+}
+
+.produto-edit-modal
+.produto-stepper-item.active {
+  border-color:
+    rgba(73, 255, 112, 0.35);
+
+  background:
+    rgba(61, 255, 105, 0.07);
+}
+
+.produto-edit-modal
+.produto-stepper-item.completed
+.produto-stepper-numero {
+  background: #25e153;
+  color: #06110a;
+}
+
+.produto-edit-modal
+.produto-stepper-numero {
+  flex: 0 0 34px;
+
+  width: 34px;
+  height: 34px;
+
+  display: grid;
+  place-items: center;
+
+  border-radius: 10px;
+
+  background:
+    rgba(255, 255, 255, 0.08);
+
+  color: #fff;
+
+  font-size: 13px;
+  font-weight: 800;
+}
+
+.produto-edit-modal
+.produto-stepper-item strong,
+.produto-edit-modal
+.produto-stepper-item span {
+  display: block;
+}
+
+.produto-edit-modal
+.produto-stepper-item strong {
+  color: #fff;
+  font-size: 12px;
+}
+
+.produto-edit-modal
+.produto-stepper-item span {
+  margin-top: 2px;
+
+  color: rgba(255, 255, 255, 0.48);
+  font-size: 10px;
+
+  line-height: 1.25;
+}
+
+/* =========================================================
+   CONTEÚDO DAS ETAPAS
+   ========================================================= */
+
+.produto-edit-modal
+.produto-aba-card {
+  width: 100%;
+  max-width: none;
+
+  margin: 0;
+}
+
+.produto-edit-modal
+.premium-box {
+  width: 100%;
+  max-width: none;
+
+  margin: 0 0 18px;
+  padding: 20px;
+
+  border:
+    1px solid rgba(255, 255, 255, 0.075);
+
+  border-radius: 16px;
+
+  background:
+    linear-gradient(
+      145deg,
+      rgba(17, 35, 54, 0.86),
+      rgba(10, 24, 40, 0.86)
+    );
+
+  box-shadow:
+    0 8px 24px rgba(0, 0, 0, 0.12);
+}
+
+.produto-edit-modal
+.premium-box h3 {
+  margin-top: 0;
+
+  color: #47ff6d;
+  font-size: 17px;
+  font-weight: 800;
+}
+
+/* CAMPOS */
+
+.produto-edit-modal
+.field-premium,
+.produto-edit-modal
+.mini-grid > div {
+  min-width: 0;
+}
+
+.produto-edit-modal
+.field-premium label {
+  display: block;
+
+  margin-bottom: 7px;
+
+  color: rgba(255, 255, 255, 0.86);
+
+  font-size: 12px;
+  font-weight: 700;
+}
+
+.produto-edit-modal
+.field-premium input,
+.produto-edit-modal
+.field-premium select,
+.produto-edit-modal
+.field-premium textarea,
+.produto-edit-modal
+.premium-box input[type="text"],
+.produto-edit-modal
+.premium-box input[type="number"],
+.produto-edit-modal
+.premium-box input[type="datetime-local"],
+.produto-edit-modal
+.premium-box select,
+.produto-edit-modal
+.premium-box textarea {
+  width: 100%;
+  max-width: 100%;
+  min-width: 0;
+
+  min-height: 44px;
+
+  padding: 10px 12px;
+
+  border:
+    1px solid rgba(255, 255, 255, 0.08);
+  border-radius: 10px;
+
+  background:
+    rgba(3, 13, 26, 0.68);
+
+  color: #fff;
+
+  outline: none;
+
+  transition:
+    border-color 0.2s,
+    box-shadow 0.2s;
+}
+
+.produto-edit-modal
+.field-premium input:focus,
+.produto-edit-modal
+.field-premium select:focus,
+.produto-edit-modal
+.field-premium textarea:focus {
+  border-color:
+    rgba(58, 255, 91, 0.5);
+
+  box-shadow:
+    0 0 0 3px
+    rgba(58, 255, 91, 0.06);
+}
+
+.produto-edit-modal
+.field-premium input:disabled {
+  opacity: 0.72;
+  cursor: not-allowed;
+}
+
+/* GRIDS */
+
+.produto-edit-modal
+.mini-grid {
+  display: grid;
+
+  grid-template-columns:
+    repeat(3, minmax(0, 1fr));
+
+  gap: 14px;
+}
+
+.produto-edit-modal
+.form-grid,
+.produto-edit-modal
+.grid-form {
+  display: grid;
+
+  grid-template-columns:
+    repeat(2, minmax(0, 1fr));
+
+  gap: 14px;
+}
+
+/* CHECKBOXES / CHIPS */
+
+.produto-edit-modal
+.chips-premium {
+  display: flex;
+  flex-wrap: wrap;
+
+  gap: 10px;
+}
+
+.produto-edit-modal
+.chips-premium label {
+  min-width: 140px;
+
+  display: flex;
+  align-items: center;
+  gap: 8px;
+
+  padding: 10px 12px;
+
+  border:
+    1px solid rgba(255, 255, 255, 0.07);
+  border-radius: 10px;
+
+  background:
+    rgba(255, 255, 255, 0.025);
+
+  color: rgba(255, 255, 255, 0.78);
+
+  cursor: pointer;
+}
+
+.produto-edit-modal
+.chips-premium label:hover {
+  border-color:
+    rgba(67, 255, 104, 0.28);
+
+  background:
+    rgba(67, 255, 104, 0.045);
+}
+
+.produto-edit-modal
+input[type="checkbox"] {
+  accent-color: #30e55a;
+}
+
+/* SWITCHES */
+
+.produto-edit-modal
+.premium-switch {
+  display: flex;
+  align-items: center;
+  justify-content: space-between;
+  gap: 16px;
+
+  padding: 14px 16px;
+
+  border:
+    1px solid rgba(255, 255, 255, 0.07);
+
+  border-radius: 12px;
+
+  background:
+    rgba(255, 255, 255, 0.025);
+}
+
+.produto-edit-modal
+.premium-switch strong,
+.produto-edit-modal
+.premium-switch span {
+  display: block;
+}
+
+.produto-edit-modal
+.premium-switch strong {
+  color: #fff;
+}
+
+.produto-edit-modal
+.premium-switch span {
+  margin-top: 3px;
+
+  color:
+    rgba(255, 255, 255, 0.5);
+
+  font-size: 11px;
+}
+
+/* =========================================================
+   DIAGNÓSTICO
+   ========================================================= */
+
+.produto-edit-modal
+.produto-diagnostico {
+  margin-top: 20px;
+  padding: 18px 20px;
+
+  display: grid;
+
+  grid-template-columns:
+    repeat(4, minmax(0, 1fr));
+
+  gap: 10px;
+
+  border:
+    1px solid rgba(255, 255, 255, 0.08);
+
+  border-radius: 16px;
+
+  background:
+    rgba(255, 255, 255, 0.025);
+}
+
+.produto-edit-modal
+.produto-diagnostico h3 {
+  grid-column: 1 / -1;
+
+  margin: 0 0 5px;
+
+  color: #48ff70;
+}
+
+.produto-edit-modal
+.diagnostico-item {
+  padding: 10px 12px;
+
+  border-radius: 10px;
+
+  background:
+    rgba(255, 255, 255, 0.035);
+
+  color:
+    rgba(255, 255, 255, 0.75);
+}
+
+/* =========================================================
+   RODAPÉ
+   ========================================================= */
+
+.produto-edit-footer {
+  flex: 0 0 auto;
+
+  display: flex;
+  justify-content: flex-end;
+  gap: 10px;
+
+  padding: 14px 26px;
+
+  border-top:
+    1px solid rgba(255, 255, 255, 0.08);
+
+  background:
+    rgba(7, 16, 29, 0.98);
+}
+
+.produto-edit-footer button {
+  min-height: 42px;
+
+  padding: 0 20px;
+
+  border-radius: 10px;
+
+  font-size: 13px;
+  font-weight: 800;
+
+  cursor: pointer;
+}
+
+.produto-edit-footer
+.btn-cancel {
+  border:
+    1px solid rgba(255, 255, 255, 0.1);
+
+  background:
+    rgba(255, 255, 255, 0.05);
+
+  color: #fff;
+}
+
+.produto-edit-footer
+.btn-save {
+  border: none;
+
+  background:
+    linear-gradient(
+      135deg,
+      #22db4d,
+      #51ff78
+    );
+
+  color: #051109;
+
+  box-shadow:
+    0 8px 22px
+    rgba(33, 222, 78, 0.22);
+}
+
+/* =========================================================
+   RESPONSIVIDADE
+   ========================================================= */
+
+@media (max-width: 1180px) {
+  .produto-edit-modal {
+    width:
+      calc(100vw - 24px) !important;
+
+    height: 96vh;
+    max-height: 96vh;
+  }
+
+  .produto-edit-modal
+  .produto-stepper-etapas {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+
+  .produto-edit-modal
+  .mini-grid {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+
+  .produto-edit-modal
+  .produto-diagnostico {
+    grid-template-columns:
+      repeat(2, minmax(0, 1fr));
+  }
+}
+
+@media (max-width: 720px) {
+  .produto-edit-overlay {
+    padding: 0;
+  }
+
+  .produto-edit-modal {
+    width: 100vw !important;
+    height: 100vh;
+    max-height: 100vh;
+
+    border-radius: 0;
+  }
+
+  .produto-edit-header {
+    padding: 16px;
+  }
+
+  .produto-edit-scroll {
+    padding: 0 14px 18px;
+  }
+
+  .produto-edit-footer {
+    padding: 12px 14px;
+  }
+
+  .produto-edit-modal
+  .produto-stepper-etapas,
+  .produto-edit-modal
+  .mini-grid,
+  .produto-edit-modal
+  .form-grid,
+  .produto-edit-modal
+  .grid-form,
+  .produto-edit-modal
+  .produto-diagnostico {
+    grid-template-columns: 1fr;
+  }
+
+  .produto-edit-modal
+  .produto-stepper-header {
+    flex-direction: column;
+  }
+
+  .produto-edit-modal
+  .produto-stepper-percentual {
+    width: 100%;
+  }
+
+  .produto-edit-footer {
+    flex-direction: column-reverse;
+  }
+
+  .produto-edit-footer button {
+    width: 100%;
+  }
+}

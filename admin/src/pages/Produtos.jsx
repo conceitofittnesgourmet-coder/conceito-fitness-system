@@ -36,6 +36,7 @@ import ProdutoImagem from "../components/ProdutoForm/ProdutoImagem";
 import ProdutoConfigEngine from "../components/ProdutoConfig/ProdutoConfigEngine";
 import PublicacaoOnlineProduto from "../components/ProdutoForm/PublicacaoOnlineProduto";
 import FoodCoreTab from "../components/ProdutoForm/FoodCore/FoodCoreTab";
+import "../styles/produto-edicao.css";
 
 const API_URL = "https://conceito-fitness-system.onrender.com";
 
@@ -1173,9 +1174,29 @@ const progressoCadastro =
         </section>
 
         {modalOpen && (
-          <div className="modal-overlay">
-            <div className="modal">
-             <h2>Editar Produto</h2>
+  <div className="modal-overlay produto-edit-overlay">
+    <div className="modal produto-edit-modal">
+
+      <div className="produto-edit-header">
+        <div className="produto-edit-header-info">
+          <h2>Editar Produto</h2>
+          <p>
+            Gerencie cadastro, venda, cardápio,
+            informações nutricionais, fiscal e mídia.
+          </p>
+        </div>
+
+        <button
+          type="button"
+          className="produto-edit-close"
+          onClick={() => setModalOpen(false)}
+          aria-label="Fechar"
+        >
+          ×
+        </button>
+      </div>
+
+      <div className="produto-edit-scroll">
 
              <div className="produto-edicao-tabs">
 
@@ -1220,6 +1241,14 @@ const progressoCadastro =
     </button>
 
     <button
+  className={abaEdicao === "producao" ? "ativo" : ""}
+  onClick={() => setAbaEdicao("producao")}
+  type="button"
+>
+  Produção
+</button>
+
+    <button
         className={abaEdicao==="midia" ? "ativo" : ""}
         onClick={()=>setAbaEdicao("midia")}
         type="button"
@@ -1239,6 +1268,7 @@ const progressoCadastro =
         "cardapio",
         "nutricional",
         "fiscal",
+        "producao",
         "midia"
     ]}
 />
@@ -1319,6 +1349,12 @@ const progressoCadastro =
     />
 )}
 
+{abaEdicao === "producao" && (
+  <FoodCoreTab
+    tipoProduto={editTipoProduto}
+  />
+)}
+
 {abaEdicao === "midia" && (
   <ProdutoImagem
     previewCadastro={previewEdit}
@@ -1395,15 +1431,28 @@ const progressoCadastro =
 
 </div>
 
-              <div className="modal-buttons">
-                <button className="btn-save" onClick={salvarEdicao}>
-                  {loadingEditar ? "Salvando..." : "Salvar"}
-                </button>
+                    </div>
 
-                <button className="btn-cancel" onClick={() => setModalOpen(false)}>
-                  Cancelar
-                </button>
-              </div>
+      <div className="produto-edit-footer">
+        <button
+          type="button"
+          className="btn-cancel"
+          onClick={() => setModalOpen(false)}
+        >
+          Cancelar
+        </button>
+
+        <button
+          type="button"
+          className="btn-save"
+          onClick={salvarEdicao}
+          disabled={loadingEditar}
+        >
+          {loadingEditar
+            ? "Salvando..."
+            : "Salvar alterações"}
+        </button>
+      </div>
             </div>
           </div>
         )}
