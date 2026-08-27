@@ -74,6 +74,23 @@ export default function Pdv() {
   const [enderecoEntrega, setEnderecoEntrega] = useState("");
   const [distanciaEntrega, setDistanciaEntrega] = useState("");
   const [referenciaEntrega, setReferenciaEntrega] = useState("");
+  const [cepEntrega, setCepEntrega] =
+  useState("");
+
+const [
+  numeroEntrega,
+  setNumeroEntrega
+] = useState("");
+
+const [
+  bairroEntrega,
+  setBairroEntrega
+] = useState("");
+
+const [
+  complementoEntrega,
+  setComplementoEntrega
+] = useState("");
   const [taxaEntregaManual, setTaxaEntregaManual] = useState("");
   const [descontoManual, setDescontoManual] = useState("");
   const [motivoDesconto, setMotivoDesconto] = useState("");
@@ -691,6 +708,33 @@ if (crediarioSemVencimento) {
   return;
 }
 
+if (tipoPedido === "delivery") {
+  const cpfLimpo = String(
+    cpfNota || ""
+  ).replace(/\D/g, "");
+
+  if (cpfLimpo.length !== 11) {
+    alert(
+      "Para delivery com NFC-e é necessário informar o CPF do destinatário."
+    );
+    return;
+  }
+
+  if (!enderecoEntrega.trim()) {
+    alert(
+      "Informe o endereço de entrega."
+    );
+    return;
+  }
+
+  if (!bairroEntrega.trim()) {
+    alert(
+      "Informe o bairro da entrega."
+    );
+    return;
+  }
+}
+
     const novoPedido = {
       cliente,
 
@@ -707,6 +751,14 @@ mesa:
 enderecoEntrega,
 
 referenciaEntrega,
+
+cep: cepEntrega,
+
+numeroEntrega,
+
+bairroEntrega,
+
+complementoEntrega,
 
 taxaEntrega:
   Number(taxaEntregaManual || 0),
@@ -838,6 +890,10 @@ total: totalPedido,
     setNumeroMesa("");
     setEnderecoEntrega("");
     setReferenciaEntrega("");
+    setCepEntrega("");
+    setNumeroEntrega("");
+    setBairroEntrega("");
+    setComplementoEntrega("");
     setMotivoDesconto("");
     setTrocoPara("");
     setPagamentos([
@@ -1228,6 +1284,64 @@ total: totalPedido,
     setEnderecoEntrega(e.target.value)
   }
 />
+
+<div className="delivery-address-grid">
+  <div>
+    <label>Número</label>
+
+    <input
+      value={numeroEntrega}
+      onChange={(e) =>
+        setNumeroEntrega(
+          e.target.value
+        )
+      }
+      placeholder="Ex.: 1250"
+    />
+  </div>
+
+  <div>
+    <label>Bairro</label>
+
+    <input
+      value={bairroEntrega}
+      onChange={(e) =>
+        setBairroEntrega(
+          e.target.value
+        )
+      }
+      placeholder="Ex.: Zona III"
+    />
+  </div>
+
+  <div>
+    <label>CEP</label>
+
+    <input
+      value={cepEntrega}
+      onChange={(e) =>
+        setCepEntrega(
+          e.target.value
+        )
+      }
+      placeholder="87500-000"
+    />
+  </div>
+
+  <div>
+    <label>Complemento</label>
+
+    <input
+      value={complementoEntrega}
+      onChange={(e) =>
+        setComplementoEntrega(
+          e.target.value
+        )
+      }
+      placeholder="Apto, bloco..."
+    />
+  </div>
+</div>
 
     <input
       placeholder="Ponto de referência"

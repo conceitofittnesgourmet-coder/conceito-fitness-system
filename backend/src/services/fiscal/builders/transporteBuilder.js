@@ -1,5 +1,15 @@
-function montarXmlTransporteNfce(pedido = {}) {
-  const tipo = String(pedido.tipo || "")
+const {
+  somenteNumeros,
+  escapeXml,
+} = require("../documentoFiscalUtils");
+
+function montarXmlTransporteNfce(
+  pedido = {},
+  empresa = {}
+) {
+  const tipo = String(
+    pedido.tipo || ""
+  )
     .trim()
     .toLowerCase();
 
@@ -11,21 +21,41 @@ function montarXmlTransporteNfce(pedido = {}) {
   const ehDelivery =
     ["delivery", "entrega"].includes(tipo);
 
-  /*
-   * 3 = Transporte próprio por conta do remetente.
-   * 9 = Sem ocorrência de transporte.
-   *
-   * Para delivery com taxa de entrega, consideramos
-   * transporte próprio da loja.
-   */
-  const modalidadeFrete =
-    ehDelivery && valorFrete > 0
-      ? 3
-      : 9;
+  if (!ehDelivery || valorFrete <= 0) {
+    return `
+      <transp>
+        <modFrete>9</modFrete>
+      </transp>`;
+  }
+
+  const cnpj =
+    somenteNumeros(
+      empresa.cnpj || ""
+    );
+
+  const ie =
+    somenteNumeros(
+      empresa.ie || ""
+    );
 
   return `
     <transp>
-      <modFrete>${modalidadeFrete}</modFrete>
+      <modFrete>3</modFrete>
+
+      <transporta>
+        <CNPJ>${cnpj}</CNPJ>
+        <xNome>${escapeXml(
+          empresa.nome ||
+          "CONCEITO FITNESS"
+        )}</xNome>
+        <IE>${ie}</IE>
+        <xEnder>${escapeXml(
+          empresa.endereco ||
+          "AV PARANA 8455"
+        )}</xEnder>
+        <xMun>UMUARAMA</xMun>
+        <UF>PR</UF>
+      </transporta>
     </transp>`;
 }
 

@@ -114,10 +114,44 @@ const ehEntregaDomicilio =
     },
   });
 
-  const destinatarioXml = montarXmlDestinatarioNfce({
+  const nomeCliente =
+  typeof pedido.cliente === "string"
+    ? pedido.cliente
+    : pedido.cliente?.nome ||
+      pedido.nomeCliente ||
+      "Consumidor";
+
+const destinatarioXml =
+  montarXmlDestinatarioNfce({
     cpf: pedido.cpfNota,
-    nome: pedido.cliente?.nome || pedido.nomeCliente,
+    nome: nomeCliente,
     ambiente,
+
+    endereco: ehEntregaDomicilio
+      ? {
+          logradouro:
+            pedido.enderecoEntrega || "",
+
+          numero:
+            pedido.numeroEntrega || "SN",
+
+          complemento:
+            pedido.complementoEntrega || "",
+
+          bairro:
+            pedido.bairroEntrega || "",
+
+          cep:
+            pedido.cep || "",
+
+          codigoMunicipio:
+            MUNICIPIO_UMUARAMA,
+
+          municipio: "UMUARAMA",
+
+          uf: "PR",
+        }
+      : null,
   });
 
   return `<?xml version="1.0" encoding="UTF-8"?>
@@ -128,7 +162,15 @@ const ehEntregaDomicilio =
     ${destinatarioXml}
     ${montarItensXml(pedido.produtos, ambiente)}
     ${montarXmlTotais(totais)}
-    ${montarXmlTransporteNfce(pedido)}
+    ${montarXmlTransporteNfce(
+  pedido,
+  {
+    cnpj: getEmpresaCnpj(),
+    ie: getEmpresaIe(),
+    nome: "CONCEITO FITNESS",
+    endereco: "AV PARANA 8455",
+  }
+)}
     ${montarXmlPagamento(pedido, totais.valorTotal)}
     ${montarXmlInformacoesAdicionais({ ambiente })}
     ${montarXmlResponsavelTecnico({ cnpj })}
