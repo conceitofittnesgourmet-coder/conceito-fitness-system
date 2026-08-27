@@ -13,6 +13,10 @@ router.post("/assinar/:id", controller.assinarPorId);
 router.post("/transmitir/:id", controller.transmitirPorId);
 router.get("/consultar/:id", controller.consultarPorId);
 router.post("/consultar/:id", controller.consultarPorId);
+router.post(
+  "/cancelar/:id",
+  controller.cancelarPorId
+);
 router.get("/:id/xml", controller.visualizarXml);
 router.get("/:id/download", controller.downloadXml);
 router.get("/:id/danfe", controller.visualizarDanfe);

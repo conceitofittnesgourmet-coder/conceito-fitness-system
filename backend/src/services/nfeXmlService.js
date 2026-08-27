@@ -256,6 +256,22 @@ function gerarXmlNfe({ nfe, empresa }) {
   const dhEmi = dataSp(nfe.dataEmissao || new Date());
   const chave = criarChave({ cnpj, serie:nfe.serie, numero:nfe.numero, cNF });
   const id = `NFe${chave}`;
+  const csrt = String(process.env.NFE_CSRT_HOMOLOGACAO || "").trim();
+const idCsrt = String(process.env.NFE_ID_CSRT_HOMOLOGACAO || "1")
+  .replace(/\D/g, "")
+  .padStart(2, "0");
+
+if (nfe.ambiente === "homologacao" && !csrt) {
+  throw new Error("NFE_CSRT_HOMOLOGACAO não configurado.");
+}
+
+const hashCsrt =
+  nfe.ambiente === "homologacao"
+    ? crypto
+        .createHash("sha1")
+        .update(csrt + chave, "utf8")
+        .digest("base64")
+    : "";
   const dest = nfe.destinatario;
   const docDest = dest.cnpj ? `<CNPJ>${somenteNumeros(dest.cnpj)}</CNPJ>` : `<CPF>${somenteNumeros(dest.cpf)}</CPF>`;
   const indIEDest = Number(dest.indicadorIe || 9);
@@ -404,6 +420,12 @@ const totalVCBS = nfe.itens.reduce((total, item) => {
   <xContato>J. André Correa</xContato>
   <email>conceitofittnesgourmet@gmail.com</email>
   <fone>44991030076</fone>
+  ${
+    nfe.ambiente === "homologacao"
+      ? `<idCSRT>${esc(idCsrt)}</idCSRT>
+  <hashCSRT>${esc(hashCsrt)}</hashCSRT>`
+      : ""
+  }
 </infRespTec>
 
 ${nfe.informacoesComplementares

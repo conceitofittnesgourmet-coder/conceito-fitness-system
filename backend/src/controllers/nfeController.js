@@ -7,6 +7,7 @@ const {
   consultarRetornoNfe,
   consultarStatusSefaz,
   processarNfeDoPedido,
+  cancelarNfe,
 } = require("../services/nfeService");
 const { diagnosticarFiscal } = require("../services/fiscalReadinessService");
 const { gerarDanfeNfeHtml } = require("../services/danfeNfeService");
@@ -198,6 +199,47 @@ exports.buscarPorId = async (req, res) => {
     return res.json({ success: true, nfe });
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
+  }
+};
+
+exports.cancelarPorId = async (req, res) => {
+  try {
+    const justificativa = String(
+      req.body?.justificativa || ""
+    ).trim();
+
+    if (!justificativa) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "A justificativa do cancelamento é obrigatória.",
+      });
+    }
+
+    const nfe = await cancelarNfe(
+      req.params.id,
+      justificativa
+    );
+
+    return res.json({
+      success: true,
+      message:
+        nfe.mensagemSefaz ||
+        "Cancelamento da NF-e processado.",
+      nfe,
+    });
+  } catch (error) {
+    console.error(
+      "ERRO CANCELAR NFE:",
+      error
+    );
+
+    return res.status(400).json({
+      success: false,
+      message:
+        error.message ||
+        "Erro ao cancelar a NF-e.",
+    });
   }
 };
 

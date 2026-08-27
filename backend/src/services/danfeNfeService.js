@@ -1,13 +1,411 @@
-function esc(v) { return String(v ?? "").replace(/&/g,"&amp;").replace(/</g,"&lt;").replace(/>/g,"&gt;"); }
-function moeda(v) { return Number(v || 0).toLocaleString("pt-BR", { style:"currency", currency:"BRL" }); }
-function data(v) { return v ? new Date(v).toLocaleString("pt-BR", { timeZone:"America/Sao_Paulo" }) : ""; }
-function formatarChave(v) { return String(v || "").replace(/(\d{4})(?=\d)/g,"$1 ").trim(); }
+function esc(v) {
+  return String(v ?? "")
+    .replace(/&/g, "&amp;")
+    .replace(/</g, "&lt;")
+    .replace(/>/g, "&gt;");
+}
+
+function moeda(v) {
+  return Number(v || 0).toLocaleString("pt-BR", {
+    style: "currency",
+    currency: "BRL",
+  });
+}
+
+function data(v) {
+  return v
+    ? new Date(v).toLocaleString("pt-BR", {
+        timeZone: "America/Sao_Paulo",
+      })
+    : "";
+}
+
+function formatarChave(v) {
+  return String(v || "")
+    .replace(/(\d{4})(?=\d)/g, "$1 ")
+    .trim();
+}
 
 function gerarDanfeNfeHtml(nfe) {
-  const e=nfe.empresa || {};
-  const d=nfe.destinatario || {};
-  const itens=(nfe.itens || []).map((i,idx)=>`<tr><td>${idx+1}</td><td>${esc(i.codigo)}</td><td>${esc(i.descricao)}</td><td>${esc(i.ncm)}</td><td>${esc(i.cfop)}</td><td>${esc(i.unidadeComercial)}</td><td>${Number(i.quantidadeComercial||0).toFixed(3)}</td><td>${moeda(i.valorUnitarioComercial)}</td><td>${moeda(i.valorProduto)}</td></tr>`).join("");
-  const semValor=nfe.ambiente !== "producao" ? '<div class="hom">SEM VALOR FISCAL — AMBIENTE DE HOMOLOGAÇÃO</div>' : '';
-  return `<!doctype html><html lang="pt-BR"><head><meta charset="utf-8"><title>DANFE NF-e ${nfe.numero}</title><style>@page{size:A4;margin:8mm}body{font-family:Arial,sans-serif;font-size:10px;color:#111}.box{border:1px solid #111;padding:6px;margin-bottom:5px}.grid{display:grid;grid-template-columns:1fr 1fr;gap:5px}.head{display:grid;grid-template-columns:2fr 1fr 2fr;gap:5px}.title{text-align:center;font-weight:bold;font-size:18px}.small{font-size:9px}.hom{border:2px solid #b00;color:#b00;padding:8px;text-align:center;font-size:16px;font-weight:bold;margin-bottom:6px}table{width:100%;border-collapse:collapse;font-size:8px}th,td{border:1px solid #555;padding:3px}th{background:#eee}.right{text-align:right}@media print{button{display:none}}</style></head><body><button onclick="window.print()">Imprimir DANFE</button>${semValor}<div class="head"><div class="box"><b>${esc(e.razaoSocial || e.nome || "CONCEITO FITNESS")}</b><br>${esc(e.nomeFantasia || "")}<br>CNPJ: ${esc(e.cnpj || "")}<br>IE: ${esc(e.inscricaoEstadual || e.ie || "")}</div><div class="box title">DANFE<div class="small">Documento Auxiliar da NF-e<br>0-Entrada 1-Saída<br><b>1</b><br>Nº ${nfe.numero}<br>Série ${nfe.serie}</div></div><div class="box"><b>CHAVE DE ACESSO</b><br>${formatarChave(nfe.chaveAcesso)}<br><br>Protocolo: ${esc(nfe.protocolo || "Aguardando autorização")}<br>Emissão: ${data(nfe.dataEmissao)}</div></div><div class="box"><b>DESTINATÁRIO / REMETENTE</b><div class="grid"><div>Nome/Razão Social: ${esc(d.nomeRazaoSocial)}</div><div>CNPJ/CPF: ${esc(d.cnpj || d.cpf)}</div><div>IE: ${esc(d.inscricaoEstadual)}</div><div>Endereço: ${esc(d.endereco?.logradouro)}, ${esc(d.endereco?.numero)}</div><div>Município: ${esc(d.endereco?.cidade)} - ${esc(d.endereco?.uf)}</div><div>CEP: ${esc(d.endereco?.cep)}</div></div></div><div class="box"><b>DADOS DOS PRODUTOS / SERVIÇOS</b><table><thead><tr><th>#</th><th>Cód.</th><th>Descrição</th><th>NCM</th><th>CFOP</th><th>UN</th><th>Qtd.</th><th>V. Unit.</th><th>V. Total</th></tr></thead><tbody>${itens}</tbody></table></div><div class="box"><b>CÁLCULO DO IMPOSTO</b><div class="grid"><div>Produtos: ${moeda(nfe.totais?.valorProdutos)}</div><div>Frete: ${moeda(nfe.totais?.valorFrete)}</div><div>Desconto: ${moeda(nfe.totais?.valorDesconto)}</div><div>Valor total da NF-e: <b>${moeda(nfe.totais?.valorTotal)}</b></div></div></div><div class="box"><b>INFORMAÇÕES COMPLEMENTARES</b><br>${esc(nfe.informacoesComplementares || "")}</div></body></html>`;
+  const e = nfe.empresa || {};
+  const d = nfe.destinatario || {};
+  const cancelamento = nfe.cancelamento || {};
+
+  const itens = (nfe.itens || [])
+    .map(
+      (i, idx) => `
+        <tr>
+          <td>${idx + 1}</td>
+          <td>${esc(i.codigo)}</td>
+          <td>${esc(i.descricao)}</td>
+          <td>${esc(i.ncm)}</td>
+          <td>${esc(i.cfop)}</td>
+          <td>${esc(i.unidadeComercial)}</td>
+          <td>${Number(i.quantidadeComercial || 0).toFixed(3)}</td>
+          <td>${moeda(i.valorUnitarioComercial)}</td>
+          <td>${moeda(i.valorProduto)}</td>
+        </tr>
+      `
+    )
+    .join("");
+
+  const homologacao =
+    nfe.ambiente !== "producao"
+      ? `
+        <div class="hom">
+          SEM VALOR FISCAL — AMBIENTE DE HOMOLOGAÇÃO
+        </div>
+      `
+      : "";
+
+      const cancelada =
+    nfe.status === "cancelada"
+      ? `
+        <div class="cancelada">
+          NF-e CANCELADA
+        </div>
+      `
+      : "";
+
+  return `
+<!doctype html>
+<html lang="pt-BR">
+<head>
+  <meta charset="utf-8">
+
+  <title>DANFE NF-e ${nfe.numero}</title>
+
+  <style>
+    @page {
+      size: A4;
+      margin: 8mm;
+    }
+
+    body {
+      font-family: Arial, sans-serif;
+      font-size: 10px;
+      color: #111;
+    }
+
+    .box {
+      border: 1px solid #111;
+      padding: 6px;
+      margin-bottom: 5px;
+    }
+
+    .grid {
+      display: grid;
+      grid-template-columns: 1fr 1fr;
+      gap: 5px;
+    }
+
+    .head {
+      display: grid;
+      grid-template-columns: 2fr 1fr 2fr;
+      gap: 5px;
+    }
+
+    .title {
+      text-align: center;
+      font-weight: bold;
+      font-size: 18px;
+    }
+
+    .small {
+      font-size: 9px;
+    }
+
+    .hom {
+      border: 2px solid #b00;
+      color: #b00;
+      padding: 8px;
+      text-align: center;
+      font-size: 16px;
+      font-weight: bold;
+      margin-bottom: 6px;
+    }
+
+    .cancelada {
+      border: 4px double #900;
+      color: #900;
+      padding: 12px;
+      text-align: center;
+      font-size: 25px;
+      font-weight: bold;
+      margin-bottom: 6px;
+      letter-spacing: 2px;
+    }
+
+    .cancelamento-info {
+      border: 2px solid #900;
+    }
+
+    .cancelamento-grid {
+      margin-top: 7px;
+    }
+
+    .justificativa {
+      margin-top: 8px;
+      padding-top: 6px;
+      border-top: 1px solid #999;
+    }
+
+    table {
+      width: 100%;
+      border-collapse: collapse;
+      font-size: 8px;
+    }
+
+    th,
+    td {
+      border: 1px solid #555;
+      padding: 3px;
+    }
+
+    th {
+      background: #eee;
+    }
+
+    .right {
+      text-align: right;
+    }
+
+    @media print {
+      button {
+        display: none;
+      }
+    }
+  </style>
+</head>
+
+<body>
+
+<button onclick="window.print()">
+  Imprimir DANFE
+</button>
+
+${cancelada}
+${homologacao}
+
+<div class="head">
+
+  <div class="box">
+    <b>${esc(
+      e.razaoSocial ||
+      e.nome ||
+      "CONCEITO FITNESS"
+    )}</b>
+
+    <br>
+
+    ${esc(e.nomeFantasia || "")}
+
+    <br>
+    CNPJ: ${esc(e.cnpj || "")}
+
+    <br>
+    IE: ${esc(
+      e.inscricaoEstadual ||
+      e.ie ||
+      ""
+    )}
+  </div>
+
+  <div class="box title">
+    DANFE
+
+    <div class="small">
+      Documento Auxiliar da NF-e
+      <br>
+
+      0-Entrada 1-Saída
+      <br>
+
+      <b>1</b>
+      <br>
+
+      Nº ${nfe.numero}
+      <br>
+
+      Série ${nfe.serie}
+    </div>
+  </div>
+
+  <div class="box">
+    <b>CHAVE DE ACESSO</b>
+    <br>
+
+    ${formatarChave(nfe.chaveAcesso)}
+
+    <br><br>
+
+    Protocolo de autorização:
+    ${esc(
+      nfe.protocolo ||
+      "Aguardando autorização"
+    )}
+
+    <br>
+
+    Emissão:
+    ${data(nfe.dataEmissao)}
+  </div>
+
+</div>
+
+${cancelada ? `
+<div class="box cancelamento-info">
+  <b>DADOS DO CANCELAMENTO</b>
+
+  <div class="grid cancelamento-grid">
+    <div>
+      Protocolo:
+      <b>${esc(cancelamento.protocolo || "")}</b>
+    </div>
+
+    <div>
+      Data/Hora:
+      <b>${data(cancelamento.dataEvento)}</b>
+    </div>
+
+    <div>
+      cStat:
+      <b>${esc(cancelamento.cStat || "")}</b>
+    </div>
+
+    <div>
+      Motivo:
+      <b>${esc(cancelamento.xMotivo || "")}</b>
+    </div>
+  </div>
+
+  <div class="justificativa">
+    <b>Justificativa:</b><br>
+    ${esc(cancelamento.justificativa || "")}
+  </div>
+</div>
+` : ""}
+
+<div class="box">
+  <b>DESTINATÁRIO / REMETENTE</b>
+
+  <div class="grid">
+
+    <div>
+      Nome/Razão Social:
+      ${esc(d.nomeRazaoSocial)}
+    </div>
+
+    <div>
+      CNPJ/CPF:
+      ${esc(d.cnpj || d.cpf)}
+    </div>
+
+    <div>
+      IE:
+      ${esc(d.inscricaoEstadual)}
+    </div>
+
+    <div>
+      Endereço:
+      ${esc(d.endereco?.logradouro)},
+      ${esc(d.endereco?.numero)}
+    </div>
+
+    <div>
+      Município:
+      ${esc(d.endereco?.cidade)}
+      -
+      ${esc(d.endereco?.uf)}
+    </div>
+
+    <div>
+      CEP:
+      ${esc(d.endereco?.cep)}
+    </div>
+
+  </div>
+</div>
+
+<div class="box">
+  <b>DADOS DOS PRODUTOS / SERVIÇOS</b>
+
+  <table>
+
+    <thead>
+      <tr>
+        <th>#</th>
+        <th>Cód.</th>
+        <th>Descrição</th>
+        <th>NCM</th>
+        <th>CFOP</th>
+        <th>UN</th>
+        <th>Qtd.</th>
+        <th>V. Unit.</th>
+        <th>V. Total</th>
+      </tr>
+    </thead>
+
+    <tbody>
+      ${itens}
+    </tbody>
+
+  </table>
+</div>
+
+<div class="box">
+  <b>CÁLCULO DO IMPOSTO</b>
+
+  <div class="grid">
+
+    <div>
+      Produtos:
+      ${moeda(
+        nfe.totais?.valorProdutos
+      )}
+    </div>
+
+    <div>
+      Frete:
+      ${moeda(
+        nfe.totais?.valorFrete
+      )}
+    </div>
+
+    <div>
+      Desconto:
+      ${moeda(
+        nfe.totais?.valorDesconto
+      )}
+    </div>
+
+    <div>
+      Valor total da NF-e:
+      <b>
+        ${moeda(
+          nfe.totais?.valorTotal
+        )}
+      </b>
+    </div>
+
+  </div>
+</div>
+
+<div class="box">
+  <b>INFORMAÇÕES COMPLEMENTARES</b>
+  <br>
+
+  ${esc(
+    nfe.informacoesComplementares ||
+    ""
+  )}
+</div>
+
+</body>
+</html>
+`;
 }
-module.exports={ gerarDanfeNfeHtml };
+
+module.exports = {
+  gerarDanfeNfeHtml,
+};

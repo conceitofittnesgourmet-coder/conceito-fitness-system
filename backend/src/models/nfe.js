@@ -273,20 +273,54 @@ const cartaCorrecaoSchema = new mongoose.Schema(
   {
     _id: true,
   }
-);
-
+  );
 
 const processamentoNfeSchema = new mongoose.Schema(
   {
-    etapa: { type: String, required: true, trim: true },
-    status: { type: String, default: "", trim: true },
-    cStat: { type: String, default: "", trim: true },
-    mensagem: { type: String, default: "", trim: true },
-    protocolo: { type: String, default: "", trim: true },
-    recibo: { type: String, default: "", trim: true },
-    data: { type: Date, default: Date.now },
+    etapa: {
+      type: String,
+      required: true,
+      trim: true,
+    },
+
+    status: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+
+    cStat: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+
+    mensagem: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+
+    protocolo: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+
+    recibo: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+
+    data: {
+      type: Date,
+      default: Date.now,
+    },
   },
-  { _id: true }
+  {
+    _id: true,
+  }
 );
 
 const nfeSchema = new mongoose.Schema(
@@ -758,6 +792,11 @@ const nfeSchema = new mongoose.Schema(
       },
 
       xmlRetorno: {
+        type: String,
+        default: "",
+      },
+
+      xmlProcessado: {
         type: String,
         default: "",
       },

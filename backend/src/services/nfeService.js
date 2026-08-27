@@ -6,6 +6,10 @@ const { assinarXmlNfe } = require("./xmlSignatureService");
 const { gerarXmlNfe } = require("./nfeXmlService");
 const { transmitirNfeParaSefaz, consultarReciboNfe, consultarNfePorChave, consultarStatusServicoNfe } = require("./sefazNfeService");
 const { validarAntesDeGerarNfe, obterEnderecoFiscalEmpresa } = require("./fiscalValidationService");
+const {
+  cancelarNfeNaSefaz,
+  validarJustificativa: validarJustificativaCancelamentoNfe,
+} = require("./sefazNfeEventoService");
 
 function registrarHistorico(nfe, etapa, dados = {}) {
   nfe.historicoProcessamento = nfe.historicoProcessamento || [];
@@ -29,6 +33,34 @@ function montarXmlAutorizado(xmlAssinado, xmlRetorno) {
   const protocolo = retorno.match(/<(?:\w+:)?protNFe\b[^>]*>[\s\S]*?<\/(?:\w+:)?protNFe>/i)?.[0] || "";
   if (!xml || !protocolo) return xmlAssinado || "";
   return `<?xml version="1.0" encoding="UTF-8"?><nfeProc xmlns="http://www.portalfiscal.inf.br/nfe" versao="4.00">${xml}${protocolo}</nfeProc>`;
+}
+
+function montarXmlCancelamentoProcessado(
+  xmlEventoAssinado,
+  xmlRetorno
+) {
+  const evento = String(xmlEventoAssinado || "")
+    .replace(/^<\?xml[^>]*>\s*/i, "")
+    .trim();
+
+  const retorno = String(xmlRetorno || "");
+
+  const retEvento =
+    retorno.match(
+      /<(?:\w+:)?retEvento\b[^>]*>[\s\S]*?<\/(?:\w+:)?retEvento>/i
+    )?.[0] || "";
+
+  if (!evento || !retEvento) {
+    return "";
+  }
+
+  return (
+    '<?xml version="1.0" encoding="UTF-8"?>' +
+    '<procEventoNFe xmlns="http://www.portalfiscal.inf.br/nfe" versao="1.00">' +
+    evento +
+    retEvento +
+    "</procEventoNFe>"
+  );
 }
 
 function aplicarRetornoSefaz(nfe, ret, etapa) {
@@ -436,4 +468,146 @@ async function processarNfeDoPedido(dados) {
   return nfe;
 }
 
-module.exports={ prevalidarNfeDoPedido, gerarNfeDoPedido, assinarNfe, transmitirNfe, consultarRetornoNfe, consultarStatusSefaz, processarNfeDoPedido };
+async function cancelarNfe(id, justificativa) {
+  if (!id) {
+    throw new Error(
+      "O identificador da NF-e não foi informado."
+    );
+  }
+
+  const nfe = await Nfe.findById(id);
+
+  if (!nfe) {
+    throw new Error("NF-e não encontrada.");
+  }
+
+  if (nfe.status === "cancelada") {
+    throw new Error(
+      "Esta NF-e já está cancelada."
+    );
+  }
+
+  if (nfe.status !== "autorizada") {
+    throw new Error(
+      `Somente uma NF-e autorizada pode ser cancelada. Status atual: ${nfe.status || "não informado"}.`
+    );
+  }
+
+  if (!nfe.chaveAcesso) {
+    throw new Error(
+      "A chave de acesso da NF-e não foi encontrada."
+    );
+  }
+
+  if (!nfe.protocolo) {
+    throw new Error(
+      "O protocolo de autorização da NF-e não foi encontrado."
+    );
+  }
+
+  const justificativaValidada =
+    validarJustificativaCancelamentoNfe(
+      justificativa
+    );
+
+  const dataEvento = new Date();
+
+  const retorno =
+    await cancelarNfeNaSefaz({
+      chaveAcesso: nfe.chaveAcesso,
+      protocolo: nfe.protocolo,
+      justificativa:
+        justificativaValidada,
+      ambiente:
+        nfe.ambiente || "homologacao",
+      sequenciaEvento: 1,
+      dataEvento,
+    });
+
+  nfe.cancelamento = {
+    justificativa:
+      justificativaValidada,
+
+    protocolo:
+      retorno.protocoloEvento || "",
+
+    cStat:
+      retorno.cStatEvento ||
+      retorno.cStat ||
+      "",
+
+    xMotivo:
+      retorno.xMotivoEvento ||
+      retorno.xMotivo ||
+      "",
+
+    dataEvento,
+
+        xmlEvento:
+      retorno.xmlEvento || "",
+
+    xmlEventoAssinado:
+      retorno.xmlEventoAssinado || "",
+
+    xmlRetorno:
+      retorno.xmlRetorno || "",
+
+    xmlProcessado:
+      montarXmlCancelamentoProcessado(
+        retorno.xmlEventoAssinado || "",
+        retorno.xmlRetorno || ""
+      ),
+  };
+
+  const concluido =
+    Boolean(
+      retorno.cancelamentoConfirmado
+    ) ||
+    Boolean(
+      retorno.eventoDuplicado
+    );
+
+  if (concluido) {
+    nfe.status = "cancelada";
+
+    nfe.mensagemSefaz =
+      retorno.xMotivoEvento ||
+      retorno.xMotivo ||
+      "Cancelamento da NF-e confirmado pela SEFAZ.";
+  } else {
+    nfe.mensagemSefaz =
+      retorno.xMotivoEvento ||
+      retorno.xMotivo ||
+      "A SEFAZ não confirmou o cancelamento da NF-e.";
+  }
+
+  registrarHistorico(
+    nfe,
+    "cancelamento",
+    {
+      status: nfe.status,
+      cStat:
+        retorno.cStatEvento ||
+        retorno.cStat ||
+        "",
+      mensagem: nfe.mensagemSefaz,
+      protocolo:
+        retorno.protocoloEvento || "",
+    }
+  );
+
+  await nfe.save();
+
+  return nfe;
+}
+
+module.exports = {
+  prevalidarNfeDoPedido,
+  gerarNfeDoPedido,
+  assinarNfe,
+  transmitirNfe,
+  consultarRetornoNfe,
+  consultarStatusSefaz,
+  processarNfeDoPedido,
+  cancelarNfe,
+};
