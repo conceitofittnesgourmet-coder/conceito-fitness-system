@@ -618,12 +618,10 @@ const troco =
     return;
   }
 
-  const enderecoCompleto = `${enderecoEntrega}, Umuarama, Paraná, Brasil`;
-
   try {
-    const response = await api.post("/frete/calcular", {
-      endereco: enderecoCompleto,
-    });
+  const response = await api.post("/frete/calcular", {
+    endereco: enderecoEntrega.trim(),
+  });
 
     const frete = Number(response.data.frete || 0);
     const distancia = Number(response.data.distanciaKm || 0);

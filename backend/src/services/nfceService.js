@@ -77,11 +77,29 @@ function montarXmlNfce({ pedido, identificacaoFiscal }) {
   const ambiente = identificacaoFiscal.ambiente;
   const cnpj = identificacaoFiscal.emitente.cnpj;
   const totais = calcularTotaisPedido(pedido);
+  const tipoPedido = String(
+  pedido.tipo || ""
+)
+  .trim()
+  .toLowerCase();
+
+const ehEntregaDomicilio =
+  ["delivery", "entrega"].includes(
+    tipoPedido
+  );
 
   const ideXml = montarXmlIdentificacao({
-    identificacaoFiscal,
-    codigoMunicipioFatoGerador: MUNICIPIO_UMUARAMA,
-  });
+  identificacaoFiscal,
+  codigoMunicipioFatoGerador:
+    MUNICIPIO_UMUARAMA,
+
+  /*
+   * 1 = operação presencial
+   * 4 = NFC-e em operação com entrega em domicílio
+   */
+  indicadorPresenca:
+    ehEntregaDomicilio ? 4 : 1,
+});
 
   const emitenteXml = montarXmlEmitente({
     empresa: identificacaoFiscal.emitente,
@@ -110,7 +128,7 @@ function montarXmlNfce({ pedido, identificacaoFiscal }) {
     ${destinatarioXml}
     ${montarItensXml(pedido.produtos, ambiente)}
     ${montarXmlTotais(totais)}
-    ${montarXmlTransporteNfce()}
+    ${montarXmlTransporteNfce(pedido)}
     ${montarXmlPagamento(pedido, totais.valorTotal)}
     ${montarXmlInformacoesAdicionais({ ambiente })}
     ${montarXmlResponsavelTecnico({ cnpj })}
