@@ -27,6 +27,25 @@ async function buscarCoordenadas(endereco) {
     },
   });
 
+  const contentType =
+  response.headers.get("content-type") || "";
+
+if (!response.ok) {
+  const texto = await response.text();
+
+  throw new Error(
+    `Nominatim respondeu HTTP ${response.status}: ${texto.slice(0, 300)}`
+  );
+}
+
+if (!contentType.includes("application/json")) {
+  const texto = await response.text();
+
+  throw new Error(
+    `Nominatim retornou resposta inválida: ${texto.slice(0, 300)}`
+  );
+}
+
   const data = await response.json();
 
   if (!data || data.length === 0) {
@@ -44,7 +63,26 @@ async function calcularDistanciaRota(destinoLat, destinoLon) {
   const url = `https://router.project-osrm.org/route/v1/driving/${ORIGEM_LON},${ORIGEM_LAT};${destinoLon},${destinoLat}?overview=false&alternatives=false&steps=false`;
 
   const response = await fetch(url);
-  const data = await response.json();
+  const contentType =
+  response.headers.get("content-type") || "";
+
+if (!response.ok) {
+  const texto = await response.text();
+
+  throw new Error(
+    `OSRM respondeu HTTP ${response.status}: ${texto.slice(0, 300)}`
+  );
+}
+
+if (!contentType.includes("application/json")) {
+  const texto = await response.text();
+
+  throw new Error(
+    `OSRM retornou resposta inválida: ${texto.slice(0, 300)}`
+  );
+}
+
+const data = await response.json();
 
   console.log("OSRM RESPONSE:");
   console.log(JSON.stringify(data, null, 2));
