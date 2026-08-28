@@ -269,6 +269,11 @@ const cartaCorrecaoSchema = new mongoose.Schema(
       type: String,
       default: "",
     },
+
+    xmlProcessado: {
+     type: String,
+     default: "",
+   },
   },
   {
     _id: true,

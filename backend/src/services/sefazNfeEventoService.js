@@ -16,6 +16,7 @@ const UF_PR = "41";
 const MODELO_NFE = "55";
 const VERSAO_EVENTO = "1.00";
 const TIPO_EVENTO_CANCELAMENTO = "110111";
+const TIPO_EVENTO_CARTA_CORRECAO = "110110";
 const SEQUENCIA_EVENTO_PADRAO = 1;
 
 const NAMESPACE_NFE =
@@ -176,6 +177,26 @@ function validarJustificativa(justificativa) {
   return texto;
 }
 
+function validarCorrecao(correcao) {
+  const texto = String(correcao || "")
+    .replace(/\s+/g, " ")
+    .trim();
+
+  if (texto.length < 15) {
+    throw new Error(
+      "A correção da CC-e deve possuir no mínimo 15 caracteres."
+    );
+  }
+
+  if (texto.length > 1000) {
+    throw new Error(
+      "A correção da CC-e deve possuir no máximo 1000 caracteres."
+    );
+  }
+
+  return texto;
+}
+
 function validarSequenciaEvento(sequencia) {
   const numero = Number(sequencia);
 
@@ -263,6 +284,55 @@ function montarXmlEventoCancelamento({
     "<descEvento>Cancelamento</descEvento>" +
     `<nProt>${numeroProtocolo}</nProt>` +
     `<xJust>${escaparXml(textoJustificativa)}</xJust>` +
+    "</detEvento>" +
+    "</infEvento>" +
+    "</evento>"
+  );
+}
+
+function montarXmlEventoCartaCorrecao({
+  chaveAcesso,
+  correcao,
+  ambiente,
+  sequenciaEvento = SEQUENCIA_EVENTO_PADRAO,
+  dataEvento = new Date(),
+}) {
+  const chave = validarChaveAcesso(chaveAcesso);
+
+  const textoCorrecao =
+    validarCorrecao(correcao);
+
+  const sequencia =
+    validarSequenciaEvento(sequenciaEvento);
+
+  const idEvento = montarIdEvento({
+    chaveAcesso: chave,
+    tipoEvento: TIPO_EVENTO_CARTA_CORRECAO,
+    sequenciaEvento: sequencia,
+  });
+
+  const dhEvento =
+    formatarDataHoraSaoPaulo(dataEvento);
+
+  const condicaoUso =
+    "A Carta de Correcao e disciplinada pelo paragrafo 1o-A do art. 7o do Convenio S/N, de 15 de dezembro de 1970 e pode ser utilizada para regularizacao de erro ocorrido na emissao de documento fiscal, desde que o erro nao esteja relacionado com: I - as variaveis que determinam o valor do imposto tais como: base de calculo, aliquota, diferenca de preco, quantidade, valor da operacao ou da prestacao; II - a correcao de dados cadastrais que implique mudanca do remetente ou do destinatario; III - a data de emissao ou de saida.";
+
+  return (
+    '<?xml version="1.0" encoding="UTF-8"?>' +
+    `<evento xmlns="${NAMESPACE_NFE}" versao="${VERSAO_EVENTO}">` +
+    `<infEvento Id="${idEvento}">` +
+    `<cOrgao>${UF_PR}</cOrgao>` +
+    `<tpAmb>${obterTpAmb(ambiente)}</tpAmb>` +
+    `<CNPJ>${obterCnpjDaChave(chave)}</CNPJ>` +
+    `<chNFe>${chave}</chNFe>` +
+    `<dhEvento>${dhEvento}</dhEvento>` +
+    `<tpEvento>${TIPO_EVENTO_CARTA_CORRECAO}</tpEvento>` +
+    `<nSeqEvento>${sequencia}</nSeqEvento>` +
+    `<verEvento>${VERSAO_EVENTO}</verEvento>` +
+    `<detEvento versao="${VERSAO_EVENTO}">` +
+    "<descEvento>Carta de Correcao</descEvento>" +
+    `<xCorrecao>${escaparXml(textoCorrecao)}</xCorrecao>` +
+    `<xCondUso>${escaparXml(condicaoUso)}</xCondUso>` +
     "</detEvento>" +
     "</infEvento>" +
     "</evento>"
@@ -483,12 +553,77 @@ async function cancelarNfeNaSefaz({
   };
 }
 
+async function enviarCartaCorrecaoNfe({
+  chaveAcesso,
+  correcao,
+  ambiente,
+  sequenciaEvento =
+    SEQUENCIA_EVENTO_PADRAO,
+  dataEvento = new Date(),
+}) {
+  const xmlEvento =
+    montarXmlEventoCartaCorrecao({
+      chaveAcesso,
+      correcao,
+      ambiente,
+      sequenciaEvento,
+      dataEvento,
+    });
+
+  const xmlEventoAssinado =
+    assinarXmlEvento(
+      removerDeclaracaoXml(xmlEvento)
+    );
+
+  if (!xmlEventoAssinado) {
+    throw new Error(
+      "O assinador não devolveu o XML da Carta de Correção assinado."
+    );
+  }
+
+  const retorno =
+    await transmitirEvento({
+      xmlEventoAssinado,
+      ambiente,
+    });
+
+  const cStat =
+    String(
+      retorno.cStatEvento ||
+      retorno.cStat ||
+      ""
+    );
+
+  return {
+    ...retorno,
+
+    cartaCorrecaoConfirmada:
+      cStat === "135",
+
+    xmlEvento:
+      removerDeclaracaoXml(xmlEvento),
+
+    xmlEventoAssinado:
+      removerDeclaracaoXml(
+        xmlEventoAssinado
+      ),
+  };
+}
+
 module.exports = {
   TIPO_EVENTO_CANCELAMENTO,
+  TIPO_EVENTO_CARTA_CORRECAO,
+
   CSTAT_CANCELAMENTO_CONFIRMADO,
+
   validarJustificativa,
+  validarCorrecao,
   validarChaveAcesso,
   validarProtocolo,
+
   montarXmlEventoCancelamento,
+  montarXmlEventoCartaCorrecao,
+
   cancelarNfeNaSefaz,
+  enviarCartaCorrecaoNfe,
 };

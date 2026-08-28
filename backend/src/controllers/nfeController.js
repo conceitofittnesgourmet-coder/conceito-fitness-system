@@ -8,6 +8,7 @@ const {
   consultarStatusSefaz,
   processarNfeDoPedido,
   cancelarNfe,
+  cartaCorrecaoNfe,
 } = require("../services/nfeService");
 const { diagnosticarFiscal } = require("../services/fiscalReadinessService");
 const { gerarDanfeNfeHtml } = require("../services/danfeNfeService");
@@ -243,6 +244,61 @@ exports.cancelarPorId = async (req, res) => {
   }
 };
 
+exports.cartaCorrecaoPorId = async (req, res) => {
+  try {
+    const correcao = String(
+      req.body?.correcao || ""
+    ).trim();
+
+    if (!correcao) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "O texto da Carta de Correção é obrigatório.",
+      });
+    }
+
+    const resultado =
+      await cartaCorrecaoNfe(
+        req.params.id,
+        correcao
+      );
+
+    return res.json({
+      success:
+        Boolean(
+          resultado.evento?.confirmado
+        ),
+
+      message:
+        resultado.evento?.xMotivo ||
+        (
+          resultado.evento?.confirmado
+            ? "Carta de Correção registrada pela SEFAZ."
+            : "A SEFAZ não confirmou a Carta de Correção."
+        ),
+
+      evento:
+        resultado.evento,
+
+      nfe:
+        resultado.nfe,
+    });
+  } catch (error) {
+    console.error(
+      "ERRO CARTA CORRECAO NFE:",
+      error
+    );
+
+    return res.status(400).json({
+      success: false,
+      message:
+        error.message ||
+        "Erro ao registrar Carta de Correção.",
+    });
+  }
+};
+
 exports.visualizarXml = async (req, res) => {
   try {
     const nfe = await Nfe.findById(req.params.id);
@@ -349,6 +405,139 @@ exports.downloadXmlCancelamento = async (req, res) => {
     res.setHeader(
       "Content-Disposition",
       `attachment; filename=NFE-${nfe.numero}-CANCELAMENTO.xml`
+    );
+
+    res.setHeader(
+      "Content-Type",
+      "application/xml; charset=utf-8"
+    );
+
+    return res.send(xml);
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+exports.visualizarXmlCartaCorrecao = async (req, res) => {
+  try {
+    const nfe = await Nfe.findById(req.params.id);
+
+    if (!nfe) {
+      return res.status(404).json({
+        success: false,
+        message: "NF-e não encontrada.",
+      });
+    }
+
+    const sequencia = Number(req.params.sequencia);
+
+    if (
+      !Number.isInteger(sequencia) ||
+      sequencia < 1
+    ) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Sequência da Carta de Correção inválida.",
+      });
+    }
+
+    const carta = (nfe.cartaCorrecao || []).find(
+      (item) =>
+        Number(item.sequencia) === sequencia
+    );
+
+    if (!carta) {
+      return res.status(404).json({
+        success: false,
+        message:
+          `Carta de Correção sequência ${sequencia} não encontrada.`,
+      });
+    }
+
+    const xml =
+      carta.xmlProcessado ||
+      carta.xmlEventoAssinado ||
+      "";
+
+    if (!xml) {
+      return res.status(404).json({
+        success: false,
+        message:
+          "XML da Carta de Correção não encontrado.",
+      });
+    }
+
+    res.setHeader(
+      "Content-Type",
+      "application/xml; charset=utf-8"
+    );
+
+    return res.send(xml);
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+exports.downloadXmlCartaCorrecao = async (req, res) => {
+  try {
+    const nfe = await Nfe.findById(req.params.id);
+
+    if (!nfe) {
+      return res.status(404).json({
+        success: false,
+        message: "NF-e não encontrada.",
+      });
+    }
+
+    const sequencia = Number(req.params.sequencia);
+
+    if (
+      !Number.isInteger(sequencia) ||
+      sequencia < 1
+    ) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Sequência da Carta de Correção inválida.",
+      });
+    }
+
+    const carta = (nfe.cartaCorrecao || []).find(
+      (item) =>
+        Number(item.sequencia) === sequencia
+    );
+
+    if (!carta) {
+      return res.status(404).json({
+        success: false,
+        message:
+          `Carta de Correção sequência ${sequencia} não encontrada.`,
+      });
+    }
+
+    const xml =
+      carta.xmlProcessado ||
+      carta.xmlEventoAssinado ||
+      "";
+
+    if (!xml) {
+      return res.status(404).json({
+        success: false,
+        message:
+          "XML da Carta de Correção não encontrado.",
+      });
+    }
+
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename=CCe-NFE-${nfe.numero}-SEQ-${sequencia}.xml`
     );
 
     res.setHeader(

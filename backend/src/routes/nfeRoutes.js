@@ -17,6 +17,12 @@ router.post(
   "/cancelar/:id",
   controller.cancelarPorId
 );
+
+router.post(
+  "/carta-correcao/:id",
+  controller.cartaCorrecaoPorId
+);
+
 router.get(
   "/:id/cancelamento/xml",
   controller.visualizarXmlCancelamento
@@ -25,6 +31,16 @@ router.get(
 router.get(
   "/:id/cancelamento/download",
   controller.downloadXmlCancelamento
+);
+
+router.get(
+  "/:id/carta-correcao/:sequencia/xml",
+  controller.visualizarXmlCartaCorrecao
+);
+
+router.get(
+  "/:id/carta-correcao/:sequencia/download",
+  controller.downloadXmlCartaCorrecao
 );
 router.get("/:id/xml", controller.visualizarXml);
 router.get("/:id/download", controller.downloadXml);

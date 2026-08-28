@@ -8,7 +8,9 @@ const { transmitirNfeParaSefaz, consultarReciboNfe, consultarNfePorChave, consul
 const { validarAntesDeGerarNfe, obterEnderecoFiscalEmpresa } = require("./fiscalValidationService");
 const {
   cancelarNfeNaSefaz,
+  enviarCartaCorrecaoNfe,
   validarJustificativa: validarJustificativaCancelamentoNfe,
+  validarCorrecao: validarCorrecaoNfe,
 } = require("./sefazNfeEventoService");
 
 function registrarHistorico(nfe, etapa, dados = {}) {
@@ -36,6 +38,34 @@ function montarXmlAutorizado(xmlAssinado, xmlRetorno) {
 }
 
 function montarXmlCancelamentoProcessado(
+  xmlEventoAssinado,
+  xmlRetorno
+) {
+  const evento = String(xmlEventoAssinado || "")
+    .replace(/^<\?xml[^>]*>\s*/i, "")
+    .trim();
+
+  const retorno = String(xmlRetorno || "");
+
+  const retEvento =
+    retorno.match(
+      /<(?:\w+:)?retEvento\b[^>]*>[\s\S]*?<\/(?:\w+:)?retEvento>/i
+    )?.[0] || "";
+
+  if (!evento || !retEvento) {
+    return "";
+  }
+
+  return (
+    '<?xml version="1.0" encoding="UTF-8"?>' +
+    '<procEventoNFe xmlns="http://www.portalfiscal.inf.br/nfe" versao="1.00">' +
+    evento +
+    retEvento +
+    "</procEventoNFe>"
+  );
+}
+
+function montarXmlCartaCorrecaoProcessado(
   xmlEventoAssinado,
   xmlRetorno
 ) {
@@ -601,6 +631,160 @@ async function cancelarNfe(id, justificativa) {
   return nfe;
 }
 
+async function cartaCorrecaoNfe(id, correcao) {
+  if (!id) {
+    throw new Error(
+      "O identificador da NF-e não foi informado."
+    );
+  }
+
+  const nfe = await Nfe.findById(id);
+
+  if (!nfe) {
+    throw new Error("NF-e não encontrada.");
+  }
+
+  if (nfe.status === "cancelada") {
+    throw new Error(
+      "Não é permitido registrar Carta de Correção para NF-e cancelada."
+    );
+  }
+
+  if (nfe.status !== "autorizada") {
+    throw new Error(
+      `Somente uma NF-e autorizada pode receber Carta de Correção. Status atual: ${nfe.status || "não informado"}.`
+    );
+  }
+
+  if (!nfe.chaveAcesso) {
+    throw new Error(
+      "A chave de acesso da NF-e não foi encontrada."
+    );
+  }
+
+  const correcaoValidada =
+    validarCorrecaoNfe(correcao);
+
+  nfe.cartaCorrecao =
+    nfe.cartaCorrecao || [];
+
+  const maiorSequencia =
+    nfe.cartaCorrecao.reduce(
+      (maior, carta) =>
+        Math.max(
+          maior,
+          Number(carta.sequencia || 0)
+        ),
+      0
+    );
+
+  const sequenciaEvento =
+    maiorSequencia + 1;
+
+  if (sequenciaEvento > 20) {
+    throw new Error(
+      "A NF-e já atingiu o limite de 20 Cartas de Correção."
+    );
+  }
+
+  const dataEvento = new Date();
+
+  const retorno =
+    await enviarCartaCorrecaoNfe({
+      chaveAcesso: nfe.chaveAcesso,
+      correcao: correcaoValidada,
+      ambiente:
+        nfe.ambiente || "homologacao",
+      sequenciaEvento,
+      dataEvento,
+    });
+
+  const cStat =
+    String(
+      retorno.cStatEvento ||
+      retorno.cStat ||
+      ""
+    );
+
+  const xMotivo =
+    retorno.xMotivoEvento ||
+    retorno.xMotivo ||
+    "";
+
+  const xmlProcessado =
+    montarXmlCartaCorrecaoProcessado(
+      retorno.xmlEventoAssinado || "",
+      retorno.xmlRetorno || ""
+    );
+
+  if (retorno.cartaCorrecaoConfirmada) {
+    nfe.cartaCorrecao.push({
+      sequencia: sequenciaEvento,
+      correcao: correcaoValidada,
+
+      protocolo:
+        retorno.protocoloEvento || "",
+
+      cStat,
+      xMotivo,
+      dataEvento,
+
+      xmlEvento:
+        retorno.xmlEvento || "",
+
+      xmlEventoAssinado:
+        retorno.xmlEventoAssinado || "",
+
+      xmlRetorno:
+        retorno.xmlRetorno || "",
+
+      xmlProcessado,
+    });
+
+    nfe.mensagemSefaz =
+      xMotivo ||
+      "Carta de Correção registrada pela SEFAZ.";
+
+    registrarHistorico(
+      nfe,
+      "carta_correcao",
+      {
+        status: nfe.status,
+        cStat,
+        mensagem: nfe.mensagemSefaz,
+        protocolo:
+          retorno.protocoloEvento || "",
+      }
+    );
+
+    await nfe.save();
+  }
+
+  return {
+    nfe,
+    evento: {
+      confirmado:
+        Boolean(
+          retorno.cartaCorrecaoConfirmada
+        ),
+
+      sequencia:
+        sequenciaEvento,
+
+      cStat,
+      xMotivo,
+
+      protocolo:
+        retorno.protocoloEvento || "",
+
+      dataRegistro:
+        retorno.dataRegistro || "",
+
+      xmlProcessado,
+    },
+  };
+}
+
 module.exports = {
   prevalidarNfeDoPedido,
   gerarNfeDoPedido,
@@ -610,4 +794,5 @@ module.exports = {
   consultarStatusSefaz,
   processarNfeDoPedido,
   cancelarNfe,
+  cartaCorrecaoNfe,
 };
