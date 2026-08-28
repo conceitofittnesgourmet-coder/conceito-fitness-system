@@ -17,6 +17,15 @@ router.post(
   "/cancelar/:id",
   controller.cancelarPorId
 );
+router.get(
+  "/:id/cancelamento/xml",
+  controller.visualizarXmlCancelamento
+);
+
+router.get(
+  "/:id/cancelamento/download",
+  controller.downloadXmlCancelamento
+);
 router.get("/:id/xml", controller.visualizarXml);
 router.get("/:id/download", controller.downloadXml);
 router.get("/:id/danfe", controller.visualizarDanfe);

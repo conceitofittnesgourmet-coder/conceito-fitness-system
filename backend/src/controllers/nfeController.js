@@ -270,6 +270,101 @@ exports.downloadXml = async (req, res) => {
   }
 };
 
+exports.visualizarXmlCancelamento = async (req, res) => {
+  try {
+    const nfe = await Nfe.findById(req.params.id);
+
+    if (!nfe) {
+      return res.status(404).json({
+        success: false,
+        message: "NF-e não encontrada.",
+      });
+    }
+
+    if (nfe.status !== "cancelada") {
+      return res.status(400).json({
+        success: false,
+        message: "Esta NF-e não está cancelada.",
+      });
+    }
+
+    const xml =
+      nfe.cancelamento?.xmlProcessado ||
+      nfe.cancelamento?.xmlEventoAssinado ||
+      "";
+
+    if (!xml) {
+      return res.status(404).json({
+        success: false,
+        message:
+          "XML processado do cancelamento não encontrado.",
+      });
+    }
+
+    res.setHeader(
+      "Content-Type",
+      "application/xml; charset=utf-8"
+    );
+
+    return res.send(xml);
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
+exports.downloadXmlCancelamento = async (req, res) => {
+  try {
+    const nfe = await Nfe.findById(req.params.id);
+
+    if (!nfe) {
+      return res.status(404).json({
+        success: false,
+        message: "NF-e não encontrada.",
+      });
+    }
+
+    if (nfe.status !== "cancelada") {
+      return res.status(400).json({
+        success: false,
+        message: "Esta NF-e não está cancelada.",
+      });
+    }
+
+    const xml =
+      nfe.cancelamento?.xmlProcessado ||
+      nfe.cancelamento?.xmlEventoAssinado ||
+      "";
+
+    if (!xml) {
+      return res.status(404).json({
+        success: false,
+        message:
+          "XML processado do cancelamento não encontrado.",
+      });
+    }
+
+    res.setHeader(
+      "Content-Disposition",
+      `attachment; filename=NFE-${nfe.numero}-CANCELAMENTO.xml`
+    );
+
+    res.setHeader(
+      "Content-Type",
+      "application/xml; charset=utf-8"
+    );
+
+    return res.send(xml);
+  } catch (error) {
+    return res.status(500).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
 exports.visualizarDanfe = async (req, res) => {
   try {
     const nfe = await Nfe.findById(req.params.id).populate("empresa").populate("pedido");
