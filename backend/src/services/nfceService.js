@@ -160,7 +160,11 @@ const destinatarioXml =
     ${ideXml}
     ${emitenteXml}
     ${destinatarioXml}
-    ${montarItensXml(pedido.produtos, ambiente)}
+    ${montarItensXml(
+  pedido.produtos,
+  ambiente,
+  totais.valorFrete
+)}
     ${montarXmlTotais(totais)}
     ${montarXmlTransporteNfce(
   pedido,

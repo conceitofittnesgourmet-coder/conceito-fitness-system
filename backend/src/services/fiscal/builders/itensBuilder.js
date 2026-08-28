@@ -107,35 +107,141 @@ function validarDadosFiscaisItem(fiscal, item, index) {
   }
 }
 
-function montarItensXml(produtos = [], ambiente) {
+function montarItensXml(
+  produtos = [],
+  ambiente,
+  valorFreteTotal = 0
+) {
   if (!Array.isArray(produtos) || produtos.length === 0) {
-    throw new Error("Pedido sem produtos para emissão da NFC-e.");
+    throw new Error(
+      "Pedido sem produtos para emissão da NFC-e."
+    );
   }
+
+  const freteTotal = Math.max(
+    0,
+    Number(valorFreteTotal || 0)
+  );
+
+  /*
+   * Primeiro calculamos o valor total dos produtos
+   * para fazer o rateio proporcional do frete.
+   */
+  const valoresProdutos = produtos.map((item) => {
+    const quantidade =
+      Number(item.quantidade || 1);
+
+    const precoUnitario = Number(
+      item.precoUnitario ||
+      item.preco ||
+      item.valorUnitario ||
+      0
+    );
+
+    return item.subtotal !== undefined
+      ? Number(item.subtotal || 0)
+      : quantidade * precoUnitario;
+  });
+
+  const totalProdutos = valoresProdutos.reduce(
+    (soma, valor) =>
+      soma + Number(valor || 0),
+    0
+  );
+
+  let freteDistribuido = 0;
 
   return produtos
     .map((item, index) => {
-      const fiscal = obterDadosFiscaisItem(item);
-      validarDadosFiscaisItem(fiscal, item, index);
+      const fiscal =
+        obterDadosFiscaisItem(item);
 
-      const quantidade = Number(item.quantidade || 1);
-      const precoUnitario = Number(
-        item.precoUnitario || item.preco || item.valorUnitario || 0
+      validarDadosFiscaisItem(
+        fiscal,
+        item,
+        index
       );
+
+      const quantidade =
+        Number(item.quantidade || 1);
+
+      const precoUnitario = Number(
+        item.precoUnitario ||
+        item.preco ||
+        item.valorUnitario ||
+        0
+      );
+
       const valorProduto =
-        item.subtotal !== undefined
-          ? Number(item.subtotal || 0)
-          : quantidade * precoUnitario;
+        valoresProdutos[index];
 
-      if (!Number.isFinite(quantidade) || quantidade <= 0) {
-        throw new Error(`Quantidade inválida no item ${index + 1}.`);
+      if (
+        !Number.isFinite(quantidade) ||
+        quantidade <= 0
+      ) {
+        throw new Error(
+          `Quantidade inválida no item ${index + 1}.`
+        );
       }
 
-      if (!Number.isFinite(precoUnitario) || precoUnitario <= 0) {
-        throw new Error(`Preço inválido no item ${index + 1}.`);
+      if (
+        !Number.isFinite(precoUnitario) ||
+        precoUnitario <= 0
+      ) {
+        throw new Error(
+          `Preço inválido no item ${index + 1}.`
+        );
       }
 
-      if (!Number.isFinite(valorProduto) || valorProduto <= 0) {
-        throw new Error(`Subtotal inválido no item ${index + 1}.`);
+      if (
+        !Number.isFinite(valorProduto) ||
+        valorProduto <= 0
+      ) {
+        throw new Error(
+          `Subtotal inválido no item ${index + 1}.`
+        );
+      }
+
+      /*
+       * Rateio proporcional do frete.
+       *
+       * O último item recebe o resíduo dos
+       * arredondamentos para garantir que:
+       *
+       * soma(vFrete dos itens) === vFrete total.
+       */
+      let valorFreteItem = 0;
+
+      if (
+        freteTotal > 0 &&
+        totalProdutos > 0
+      ) {
+        const ultimoItem =
+          index === produtos.length - 1;
+
+        if (ultimoItem) {
+          valorFreteItem =
+            Number(
+              (
+                freteTotal -
+                freteDistribuido
+              ).toFixed(2)
+            );
+        } else {
+          valorFreteItem =
+            Number(
+              (
+                freteTotal *
+                (
+                  valorProduto /
+                  totalProdutos
+                )
+              ).toFixed(2)
+            );
+
+          freteDistribuido +=
+            valorFreteItem;
+        }
       }
 
       const codigoProduto =
@@ -144,40 +250,104 @@ function montarItensXml(produtos = [], ambiente) {
         item.produtoId ||
         item._id ||
         index + 1;
-      const cEAN = validarGtin(fiscal.gtin);
-      const cEANTrib = validarGtin(fiscal.gtinTributavel);
-      const cestXml = fiscal.cest
-        ? `<CEST>${escapeXml(fiscal.cest)}</CEST>`
-        : "";
-      const beneficioXml = fiscal.codigoBeneficioFiscal
-        ? `<cBenef>${escapeXml(fiscal.codigoBeneficioFiscal)}</cBenef>`
-        : "";
+
+      const cEAN =
+        validarGtin(fiscal.gtin);
+
+      const cEANTrib =
+        validarGtin(
+          fiscal.gtinTributavel
+        );
+
+      const cestXml =
+        fiscal.cest
+          ? `<CEST>${escapeXml(
+              fiscal.cest
+            )}</CEST>`
+          : "";
+
+      const beneficioXml =
+        fiscal.codigoBeneficioFiscal
+          ? `<cBenef>${escapeXml(
+              fiscal.codigoBeneficioFiscal
+            )}</cBenef>`
+          : "";
+
+      const freteXml =
+        valorFreteItem > 0
+          ? `<vFrete>${valorFreteItem.toFixed(
+              2
+            )}</vFrete>`
+          : "";
 
       return `
       <det nItem="${index + 1}">
         <prod>
-          <cProd>${escapeXml(codigoProduto)}</cProd>
+          <cProd>${escapeXml(
+            codigoProduto
+          )}</cProd>
+
           <cEAN>${cEAN}</cEAN>
+
           <xProd>${escapeXml(
-            getProdutoNomeFiscal(item.nome, index, ambiente)
+            getProdutoNomeFiscal(
+              item.nome,
+              index,
+              ambiente
+            )
           )}</xProd>
-          <NCM>${escapeXml(fiscal.ncm)}</NCM>
+
+          <NCM>${escapeXml(
+            fiscal.ncm
+          )}</NCM>
+
           ${cestXml}
           ${beneficioXml}
-          <CFOP>${escapeXml(fiscal.cfop)}</CFOP>
-          <uCom>${escapeXml(fiscal.unidadeComercial)}</uCom>
-          <qCom>${quantidade.toFixed(4)}</qCom>
-          <vUnCom>${precoUnitario.toFixed(10)}</vUnCom>
-          <vProd>${valorProduto.toFixed(2)}</vProd>
+
+          <CFOP>${escapeXml(
+            fiscal.cfop
+          )}</CFOP>
+
+          <uCom>${escapeXml(
+            fiscal.unidadeComercial
+          )}</uCom>
+
+          <qCom>${quantidade.toFixed(
+            4
+          )}</qCom>
+
+          <vUnCom>${precoUnitario.toFixed(
+            10
+          )}</vUnCom>
+
+          <vProd>${valorProduto.toFixed(
+            2
+          )}</vProd>
+
+          ${freteXml}
+
           <cEANTrib>${cEANTrib}</cEANTrib>
-          <uTrib>${escapeXml(fiscal.unidadeTributavel)}</uTrib>
-          <qTrib>${quantidade.toFixed(4)}</qTrib>
-          <vUnTrib>${precoUnitario.toFixed(10)}</vUnTrib>
+
+          <uTrib>${escapeXml(
+            fiscal.unidadeTributavel
+          )}</uTrib>
+
+          <qTrib>${quantidade.toFixed(
+            4
+          )}</qTrib>
+
+          <vUnTrib>${precoUnitario.toFixed(
+            10
+          )}</vUnTrib>
+
           <indTot>1</indTot>
         </prod>
 
         <imposto>
-          ${montarXmlImpostosItem(fiscal, valorProduto)}
+          ${montarXmlImpostosItem(
+            fiscal,
+            valorProduto
+          )}
         </imposto>
       </det>`;
     })
