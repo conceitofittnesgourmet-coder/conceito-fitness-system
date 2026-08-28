@@ -10,23 +10,46 @@ function montarXmlDestinatarioNfce({
   ambiente,
   endereco = null,
 }) {
-  const cpfNormalizado =
+  const documento =
     somenteNumeros(cpf || "");
 
+  const cpfValido =
+    documento.length === 11;
+
+  const cnpjValido =
+    documento.length === 14;
+
   /*
-   * Venda comum sem CPF e sem endereço:
-   * pode omitir o destinatário.
-   *
-   * Delivery:
-   * o destinatário continua sendo enviado
-   * por causa do endereço, mesmo sem CPF.
+   * Se não houver identificação e também
+   * não for delivery, a NFC-e comum pode
+   * omitir completamente o destinatário.
    */
   if (
-    cpfNormalizado.length !== 11 &&
+    !cpfValido &&
+    !cnpjValido &&
     !endereco
   ) {
     return "";
   }
+
+  /*
+   * Delivery (indPres=4) exige identificação
+   * do destinatário.
+   */
+  if (
+    endereco &&
+    !cpfValido &&
+    !cnpjValido
+  ) {
+    throw new Error(
+      "Para NFC-e com entrega em domicílio é necessário informar CPF ou CNPJ do destinatário."
+    );
+  }
+
+  const identificacaoXml =
+    cpfValido
+      ? `<CPF>${documento}</CPF>`
+      : `<CNPJ>${documento}</CNPJ>`;
 
   const nomeDestinatario =
     ambiente !== "producao"
@@ -36,15 +59,11 @@ function montarXmlDestinatarioNfce({
           "CONSUMIDOR"
         );
 
-  const nomeXml = nomeDestinatario
-    ? `<xNome>${escapeXml(
-        nomeDestinatario
-      )}</xNome>`
-    : "";
-
-  const cpfXml =
-    cpfNormalizado.length === 11
-      ? `<CPF>${cpfNormalizado}</CPF>`
+  const nomeXml =
+    nomeDestinatario
+      ? `<xNome>${escapeXml(
+          nomeDestinatario
+        )}</xNome>`
       : "";
 
   let enderecoXml = "";
@@ -156,7 +175,7 @@ function montarXmlDestinatarioNfce({
   }
 
   return `<dest>
-    ${cpfXml}
+    ${identificacaoXml}
     ${nomeXml}
     ${enderecoXml}
     <indIEDest>9</indIEDest>

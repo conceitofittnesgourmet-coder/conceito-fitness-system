@@ -709,6 +709,20 @@ if (crediarioSemVencimento) {
 }
 
 if (tipoPedido === "delivery") {
+  const documentoLimpo =
+    String(cpfNota || "")
+      .replace(/\D/g, "");
+
+  if (
+    documentoLimpo.length !== 11 &&
+    documentoLimpo.length !== 14
+  ) {
+    alert(
+      "Para emitir NFC-e de delivery, informe o CPF ou CNPJ do destinatário."
+    );
+    return;
+  }
+
   if (!enderecoEntrega.trim()) {
     alert(
       "Informe o endereço de entrega."
@@ -728,7 +742,7 @@ if (tipoPedido === "delivery") {
       cliente,
 
       telefone,
-      cpfNota,
+      "CPF/CNPJ na nota": documentoLimpo,
       documentoFiscal: "nfce",
       tipo: tipoPedido,
 
