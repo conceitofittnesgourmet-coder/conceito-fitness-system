@@ -709,17 +709,6 @@ if (crediarioSemVencimento) {
 }
 
 if (tipoPedido === "delivery") {
-  const cpfLimpo = String(
-    cpfNota || ""
-  ).replace(/\D/g, "");
-
-  if (cpfLimpo.length !== 11) {
-    alert(
-      "Para delivery com NFC-e é necessário informar o CPF do destinatário."
-    );
-    return;
-  }
-
   if (!enderecoEntrega.trim()) {
     alert(
       "Informe o endereço de entrega."

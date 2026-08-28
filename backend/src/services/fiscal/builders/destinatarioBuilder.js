@@ -14,27 +14,47 @@ function montarXmlDestinatarioNfce({
     somenteNumeros(cpf || "");
 
   /*
-   * NFC-e comum pode ser emitida sem CPF.
-   * Porém delivery (indPres=4) exige identificação.
+   * Venda comum sem CPF e sem endereço:
+   * pode omitir o destinatário.
+   *
+   * Delivery:
+   * o destinatário continua sendo enviado
+   * por causa do endereço, mesmo sem CPF.
    */
-  if (cpfNormalizado.length !== 11) {
+  if (
+    cpfNormalizado.length !== 11 &&
+    !endereco
+  ) {
     return "";
   }
 
   const nomeDestinatario =
     ambiente !== "producao"
       ? "NF-E EMITIDA EM AMBIENTE DE HOMOLOGACAO - SEM VALOR FISCAL"
-      : textoFiscal(nome, "CONSUMIDOR");
+      : textoFiscal(
+          nome,
+          "CONSUMIDOR"
+        );
 
   const nomeXml = nomeDestinatario
-    ? `<xNome>${escapeXml(nomeDestinatario)}</xNome>`
+    ? `<xNome>${escapeXml(
+        nomeDestinatario
+      )}</xNome>`
     : "";
+
+  const cpfXml =
+    cpfNormalizado.length === 11
+      ? `<CPF>${cpfNormalizado}</CPF>`
+      : "";
 
   let enderecoXml = "";
 
   if (endereco) {
     const logradouro =
-      textoFiscal(endereco.logradouro, "");
+      textoFiscal(
+        endereco.logradouro,
+        ""
+      );
 
     const numero =
       textoFiscal(
@@ -43,7 +63,10 @@ function montarXmlDestinatarioNfce({
       );
 
     const bairro =
-      textoFiscal(endereco.bairro, "");
+      textoFiscal(
+        endereco.bairro,
+        ""
+      );
 
     const codigoMunicipio =
       somenteNumeros(
@@ -52,17 +75,22 @@ function montarXmlDestinatarioNfce({
 
     const municipio =
       textoFiscal(
-        endereco.municipio || "UMUARAMA",
+        endereco.municipio ||
+          "UMUARAMA",
         "UMUARAMA"
       );
 
     const uf =
-      String(endereco.uf || "PR")
+      String(
+        endereco.uf || "PR"
+      )
         .trim()
         .toUpperCase();
 
     const cep =
-      somenteNumeros(endereco.cep || "");
+      somenteNumeros(
+        endereco.cep || ""
+      );
 
     const complemento =
       textoFiscal(
@@ -82,7 +110,9 @@ function montarXmlDestinatarioNfce({
       );
     }
 
-    if (codigoMunicipio.length !== 7) {
+    if (
+      codigoMunicipio.length !== 7
+    ) {
       throw new Error(
         "Código do município de entrega inválido."
       );
@@ -90,7 +120,9 @@ function montarXmlDestinatarioNfce({
 
     const complementoXml =
       complemento
-        ? `<xCpl>${escapeXml(complemento)}</xCpl>`
+        ? `<xCpl>${escapeXml(
+            complemento
+          )}</xCpl>`
         : "";
 
     const cepXml =
@@ -100,13 +132,23 @@ function montarXmlDestinatarioNfce({
 
     enderecoXml = `
       <enderDest>
-        <xLgr>${escapeXml(logradouro)}</xLgr>
-        <nro>${escapeXml(numero)}</nro>
+        <xLgr>${escapeXml(
+          logradouro
+        )}</xLgr>
+        <nro>${escapeXml(
+          numero
+        )}</nro>
         ${complementoXml}
-        <xBairro>${escapeXml(bairro)}</xBairro>
+        <xBairro>${escapeXml(
+          bairro
+        )}</xBairro>
         <cMun>${codigoMunicipio}</cMun>
-        <xMun>${escapeXml(municipio)}</xMun>
-        <UF>${escapeXml(uf)}</UF>
+        <xMun>${escapeXml(
+          municipio
+        )}</xMun>
+        <UF>${escapeXml(
+          uf
+        )}</UF>
         ${cepXml}
         <cPais>1058</cPais>
         <xPais>BRASIL</xPais>
@@ -114,7 +156,7 @@ function montarXmlDestinatarioNfce({
   }
 
   return `<dest>
-    <CPF>${cpfNormalizado}</CPF>
+    ${cpfXml}
     ${nomeXml}
     ${enderecoXml}
     <indIEDest>9</indIEDest>

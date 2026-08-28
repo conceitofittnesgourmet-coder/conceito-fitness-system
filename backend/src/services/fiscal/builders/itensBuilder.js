@@ -320,27 +320,21 @@ function montarItensXml(
             10
           )}</vUnCom>
 
-          <vProd>${valorProduto.toFixed(
-            2
-          )}</vProd>
+          <vProd>${valorProduto.toFixed(2)}</vProd>
 
-          ${freteXml}
+<cEANTrib>${cEANTrib}</cEANTrib>
 
-          <cEANTrib>${cEANTrib}</cEANTrib>
+<uTrib>${escapeXml(
+  fiscal.unidadeTributavel
+)}</uTrib>
 
-          <uTrib>${escapeXml(
-            fiscal.unidadeTributavel
-          )}</uTrib>
+<qTrib>${quantidade.toFixed(4)}</qTrib>
 
-          <qTrib>${quantidade.toFixed(
-            4
-          )}</qTrib>
+<vUnTrib>${precoUnitario.toFixed(10)}</vUnTrib>
 
-          <vUnTrib>${precoUnitario.toFixed(
-            10
-          )}</vUnTrib>
+${freteXml}
 
-          <indTot>1</indTot>
+<indTot>1</indTot>
         </prod>
 
         <imposto>
