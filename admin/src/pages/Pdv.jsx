@@ -708,11 +708,11 @@ if (crediarioSemVencimento) {
   return;
 }
 
-if (tipoPedido === "delivery") {
-  const documentoLimpo =
-    String(cpfNota || "")
-      .replace(/\D/g, "");
+const documentoLimpo = String(
+  cpfNota || ""
+).replace(/\D/g, "");
 
+if (tipoPedido === "delivery") {
   if (
     documentoLimpo.length !== 11 &&
     documentoLimpo.length !== 14
@@ -724,16 +724,12 @@ if (tipoPedido === "delivery") {
   }
 
   if (!enderecoEntrega.trim()) {
-    alert(
-      "Informe o endereço de entrega."
-    );
+    alert("Informe o endereço de entrega.");
     return;
   }
 
   if (!bairroEntrega.trim()) {
-    alert(
-      "Informe o bairro da entrega."
-    );
+    alert("Informe o bairro da entrega.");
     return;
   }
 }
@@ -741,9 +737,9 @@ if (tipoPedido === "delivery") {
     const novoPedido = {
       cliente,
 
-      telefone,
-      "CPF/CNPJ na nota": documentoLimpo,
-      documentoFiscal: "nfce",
+telefone,
+cpfNota: documentoLimpo,
+documentoFiscal: "nfce",
       tipo: tipoPedido,
 
 mesa:
