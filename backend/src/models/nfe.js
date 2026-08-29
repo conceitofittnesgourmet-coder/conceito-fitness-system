@@ -110,6 +110,11 @@ const itemNfeSchema = new mongoose.Schema(
       trim: true,
     },
 
+    baseCalculoIcms: {
+      type: Number,
+      default: 0,
+    },
+
     aliquotaIcms: {
       type: Number,
       default: 0,
@@ -126,6 +131,11 @@ const itemNfeSchema = new mongoose.Schema(
       trim: true,
     },
 
+    baseCalculoPis: {
+      type: Number,
+      default: 0,
+    },
+
     aliquotaPis: {
       type: Number,
       default: 0,
@@ -140,6 +150,11 @@ const itemNfeSchema = new mongoose.Schema(
       type: String,
       default: "99",
       trim: true,
+    },
+
+    baseCalculoCofins: {
+      type: Number,
+      default: 0,
     },
 
     aliquotaCofins: {
@@ -172,6 +187,63 @@ const itemNfeSchema = new mongoose.Schema(
       type: String,
       default: "",
       trim: true,
+    },
+
+    cstIbsCbs: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+
+    cClassTrib: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+
+    baseCalculoIbsCbs: {
+      type: Number,
+      default: 0,
+    },
+
+    aliquotaIbs: {
+      type: Number,
+      default: 0,
+    },
+
+    reducaoAliquotaIbs: {
+      type: Number,
+      default: 0,
+    },
+
+    valorIbsUf: {
+      type: Number,
+      default: 0,
+    },
+
+    valorIbsMun: {
+      type: Number,
+      default: 0,
+    },
+
+    valorIbs: {
+      type: Number,
+      default: 0,
+    },
+
+    aliquotaCbs: {
+      type: Number,
+      default: 0,
+    },
+
+    reducaoAliquotaCbs: {
+      type: Number,
+      default: 0,
+    },
+
+    valorCbs: {
+      type: Number,
+      default: 0,
     },
   },
   {

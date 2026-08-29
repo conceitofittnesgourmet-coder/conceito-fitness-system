@@ -40,203 +40,261 @@ function validarEndereco(end, rotulo) {
 function montarImposto(item, crt = 1) {
   const usaCsosn = [1, 4].includes(Number(crt));
 
-  const icms = usaCsosn
-    ? `<ICMSSN102>
-        <orig>${esc(item.origem || "0")}</orig>
-        <CSOSN>${esc(item.csosn || "102")}</CSOSN>
-      </ICMSSN102>`
-    : `<ICMS00>
-        <orig>${esc(item.origem || "0")}</orig>
-        <CST>${esc(item.cstIcms || "00")}</CST>
-        <modBC>3</modBC>
-        <vBC>${n2(item.valorProduto)}</vBC>
-        <pICMS>${n2(item.aliquotaIcms)}</pICMS>
-        <vICMS>${n2(item.valorIcms)}</vICMS>
-      </ICMS00>`;
+  // ==============================
+  // ICMS
+  // ==============================
+  let icms;
+
+  if (usaCsosn) {
+    const csosn = String(item.csosn || "").trim();
+
+    if (!csosn) {
+      throw new Error(
+        "CSOSN nao informado para o item."
+      );
+    }
+
+    if (csosn !== "102") {
+      throw new Error(
+        "CSOSN " +
+          csosn +
+          " ainda nao possui grupo XML implementado na NF-e."
+      );
+    }
+
+    icms =
+      "<ICMSSN102>" +
+      "<orig>" + esc(item.origem || "0") + "</orig>" +
+      "<CSOSN>" + esc(csosn) + "</CSOSN>" +
+      "</ICMSSN102>";
+  } else {
+    const cstIcms = String(item.cstIcms || "").trim();
+
+    if (!cstIcms) {
+      throw new Error(
+        "CST ICMS nao informado para o item."
+      );
+    }
+
+    if (cstIcms !== "00") {
+      throw new Error(
+        "CST ICMS " +
+          cstIcms +
+          " ainda nao possui grupo XML implementado na NF-e."
+      );
+    }
+
+    icms =
+      "<ICMS00>" +
+      "<orig>" + esc(item.origem || "0") + "</orig>" +
+      "<CST>00</CST>" +
+      "<modBC>3</modBC>" +
+      "<vBC>" + n2(item.baseCalculoIcms) + "</vBC>" +
+      "<pICMS>" + n2(item.aliquotaIcms) + "</pICMS>" +
+      "<vICMS>" + n2(item.valorIcms) + "</vICMS>" +
+      "</ICMS00>";
+  }
+
+  // ==============================
+  // PIS
+  // ==============================
+  const cstPis = String(item.cstPis || "").trim();
+
+  if (!cstPis) {
+    throw new Error(
+      "CST PIS nao informado para o item."
+    );
+  }
 
   let pis;
 
-  const cstPis = String(item.cstPis || "99");
-
-  if (["04", "05", "06", "07", "08", "09"].includes(cstPis)) {
-    pis = `<PISNT>
-      <CST>${esc(cstPis)}</CST>
-    </PISNT>`;
-  } else if (["01", "02"].includes(cstPis)) {
-    pis = `<PISAliq>
-      <CST>${esc(cstPis)}</CST>
-      <vBC>${n2(item.valorProduto)}</vBC>
-      <pPIS>${n4(item.aliquotaPis)}</pPIS>
-      <vPIS>${n2(item.valorPis)}</vPIS>
-    </PISAliq>`;
+  if (
+    ["04", "05", "06", "07", "08", "09"].includes(cstPis)
+  ) {
+    pis =
+      "<PISNT>" +
+      "<CST>" + esc(cstPis) + "</CST>" +
+      "</PISNT>";
+  } else if (
+    ["01", "02"].includes(cstPis)
+  ) {
+    pis =
+      "<PISAliq>" +
+      "<CST>" + esc(cstPis) + "</CST>" +
+      "<vBC>" + n2(item.baseCalculoPis) + "</vBC>" +
+      "<pPIS>" + n4(item.aliquotaPis) + "</pPIS>" +
+      "<vPIS>" + n2(item.valorPis) + "</vPIS>" +
+      "</PISAliq>";
   } else {
-    pis = `<PISOutr>
-      <CST>${esc(cstPis)}</CST>
-      <vBC>${n2(item.valorProduto)}</vBC>
-      <pPIS>${n4(item.aliquotaPis)}</pPIS>
-      <vPIS>${n2(item.valorPis)}</vPIS>
-    </PISOutr>`;
+    pis =
+      "<PISOutr>" +
+      "<CST>" + esc(cstPis) + "</CST>" +
+      "<vBC>" + n2(item.baseCalculoPis) + "</vBC>" +
+      "<pPIS>" + n4(item.aliquotaPis) + "</pPIS>" +
+      "<vPIS>" + n2(item.valorPis) + "</vPIS>" +
+      "</PISOutr>";
+  }
+
+  // ==============================
+  // COFINS
+  // ==============================
+  const cstCofins = String(
+    item.cstCofins || ""
+  ).trim();
+
+  if (!cstCofins) {
+    throw new Error(
+      "CST COFINS nao informado para o item."
+    );
   }
 
   let cofins;
 
-  const cstCofins = String(item.cstCofins || "99");
-
-  if (["04", "05", "06", "07", "08", "09"].includes(cstCofins)) {
-    cofins = `<COFINSNT>
-      <CST>${esc(cstCofins)}</CST>
-    </COFINSNT>`;
-  } else if (["01", "02"].includes(cstCofins)) {
-    cofins = `<COFINSAliq>
-      <CST>${esc(cstCofins)}</CST>
-      <vBC>${n2(item.valorProduto)}</vBC>
-      <pCOFINS>${n4(item.aliquotaCofins)}</pCOFINS>
-      <vCOFINS>${n2(item.valorCofins)}</vCOFINS>
-    </COFINSAliq>`;
+  if (
+    ["04", "05", "06", "07", "08", "09"].includes(cstCofins)
+  ) {
+    cofins =
+      "<COFINSNT>" +
+      "<CST>" + esc(cstCofins) + "</CST>" +
+      "</COFINSNT>";
+  } else if (
+    ["01", "02"].includes(cstCofins)
+  ) {
+    cofins =
+      "<COFINSAliq>" +
+      "<CST>" + esc(cstCofins) + "</CST>" +
+      "<vBC>" + n2(item.baseCalculoCofins) + "</vBC>" +
+      "<pCOFINS>" + n4(item.aliquotaCofins) + "</pCOFINS>" +
+      "<vCOFINS>" + n2(item.valorCofins) + "</vCOFINS>" +
+      "</COFINSAliq>";
   } else {
-    cofins = `<COFINSOutr>
-      <CST>${esc(cstCofins)}</CST>
-      <vBC>${n2(item.valorProduto)}</vBC>
-      <pCOFINS>${n4(item.aliquotaCofins)}</pCOFINS>
-      <vCOFINS>${n2(item.valorCofins)}</vCOFINS>
-    </COFINSOutr>`;
+    cofins =
+      "<COFINSOutr>" +
+      "<CST>" + esc(cstCofins) + "</CST>" +
+      "<vBC>" + n2(item.baseCalculoCofins) + "</vBC>" +
+      "<pCOFINS>" + n4(item.aliquotaCofins) + "</pCOFINS>" +
+      "<vCOFINS>" + n2(item.valorCofins) + "</vCOFINS>" +
+      "</COFINSOutr>";
   }
- 
-  // ==============================
-  // IBS / CBS - Reforma Tributária
-  // ==============================
 
-  const cstIbsCbs = String(item.cstIbsCbs || "000");
-  const cClassTrib = String(item.cClassTrib || "000001");
+  // ==============================
+  // IBS / CBS
+  // ==============================
+  const cstIbsCbs = String(
+    item.cstIbsCbs || ""
+  ).trim();
 
-  const pIBSUF = num(
-    item.aliquotaIbs ?? 0.1
+  const cClassTrib = String(
+    item.cClassTrib || ""
+  ).trim();
+
+  if (!cstIbsCbs) {
+    throw new Error(
+      "CST IBS/CBS nao informado para o item."
+    );
+  }
+
+  if (!cClassTrib) {
+    throw new Error(
+      "cClassTrib IBS/CBS nao informado para o item."
+    );
+  }
+
+  const baseIbsCbs = num(
+    item.baseCalculoIbsCbs
   );
 
-  const pIBSMun = 0;
-
-  const pCBS = num(
-    item.aliquotaCbs ?? 0.9
+  const aliquotaIbs = num(
+    item.aliquotaIbs
   );
 
-  const reducao =
-    cClassTrib === "200047"
-      ? 40
-      : 0;
+  const reducaoIbs = num(
+    item.reducaoAliquotaIbs
+  );
 
-  const pIBSUFEfet =
-    pIBSUF * (1 - reducao / 100);
+  const valorIbsUf = num(
+    item.valorIbsUf
+  );
 
-  const pIBSMunEfet =
-    pIBSMun * (1 - reducao / 100);
+  const valorIbsMun = num(
+    item.valorIbsMun
+  );
 
-  const pCBSEfet =
-    pCBS * (1 - reducao / 100);
+  const valorIbs = num(
+    item.valorIbs
+  );
 
-  const vBCIBSCBS = n2(item.valorProduto);
+  const aliquotaCbs = num(
+    item.aliquotaCbs
+  );
 
-  const vIBSUF =
-    Number(
-      (
-        vBCIBSCBS *
-        pIBSUFEfet /
-        100
-      ).toFixed(2)
-    );
+  const reducaoCbs = num(
+    item.reducaoAliquotaCbs
+  );
 
-  const vIBSMun =
-    Number(
-      (
-        vBCIBSCBS *
-        pIBSMunEfet /
-        100
-      ).toFixed(2)
-    );
+  const valorCbs = num(
+    item.valorCbs
+  );
 
-  const vIBS =
-    Number(
-      (vIBSUF + vIBSMun).toFixed(2)
-    );
+  const aliquotaIbsEfetiva =
+    aliquotaIbs *
+    (1 - reducaoIbs / 100);
 
-  const vCBS =
-    Number(
-      (
-        vBCIBSCBS *
-        pCBSEfet /
-        100
-      ).toFixed(2)
-    );
+  const aliquotaCbsEfetiva =
+    aliquotaCbs *
+    (1 - reducaoCbs / 100);
 
-  const ibsCbs = `
-    <IBSCBS>
-      <CST>${esc(cstIbsCbs)}</CST>
-      <cClassTrib>${esc(cClassTrib)}</cClassTrib>
+  const ibsCbs =
+    "<IBSCBS>" +
+      "<CST>" + esc(cstIbsCbs) + "</CST>" +
+      "<cClassTrib>" + esc(cClassTrib) + "</cClassTrib>" +
+      "<gIBSCBS>" +
+        "<vBC>" + n2(baseIbsCbs) + "</vBC>" +
 
-      <gIBSCBS>
-        <vBC>${n2(vBCIBSCBS)}</vBC>
-
-        <gIBSUF>
-          <pIBSUF>${n4(pIBSUF)}</pIBSUF>
-
-          ${
-            reducao > 0
-              ? `
-          <gRed>
-            <pRedAliq>${n4(reducao)}</pRedAliq>
-            <pAliqEfet>${n4(pIBSUFEfet)}</pAliqEfet>
-          </gRed>
-          `
+        "<gIBSUF>" +
+          "<pIBSUF>" + n4(aliquotaIbs) + "</pIBSUF>" +
+          (
+            reducaoIbs > 0
+              ? "<gRed>" +
+                  "<pRedAliq>" + n4(reducaoIbs) + "</pRedAliq>" +
+                  "<pAliqEfet>" + n4(aliquotaIbsEfetiva) + "</pAliqEfet>" +
+                "</gRed>"
               : ""
-          }
+          ) +
+          "<vIBSUF>" + n2(valorIbsUf) + "</vIBSUF>" +
+        "</gIBSUF>" +
 
-          <vIBSUF>${n2(vIBSUF)}</vIBSUF>
-        </gIBSUF>
+        "<gIBSMun>" +
+          "<pIBSMun>0.0000</pIBSMun>" +
+          "<vIBSMun>" + n2(valorIbsMun) + "</vIBSMun>" +
+        "</gIBSMun>" +
 
-        <gIBSMun>
-          <pIBSMun>${n4(pIBSMun)}</pIBSMun>
+        "<vIBS>" + n2(valorIbs) + "</vIBS>" +
 
-          ${
-            reducao > 0
-              ? `
-          <gRed>
-            <pRedAliq>${n4(reducao)}</pRedAliq>
-            <pAliqEfet>${n4(pIBSMunEfet)}</pAliqEfet>
-          </gRed>
-          `
+        "<gCBS>" +
+          "<pCBS>" + n4(aliquotaCbs) + "</pCBS>" +
+          (
+            reducaoCbs > 0
+              ? "<gRed>" +
+                  "<pRedAliq>" + n4(reducaoCbs) + "</pRedAliq>" +
+                  "<pAliqEfet>" + n4(aliquotaCbsEfetiva) + "</pAliqEfet>" +
+                "</gRed>"
               : ""
-          }
+          ) +
+          "<vCBS>" + n2(valorCbs) + "</vCBS>" +
+        "</gCBS>" +
 
-          <vIBSMun>${n2(vIBSMun)}</vIBSMun>
-        </gIBSMun>
+      "</gIBSCBS>" +
+    "</IBSCBS>";
 
-        <vIBS>${n2(vIBS)}</vIBS>
-
-        <gCBS>
-          <pCBS>${n4(pCBS)}</pCBS>
-
-          ${
-            reducao > 0
-              ? `
-          <gRed>
-            <pRedAliq>${n4(reducao)}</pRedAliq>
-            <pAliqEfet>${n4(pCBSEfet)}</pAliqEfet>
-          </gRed>
-          `
-              : ""
-          }
-
-          <vCBS>${n2(vCBS)}</vCBS>
-        </gCBS>
-
-      </gIBSCBS>
-    </IBSCBS>`;
-
-  return `<imposto>
-    <ICMS>${icms}</ICMS>
-    <PIS>${pis}</PIS>
-    <COFINS>${cofins}</COFINS>
-    ${ibsCbs}
-  </imposto>`;
+  return (
+    "<imposto>" +
+      "<ICMS>" + icms + "</ICMS>" +
+      "<PIS>" + pis + "</PIS>" +
+      "<COFINS>" + cofins + "</COFINS>" +
+      ibsCbs +
+    "</imposto>"
+  );
 }
 
 function gerarXmlNfe({ nfe, empresa }) {
@@ -256,108 +314,110 @@ function gerarXmlNfe({ nfe, empresa }) {
   const dhEmi = dataSp(nfe.dataEmissao || new Date());
   const chave = criarChave({ cnpj, serie:nfe.serie, numero:nfe.numero, cNF });
   const id = `NFe${chave}`;
-  const csrt = String(process.env.NFE_CSRT_HOMOLOGACAO || "").trim();
-const idCsrt = String(process.env.NFE_ID_CSRT_HOMOLOGACAO || "1")
-  .replace(/\D/g, "")
-  .padStart(2, "0");
+  const ambienteProducao = nfe.ambiente === "producao";
 
-if (nfe.ambiente === "homologacao" && !csrt) {
-  throw new Error("NFE_CSRT_HOMOLOGACAO não configurado.");
+const csrt = String(
+  (
+    ambienteProducao
+      ? process.env.NFE_CSRT_PRODUCAO
+      : process.env.NFE_CSRT_HOMOLOGACAO
+  ) || ""
+).trim();
+
+const idCsrtRaw = String(
+  (
+    ambienteProducao
+      ? process.env.NFE_ID_CSRT_PRODUCAO
+      : process.env.NFE_ID_CSRT_HOMOLOGACAO
+  ) || ""
+).trim();
+
+if (!csrt) {
+  throw new Error(
+    ambienteProducao
+      ? "NFE_CSRT_PRODUCAO não configurado."
+      : "NFE_CSRT_HOMOLOGACAO não configurado."
+  );
 }
 
-const hashCsrt =
-  nfe.ambiente === "homologacao"
-    ? crypto
-        .createHash("sha1")
-        .update(csrt + chave, "utf8")
-        .digest("base64")
-    : "";
+if (!idCsrtRaw) {
+  throw new Error(
+    ambienteProducao
+      ? "NFE_ID_CSRT_PRODUCAO não configurado."
+      : "NFE_ID_CSRT_HOMOLOGACAO não configurado."
+  );
+}
+
+const idCsrt = idCsrtRaw.padStart(2, "0");
+
+const hashCsrt = crypto
+  .createHash("sha1")
+  .update(csrt + chave, "utf8")
+  .digest("base64");
+
   const dest = nfe.destinatario;
   const docDest = dest.cnpj ? `<CNPJ>${somenteNumeros(dest.cnpj)}</CNPJ>` : `<CPF>${somenteNumeros(dest.cpf)}</CPF>`;
   const indIEDest = Number(dest.indicadorIe || 9);
   const ieDest = dest.inscricaoEstadual ? `<IE>${somenteNumeros(dest.inscricaoEstadual)}</IE>` : "";
   const totalVBC = nfe.itens.reduce(
-  (total, item) => total + Number(item.valorProduto || 0),
+  (total, item) =>
+    total + Number(item.baseCalculoIcms || 0),
   0
 );
 
 const totalVICMS = nfe.itens.reduce(
-  (total, item) => total + Number(item.valorIcms || 0),
+  (total, item) =>
+    total + Number(item.valorIcms || 0),
   0
 );
 
 const totalVPIS = nfe.itens.reduce(
-  (total, item) => total + Number(item.valorPis || 0),
+  (total, item) =>
+    total + Number(item.valorPis || 0),
   0
 );
 
 const totalVCOFINS = nfe.itens.reduce(
-  (total, item) => total + Number(item.valorCofins || 0),
+  (total, item) =>
+    total + Number(item.valorCofins || 0),
   0
 );
 
 const totalVProd = nfe.itens.reduce(
-  (total, item) => total + Number(item.valorProduto || 0),
+  (total, item) =>
+    total + Number(item.valorProduto || 0),
   0
 );
 
 const totalVBCIBSCBS = nfe.itens.reduce(
-  (total, item) => total + Number(item.valorProduto || 0),
+  (total, item) =>
+    total + Number(item.baseCalculoIbsCbs || 0),
   0
 );
 
-const totalVIBSUF = nfe.itens.reduce((total, item) => {
-  const base = Number(item.valorProduto || 0);
-  const aliquota = Number(item.aliquotaIbs ?? 0.1);
-
-  const reducao =
-    String(item.cClassTrib || "000001") === "200047"
-      ? 40
-      : 0;
-
-  const aliquotaEfetiva =
-    aliquota * (1 - reducao / 100);
-
-  const valor = Number(
-    (base * aliquotaEfetiva / 100).toFixed(2)
-  );
-
-  return total + valor;
-}, 0);
-
-const totalVIBSMun = nfe.itens.reduce((total, item) => {
-  const base = Number(item.valorProduto || 0);
-  const aliquota = 0;
-
-  const valor = Number(
-    (base * aliquota / 100).toFixed(2)
-  );
-
-  return total + valor;
-}, 0);
-
-const totalVIBS = Number(
-  (totalVIBSUF + totalVIBSMun).toFixed(2)
+const totalVIBSUF = nfe.itens.reduce(
+  (total, item) =>
+    total + Number(item.valorIbsUf || 0),
+  0
 );
 
-const totalVCBS = nfe.itens.reduce((total, item) => {
-  const base = Number(item.valorProduto || 0);
-  const aliquota = Number(item.aliquotaCbs ?? 0.9);
+const totalVIBSMun = nfe.itens.reduce(
+  (total, item) =>
+    total + Number(item.valorIbsMun || 0),
+  0
+);
 
-  const reducao =
-    String(item.cClassTrib || "000001") === "200047"
-      ? 40
-      : 0;
+const totalVIBS = nfe.itens.reduce(
+  (total, item) =>
+    total + Number(item.valorIbs || 0),
+  0
+);
 
-  const aliquotaEfetiva =
-    aliquota * (1 - reducao / 100);
-
-  const valor = Number(
-    (base * aliquotaEfetiva / 100).toFixed(2)
-  );
-
-  return total + valor;
-}, 0);
+const totalVCBS = nfe.itens.reduce(
+  (total, item) =>
+    total + Number(item.valorCbs || 0),
+  0
+);
 
   const itensXml = nfe.itens.map((item, i) => `<det nItem="${i+1}"><prod><cProd>${esc(item.codigo || i+1)}</cProd><cEAN>${esc(item.gtin || "SEM GTIN")}</cEAN><xProd>${esc(item.descricao)}</xProd><NCM>${somenteNumeros(item.ncm)}</NCM>${somenteNumeros(item.cest) ? `<CEST>${somenteNumeros(item.cest)}</CEST>` : ""}<CFOP>${somenteNumeros(item.cfop)}</CFOP><uCom>${esc(item.unidadeComercial || "UN")}</uCom><qCom>${n4(item.quantidadeComercial)}</qCom><vUnCom>${n4(item.valorUnitarioComercial)}</vUnCom><vProd>${n2(item.valorProduto)}</vProd><cEANTrib>${esc(item.gtinTributavel || "SEM GTIN")}</cEANTrib><uTrib>${esc(item.unidadeTributavel || "UN")}</uTrib><qTrib>${n4(item.quantidadeTributavel)}</qTrib><vUnTrib>${n4(item.valorUnitarioTributavel)}</vUnTrib><indTot>1</indTot></prod>${montarImposto(
   item,
@@ -420,12 +480,8 @@ const totalVCBS = nfe.itens.reduce((total, item) => {
   <xContato>J. André Correa</xContato>
   <email>conceitofittnesgourmet@gmail.com</email>
   <fone>44991030076</fone>
-  ${
-    nfe.ambiente === "homologacao"
-      ? `<idCSRT>${esc(idCsrt)}</idCSRT>
-  <hashCSRT>${esc(hashCsrt)}</hashCSRT>`
-      : ""
-  }
+   <idCSRT>${esc(idCsrt)}</idCSRT>
+  <hashCSRT>${esc(hashCsrt)}</hashCSRT>
 </infRespTec>
 
 ${nfe.informacoesComplementares

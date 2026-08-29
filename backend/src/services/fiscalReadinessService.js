@@ -40,6 +40,19 @@ async function diagnosticarFiscal(empresaId = null) {
     campo(Boolean(config), "Configuração fiscal", "Salve a configuração fiscal.", "configuracao"),
     campo(Number(config?.serieNfe) > 0, "Série da NF-e", "Informe a série da NF-e.", "configuracao"),
     campo(Number(config?.proximoNumeroNfe) > 0, "Próximo número da NF-e", "Informe o próximo número da NF-e.", "configuracao"),
+    campo(
+  Number(config?.serieNfeProducao) > 0,
+  "Série da NF-e em produção",
+  "Informe a série da NF-e em produção.",
+  "configuracao"
+),
+
+campo(
+  Number(config?.proximoNumeroNfeProducao) > 0,
+  "Próximo número da NF-e em produção",
+  "Informe o próximo número da NF-e em produção.",
+  "configuracao"
+),
     campo(Boolean(config?.credenciadoNfe), "Credenciamento NF-e", "Confirme o credenciamento para NF-e modelo 55.", "configuracao"),
     campo(Boolean(certificado?.valido), "Certificado digital A1", certificado?.message || "Configure um certificado A1 válido.", "certificado"),
   ];

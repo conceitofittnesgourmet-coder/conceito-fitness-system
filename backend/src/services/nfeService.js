@@ -2,6 +2,7 @@ const Pedido = require("../models/pedido");
 const Nfe = require("../models/nfe");
 const Empresa = require("../models/empresa");
 const ConfiguracaoFiscal = require("../models/configuracaofiscal");
+const Cliente = require("../models/cliente");
 const { assinarXmlNfe } = require("./xmlSignatureService");
 const { gerarXmlNfe } = require("./nfeXmlService");
 const { transmitirNfeParaSefaz, consultarReciboNfe, consultarNfePorChave, consultarStatusServicoNfe } = require("./sefazNfeService");
@@ -222,56 +223,195 @@ function destinatarioDoPedido(pedido, informado={}) {
 
       origem: f.origemMercadoria || "0",
 
-     // Reforma Tributária - IBS/CBS
-cstIbsCbs: f.cstIbsCbs || "000",
-cClassTrib: f.cClassTrib || "000001",
+      // Reforma Tributária - IBS/CBS
+      // Sem defaults tributários automáticos.
+      // CST e cClassTrib devem vir do cadastro fiscal.
+      cstIbsCbs: String(f.cstIbsCbs || "").trim(),
+      cClassTrib: String(f.cClassTrib || "").trim(),
 
-aliquotaIbs: num(f.aliquotaIbs),
-aliquotaCbs: num(f.aliquotaCbs),
+      baseCalculoIbsCbs: num(f.baseCalculoIbsCbs),
+      aliquotaIbs: num(f.aliquotaIbs),
+      reducaoAliquotaIbs: num(f.reducaoAliquotaIbs),
+      valorIbsUf: num(f.valorIbsUf),
+      valorIbsMun: num(f.valorIbsMun),
+      valorIbs: num(f.valorIbs),
+
+      aliquotaCbs: num(f.aliquotaCbs),
+      reducaoAliquotaCbs: num(f.reducaoAliquotaCbs),
+      valorCbs: num(f.valorCbs),
 
       // Simples Nacional
       csosn: usaCsosn
-        ? (f.csosn || "102")
+        ? String(f.csosn || "102").trim()
         : "",
 
       // Regime Normal
       cstIcms: usaCsosn
         ? ""
-        : (f.cstIcms || "00"),
+        : String(f.cstIcms || "").trim(),
 
+      baseCalculoIcms: num(f.baseCalculoIcms),
       aliquotaIcms: num(f.aliquotaIcms),
-      valorIcms: 0,
+      valorIcms: num(f.valorIcms),
 
-      cstPis: f.cstPis || "99",
+      cstPis: String(f.cstPis || "").trim(),
+      baseCalculoPis: num(f.baseCalculoPis),
       aliquotaPis: num(f.aliquotaPis),
-      valorPis: 0,
+      valorPis: num(f.valorPis),
 
-      cstCofins: f.cstCofins || "99",
+      cstCofins: String(f.cstCofins || "").trim(),
+      baseCalculoCofins: num(f.baseCalculoCofins),
       aliquotaCofins: num(f.aliquotaCofins),
-      valorCofins: 0,
+      valorCofins: num(f.valorCofins),
 
-      cstIpi: f.cstIpi || "",
+      cstIpi: String(f.cstIpi || "").trim(),
       aliquotaIpi: num(f.aliquotaIpi),
-      valorIpi: 0,
+      valorIpi: num(f.valorIpi),
 
       codigoBeneficioFiscal:
-        f.codigoBeneficioFiscal || "",
+        String(f.codigoBeneficioFiscal || "").trim(),
     };
   });
 }
 
 function totais(itens, dados) {
-  const vp=r2(itens.reduce((s,i)=>s+i.valorProduto,0));
-  const frete=r2(dados.valorFrete), seguro=r2(dados.valorSeguro), desconto=r2(dados.valorDesconto), outras=r2(dados.outrasDespesas);
-  return { valorProdutos:vp, valorFrete:frete, valorSeguro:seguro, valorDesconto:desconto, outrasDespesas:outras, valorIcms:0, valorIpi:0, valorPis:0, valorCofins:0, valorTotal:r2(vp+frete+seguro+outras-desconto) };
+  const valorProdutos = r2(
+    itens.reduce(
+      (total, item) => total + num(item.valorProduto),
+      0
+    )
+  );
+
+  const valorFrete = r2(dados.valorFrete);
+  const valorSeguro = r2(dados.valorSeguro);
+  const valorDesconto = r2(dados.valorDesconto);
+  const outrasDespesas = r2(dados.outrasDespesas);
+
+  const valorIcms = r2(
+    itens.reduce(
+      (total, item) => total + num(item.valorIcms),
+      0
+    )
+  );
+
+  const valorIpi = r2(
+    itens.reduce(
+      (total, item) => total + num(item.valorIpi),
+      0
+    )
+  );
+
+  const valorPis = r2(
+    itens.reduce(
+      (total, item) => total + num(item.valorPis),
+      0
+    )
+  );
+
+  const valorCofins = r2(
+    itens.reduce(
+      (total, item) => total + num(item.valorCofins),
+      0
+    )
+  );
+
+  return {
+    valorProdutos,
+    valorFrete,
+    valorSeguro,
+    valorDesconto,
+    outrasDespesas,
+    valorIcms,
+    valorIpi,
+    valorPis,
+    valorCofins,
+
+    valorTotal: r2(
+      valorProdutos +
+      valorFrete +
+      valorSeguro +
+      outrasDespesas -
+      valorDesconto
+    ),
+  };
 }
 
 async function reservar(empresaId, ambienteInformado, serieInformada) {
-  let cfg=await ConfiguracaoFiscal.findOne({ empresa:empresaId });
-  if (!cfg) cfg=await ConfiguracaoFiscal.create({ empresa:empresaId, ambiente:ambienteInformado || "homologacao", serieNfe:num(serieInformada,1), proximoNumeroNfe:1 });
-  const numero=num(cfg.proximoNumeroNfe,1); const serie=num(serieInformada || cfg.serieNfe,1); const ambiente=ambienteInformado || cfg.ambiente || "homologacao";
-  await ConfiguracaoFiscal.updateOne({ _id:cfg._id }, { $set:{ serieNfe:serie }, $inc:{ proximoNumeroNfe:1 } });
-  return { numero, serie, ambiente };
+  let cfg = await ConfiguracaoFiscal.findOne({ empresa: empresaId });
+
+  if (!cfg) {
+    cfg = await ConfiguracaoFiscal.create({
+      empresa: empresaId,
+      ambiente: ambienteInformado || "homologacao",
+      serieNfe: 1,
+      proximoNumeroNfe: 1,
+      serieNfeProducao: 1,
+      proximoNumeroNfeProducao: 1,
+    });
+  }
+
+  const ambiente =
+    ambienteInformado ||
+    cfg.ambiente ||
+    "homologacao";
+
+  const producao = ambiente === "producao";
+
+  const campoSerie = producao
+    ? "serieNfeProducao"
+    : "serieNfe";
+
+  const campoNumero = producao
+    ? "proximoNumeroNfeProducao"
+    : "proximoNumeroNfe";
+
+  const serie = num(
+    serieInformada || cfg[campoSerie],
+    1
+  );
+
+  const numeroAtual = num(cfg[campoNumero], 1);
+
+  // Garante que documentos antigos tenham o contador do ambiente criado
+  // antes da reserva atômica.
+  if (!Number(cfg[campoNumero]) || Number(cfg[campoNumero]) < 1) {
+    await ConfiguracaoFiscal.updateOne(
+      { _id: cfg._id },
+      {
+        $set: {
+          [campoSerie]: serie,
+          [campoNumero]: numeroAtual,
+        },
+      }
+    );
+  }
+
+  const reservado = await ConfiguracaoFiscal.findOneAndUpdate(
+    { _id: cfg._id },
+    {
+      $set: {
+        [campoSerie]: serie,
+      },
+      $inc: {
+        [campoNumero]: 1,
+      },
+    },
+    {
+      new: false,
+    }
+  );
+
+  if (!reservado) {
+    throw new Error("Não foi possível reservar a numeração da NF-e.");
+  }
+
+  const numero = num(reservado[campoNumero], numeroAtual);
+
+  return {
+    numero,
+    serie,
+    ambiente,
+  };
 }
 
 
@@ -301,7 +441,29 @@ empresaId = empresa._id;
     throw new Error(`Já existe uma NF-e ${existente.status} vinculada a este pedido.`);
   }
 
-  const destinatario = destinatarioDoPedido(pedido, dados.destinatario || {});
+  let destinatarioInformado = dados.destinatario || {};
+
+  if (!dados.destinatario || Object.keys(destinatarioInformado).length === 0) {
+    const documentoPedido = nums(pedido.cpfNota);
+
+    let clienteFiscal = null;
+
+    if (documentoPedido.length === 14) {
+      clienteFiscal = await Cliente.findOne({ cnpj: documentoPedido }).lean();
+    } else if (documentoPedido.length === 11) {
+      clienteFiscal = await Cliente.findOne({ cpf: documentoPedido }).lean();
+    }
+
+    if (clienteFiscal) {
+      destinatarioInformado = clienteFiscal;
+    }
+  }
+
+  const destinatario = destinatarioDoPedido(
+    pedido,
+    destinatarioInformado
+  );
+
   const ufEmitente = estadoEmpresa(empresa);
   const itens = itensDoPedido(
   pedido,
@@ -323,9 +485,28 @@ empresaId = empresa._id;
   });
 
   const cfg = await ConfiguracaoFiscal.findOne({ empresa: empresaId });
-  const ambiente = dados.ambiente || cfg?.ambiente || "homologacao";
-  const serie = num(dados.serie || cfg?.serieNfe, 1);
-  const proximoNumero = num(cfg?.proximoNumeroNfe, 1);
+
+const ambiente =
+  dados.ambiente ||
+  cfg?.ambiente ||
+  "homologacao";
+
+const producao = ambiente === "producao";
+
+const serie = num(
+  dados.serie ||
+    (producao
+      ? cfg?.serieNfeProducao
+      : cfg?.serieNfe),
+  1
+);
+
+const proximoNumero = num(
+  producao
+    ? cfg?.proximoNumeroNfeProducao
+    : cfg?.proximoNumeroNfe,
+  1
+);
 
   return {
     valido: true,
@@ -386,10 +567,28 @@ empresaId = empresa._id;
 
 if (!empresa) throw new Error("Empresa emissora não encontrada.");
   const existente=await Nfe.findOne({ empresa:empresaId, pedido:pedido._id }); if (existente) throw new Error("Já existe uma NF-e vinculada a este pedido.");
+  let destinatarioInformado = dados.destinatario || {};
+
+  if (!dados.destinatario || Object.keys(destinatarioInformado).length === 0) {
+    const documentoPedido = nums(pedido.cpfNota);
+
+    let clienteFiscal = null;
+
+    if (documentoPedido.length === 14) {
+      clienteFiscal = await Cliente.findOne({ cnpj: documentoPedido }).lean();
+    } else if (documentoPedido.length === 11) {
+      clienteFiscal = await Cliente.findOne({ cpf: documentoPedido }).lean();
+    }
+
+    if (clienteFiscal) {
+      destinatarioInformado = clienteFiscal;
+    }
+  }
+
   const dest = destinatarioDoPedido(
-  pedido,
-  dados.destinatario || {}
-);
+    pedido,
+    destinatarioInformado
+  );
 
 const itens = itensDoPedido(
   pedido,

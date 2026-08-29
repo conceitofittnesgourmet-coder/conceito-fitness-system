@@ -44,6 +44,20 @@ const configuracaoFiscalSchema = new mongoose.Schema(
       min: 1,
     },
 
+    // Numeração da NF-e modelo 55 em PRODUÇÃO.
+// Mantida separada da numeração usada em homologação.
+serieNfeProducao: {
+  type: Number,
+  default: 1,
+  min: 1,
+},
+
+proximoNumeroNfeProducao: {
+  type: Number,
+  default: 1,
+  min: 1,
+},
+
     cscId: {
       type: String,
       default: "",

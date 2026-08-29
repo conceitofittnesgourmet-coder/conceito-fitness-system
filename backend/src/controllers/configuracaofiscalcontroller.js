@@ -47,24 +47,70 @@ exports.salvarConfiguracao = async (req, res) => {
   try {
     
     const filtro = {};
-    
+
+    const atual = await ConfiguracaoFiscal.findOne(filtro);
+
+    const manterNumero = (campo, padrao = 1) => {
+      if (req.body[campo] !== undefined && req.body[campo] !== null && req.body[campo] !== "") {
+        return Number(req.body[campo]);
+      }
+
+      if (atual && atual[campo] !== undefined && atual[campo] !== null) {
+        return Number(atual[campo]);
+      }
+
+      return padrao;
+    };
+
+    const manterTexto = (campo, padrao = "") => {
+      if (req.body[campo] !== undefined && req.body[campo] !== null) {
+        return req.body[campo];
+      }
+
+      if (atual && atual[campo] !== undefined && atual[campo] !== null) {
+        return atual[campo];
+      }
+
+      return padrao;
+    };
+
+    const manterBooleano = (campo, padrao = false) => {
+      if (req.body[campo] !== undefined) {
+        return Boolean(req.body[campo]);
+      }
+
+      if (atual && atual[campo] !== undefined) {
+        return Boolean(atual[campo]);
+      }
+
+      return padrao;
+    };
+
     const dados = {
-      ambiente: req.body.ambiente || "homologacao",
-      serieNfce: Number(req.body.serieNfce || 1),
-      proximoNumeroNfce: Number(req.body.proximoNumeroNfce || 1),
-      serieNfe: Number(req.body.serieNfe || 1),
-      proximoNumeroNfe: Number(req.body.proximoNumeroNfe || 1),
-      cscId: req.body.cscId || "",
-      cscToken: req.body.cscToken || "",
-      certificadoConfigurado: Boolean(req.body.certificadoConfigurado),
-      credenciadoNfce: Boolean(req.body.credenciadoNfce),
-      credenciadoNfe: Boolean(req.body.credenciadoNfe),
-      observacao: req.body.observacao || "",
+      ambiente: manterTexto("ambiente", "homologacao"),
+
+      serieNfce: manterNumero("serieNfce", 1),
+      proximoNumeroNfce: manterNumero("proximoNumeroNfce", 1),
+
+      serieNfe: manterNumero("serieNfe", 1),
+      proximoNumeroNfe: manterNumero("proximoNumeroNfe", 1),
+
+      serieNfeProducao: manterNumero("serieNfeProducao", 1),
+      proximoNumeroNfeProducao: manterNumero("proximoNumeroNfeProducao", 1),
+
+      cscId: manterTexto("cscId", ""),
+      cscToken: manterTexto("cscToken", ""),
+
+      certificadoConfigurado: manterBooleano("certificadoConfigurado", false),
+      credenciadoNfce: manterBooleano("credenciadoNfce", false),
+      credenciadoNfe: manterBooleano("credenciadoNfe", false),
+
+      observacao: manterTexto("observacao", ""),
     };
 
     const config = await ConfiguracaoFiscal.findOneAndUpdate(
       filtro,
-      dados,
+      { $set: dados },
       {
         new: true,
         upsert: true,
