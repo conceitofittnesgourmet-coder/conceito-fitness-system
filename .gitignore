@@ -1,1 +1,27 @@
 backend/node_modules/
+
+# Variáveis de ambiente
+backend/.env
+backend/.env.*
+
+# Logs
+backend/src/logs/*.log
+
+# XMLs fiscais e eventos
+backend/*.xml
+
+# DANFEs e arquivos HTML de teste
+backend/danfe-*.html
+
+# Arquivos temporários de inspeção
+backend/*-atual.txt
+
+# Scripts temporários de patch
+backend/patch*.js
+backend/patch_*.js
+
+# Backups temporários
+backend/**/*.bak*
+backend/**/*.backup-*
+backend/**/*.backup.*
+backend/**/*backup*
