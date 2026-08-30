@@ -97,6 +97,40 @@ function GestaoVendas() {
   const [contasReceber, setContasReceber] =
     useState([]);
 
+const [resumoCentral, setResumoCentral] =
+  useState({
+    vendas: {
+      faturamento: 0,
+      quantidade: 0,
+      ticketMedio: 0,
+      maiorVenda: 0,
+      pix: 0,
+      credito: 0,
+      debito: 0,
+      dinheiro: 0,
+      crediario: 0,
+      outros: 0,
+    },
+
+    financeiro: {
+      entradas: 0,
+      saidas: 0,
+      saldo: 0,
+    },
+
+    contas: {
+      pagar: {
+        totalAberto: 0,
+        totalVencido: 0,
+      },
+
+      receber: {
+        totalAberto: 0,
+        totalVencido: 0,
+      },
+    },
+  });
+
   const [loading, setLoading] =
     useState(true);
 
@@ -136,19 +170,16 @@ function GestaoVendas() {
       setLoading(true);
 
       const [
-        pedidosResponse,
-        financeiroResponse,
-      ] =
-        await Promise.all([
-          api.get("/pedidos"),
+  pedidosResponse,
+  financeiroCentralResponse,
+] =
+  await Promise.all([
+    api.get("/pedidos"),
 
-          api.get("/financeiro")
-            .catch(() => ({
-              data: {
-                contasReceber: [],
-              },
-            })),
-        ]);
+    api.get(
+      "/financeiro-central/hoje"
+    ),
+  ]);
 
       setPedidos(
         pedidosResponse
@@ -156,11 +187,17 @@ function GestaoVendas() {
           ?.pedidos || []
       );
 
-      setContasReceber(
-        financeiroResponse
-          .data
-          ?.contasReceber || []
-      );
+      setResumoCentral(
+  financeiroCentralResponse
+    .data || {}
+);
+
+setContasReceber(
+  financeiroCentralResponse
+    .data
+    ?.dados
+    ?.contasReceber || []
+);
 
     } catch (error) {
       console.error(
@@ -236,48 +273,6 @@ async function visualizarVenda(pedido) {
       );
 
     }, [pedidos]);
-
-
-  const hoje =
-    new Date()
-      .toISOString()
-      .slice(0, 10);
-
-
-  const vendasHoje =
-    useMemo(() => {
-
-      return vendasValidas.filter(
-        (pedido) => {
-
-          if (!pedido.createdAt) {
-            return false;
-          }
-
-          const dataPedido =
-            new Date(
-              pedido.createdAt
-            )
-              .toISOString()
-              .slice(0, 10);
-
-          return dataPedido === hoje;
-        }
-      );
-
-    }, [vendasValidas, hoje]);
-
-
-  const faturamentoHoje =
-    vendasHoje.reduce(
-      (total, pedido) =>
-        total +
-        Number(
-          pedido.total || 0
-        ),
-      0
-    );
-
 
   const contasCrediario =
     useMemo(() => {
@@ -837,8 +832,12 @@ async function visualizarVenda(pedido) {
             </span>
 
             <strong>
-              {vendasHoje.length}
-            </strong>
+  {Number(
+    resumoCentral
+      ?.vendas
+      ?.quantidade || 0
+  )}
+</strong>
 
             <small>
               vendas realizadas
@@ -858,10 +857,12 @@ async function visualizarVenda(pedido) {
             </span>
 
             <strong>
-              {moeda(
-                faturamentoHoje
-              )}
-            </strong>
+  {moeda(
+    resumoCentral
+      ?.vendas
+      ?.faturamento
+  )}
+</strong>
 
             <small>
               vendas não canceladas
