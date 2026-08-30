@@ -1225,18 +1225,31 @@ async function visualizarVenda(pedido) {
                           <td>
 
                             <div className="gv-actions">
-                              <button
-                                title="Reimprimir cupom / DANFE NFC-e"
-                                onClick={() =>
-                                  abrirFiscal(
-                                    pedido
-                                  )
-                                }
-                              >
-                                <FaPrint />
-                              </button>
 
-                            </div>
+  <button
+    title="Visualizar venda"
+    onClick={() =>
+      visualizarVenda(
+        pedido
+      )
+    }
+  >
+    <FaEye />
+  </button>
+
+
+  <button
+    title="Reimprimir cupom / DANFE NFC-e"
+    onClick={() =>
+      abrirFiscal(
+        pedido
+      )
+    }
+  >
+    <FaPrint />
+  </button>
+
+</div>
 
                           </td>
 
