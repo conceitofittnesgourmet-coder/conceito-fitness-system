@@ -79,6 +79,8 @@ import Analise from "./pages/Analise";
 
 import Pdv from "./pages/Pdv";
 
+import GestaoVendas from "./pages/GestaoVendas";
+
 import Caixa from "./pages/Caixa";
 
 import Cupom from "./pages/Cupom";
@@ -385,6 +387,14 @@ function App() {
   }
 />
 
+<Route
+  path="/gestao-vendas"
+  element={
+    <PrivateRoute>
+      <GestaoVendas />
+    </PrivateRoute>
+  }
+/>
 
 
       {/* DASHBOARD */}

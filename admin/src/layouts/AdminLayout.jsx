@@ -56,6 +56,13 @@ function AdminLayout({
   path: "/pdv",
   icon: <ShoppingCart size={20} />
 },
+
+{
+  label: "Gestão de Vendas",
+  path: "/gestao-vendas",
+  icon: <FaReceipt />
+},
+
 {
   label: "Cardápio Online",
   path: "/cardapio-online-admin",
