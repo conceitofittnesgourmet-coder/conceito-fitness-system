@@ -1,4 +1,7 @@
-import { useEffect, useMemo, useState } from "react";
+import {
+  useEffect,
+  useState,
+} from "react";
 import AdminLayout from "../layouts/AdminLayout";
 import api from "../services/api";
 
@@ -15,11 +18,42 @@ import {
 
 function Financeiro() {
   const [dados, setDados] = useState(null);
+  const [
+  resumoCentral,
+  setResumoCentral,
+] = useState(null);
   const [loading, setLoading] = useState(true);
-  const hoje = new Date().toISOString().slice(0, 10);
-const inicioMes = new Date(new Date().getFullYear(), new Date().getMonth(), 1)
-  .toISOString()
-  .slice(0, 10);
+  function dataLocalInput(data = new Date()) {
+  const ano =
+    data.getFullYear();
+
+  const mes =
+    String(
+      data.getMonth() + 1
+    ).padStart(2, "0");
+
+  const dia =
+    String(
+      data.getDate()
+    ).padStart(2, "0");
+
+  return `${ano}-${mes}-${dia}`;
+}
+
+const agora =
+  new Date();
+
+const hoje =
+  dataLocalInput(agora);
+
+const inicioMes =
+  dataLocalInput(
+    new Date(
+      agora.getFullYear(),
+      agora.getMonth(),
+      1
+    )
+  );
 
 const [filtros, setFiltros] = useState({
   inicio: inicioMes,
@@ -56,9 +90,44 @@ const [filtros, setFiltros] = useState({
     if (filtros.formaPagamento) params.append("formaPagamento", filtros.formaPagamento);
     if (filtros.tipo) params.append("tipo", filtros.tipo);
 
-    const response = await api.get(`/financeiro?${params.toString()}`);
+    const paramsCentral =
+  new URLSearchParams();
 
-    setDados(response.data);
+if (filtros.inicio) {
+  paramsCentral.append(
+    "inicio",
+    filtros.inicio
+  );
+}
+
+if (filtros.fim) {
+  paramsCentral.append(
+    "fim",
+    filtros.fim
+  );
+}
+
+const [
+  responseDetalhes,
+  responseCentral,
+] =
+  await Promise.all([
+    api.get(
+      `/financeiro?${params.toString()}`
+    ),
+
+    api.get(
+      `/financeiro-central/resumo?${paramsCentral.toString()}`
+    ),
+  ]);
+
+setDados(
+  responseDetalhes.data
+);
+
+setResumoCentral(
+  responseCentral.data
+);
   } catch (error) {
     console.log("Erro financeiro:", error);
     alert("Erro ao carregar financeiro.");
@@ -70,11 +139,20 @@ const [filtros, setFiltros] = useState({
   useEffect(() => {
     carregarFinanceiro();
   }, []);
-
-  const resumo = dados?.resumo || {};
   const contasPagar = dados?.contasPagar || [];
   const contasReceber = dados?.contasReceber || [];
   const movimentacoes = dados?.movimentacoes || [];
+   const vendasResumo =
+  resumoCentral
+    ?.vendas || {};
+
+const financeiroResumo =
+  resumoCentral
+    ?.financeiro || {};
+
+const contasResumo =
+  resumoCentral
+    ?.contas || {};
 
   async function criarContaPagar() {
     if (!novaPagar.descricao || !novaPagar.valor || !novaPagar.vencimento) {
@@ -222,35 +300,83 @@ const [filtros, setFiltros] = useState({
           <div className="financeiro-kpi green">
             <FaDollarSign />
             <span>Entradas</span>
-            <strong>{dinheiro(resumo.entradas)}</strong>
-            <p>Receitas registradas</p>
+            <strong>
+  {dinheiro(
+    financeiroResumo
+      ?.entradas
+  )}
+</strong>
+            <p>
+  Valores efetivamente recebidos
+</p>
           </div>
 
           <div className="financeiro-kpi purple">
             <FaArrowDown />
             <span>Saídas</span>
-            <strong>{dinheiro(resumo.saidas)}</strong>
+            <strong>
+  {dinheiro(
+    financeiroResumo
+      ?.saidas
+  )}
+</strong>
             <p>Despesas pagas</p>
           </div>
+
+          <div className="financeiro-kpi green">
+  <FaDollarSign />
+
+  <span>
+    Faturamento
+  </span>
+
+  <strong>
+    {dinheiro(
+      vendasResumo
+        ?.faturamento
+    )}
+  </strong>
+
+  <p>
+    Vendas realizadas no período
+  </p>
+</div>
 
           <div className="financeiro-kpi blue">
             <FaWallet />
             <span>Saldo</span>
-            <strong>{dinheiro(resumo.saldo)}</strong>
+            <strong>
+  {dinheiro(
+    financeiroResumo
+      ?.saldo
+  )}
+</strong>
             <p>Entradas - saídas</p>
           </div>
 
           <div className="financeiro-kpi yellow">
             <FaClock />
             <span>A Receber</span>
-            <strong>{dinheiro(resumo.totalReceberPendente)}</strong>
+            <strong>
+  {dinheiro(
+    contasResumo
+      ?.receber
+      ?.totalAberto
+  )}
+</strong>
             <p>Pendente</p>
           </div>
 
           <div className="financeiro-kpi red">
             <FaChartBar />
             <span>A Pagar</span>
-            <strong>{dinheiro(resumo.totalPagarPendente)}</strong>
+            <strong>
+  {dinheiro(
+    contasResumo
+      ?.pagar
+      ?.totalAberto
+  )}
+</strong>
             <p>Pendente</p>
           </div>
         </section>
@@ -307,11 +433,18 @@ const [filtros, setFiltros] = useState({
                         </button>
                       )}
 
-                      {conta.status !== "cancelada" && (
-                        <button onClick={() => cancelarContaPagar(conta._id)}>
-                          <FaTrash />
-                        </button>
-                      )}
+                      {conta.status !== "paga" &&
+  conta.status !== "cancelada" && (
+    <button
+      onClick={() =>
+        cancelarContaPagar(
+          conta._id
+        )
+      }
+    >
+      <FaTrash />
+    </button>
+  )}
                     </td>
                   </tr>
                 ))}
@@ -349,7 +482,8 @@ const [filtros, setFiltros] = useState({
                         </button>
                       )}
 
-                      {conta.status !== "cancelada" && (
+                      {conta.status !== "recebida" &&
+  conta.status !== "cancelada" && (
                         <button onClick={() => cancelarContaReceber(conta._id)}>
                           <FaTrash />
                         </button>
