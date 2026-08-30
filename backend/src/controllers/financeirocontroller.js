@@ -239,38 +239,120 @@ exports.criarContaPagar = async (req, res) => {
 
 exports.pagarConta = async (req, res) => {
   try {
-    const conta = await ContaPagar.findById(req.params.id);
+    const empresa =
+      filtroEmpresa(req);
+
+    const conta =
+      await ContaPagar.findOne({
+        _id: req.params.id,
+        ...empresa,
+      });
 
     if (!conta) {
       return res.status(404).json({
         success: false,
-        message: "Conta a pagar não encontrada.",
+        message:
+          "Conta a pagar não encontrada.",
+      });
+    }
+
+    /*
+     * IDEMPOTÊNCIA:
+     * se a conta já foi paga, não gera
+     * uma segunda saída financeira.
+     */
+    if (conta.status === "paga") {
+      const movimentacaoExistente =
+        await MovimentacaoFinanceira.findOne({
+          origem: "conta_pagar",
+          contaPagar: conta._id,
+          ...empresa,
+        });
+
+      return res.json({
+        success: true,
+        conta,
+        movimentacao:
+          movimentacaoExistente,
+        jaProcessada: true,
+      });
+    }
+
+    if (conta.status === "cancelada") {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Uma conta cancelada não pode ser paga.",
       });
     }
 
     conta.status = "paga";
-    conta.dataPagamento = new Date();
-    conta.formaPagamento = req.body.formaPagamento || conta.formaPagamento || "PIX";
+    conta.dataPagamento =
+      new Date();
+
+    conta.formaPagamento =
+      req.body.formaPagamento ||
+      conta.formaPagamento ||
+      "PIX";
 
     await conta.save();
 
-    await MovimentacaoFinanceira.create({
-      tipo: "saida",
-      origem: "conta_pagar",
-      descricao: `Pagamento: ${conta.descricao}`,
-      categoria: conta.categoria || "Despesas",
-      valor: Number(conta.valor || 0),
-      formaPagamento: conta.formaPagamento,
-      contaPagar: conta._id,
-      empresa: conta.empresa,
-    });
+    /*
+     * Segunda proteção:
+     * verifica se já existe lançamento
+     * financeiro ligado a esta conta.
+     */
+    let movimentacao =
+      await MovimentacaoFinanceira.findOne({
+        origem: "conta_pagar",
+        contaPagar: conta._id,
+        ...empresa,
+      });
+
+    if (!movimentacao) {
+      movimentacao =
+        await MovimentacaoFinanceira.create({
+          tipo: "saida",
+          origem: "conta_pagar",
+
+          descricao:
+            `Pagamento: ${conta.descricao}`,
+
+          categoria:
+            conta.categoria ||
+            "Despesas",
+
+          valor:
+            Number(
+              conta.valor || 0
+            ),
+
+          data:
+            conta.dataPagamento,
+
+          formaPagamento:
+            conta.formaPagamento,
+
+          contaPagar:
+            conta._id,
+
+          empresa:
+            conta.empresa,
+        });
+    }
 
     return res.json({
       success: true,
       conta,
+      movimentacao,
+      jaProcessada: false,
     });
+
   } catch (error) {
-    console.log("ERRO PAGAR CONTA:", error);
+    console.log(
+      "ERRO PAGAR CONTA:",
+      error
+    );
 
     return res.status(500).json({
       success: false,
@@ -279,27 +361,54 @@ exports.pagarConta = async (req, res) => {
   }
 };
 
-exports.deletarContaPagar = async (req, res) => {
+exports.deletarContaPagar = async (
+  req,
+  res
+) => {
   try {
-    const conta = await ContaPagar.findByIdAndUpdate(
-      req.params.id,
-      { status: "cancelada" },
-      { new: true }
-    );
+    const empresa =
+      filtroEmpresa(req);
+
+    const conta =
+      await ContaPagar.findOne({
+        _id: req.params.id,
+        ...empresa,
+      });
 
     if (!conta) {
       return res.status(404).json({
         success: false,
-        message: "Conta a pagar não encontrada.",
+        message:
+          "Conta a pagar não encontrada.",
       });
     }
+
+    if (
+      conta.status === "paga"
+    ) {
+      return res.status(400).json({
+        success: false,
+
+        message:
+          "Uma conta já paga não pode ser cancelada. Utilize um estorno financeiro.",
+      });
+    }
+
+    conta.status =
+      "cancelada";
+
+    await conta.save();
 
     return res.json({
       success: true,
       conta,
     });
+
   } catch (error) {
-    console.log("ERRO CANCELAR CONTA PAGAR:", error);
+    console.log(
+      "ERRO CANCELAR CONTA PAGAR:",
+      error
+    );
 
     return res.status(500).json({
       success: false,
@@ -349,42 +458,144 @@ const conta =
   }
 };
 
-exports.receberConta = async (req, res) => {
+exports.receberConta = async (
+  req,
+  res
+) => {
   try {
-    const conta = await ContaReceber.findById(req.params.id);
+    const empresa =
+      filtroEmpresa(req);
+
+    const conta =
+      await ContaReceber.findOne({
+        _id: req.params.id,
+        ...empresa,
+      });
 
     if (!conta) {
       return res.status(404).json({
         success: false,
-        message: "Conta a receber não encontrada.",
+        message:
+          "Conta a receber não encontrada.",
       });
     }
 
-    conta.status = "recebida";
-    conta.dataRecebimento = new Date();
+    /*
+     * IDEMPOTÊNCIA:
+     * conta já recebida não gera
+     * uma segunda entrada.
+     */
+    if (
+      conta.status === "recebida"
+    ) {
+      const movimentacaoExistente =
+        await MovimentacaoFinanceira.findOne({
+          origem:
+            "conta_receber",
+
+          contaReceber:
+            conta._id,
+
+          ...empresa,
+        });
+
+      return res.json({
+        success: true,
+        conta,
+
+        movimentacao:
+          movimentacaoExistente,
+
+        jaProcessada: true,
+      });
+    }
+
+    if (
+      conta.status ===
+      "cancelada"
+    ) {
+      return res.status(400).json({
+        success: false,
+
+        message:
+          "Uma conta cancelada não pode ser recebida.",
+      });
+    }
+
+    conta.status =
+      "recebida";
+
+    conta.dataRecebimento =
+      new Date();
+
     conta.formaRecebimento =
-      req.body.formaRecebimento || conta.formaRecebimento || "PIX";
+      req.body.formaRecebimento ||
+      conta.formaRecebimento ||
+      "PIX";
 
     await conta.save();
 
-    await MovimentacaoFinanceira.create({
-      tipo: "entrada",
-      origem: "conta_receber",
-      descricao: `Recebimento: ${conta.descricao}`,
-      categoria: "Receitas",
-      valor: Number(conta.valor || 0),
-      formaPagamento: conta.formaRecebimento,
-      contaReceber: conta._id,
-      empresa:
-  conta.empresa,
-    });
+    /*
+     * Segunda proteção contra
+     * lançamento financeiro duplicado.
+     */
+    let movimentacao =
+      await MovimentacaoFinanceira.findOne({
+        origem:
+          "conta_receber",
+
+        contaReceber:
+          conta._id,
+
+        ...empresa,
+      });
+
+    if (!movimentacao) {
+      movimentacao =
+        await MovimentacaoFinanceira.create({
+          tipo:
+            "entrada",
+
+          origem:
+            "conta_receber",
+
+          descricao:
+            `Recebimento: ${conta.descricao}`,
+
+          categoria:
+            "Receitas",
+
+          valor:
+            Number(
+              conta.valor || 0
+            ),
+
+          data:
+            conta.dataRecebimento,
+
+          formaPagamento:
+            conta.formaRecebimento,
+
+          contaReceber:
+            conta._id,
+
+          empresa:
+            conta.empresa,
+        });
+    }
 
     return res.json({
       success: true,
       conta,
+      movimentacao,
+      jaProcessada: false,
     });
+
   } catch (error) {
-    console.log("ERRO RECEBER CONTA:", error);
+    console.log(
+      "ERRO RECEBER CONTA:",
+      error
+    );
 
     return res.status(500).json({
       success: false,
@@ -393,27 +604,55 @@ exports.receberConta = async (req, res) => {
   }
 };
 
-exports.deletarContaReceber = async (req, res) => {
+exports.deletarContaReceber = async (
+  req,
+  res
+) => {
   try {
-    const conta = await ContaReceber.findByIdAndUpdate(
-      req.params.id,
-      { status: "cancelada" },
-      { new: true }
-    );
+    const empresa =
+      filtroEmpresa(req);
+
+    const conta =
+      await ContaReceber.findOne({
+        _id: req.params.id,
+        ...empresa,
+      });
 
     if (!conta) {
       return res.status(404).json({
         success: false,
-        message: "Conta a receber não encontrada.",
+
+        message:
+          "Conta a receber não encontrada.",
       });
     }
+
+    if (
+      conta.status === "recebida"
+    ) {
+      return res.status(400).json({
+        success: false,
+
+        message:
+          "Uma conta já recebida não pode ser cancelada. Utilize um estorno financeiro.",
+      });
+    }
+
+    conta.status =
+      "cancelada";
+
+    await conta.save();
 
     return res.json({
       success: true,
       conta,
     });
+
   } catch (error) {
-    console.log("ERRO CANCELAR CONTA RECEBER:", error);
+    console.log(
+      "ERRO CANCELAR CONTA RECEBER:",
+      error
+    );
 
     return res.status(500).json({
       success: false,
@@ -425,29 +664,89 @@ exports.deletarContaReceber = async (req, res) => {
 // ===============================
 // MOVIMENTAÇÃO MANUAL
 // ===============================
-exports.criarMovimentacao = async (req, res) => {
+exports.criarMovimentacao = async (
+  req,
+  res
+) => {
   try {
-    const { tipo, descricao, valor } = req.body;
+    const {
+      tipo,
+      descricao,
+      valor,
+    } = req.body;
 
-    if (!tipo || !descricao || !valor) {
+    if (
+      !tipo ||
+      !descricao ||
+      !valor
+    ) {
       return res.status(400).json({
         success: false,
-        message: "Tipo, descrição e valor são obrigatórios.",
+
+        message:
+          "Tipo, descrição e valor são obrigatórios.",
       });
     }
 
-    const movimentacao = await MovimentacaoFinanceira.create({
-      ...req.body,
-      valor: Number(valor),
-      origem: req.body.origem || "manual",
-    });
+    if (
+      ![
+        "entrada",
+        "saida",
+      ].includes(tipo)
+    ) {
+      return res.status(400).json({
+        success: false,
+
+        message:
+          "Tipo de movimentação inválido.",
+      });
+    }
+
+    const valorNumerico =
+      Number(valor);
+
+    if (
+      !Number.isFinite(
+        valorNumerico
+      ) ||
+      valorNumerico <= 0
+    ) {
+      return res.status(400).json({
+        success: false,
+
+        message:
+          "O valor da movimentação deve ser maior que zero.",
+      });
+    }
+
+    const empresa =
+      filtroEmpresa(req);
+
+    const movimentacao =
+      await MovimentacaoFinanceira.create({
+        ...req.body,
+
+        ...empresa,
+
+        tipo,
+
+        valor:
+          valorNumerico,
+
+        origem:
+          "manual",
+      });
 
     return res.status(201).json({
       success: true,
       movimentacao,
     });
+
   } catch (error) {
-    console.log("ERRO CRIAR MOVIMENTAÇÃO:", error);
+    console.log(
+      "ERRO CRIAR MOVIMENTAÇÃO:",
+      error
+    );
 
     return res.status(500).json({
       success: false,
