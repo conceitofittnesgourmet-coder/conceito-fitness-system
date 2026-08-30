@@ -568,28 +568,313 @@ const listarCadastroMestre = async (req, res) => {
   }
 };
 
-const atualizarCadastroMestre = async (req, res) => {
-  try {
-    const produto = await Produto.findById(req.params.id);
-    if (!produto) return res.status(404).json({ success: false, message: "Produto não encontrado" });
+const atualizarCadastroMestre =
+  async (req, res) => {
+    try {
+      const produto =
+        await Produto.findById(
+          req.params.id
+        );
 
-    const campos = normalizarCadastroMestre(req.body?.cadastroMestre || req.body || {});
-    const alteradoPor = String(req.admin?.nome || req.admin?.email || req.admin?.id || "Administrador");
-    produto.cadastroMestre = { ...campos, atualizadoEm: new Date(), atualizadoPor: alteradoPor };
-    produto.historicoCadastroMestre.push({ alteradoEm: new Date(), alteradoPor, campos });
-    if (produto.historicoCadastroMestre.length > 50) produto.historicoCadastroMestre = produto.historicoCadastroMestre.slice(-50);
-    await produto.save();
+      if (!produto) {
+        return res
+          .status(404)
+          .json({
+            success: false,
+            message:
+              "Produto não encontrado",
+          });
+      }
 
-    return res.json({
-      success: true,
-      message: "Cadastro mestre atualizado com sucesso",
-      produto,
-      diagnosticoCadastro: analisarCadastroMestre(produto),
-    });
-  } catch (error) {
-    return responderErro(res, error, "ERRO ATUALIZAR CADASTRO MESTRE:");
-  }
-};
+      const body =
+        req.body || {};
+
+      const dadosProduto =
+        body.dadosProduto || {};
+
+      const cadastroMestre =
+        normalizarCadastroMestre(
+          body.cadastroMestre || {}
+        );
+
+      const dadosFiscais =
+        normalizarFiscal(
+          body.dadosFiscais || {}
+        );
+
+      /* =========================
+         DADOS PRINCIPAIS
+      ========================= */
+
+      if (
+        dadosProduto.nome !==
+        undefined
+      ) {
+        const nome = String(
+          dadosProduto.nome || ""
+        ).trim();
+
+        if (!nome) {
+          return res
+            .status(400)
+            .json({
+              success: false,
+              message:
+                "O nome do produto é obrigatório.",
+            });
+        }
+
+        produto.nome = nome;
+      }
+
+      if (
+        dadosProduto.categoria !==
+        undefined
+      ) {
+        produto.categoria =
+          String(
+            dadosProduto.categoria ||
+              ""
+          ).trim();
+      }
+
+      if (
+        dadosProduto.sku !==
+        undefined
+      ) {
+        produto.sku = String(
+          dadosProduto.sku || ""
+        ).trim();
+      }
+
+      if (
+        dadosProduto.codigoBarras !==
+        undefined
+      ) {
+        produto.codigoBarras =
+          String(
+            dadosProduto.codigoBarras ||
+              ""
+          ).trim();
+      }
+
+      if (
+        dadosProduto.ativo !==
+        undefined
+      ) {
+        produto.ativo =
+          dadosProduto.ativo === true ||
+          String(
+            dadosProduto.ativo
+          ).toLowerCase() ===
+            "true";
+      }
+
+      if (
+        dadosProduto.preco !==
+        undefined &&
+        dadosProduto.preco !== ""
+      ) {
+        const preco = Number(
+          String(
+            dadosProduto.preco
+          ).replace(",", ".")
+        );
+
+        if (
+          !Number.isFinite(preco) ||
+          preco < 0
+        ) {
+          return res
+            .status(400)
+            .json({
+              success: false,
+              message:
+                "Preço de venda inválido.",
+            });
+        }
+
+        produto.preco = preco;
+      }
+
+      if (
+        dadosProduto.custo !==
+        undefined &&
+        dadosProduto.custo !== ""
+      ) {
+        const custo = Number(
+          String(
+            dadosProduto.custo
+          ).replace(",", ".")
+        );
+
+        if (
+          !Number.isFinite(custo) ||
+          custo < 0
+        ) {
+          return res
+            .status(400)
+            .json({
+              success: false,
+              message:
+                "Custo do produto inválido.",
+            });
+        }
+
+        produto.custo = custo;
+      }
+
+      if (
+        dadosProduto.estoque !==
+        undefined &&
+        dadosProduto.estoque !== ""
+      ) {
+        const estoque = Number(
+          String(
+            dadosProduto.estoque
+          ).replace(",", ".")
+        );
+
+        if (
+          !Number.isFinite(estoque)
+        ) {
+          return res
+            .status(400)
+            .json({
+              success: false,
+              message:
+                "Estoque inválido.",
+            });
+        }
+
+        produto.estoque =
+          estoque;
+      }
+
+      /* =========================
+         CADASTRO MESTRE
+      ========================= */
+
+      const alteradoPor =
+        String(
+          req.admin?.nome ||
+            req.admin?.email ||
+            req.admin?.id ||
+            "Administrador"
+        );
+
+      produto.cadastroMestre = {
+        ...cadastroMestre,
+        atualizadoEm:
+          new Date(),
+        atualizadoPor:
+          alteradoPor,
+      };
+
+      /* =========================
+         DADOS FISCAIS
+      ========================= */
+
+      produto.dadosFiscais = {
+        ...(
+          produto.dadosFiscais
+            ?.toObject?.() ||
+          produto.dadosFiscais ||
+          {}
+        ),
+
+        ...dadosFiscais,
+      };
+
+      /* =========================
+         HISTÓRICOS
+      ========================= */
+
+      produto.historicoCadastroMestre.push(
+        {
+          alteradoEm:
+            new Date(),
+
+          alteradoPor,
+
+          campos:
+            cadastroMestre,
+        }
+      );
+
+      if (
+        produto
+          .historicoCadastroMestre
+          .length > 50
+      ) {
+        produto.historicoCadastroMestre =
+          produto.historicoCadastroMestre.slice(
+            -50
+          );
+      }
+
+      if (
+        Object.keys(
+          dadosFiscais
+        ).length
+      ) {
+        produto.historicoFiscal.push(
+          {
+            alteradoEm:
+              new Date(),
+
+            alteradoPor,
+
+            origem:
+              "cadastro_mestre",
+
+            campos:
+              dadosFiscais,
+          }
+        );
+
+        if (
+          produto
+            .historicoFiscal
+            .length > 50
+        ) {
+          produto.historicoFiscal =
+            produto.historicoFiscal.slice(
+              -50
+            );
+        }
+      }
+
+      await produto.save();
+
+      if (global.io) {
+        global.io.emit(
+          "produto-atualizado",
+          produto
+        );
+      }
+
+      return res.json({
+        success: true,
+
+        message:
+          "Cadastro mestre atualizado com sucesso",
+
+        produto,
+
+        diagnosticoCadastro:
+          analisarCadastroMestre(
+            produto
+          ),
+      });
+    } catch (error) {
+      return responderErro(
+        res,
+        error,
+        "ERRO ATUALIZAR CADASTRO MESTRE:"
+      );
+    }
+  };
 
 
 
