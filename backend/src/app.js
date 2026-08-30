@@ -26,6 +26,10 @@ const clubeRoutes = require("./routes/clubeRoutes");
 const orcamentoRoutes = require("./routes/orcamentoRoutes");
 const freteRoutes = require("./routes/freteRoutes");
 const financeiroRoutes = require("./routes/financeiroRoutes");
+const financeiroCentralRoutes =
+  require(
+    "./routes/financeiroCentralRoutes"
+  );
 const producaoRoutes = require("./routes/producaoRoutes");
 const comprasRoutes = require("./routes/comprasRoutes");
 const relatoriosRoutes = require("./routes/relatoriosRoutes");
@@ -127,6 +131,10 @@ app.use("/api/clientes", clienteRoutes);
 app.use("/api/clube", clubeRoutes);
 app.use("/api/frete", freteRoutes);
 app.use("/api/financeiro", financeiroRoutes);
+app.use(
+  "/api/financeiro-central",
+  financeiroCentralRoutes
+);
 app.use("/api/producao", producaoRoutes);
 app.use("/api/compras", comprasRoutes);
 app.use("/api/relatorios", relatoriosRoutes);
