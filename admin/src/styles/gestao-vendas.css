@@ -500,6 +500,9 @@
   display: grid;
   gap: 13px;
   padding: 18px;
+
+  /* Cor padrão dos dados exibidos no modal */
+  color: #332d30;
 }
 
 .gv-detail-section {
@@ -534,6 +537,12 @@
   font-size: 11px;
 }
 
+.gv-detail-grid strong {
+  color: #332d30;
+  font-size: 14px;
+  font-weight: 700;
+}
+
 .gv-items {
   display: grid;
   gap: 7px;
@@ -545,6 +554,15 @@
   gap: 15px;
   padding: 8px 0;
   border-bottom: 1px dashed #e8e0e3;
+}
+
+.gv-item span {
+  color: #51494d;
+}
+
+.gv-item strong {
+  color: #332d30;
+  font-weight: 700;
 }
 
 .gv-total-box {
