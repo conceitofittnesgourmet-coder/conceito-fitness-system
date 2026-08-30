@@ -177,6 +177,49 @@ function GestaoVendas() {
     }
   }
 
+async function visualizarVenda(pedido) {
+  try {
+    if (!pedido?._id) {
+      toast.error(
+        "Não foi possível identificar esta venda."
+      );
+
+      return;
+    }
+
+    const response =
+      await api.get(
+        `/pedidos/${pedido._id}`
+      );
+
+    const vendaCompleta =
+      response.data?.pedido ||
+      response.data;
+
+    if (!vendaCompleta?._id) {
+      toast.error(
+        "Os detalhes desta venda não foram encontrados."
+      );
+
+      return;
+    }
+
+    setVendaSelecionada(
+      vendaCompleta
+    );
+
+  } catch (error) {
+    console.error(
+      "Erro ao carregar detalhes da venda:",
+      error
+    );
+
+    toast.error(
+      error.response?.data?.message ||
+      "Não foi possível carregar os detalhes da venda."
+    );
+  }
+}
 
   useEffect(() => {
     carregarDados();
@@ -1182,19 +1225,6 @@ function GestaoVendas() {
                           <td>
 
                             <div className="gv-actions">
-
-                              <button
-                                title="Ver detalhes"
-                                onClick={() =>
-                                  setVendaSelecionada(
-                                    pedido
-                                  )
-                                }
-                              >
-                                <FaEye />
-                              </button>
-
-
                               <button
                                 title="Reimprimir cupom / DANFE NFC-e"
                                 onClick={() =>
