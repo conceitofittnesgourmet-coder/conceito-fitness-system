@@ -23,6 +23,8 @@ function Fiscal() {
   const [notas, setNotas] = useState([]);
   const [resumo, setResumo] = useState(null);
   const [notaSelecionada, setNotaSelecionada] = useState(null);
+  const [itensConferencia, setItensConferencia] = useState([]);
+  const [salvandoConferencia, setSalvandoConferencia] = useState(false);
   const [ultimaNfce, setUltimaNfce] = useState(null);
   const [nfces, setNfces] = useState([]);
   const [carregandoNfce, setCarregandoNfce] = useState(false);
@@ -628,6 +630,265 @@ async function cancelarNfceEmitida(nfce) {
     );
   } finally {
     setCarregandoNfce(false);
+  }
+}
+
+
+function abrirConferenciaNota(nota) {
+  setNotaSelecionada(nota);
+
+  setItensConferencia(
+    (nota.itens || []).map((item) => {
+      const materiaId =
+        typeof item.materiaPrima === "object"
+          ? item.materiaPrima?._id || ""
+          : item.materiaPrima || "";
+
+      const materia =
+        materias.find(
+          (m) =>
+            String(m._id) ===
+            String(materiaId)
+        );
+
+      const fatorExistente =
+        Number(item.fatorConversao);
+
+      const quantidadeExistente =
+        Number(item.quantidadeEstoque);
+
+      return {
+        _id: item._id,
+        nome: item.nome,
+        codigo: item.codigo || "",
+        unidade: item.unidade || "",
+        quantidade: Number(
+          item.quantidade || 0
+        ),
+        valorUnitario: Number(
+          item.valorUnitario || 0
+        ),
+        valorTotal: Number(
+          item.valorTotal || 0
+        ),
+
+        materiaPrima:
+          materiaId || "",
+
+        fatorConversao:
+          Number.isFinite(
+            fatorExistente
+          ) &&
+          fatorExistente > 0
+            ? fatorExistente
+            : "",
+
+        quantidadeEstoque:
+          Number.isFinite(
+            quantidadeExistente
+          ) &&
+          quantidadeExistente > 0
+            ? quantidadeExistente
+            : "",
+
+        unidadeEstoque:
+          item.unidadeEstoque ||
+          materia?.unidade ||
+          "",
+      };
+    })
+  );
+}
+
+function alterarItemConferencia(
+  index,
+  campo,
+  valor
+) {
+  setItensConferencia(
+    (anteriores) =>
+      anteriores.map(
+        (item, i) => {
+          if (i !== index) {
+            return item;
+          }
+
+          const atualizado = {
+            ...item,
+            [campo]: valor,
+          };
+
+          if (
+            campo ===
+            "materiaPrima"
+          ) {
+            const materia =
+              materias.find(
+                (m) =>
+                  String(m._id) ===
+                  String(valor)
+              );
+
+            atualizado.unidadeEstoque =
+              materia?.unidade || "";
+
+            atualizado.fatorConversao =
+              "";
+
+            atualizado.quantidadeEstoque =
+              "";
+          }
+
+          if (
+            campo ===
+            "fatorConversao"
+          ) {
+            const fator =
+              Number(valor);
+
+            const quantidadeXml =
+              Number(
+                item.quantidade || 0
+              );
+
+            if (
+              Number.isFinite(fator) &&
+              fator > 0 &&
+              Number.isFinite(
+                quantidadeXml
+              )
+            ) {
+              atualizado.quantidadeEstoque =
+                Number(
+                  (
+                    quantidadeXml *
+                    fator
+                  ).toFixed(6)
+                );
+            } else {
+              atualizado.quantidadeEstoque =
+                "";
+            }
+          }
+
+          return atualizado;
+        }
+      )
+  );
+}
+
+async function salvarConferenciaNota() {
+  if (!notaSelecionada?._id) {
+    return;
+  }
+
+  try {
+    for (
+      const item of
+      itensConferencia
+    ) {
+      if (!item.materiaPrima) {
+        alert(
+          `Selecione a matéria-prima para "${item.nome}".`
+        );
+        return;
+      }
+
+      const fator =
+        Number(
+          item.fatorConversao
+        );
+
+      if (
+        !Number.isFinite(fator) ||
+        fator <= 0
+      ) {
+        alert(
+          `Informe o fator de conversão de "${item.nome}".`
+        );
+        return;
+      }
+
+      const quantidadeEstoque =
+        Number(
+          item.quantidadeEstoque
+        );
+
+      if (
+        !Number.isFinite(
+          quantidadeEstoque
+        ) ||
+        quantidadeEstoque <= 0
+      ) {
+        alert(
+          `Informe a quantidade que entrará no estoque para "${item.nome}".`
+        );
+        return;
+      }
+
+      if (
+        !String(
+          item.unidadeEstoque ||
+          ""
+        ).trim()
+      ) {
+        alert(
+          `Informe a unidade de estoque de "${item.nome}".`
+        );
+        return;
+      }
+    }
+
+    setSalvandoConferencia(true);
+
+    const response =
+      await api.patch(
+        `/fiscal/notas-entrada/${notaSelecionada._id}/conferencia`,
+        {
+          itens:
+            itensConferencia.map(
+              (item) => ({
+                _id: item._id,
+                materiaPrima:
+                  item.materiaPrima,
+                fatorConversao:
+                  Number(
+                    item.fatorConversao
+                  ),
+                quantidadeEstoque:
+                  Number(
+                    item.quantidadeEstoque
+                  ),
+                unidadeEstoque:
+                  item.unidadeEstoque,
+              })
+            ),
+        }
+      );
+
+    alert(
+      response.data.message ||
+      "Conferência salva com sucesso."
+    );
+
+    setNotaSelecionada(
+      response.data.nota ||
+      notaSelecionada
+    );
+
+    await carregarDados();
+  } catch (error) {
+    console.error(
+      "Erro ao salvar conferência:",
+      error
+    );
+
+    alert(
+      error.response?.data?.message ||
+      "Erro ao salvar a conferência da nota."
+    );
+  } finally {
+    setSalvandoConferencia(false);
   }
 }
 
@@ -1416,7 +1677,7 @@ async function processarEstoqueNota(nota) {
                       <td className="acoes-nota">
                         <button
                           className="btn-ver"
-                          onClick={() => setNotaSelecionada(nota)}
+                          onClick={() => abrirConferenciaNota(nota)}
                         >
                           <FaEye /> Ver
                         </button>
@@ -1515,23 +1776,263 @@ async function processarEstoqueNota(nota) {
                 </div>
               </div>
 
-              <h3>Itens da Nota</h3>
+              <h3>
+                Conferência dos Itens
+              </h3>
+
+              {!notaSelecionada.estoqueProcessado && (
+                <p
+                  style={{
+                    marginBottom: "16px",
+                    opacity: 0.8,
+                  }}
+                >
+                  Vincule cada produto do XML à matéria-prima
+                  correspondente e informe como a quantidade da nota
+                  deve entrar no estoque.
+                </p>
+              )}
 
               <div className="modal-itens">
-                {(notaSelecionada.itens || []).map((item) => (
-                  <div key={item._id} className="modal-item">
-                    <div>
-                      <strong>{item.nome}</strong>
-                      <span>
-                        {item.quantidade} {item.unidade} x{" "}
-                        {dinheiro(item.valorUnitario)}
-                      </span>
-                    </div>
+                {itensConferencia.map(
+                  (item, index) => {
+                    const materiaSelecionada =
+                      materias.find(
+                        (materia) =>
+                          String(materia._id) ===
+                          String(item.materiaPrima)
+                      );
 
-                    <strong>{dinheiro(item.valorTotal)}</strong>
-                  </div>
-                ))}
+                    return (
+                      <div
+                        key={item._id}
+                        className="modal-item"
+                        style={{
+                          display: "block",
+                          padding: "16px",
+                          marginBottom: "14px",
+                        }}
+                      >
+                        <div
+                          style={{
+                            marginBottom: "12px",
+                          }}
+                        >
+                          <strong>
+                            {item.nome}
+                          </strong>
+
+                          <span
+                            style={{
+                              display: "block",
+                              marginTop: "4px",
+                            }}
+                          >
+                            XML:{" "}
+                            {item.quantidade}{" "}
+                            {item.unidade} x{" "}
+                            {dinheiro(
+                              item.valorUnitario
+                            )}
+                          </span>
+
+                          <span
+                            style={{
+                              display: "block",
+                              marginTop: "4px",
+                            }}
+                          >
+                            Total:{" "}
+                            {dinheiro(
+                              item.valorTotal ||
+                                item.quantidade *
+                                  item.valorUnitario
+                            )}
+                          </span>
+                        </div>
+
+                        {!notaSelecionada.estoqueProcessado ? (
+                          <div
+                            style={{
+                              display: "grid",
+                              gridTemplateColumns:
+                                "minmax(240px, 2fr) repeat(3, minmax(120px, 1fr))",
+                              gap: "10px",
+                              alignItems: "end",
+                            }}
+                          >
+                            <label>
+                              <span>
+                                Matéria-prima
+                              </span>
+
+                              <select
+                                value={
+                                  item.materiaPrima
+                                }
+                                onChange={(e) =>
+                                  alterarItemConferencia(
+                                    index,
+                                    "materiaPrima",
+                                    e.target.value
+                                  )
+                                }
+                              >
+                                <option value="">
+                                  Selecione...
+                                </option>
+
+                                {materias.map(
+                                  (materia) => (
+                                    <option
+                                      key={
+                                        materia._id
+                                      }
+                                      value={
+                                        materia._id
+                                      }
+                                    >
+                                      {materia.nome} |{" "}
+                                      {materia.estoqueAtual}{" "}
+                                      {materia.unidade}
+                                    </option>
+                                  )
+                                )}
+                              </select>
+                            </label>
+
+                            <label>
+                              <span>
+                                Fator de conversão
+                              </span>
+
+                              <input
+                                type="number"
+                                min="0"
+                                step="0.000001"
+                                placeholder="Ex.: 1.01"
+                                value={
+                                  item.fatorConversao
+                                }
+                                onChange={(e) =>
+                                  alterarItemConferencia(
+                                    index,
+                                    "fatorConversao",
+                                    e.target.value
+                                  )
+                                }
+                              />
+                            </label>
+
+                            <label>
+                              <span>
+                                Entrada no estoque
+                              </span>
+
+                              <input
+                                type="number"
+                                min="0"
+                                step="0.000001"
+                                value={
+                                  item.quantidadeEstoque
+                                }
+                                onChange={(e) =>
+                                  alterarItemConferencia(
+                                    index,
+                                    "quantidadeEstoque",
+                                    e.target.value
+                                  )
+                                }
+                              />
+                            </label>
+
+                            <label>
+                              <span>
+                                Unidade estoque
+                              </span>
+
+                              <input
+                                value={
+                                  item.unidadeEstoque
+                                }
+                                readOnly
+                                placeholder="Selecione a matéria-prima"
+                              />
+                            </label>
+
+                            {materiaSelecionada && (
+                              <div
+                                style={{
+                                  gridColumn:
+                                    "1 / -1",
+                                  fontSize: "0.9rem",
+                                  opacity: 0.75,
+                                }}
+                              >
+                                Estoque atual:{" "}
+                                {
+                                  materiaSelecionada.estoqueAtual
+                                }{" "}
+                                {
+                                  materiaSelecionada.unidade
+                                }
+                                {" · "}
+                                Custo atual:{" "}
+                                {dinheiro(
+                                  materiaSelecionada.custoUnitario
+                                )}
+                              </div>
+                            )}
+                          </div>
+                        ) : (
+                          <div>
+                            <strong>
+                              Matéria-prima:{" "}
+                              {materiaSelecionada?.nome ||
+                                "Vínculo registrado"}
+                            </strong>
+
+                            <span
+                              style={{
+                                display: "block",
+                                marginTop: "4px",
+                              }}
+                            >
+                              Entrada:{" "}
+                              {item.quantidadeEstoque}{" "}
+                              {item.unidadeEstoque}
+                            </span>
+                          </div>
+                        )}
+                      </div>
+                    );
+                  }
+                )}
               </div>
+
+              {!notaSelecionada.estoqueProcessado && (
+                <div
+                  style={{
+                    display: "flex",
+                    justifyContent: "flex-end",
+                    marginTop: "18px",
+                  }}
+                >
+                  <button
+                    className="btn-fiscal salvar"
+                    onClick={
+                      salvarConferenciaNota
+                    }
+                    disabled={
+                      salvandoConferencia
+                    }
+                  >
+                    {salvandoConferencia
+                      ? "Salvando..."
+                      : "Salvar Conferência"}
+                  </button>
+                </div>
+              )}
 
               {notaSelecionada.chaveAcesso && (
                 <div className="modal-chave">

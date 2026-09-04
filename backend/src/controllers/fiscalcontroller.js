@@ -1475,6 +1475,237 @@ parcelas,
   }
 };
 
+
+exports.conferirNotaEntrada = async (req, res) => {
+  try {
+    const { id } = req.params;
+    const { itens } = req.body;
+
+    if (!mongoose.Types.ObjectId.isValid(id)) {
+      return res.status(400).json({
+        success: false,
+        message: "ID da nota de entrada inválido.",
+      });
+    }
+
+    if (!Array.isArray(itens) || itens.length === 0) {
+      return res.status(400).json({
+        success: false,
+        message: "Informe os itens para conferência.",
+      });
+    }
+
+    const nota =
+      await NotaFiscalEntrada.findById(id);
+
+    if (!nota) {
+      return res.status(404).json({
+        success: false,
+        message: "Nota fiscal de entrada não encontrada.",
+      });
+    }
+
+    if (nota.status === "cancelada") {
+      return res.status(400).json({
+        success: false,
+        message: "Nota fiscal cancelada não pode ser conferida.",
+      });
+    }
+
+    if (nota.estoqueProcessado) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "O estoque desta nota já foi processado. A conferência não pode mais ser alterada.",
+      });
+    }
+
+    const itensPorId =
+      new Map(
+        nota.itens.map((item) => [
+          String(item._id),
+          item,
+        ])
+      );
+
+    for (const itemRecebido of itens) {
+      const itemId =
+        String(
+          itemRecebido?._id ||
+          itemRecebido?.id ||
+          ""
+        );
+
+      if (!itemId || !itensPorId.has(itemId)) {
+        return res.status(400).json({
+          success: false,
+          message:
+            "Foi informado um item que não pertence a esta nota.",
+        });
+      }
+
+      const materiaPrimaId =
+        String(
+          itemRecebido.materiaPrima ||
+          ""
+        ).trim();
+
+      if (
+        !mongoose.Types.ObjectId.isValid(
+          materiaPrimaId
+        )
+      ) {
+        return res.status(400).json({
+          success: false,
+          message:
+            `Selecione uma matéria-prima válida para o item "${itensPorId.get(itemId).nome}".`,
+        });
+      }
+
+      const materia =
+        await MateriaPrima.findById(
+          materiaPrimaId
+        ).select(
+          "_id nome unidade"
+        );
+
+      if (!materia) {
+        return res.status(400).json({
+          success: false,
+          message:
+            `A matéria-prima selecionada para "${itensPorId.get(itemId).nome}" não foi encontrada.`,
+        });
+      }
+
+      const fatorConversao =
+        Number(
+          itemRecebido.fatorConversao
+        );
+
+      const quantidadeEstoque =
+        Number(
+          itemRecebido.quantidadeEstoque
+        );
+
+      const unidadeEstoque =
+        String(
+          itemRecebido.unidadeEstoque ||
+          ""
+        ).trim();
+
+      if (
+        !Number.isFinite(fatorConversao) ||
+        fatorConversao <= 0
+      ) {
+        return res.status(400).json({
+          success: false,
+          message:
+            `Informe um fator de conversão válido para "${itensPorId.get(itemId).nome}".`,
+        });
+      }
+
+      if (
+        !Number.isFinite(quantidadeEstoque) ||
+        quantidadeEstoque <= 0
+      ) {
+        return res.status(400).json({
+          success: false,
+          message:
+            `Informe uma quantidade de estoque válida para "${itensPorId.get(itemId).nome}".`,
+        });
+      }
+
+      if (!unidadeEstoque) {
+        return res.status(400).json({
+          success: false,
+          message:
+            `Informe a unidade de estoque para "${itensPorId.get(itemId).nome}".`,
+        });
+      }
+
+      if (
+        String(materia.unidade || "")
+          .trim()
+          .toLowerCase() !==
+        unidadeEstoque.toLowerCase()
+      ) {
+        return res.status(400).json({
+          success: false,
+          message:
+            `A unidade de estoque do item "${itensPorId.get(itemId).nome}" precisa ser "${materia.unidade}".`,
+        });
+      }
+
+      const itemNota =
+        itensPorId.get(itemId);
+
+      itemNota.materiaPrima =
+        materia._id;
+
+      itemNota.fatorConversao =
+        fatorConversao;
+
+      itemNota.quantidadeEstoque =
+        quantidadeEstoque;
+
+      itemNota.unidadeEstoque =
+        materia.unidade;
+    }
+
+    const todosConferidos =
+      nota.itens.every(
+        (item) =>
+          item.materiaPrima &&
+          Number(item.fatorConversao) > 0 &&
+          Number(item.quantidadeEstoque) > 0 &&
+          String(
+            item.unidadeEstoque ||
+            ""
+          ).trim()
+      );
+
+    nota.status =
+      todosConferidos
+        ? "conferida"
+        : "rascunho";
+
+    await nota.save();
+
+    const notaAtualizada =
+      await NotaFiscalEntrada.findById(
+        nota._id
+      )
+        .populate(
+          "fornecedor",
+          "nome documento"
+        )
+        .populate(
+          "itens.materiaPrima",
+          "nome unidade estoqueAtual custoUnitario"
+        );
+
+    return res.status(200).json({
+      success: true,
+      message: todosConferidos
+        ? "Conferência salva. A nota está pronta para processar o estoque."
+        : "Conferência parcial salva.",
+      nota: notaAtualizada,
+    });
+  } catch (error) {
+    console.error(
+      "Erro ao conferir nota de entrada:",
+      error
+    );
+
+    return res.status(500).json({
+      success: false,
+      message:
+        error.message ||
+        "Erro ao salvar conferência da nota de entrada.",
+    });
+  }
+};
+
 exports.processarNotaNoEstoque = async (req, res) => {
   let session = null;
 

@@ -18,6 +18,7 @@ const {
   resumoFiscal,
   importarXmlNotaEntrada,
   processarNotaNoEstoque,
+  conferirNotaEntrada,
   buscarNfePelaChave,
   buscarNfesRecebidas,
   importarNfeRecebida,
@@ -39,6 +40,13 @@ router.post(
   authMiddleware,
   processarNotaNoEstoque
 );
+
+router.patch(
+  "/notas-entrada/:id/conferencia",
+  authMiddleware,
+  conferirNotaEntrada
+);
+
 router.post(
   "/notas-entrada/buscar-chave",
   authMiddleware,
