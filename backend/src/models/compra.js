@@ -2,6 +2,13 @@ const mongoose = require("mongoose");
 
 const compraSchema = new mongoose.Schema(
   {
+
+    notaFiscalEntrada: {
+  type: mongoose.Schema.Types.ObjectId,
+  ref: "NotaFiscalEntrada",
+  default: null,
+},
+
     fornecedor: {
       type: mongoose.Schema.Types.ObjectId,
       ref: "Fornecedor",
@@ -75,6 +82,18 @@ const compraSchema = new mongoose.Schema(
     },
   },
   { timestamps: true }
+);
+
+compraSchema.index(
+  { notaFiscalEntrada: 1 },
+  {
+    unique: true,
+    partialFilterExpression: {
+      notaFiscalEntrada: {
+        $type: "objectId",
+      },
+    },
+  }
 );
 
 module.exports = mongoose.model("Compra", compraSchema);

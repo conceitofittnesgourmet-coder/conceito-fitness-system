@@ -65,8 +65,17 @@ exports.relatorioGeral = async (req, res) => {
   });
 
     const movimentacoes = await MovimentacaoFinanceira.find({
-      ...empresa, data: { $gte: inicio, $lte: fim },
-    }).sort({ createdAt: -1 });
+  ...empresa,
+
+  status: {
+    $ne: "estornada",
+  },
+
+  data: {
+    $gte: inicio,
+    $lte: fim,
+  },
+}).sort({ createdAt: -1 });
 
     const compras = await Compra.find({
       ...empresa, dataCompra: {

@@ -19,6 +19,24 @@ const itemNotaSchema = new mongoose.Schema(
       default: "",
     },
 
+    ncmOrigem: {
+  type: String,
+  default: "",
+  trim: true,
+},
+
+cestOrigem: {
+  type: String,
+  default: "",
+  trim: true,
+},
+
+cfopOrigem: {
+  type: String,
+  default: "",
+  trim: true,
+},
+
     unidade: {
       type: String,
       default: "unidade",
@@ -28,6 +46,24 @@ const itemNotaSchema = new mongoose.Schema(
       type: Number,
       default: 0,
     },
+
+    fatorConversao: {
+  type: Number,
+  default: null,
+  min: 0,
+},
+
+quantidadeEstoque: {
+  type: Number,
+  default: null,
+  min: 0,
+},
+
+unidadeEstoque: {
+  type: String,
+  default: "",
+  trim: true,
+},
 
     valorUnitario: {
       type: Number,
@@ -113,10 +149,16 @@ const notaFiscalEntradaSchema = new mongoose.Schema(
     },
 
     status: {
-      type: String,
-      enum: ["rascunho", "conferida", "entrada_realizada", "cancelada"],
-      default: "entrada_realizada",
-    },
+  type: String,
+  enum: [
+  "rascunho",
+  "conferida",
+  "processando",
+  "entrada_realizada",
+  "cancelada",
+],
+  default: "rascunho",
+},
 
     itens: [itemNotaSchema],
 
@@ -169,6 +211,19 @@ parcelas: {
     },
   },
   { timestamps: true }
+);
+
+notaFiscalEntradaSchema.index(
+  { chaveAcesso: 1 },
+  {
+    unique: true,
+    partialFilterExpression: {
+  chaveAcesso: {
+    $type: "string",
+    $gt: "",
+  },
+},
+  }
 );
 
 module.exports = mongoose.model("NotaFiscalEntrada", notaFiscalEntradaSchema);

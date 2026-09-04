@@ -65,6 +65,10 @@ const filtroMovimentacoes = {
   ...empresa,
   ...filtroData,
   ...filtroBusca,
+
+  status: {
+    $ne: "estornada",
+  },
 };
 
 if (formaPagamento) {

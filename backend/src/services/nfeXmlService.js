@@ -37,7 +37,7 @@ function validarEndereco(end, rotulo) {
   if (faltantes.length) throw new Error(`${rotulo}: faltam ${faltantes.join(", ")}.`);
 }
 
-function montarImposto(item, crt = 1) {
+function montarImposto(item, crt = 1, emitirIbsCbs = false) {
   const usaCsosn = [1, 4].includes(Number(crt));
 
   // ==============================
@@ -180,9 +180,12 @@ function montarImposto(item, crt = 1) {
   // ==============================
   // IBS / CBS
   // ==============================
-  const cstIbsCbs = String(
-    item.cstIbsCbs || ""
-  ).trim();
+  let ibsCbs = "";
+
+  if (emitirIbsCbs) {
+    const cstIbsCbs = String(
+      item.cstIbsCbs || ""
+    ).trim();
 
   const cClassTrib = String(
     item.cClassTrib || ""
@@ -244,8 +247,8 @@ function montarImposto(item, crt = 1) {
     aliquotaCbs *
     (1 - reducaoCbs / 100);
 
-  const ibsCbs =
-    "<IBSCBS>" +
+    ibsCbs =
+      "<IBSCBS>" +
       "<CST>" + esc(cstIbsCbs) + "</CST>" +
       "<cClassTrib>" + esc(cClassTrib) + "</cClassTrib>" +
       "<gIBSCBS>" +
@@ -286,6 +289,7 @@ function montarImposto(item, crt = 1) {
 
       "</gIBSCBS>" +
     "</IBSCBS>";
+  }
 
   return (
     "<imposto>" +
@@ -315,6 +319,17 @@ function gerarXmlNfe({ nfe, empresa }) {
   const chave = criarChave({ cnpj, serie:nfe.serie, numero:nfe.numero, cNF });
   const id = `NFe${chave}`;
   const ambienteProducao = nfe.ambiente === "producao";
+
+  const crt = Number(
+    empresa.crt ||
+    empresa.regimeTributarioCodigo ||
+    1
+  );
+
+  // Regra atualmente implementada pelo ERP para 2026:
+  // CRT 1 - Simples Nacional: nao gera IBS/CBS.
+  // CRT 3: mantem a estrutura RTC implementada.
+  const emitirIbsCbs = crt === 3;
 
 const csrt = String(
   (
@@ -419,9 +434,10 @@ const totalVCBS = nfe.itens.reduce(
   0
 );
 
-  const itensXml = nfe.itens.map((item, i) => `<det nItem="${i+1}"><prod><cProd>${esc(item.codigo || i+1)}</cProd><cEAN>${esc(item.gtin || "SEM GTIN")}</cEAN><xProd>${esc(item.descricao)}</xProd><NCM>${somenteNumeros(item.ncm)}</NCM>${somenteNumeros(item.cest) ? `<CEST>${somenteNumeros(item.cest)}</CEST>` : ""}<CFOP>${somenteNumeros(item.cfop)}</CFOP><uCom>${esc(item.unidadeComercial || "UN")}</uCom><qCom>${n4(item.quantidadeComercial)}</qCom><vUnCom>${n4(item.valorUnitarioComercial)}</vUnCom><vProd>${n2(item.valorProduto)}</vProd><cEANTrib>${esc(item.gtinTributavel || "SEM GTIN")}</cEANTrib><uTrib>${esc(item.unidadeTributavel || "UN")}</uTrib><qTrib>${n4(item.quantidadeTributavel)}</qTrib><vUnTrib>${n4(item.valorUnitarioTributavel)}</vUnTrib><indTot>1</indTot></prod>${montarImposto(
+  const itensXml = nfe.itens.map((item, i) => `<det nItem="${i+1}"><prod><cProd>${esc(item.codigo || i+1)}</cProd><cEAN>${esc(item.gtin || "SEM GTIN")}</cEAN><xProd>${esc(item.descricao)}</xProd><NCM>${somenteNumeros(item.ncm)}</NCM>${somenteNumeros(item.cest) ? `<CEST>${somenteNumeros(item.cest)}</CEST>` : ""}<CFOP>${somenteNumeros(item.cfop)}</CFOP><uCom>${esc(item.unidadeComercial || "UN")}</uCom><qCom>${n4(item.quantidadeComercial)}</qCom><vUnCom>${n4(item.valorUnitarioComercial)}</vUnCom><vProd>${n2(item.valorProduto)}</vProd><cEANTrib>${esc(item.gtinTributavel || "SEM GTIN")}</cEANTrib><uTrib>${esc(item.unidadeTributavel || "UN")}</uTrib><qTrib>${n4(item.quantidadeTributavel)}</qTrib><vUnTrib>${n4(item.valorUnitarioTributavel)}</vUnTrib>${Number(item.valorFrete || 0) > 0 ? `<vFrete>${n2(item.valorFrete)}</vFrete>` : ""}${Number(item.valorDesconto || 0) > 0 ? `<vDesc>${n2(item.valorDesconto)}</vDesc>` : ""}<indTot>1</indTot></prod>${montarImposto(
   item,
-  Number(empresa.crt || empresa.regimeTributarioCodigo || 1)
+  crt,
+  emitirIbsCbs
 )}</det>`).join("");
 
   const t=nfe.totais;
@@ -431,7 +447,7 @@ const totalVCBS = nfe.itens.reduce(
 <procEmi>0</procEmi><verProc>ConceitoFitERP1.0</verProc></ide><emit><CNPJ>${cnpj}</CNPJ><xNome>${esc(empresa.razaoSocial || empresa.nome || "CONCEITO FITNESS")}</xNome><xFant>${esc(empresa.nomeFantasia || empresa.fantasia || "CONCEITO FITNESS")}</xFant><enderEmit><xLgr>${esc(endEmit.logradouro || endEmit.rua)}</xLgr><nro>${esc(endEmit.numero)}</nro>${endEmit.complemento ? `<xCpl>${esc(endEmit.complemento)}</xCpl>` : ""}<xBairro>${esc(endEmit.bairro)}</xBairro><cMun>${esc(endEmit.codigoMunicipioIbge || endEmit.codigoIbge)}</cMun><xMun>${esc(endEmit.cidade || endEmit.municipio)}</xMun><UF>${esc(endEmit.uf)}</UF>${endEmit.cep ? `<CEP>${somenteNumeros(endEmit.cep)}</CEP>` : ""}<cPais>1058</cPais><xPais>Brasil</xPais></enderEmit><IE>${ie}</IE><CRT>${Number(empresa.crt || empresa.regimeTributarioCodigo || 1)}</CRT></emit><dest>${docDest}<xNome>${esc(nfe.ambiente === "homologacao" ? "NF-E EMITIDA EM AMBIENTE DE HOMOLOGACAO - SEM VALOR FISCAL" : dest.nomeRazaoSocial)}</xNome><enderDest><xLgr>${esc(dest.endereco.logradouro)}</xLgr><nro>${esc(dest.endereco.numero)}</nro>${dest.endereco.complemento ? `<xCpl>${esc(dest.endereco.complemento)}</xCpl>` : ""}<xBairro>${esc(dest.endereco.bairro)}</xBairro><cMun>${esc(dest.endereco.codigoMunicipioIbge)}</cMun><xMun>${esc(dest.endereco.cidade)}</xMun><UF>${esc(dest.endereco.uf)}</UF>${dest.endereco.cep ? `<CEP>${somenteNumeros(dest.endereco.cep)}</CEP>` : ""}<cPais>${esc(dest.endereco.codigoPais || "1058")}</cPais><xPais>${esc(dest.endereco.pais || "Brasil")}</xPais>${dest.telefone ? `<fone>${somenteNumeros(dest.telefone)}</fone>` : ""}</enderDest><indIEDest>${indIEDest}</indIEDest>${ieDest}${dest.email ? `<email>${esc(dest.email)}</email>` : ""}</dest>${itensXml}<total><ICMSTot><vBC>${n2(totalVBC)}</vBC>
 <vICMS>${n2(totalVICMS)}</vICMS><vICMSDeson>0.00</vICMSDeson><vFCP>0.00</vFCP><vBCST>0.00</vBCST><vST>0.00</vST><vFCPST>0.00</vFCPST><vFCPSTRet>0.00</vFCPSTRet><vProd>${n2(totalVProd)}</vProd><vFrete>${n2(t.valorFrete)}</vFrete><vSeg>${n2(t.valorSeguro)}</vSeg><vDesc>${n2(t.valorDesconto)}</vDesc><vII>0.00</vII><vIPI>${n2(t.valorIpi)}</vIPI><vIPIDevol>0.00</vIPIDevol><vPIS>${n2(totalVPIS)}</vPIS>
 <vCOFINS>${n2(totalVCOFINS)}</vCOFINS><vOutro>${n2(t.outrasDespesas)}</vOutro><vNF>${n2(t.valorTotal)}</vNF></ICMSTot>
-<IBSCBSTot>
+${emitirIbsCbs ? `<IBSCBSTot>
   <vBCIBSCBS>${n2(totalVBCIBSCBS)}</vBCIBSCBS>
 
   <gIBS>
@@ -459,7 +475,7 @@ const totalVCBS = nfe.itens.reduce(
     <vCredPres>0.00</vCredPres>
     <vCredPresCondSus>0.00</vCredPresCondSus>
   </gCBS>
- </IBSCBSTot>
+ </IBSCBSTot>` : ""}
 </total>
 
 
@@ -467,13 +483,68 @@ const totalVCBS = nfe.itens.reduce(
   <modFrete>${nfe.modalidadeFrete ?? 9}</modFrete>
 </transp>
 
+${(() => {
+  const cobranca = nfe.cobranca || {};
+  const fatura = cobranca.fatura || {};
+  const duplicatas = Array.isArray(cobranca.duplicatas)
+    ? cobranca.duplicatas
+    : [];
+
+  if (!duplicatas.length) return "";
+
+  const formatarDataVencimento = (valor) => {
+    if (!valor) return "";
+
+    const d = new Date(valor);
+
+    if (Number.isNaN(d.getTime())) {
+      throw new Error("Data de vencimento invalida na duplicata.");
+    }
+
+    const partes = new Intl.DateTimeFormat("en-CA", {
+      timeZone: "America/Sao_Paulo",
+      year: "numeric",
+      month: "2-digit",
+      day: "2-digit",
+    }).formatToParts(d);
+
+    const obj = Object.fromEntries(
+      partes
+        .filter((p) => p.type !== "literal")
+        .map((p) => [p.type, p.value])
+    );
+
+    return `${obj.year}-${obj.month}-${obj.day}`;
+  };
+
+  const duplicatasXml = duplicatas.map((dup) => `
+  <dup>
+    <nDup>${esc(dup.numero)}</nDup>
+    <dVenc>${formatarDataVencimento(dup.vencimento)}</dVenc>
+    <vDup>${n2(dup.valor)}</vDup>
+  </dup>`).join("");
+
+  return `<cobr>
+  <fat>
+    <nFat>${esc(fatura.numero)}</nFat>
+    <vOrig>${n2(fatura.valorOriginal)}</vOrig>
+    <vDesc>${n2(fatura.valorDesconto)}</vDesc>
+    <vLiq>${n2(fatura.valorLiquido)}</vLiq>
+  </fat>${duplicatasXml}
+</cobr>`;
+})()}
+
 <pag>
   <detPag>
-    <indPag>0</indPag>
+    <indPag>${Number(nfe.pagamento?.indicador ?? 0)}</indPag>
     <tPag>${esc(nfe.pagamento?.forma || "17")}</tPag>
     <vPag>${n2(nfe.pagamento?.valor || t.valorTotal)}</vPag>
   </detPag>
 </pag>
+
+${nfe.informacoesComplementares
+  ? `<infAdic><infCpl>${esc(nfe.informacoesComplementares)}</infCpl></infAdic>`
+  : ""}
 
 <infRespTec>
   <CNPJ>67199298000181</CNPJ>
@@ -483,10 +554,6 @@ const totalVCBS = nfe.itens.reduce(
    <idCSRT>${esc(idCsrt)}</idCSRT>
   <hashCSRT>${esc(hashCsrt)}</hashCSRT>
 </infRespTec>
-
-${nfe.informacoesComplementares
-  ? `<infAdic><infCpl>${esc(nfe.informacoesComplementares)}</infCpl></infAdic>`
-  : ""}
 
 </infNFe>
 </NFe>

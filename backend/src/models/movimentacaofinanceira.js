@@ -66,6 +66,41 @@ const movimentacaoFinanceiraSchema = new mongoose.Schema(
       default: null,
     },
 
+    notaFiscalEntrada: {
+  type: mongoose.Schema.Types.ObjectId,
+  ref: "NotaFiscalEntrada",
+  default: null,
+  index: true,
+},
+
+compra: {
+  type: mongoose.Schema.Types.ObjectId,
+  ref: "Compra",
+  default: null,
+  index: true,
+},
+
+status: {
+  type: String,
+  enum: [
+    "ativa",
+    "estornada",
+  ],
+  default: "ativa",
+  index: true,
+},
+
+estornadaEm: {
+  type: Date,
+  default: null,
+},
+
+motivoEstorno: {
+  type: String,
+  default: "",
+  trim: true,
+},
+
     observacao: {
       type: String,
       default: "",

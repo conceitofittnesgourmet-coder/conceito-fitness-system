@@ -20,6 +20,7 @@ const {
   processarNotaNoEstoque,
   buscarNfePelaChave,
   buscarNfesRecebidas,
+  importarNfeRecebida,
 } = require("../controllers/fiscalcontroller");
 
 router.get("/resumo", authMiddleware, resumoFiscal);
@@ -48,6 +49,12 @@ router.get(
   authMiddleware,
   buscarNfesRecebidas
 );
+router.post(
+  "/notas-entrada/recebidas/:id/importar",
+  authMiddleware,
+  importarNfeRecebida
+);
+
 router.get("/notas-entrada/:id", authMiddleware, buscarNotaEntrada);
 router.patch("/notas-entrada/:id/cancelar", authMiddleware, cancelarNotaEntrada);
 router.delete("/notas-entrada/:id", authMiddleware, excluirNotaEntrada);

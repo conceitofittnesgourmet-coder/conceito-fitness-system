@@ -17,6 +17,12 @@ const MODELO_NFE = "55";
 const VERSAO_EVENTO = "1.00";
 const TIPO_EVENTO_CANCELAMENTO = "110111";
 const TIPO_EVENTO_CARTA_CORRECAO = "110110";
+
+const TIPO_EVENTO_CONFIRMACAO_OPERACAO = "210200";
+const TIPO_EVENTO_CIENCIA_OPERACAO = "210210";
+const TIPO_EVENTO_DESCONHECIMENTO_OPERACAO = "210220";
+const TIPO_EVENTO_OPERACAO_NAO_REALIZADA = "210240";
+
 const SEQUENCIA_EVENTO_PADRAO = 1;
 
 const NAMESPACE_NFE =
@@ -80,7 +86,28 @@ function obterUrlRecepcaoEvento(ambiente) {
   return (
     process.env.NFE_URL_RECEPCAO_EVENTO_HOMOLOGACAO ||
     "https://homologacao.nfe.sefa.pr.gov.br/nfe/NFeRecepcaoEvento4"
-  );
+  );  
+}
+
+const URL_EVENTO_AMBIENTE_NACIONAL_PRODUCAO =
+  process.env.NFE_URL_EVENTO_AN_PRODUCAO ||
+  "https://www.nfe.fazenda.gov.br/NFeRecepcaoEvento4/NFeRecepcaoEvento4.asmx";
+
+const URL_EVENTO_AMBIENTE_NACIONAL_HOMOLOGACAO =
+  process.env.NFE_URL_EVENTO_AN_HOMOLOGACAO ||
+  "https://hom1.nfe.fazenda.gov.br/NFeRecepcaoEvento4/NFeRecepcaoEvento4.asmx";
+
+function obterUrlRecepcaoEventoAmbienteNacional(
+  ambiente
+) {
+  if (
+    normalizarAmbiente(ambiente) ===
+    "producao"
+  ) {
+    return URL_EVENTO_AMBIENTE_NACIONAL_PRODUCAO;
+  }
+
+  return URL_EVENTO_AMBIENTE_NACIONAL_HOMOLOGACAO;
 }
 
 function formatarDataHoraSaoPaulo(data = new Date()) {
@@ -339,6 +366,140 @@ function montarXmlEventoCartaCorrecao({
   );
 }
 
+function validarCnpjDestinatario(cnpj) {
+  const valor = somenteNumeros(cnpj);
+
+  if (valor.length !== 14) {
+    throw new Error(
+      "O CNPJ do destinatário deve possuir exatamente 14 dígitos."
+    );
+  }
+
+  return valor;
+}
+
+function obterDadosManifestacao(tipoEvento) {
+  const tipos = {
+    [TIPO_EVENTO_CONFIRMACAO_OPERACAO]: {
+      descricao: "Confirmacao da Operacao",
+      exigeJustificativa: false,
+    },
+
+    [TIPO_EVENTO_CIENCIA_OPERACAO]: {
+      descricao: "Ciencia da Operacao",
+      exigeJustificativa: false,
+    },
+
+    [TIPO_EVENTO_DESCONHECIMENTO_OPERACAO]: {
+      descricao: "Desconhecimento da Operacao",
+      exigeJustificativa: false,
+    },
+
+    [TIPO_EVENTO_OPERACAO_NAO_REALIZADA]: {
+      descricao: "Operacao nao Realizada",
+      exigeJustificativa: true,
+    },
+  };
+
+  const dados = tipos[String(tipoEvento || "")];
+
+  if (!dados) {
+    throw new Error(
+      "Tipo de Manifestação do Destinatário inválido."
+    );
+  }
+
+  return dados;
+}
+
+function montarXmlManifestacaoDestinatario({
+  chaveAcesso,
+  cnpjDestinatario,
+  tipoEvento,
+  ambiente,
+  justificativa = "",
+  sequenciaEvento = 1,
+  dataEvento = new Date(),
+}) {
+  const chave =
+    validarChaveAcesso(chaveAcesso);
+
+  const cnpj =
+    validarCnpjDestinatario(
+      cnpjDestinatario
+    );
+
+  const sequencia =
+    validarSequenciaEvento(
+      sequenciaEvento
+    );
+
+  if (sequencia !== 1) {
+    throw new Error(
+      "Na Manifestação do Destinatário, nSeqEvento deve ser 1."
+    );
+  }
+
+  const dadosEvento =
+    obterDadosManifestacao(
+      tipoEvento
+    );
+
+  let textoJustificativa = "";
+
+  if (dadosEvento.exigeJustificativa) {
+    textoJustificativa =
+      String(justificativa || "")
+        .replace(/\s+/g, " ")
+        .trim();
+
+    if (
+      textoJustificativa.length < 15 ||
+      textoJustificativa.length > 255
+    ) {
+      throw new Error(
+        "A justificativa da Operação não Realizada deve possuir entre 15 e 255 caracteres."
+      );
+    }
+  }
+
+  const idEvento =
+    montarIdEvento({
+      chaveAcesso: chave,
+      tipoEvento,
+      sequenciaEvento: sequencia,
+    });
+
+  const dhEvento =
+    formatarDataHoraSaoPaulo(
+      dataEvento
+    );
+
+  return (
+    '<?xml version="1.0" encoding="UTF-8"?>' +
+    `<evento xmlns="${NAMESPACE_NFE}" versao="${VERSAO_EVENTO}">` +
+    `<infEvento Id="${idEvento}">` +
+    `<cOrgao>91</cOrgao>` +
+    `<tpAmb>${obterTpAmb(ambiente)}</tpAmb>` +
+    `<CNPJ>${cnpj}</CNPJ>` +
+    `<chNFe>${chave}</chNFe>` +
+    `<dhEvento>${dhEvento}</dhEvento>` +
+    `<tpEvento>${tipoEvento}</tpEvento>` +
+    `<nSeqEvento>${sequencia}</nSeqEvento>` +
+    `<verEvento>${VERSAO_EVENTO}</verEvento>` +
+    `<detEvento versao="${VERSAO_EVENTO}">` +
+    `<descEvento>${dadosEvento.descricao}</descEvento>` +
+    (
+      dadosEvento.exigeJustificativa
+        ? `<xJust>${escaparXml(textoJustificativa)}</xJust>`
+        : ""
+    ) +
+    "</detEvento>" +
+    "</infEvento>" +
+    "</evento>"
+  );
+}
+
 function montarLoteEventos({
   xmlEventoAssinado,
   idLote,
@@ -476,6 +637,7 @@ async function transmitirEvento({
   xmlEventoAssinado,
   ambiente,
   idLote = gerarIdLoteEvento(),
+  urlRecepcao = null,
 }) {
   const xmlLote = montarLoteEventos({
     xmlEventoAssinado,
@@ -484,7 +646,9 @@ async function transmitirEvento({
 
   const resposta =
     await enviarMensagemSefaz({
-      url: obterUrlRecepcaoEvento(ambiente),
+      url:
+  urlRecepcao ||
+  obterUrlRecepcaoEvento(ambiente),
 
       namespaceWsdl:
         NAMESPACE_WSDL_EVENTO,
@@ -610,9 +774,68 @@ async function enviarCartaCorrecaoNfe({
   };
 }
 
+async function enviarManifestacaoDestinatario({
+  chaveAcesso,
+  cnpjDestinatario,
+  tipoEvento,
+  ambiente,
+  justificativa = "",
+  sequenciaEvento = 1,
+  dataEvento = new Date(),
+}) {
+  const xmlEvento =
+    montarXmlManifestacaoDestinatario({
+      chaveAcesso,
+      cnpjDestinatario,
+      tipoEvento,
+      ambiente,
+      justificativa,
+      sequenciaEvento,
+      dataEvento,
+    });
+
+  const xmlEventoAssinado =
+    assinarXmlEvento(
+      removerDeclaracaoXml(xmlEvento)
+    );
+
+  if (!xmlEventoAssinado) {
+    throw new Error(
+      "O assinador não devolveu o XML da Manifestação do Destinatário assinado."
+    );
+  }
+
+ const retorno =
+  await transmitirEvento({
+    xmlEventoAssinado,
+    ambiente,
+    urlRecepcao:
+      obterUrlRecepcaoEventoAmbienteNacional(
+        ambiente
+      ),
+  });
+
+  return {
+    ...retorno,
+
+    xmlEvento:
+      removerDeclaracaoXml(xmlEvento),
+
+    xmlEventoAssinado:
+      removerDeclaracaoXml(
+        xmlEventoAssinado
+      ),
+  };
+}
+
 module.exports = {
   TIPO_EVENTO_CANCELAMENTO,
   TIPO_EVENTO_CARTA_CORRECAO,
+
+  TIPO_EVENTO_CONFIRMACAO_OPERACAO,
+  TIPO_EVENTO_CIENCIA_OPERACAO,
+  TIPO_EVENTO_DESCONHECIMENTO_OPERACAO,
+  TIPO_EVENTO_OPERACAO_NAO_REALIZADA,
 
   CSTAT_CANCELAMENTO_CONFIRMADO,
 
@@ -623,7 +846,11 @@ module.exports = {
 
   montarXmlEventoCancelamento,
   montarXmlEventoCartaCorrecao,
+  montarXmlManifestacaoDestinatario,
+
+  obterUrlRecepcaoEventoAmbienteNacional,
 
   cancelarNfeNaSefaz,
   enviarCartaCorrecaoNfe,
+  enviarManifestacaoDestinatario,
 };

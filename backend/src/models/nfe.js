@@ -62,6 +62,18 @@ const itemNfeSchema = new mongoose.Schema(
       min: 0,
     },
 
+    valorDesconto: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+
+    valorFrete: {
+      type: Number,
+      default: 0,
+      min: 0,
+    },
+
     unidadeTributavel: {
       type: String,
       default: "UN",
@@ -713,6 +725,12 @@ const nfeSchema = new mongoose.Schema(
         trim: true,
       },
 
+      indicador: {
+        type: Number,
+        enum: [0, 1],
+        default: 0,
+      },
+
       descricao: {
         type: String,
         default: "PIX",
@@ -722,6 +740,54 @@ const nfeSchema = new mongoose.Schema(
       valor: {
         type: Number,
         default: 0,
+      },
+    },
+
+    cobranca: {
+      fatura: {
+        numero: {
+          type: String,
+          default: "",
+          trim: true,
+        },
+
+        valorOriginal: {
+          type: Number,
+          default: 0,
+        },
+
+        valorDesconto: {
+          type: Number,
+          default: 0,
+        },
+
+        valorLiquido: {
+          type: Number,
+          default: 0,
+        },
+      },
+
+      duplicatas: {
+        type: [
+          {
+            numero: {
+              type: String,
+              default: "",
+              trim: true,
+            },
+
+            vencimento: {
+              type: Date,
+              default: null,
+            },
+
+            valor: {
+              type: Number,
+              default: 0,
+            },
+          },
+        ],
+        default: [],
       },
     },
 

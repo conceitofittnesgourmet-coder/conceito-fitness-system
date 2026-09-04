@@ -126,6 +126,61 @@ function aplicarRetornoSefaz(nfe, ret, etapa) {
 function nums(v) { return String(v || "").replace(/\D/g, ""); }
 function num(v,d=0) { const n=Number(v); return Number.isFinite(n)?n:d; }
 function r2(v) { return Number(num(v).toFixed(2)); }
+
+function ratearValorProporcional(total, valores) {
+  const totalRateio = r2(total);
+
+  if (
+    totalRateio <= 0 ||
+    !Array.isArray(valores) ||
+    valores.length === 0
+  ) {
+    return Array.isArray(valores)
+      ? valores.map(() => 0)
+      : [];
+  }
+
+  const valoresNormalizados =
+    valores.map((v) => Math.max(0, r2(v)));
+
+  const soma =
+    r2(
+      valoresNormalizados.reduce(
+        (acc, v) => acc + v,
+        0
+      )
+    );
+
+  if (soma <= 0) {
+    throw new Error(
+      "Não foi possível ratear o valor: soma dos itens é zero."
+    );
+  }
+
+  if (totalRateio > soma) {
+    throw new Error(
+      "O valor a ratear não pode ser maior que o total dos itens."
+    );
+  }
+
+  let acumulado = 0;
+
+  return valoresNormalizados.map(
+    (valor, indice) => {
+      if (indice === valoresNormalizados.length - 1) {
+        return r2(totalRateio - acumulado);
+      }
+
+      const parcela =
+        r2(totalRateio * (valor / soma));
+
+      acumulado =
+        r2(acumulado + parcela);
+
+      return parcela;
+    }
+  );
+}
 function estadoEmpresa(empresa) {
   const endereco = obterEnderecoFiscalEmpresa(empresa);
   return String(endereco?.uf || empresa?.estado || empresa?.uf || "PR").toUpperCase();
@@ -150,12 +205,31 @@ function destinatarioDoPedido(pedido, informado={}) {
 }
 
 
-  function itensDoPedido(pedido, ufEmitente, ufDestinatario, crt = 1) {
+  function itensDoPedido(pedido, ufEmitente, ufDestinatario, crt = 1, valorDescontoTotal = 0, valorFreteTotal = 0) {
   const usaCsosn = [1, 4].includes(Number(crt));
 
   if (!pedido.produtos?.length) {
     throw new Error("Pedido sem produtos.");
   }
+
+  const valoresBrutos =
+    pedido.produtos.map((p) => {
+      const q = num(p.quantidade);
+      const vu = num(p.precoUnitario ?? p.preco);
+      return r2(p.subtotal || q * vu);
+    });
+
+  const descontosRateados =
+    ratearValorProporcional(
+      valorDescontoTotal,
+      valoresBrutos
+    );
+
+  const fretesRateados =
+    ratearValorProporcional(
+      valorFreteTotal,
+      valoresBrutos
+    );
 
   return pedido.produtos.map((p, idx) => {
     const f = p.dadosFiscais || {};
@@ -201,6 +275,8 @@ function destinatarioDoPedido(pedido, informado={}) {
       quantidadeComercial: q,
       valorUnitarioComercial: vu,
       valorProduto: vp,
+      valorDesconto: descontosRateados[idx] || 0,
+      valorFrete: fretesRateados[idx] || 0,
 
       unidadeTributavel:
         f.unidadeTributavel ||
@@ -242,7 +318,7 @@ function destinatarioDoPedido(pedido, informado={}) {
 
       // Simples Nacional
       csosn: usaCsosn
-        ? String(f.csosn || "102").trim()
+        ? String(f.csosn || "").trim()
         : "",
 
       // Regime Normal
@@ -466,13 +542,16 @@ empresaId = empresa._id;
 
   const ufEmitente = estadoEmpresa(empresa);
   const itens = itensDoPedido(
-  pedido,
-  estadoEmpresa(empresa),
-  destinatario.endereco.uf,
-  empresa.crt || empresa.regimeTributarioCodigo || 1
-);
+    pedido,
+    estadoEmpresa(empresa),
+    destinatario.endereco.uf,
+    empresa.crt || empresa.regimeTributarioCodigo || 1,
+    dados.valorDesconto ?? pedido.desconto ?? 0,
+    dados.valorFrete ?? pedido.taxaEntrega ?? 0
+  );
   const resumoTotais = totais(itens, {
     ...dados,
+    valorFrete: dados.valorFrete ?? pedido.taxaEntrega ?? 0,
     valorDesconto: dados.valorDesconto ?? pedido.desconto ?? 0,
   });
 
@@ -591,15 +670,18 @@ if (!empresa) throw new Error("Empresa emissora não encontrada.");
   );
 
 const itens = itensDoPedido(
-  pedido,
-  estadoEmpresa(empresa),
-  dest.endereco.uf,
-  empresa.crt || empresa.regimeTributarioCodigo || 1
-);
+    pedido,
+    estadoEmpresa(empresa),
+    dest.endereco.uf,
+    empresa.crt || empresa.regimeTributarioCodigo || 1,
+    dados.valorDesconto ?? pedido.desconto ?? 0,
+    dados.valorFrete ?? pedido.taxaEntrega ?? 0
+  );
 
 const t = totais(itens, {
   ...dados,
-  valorDesconto: dados.valorDesconto ?? pedido.desconto ?? 0
+  valorFrete: dados.valorFrete ?? pedido.taxaEntrega ?? 0,
+    valorDesconto: dados.valorDesconto ?? pedido.desconto ?? 0
 });
 
   // Valida todos os dados antes de reservar numeração, criar a NF-e e gerar o XML.
@@ -613,7 +695,81 @@ const t = totais(itens, {
   });
 
   const nr=await reservar(empresaId,dados.ambiente,dados.serie);
-  const nfe=await Nfe.create({ empresa:empresaId, pedido:pedido._id, cliente:null, numero:nr.numero, serie:nr.serie, modelo:"55", ambiente:nr.ambiente, naturezaOperacao:dados.naturezaOperacao || "Venda de mercadoria", tipoOperacao:1, finalidade:1, consumidorFinal:dados.consumidorFinal ?? true, indicadorPresenca:dados.indicadorPresenca ?? 1, destinoOperacao:estadoEmpresa(empresa) === dest.endereco.uf ? 1 : 2, modalidadeFrete:num(dados.modalidadeFrete,9), destinatario:dest, itens, totais:t, pagamento:{ forma:String(dados.formaPagamento || "17"), descricao:dados.descricaoPagamento || pedido.pagamento || "PIX", valor:t.valorTotal }, informacoesComplementares:dados.informacoesComplementares || pedido.observacao || "", status:"gerada" });
+  const nfe=await Nfe.create({ empresa:empresaId, pedido:pedido._id, cliente:null, numero:nr.numero, serie:nr.serie, modelo:"55", ambiente:nr.ambiente, naturezaOperacao:dados.naturezaOperacao || "Venda de mercadoria", tipoOperacao:1, finalidade:1, consumidorFinal:dados.consumidorFinal ?? true, indicadorPresenca:dados.indicadorPresenca ?? 1, destinoOperacao:estadoEmpresa(empresa) === dest.endereco.uf ? 1 : 2, modalidadeFrete:num(dados.modalidadeFrete,9), destinatario:dest, itens, totais:t, pagamento: (() => {
+    const pagamentosPedido = Array.isArray(pedido.pagamentos)
+      ? pedido.pagamentos
+      : [];
+
+    const pagamentoCrediario = pagamentosPedido.find(
+      (p) =>
+        String(p?.forma || "").trim().toUpperCase() === "CREDIARIO"
+    );
+
+    const ehCrediario =
+      String(pedido.pagamento || "").trim().toUpperCase() === "CREDIARIO" ||
+      Boolean(pagamentoCrediario);
+
+    return {
+      forma: String(
+        dados.formaPagamento ||
+        (ehCrediario ? "14" : "17")
+      ),
+      indicador:
+        dados.indicadorPagamento !== undefined
+          ? Number(dados.indicadorPagamento)
+          : ehCrediario
+            ? 1
+            : 0,
+      descricao:
+        dados.descricaoPagamento ||
+        pedido.pagamento ||
+        "PIX",
+      valor: t.valorTotal,
+    };
+  })(),
+
+  cobranca: (() => {
+    const pagamentosPedido = Array.isArray(pedido.pagamentos)
+      ? pedido.pagamentos
+      : [];
+
+    const parcelasCrediario = pagamentosPedido.filter(
+      (p) =>
+        String(p?.forma || "").trim().toUpperCase() === "CREDIARIO" &&
+        Number(p?.valor || 0) > 0
+    );
+
+    if (!parcelasCrediario.length) {
+      return {
+        fatura: {
+          numero: "",
+          valorOriginal: 0,
+          valorDesconto: 0,
+          valorLiquido: 0,
+        },
+        duplicatas: [],
+      };
+    }
+
+    return {
+      fatura: {
+        numero: String(
+          dados.numeroFatura ||
+          pedido.numero ||
+          nr.numero
+        ),
+        valorOriginal: t.valorTotal,
+        valorDesconto: 0,
+        valorLiquido: t.valorTotal,
+      },
+
+      duplicatas: parcelasCrediario.map((p, idx) => ({
+        numero: String(idx + 1).padStart(3, "0"),
+        vencimento: p.vencimento || null,
+        valor: num(p.valor),
+      })),
+    };
+  })(), informacoesComplementares:dados.informacoesComplementares || pedido.observacao || "", status:"gerada" });
   const gerado=gerarXmlNfe({ nfe, empresa }); nfe.xml=gerado.xml; nfe.chaveAcesso=gerado.chaveAcesso; nfe.mensagemSefaz="XML da NF-e gerado. Próxima etapa: assinatura."; registrarHistorico(nfe, "geracao", { status: "gerada", mensagem: nfe.mensagemSefaz }); await nfe.save(); return nfe;
 }
 
@@ -994,4 +1150,11 @@ module.exports = {
   processarNfeDoPedido,
   cancelarNfe,
   cartaCorrecaoNfe,
+
+  __previewInternals: {
+    destinatarioDoPedido,
+    itensDoPedido,
+    totais,
+    estadoEmpresa,
+  },
 };

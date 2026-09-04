@@ -43,6 +43,36 @@ const empresaSchema = new mongoose.Schema(
     // 1 = Simples Nacional; 2 = Simples com excesso; 3 = Regime Normal; 4 = MEI.
     crt: { type: Number, enum: [1, 2, 3, 4], default: 1 },
 
+    // Regime federal da pessoa jurídica.
+    // Não inferir automaticamente a partir do CRT.
+    regimeFederal: {
+      type: String,
+      enum: [
+        "",
+        "lucro_presumido",
+        "lucro_real",
+        "lucro_arbitrado",
+        "outro",
+      ],
+      default: "",
+      trim: true,
+    },
+
+    // Sistemática padrão de PIS/COFINS da empresa.
+    // Produtos/operações podem possuir tratamentos específicos.
+    regimePisCofins: {
+      type: String,
+      enum: [
+        "",
+        "cumulativo",
+        "nao_cumulativo",
+        "misto",
+        "outro",
+      ],
+      default: "",
+      trim: true,
+    },
+
     email: { type: String, default: "", lowercase: true, trim: true },
     telefone: { type: String, default: "", trim: true },
     whatsapp: { type: String, default: "", trim: true },

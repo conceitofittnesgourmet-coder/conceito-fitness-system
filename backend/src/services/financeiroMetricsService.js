@@ -152,15 +152,19 @@ async function buscarDadosFinanceiros(
 
 
       MovimentacaoFinanceira.find({
-        ...empresa,
+  ...empresa,
 
-        data: {
-          $gte: inicio,
-          $lte: fim,
-        },
-      }).sort({
-        data: -1,
-      }),
+  status: {
+    $ne: "estornada",
+  },
+
+  data: {
+    $gte: inicio,
+    $lte: fim,
+  },
+}).sort({
+  data: -1,
+}),
 
 
       ContaPagar.find({

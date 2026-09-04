@@ -96,6 +96,53 @@ function validarEmpresa(empresa, erros) {
   if (!ie) adicionarErro(erros, "empresa.inscricaoEstadual", "Inscrição Estadual da empresa não informada.");
   if (![1, 2, 3, 4].includes(crt)) adicionarErro(erros, "empresa.crt", "CRT deve ser 1, 2, 3 ou 4.");
 
+  if (crt === 3) {
+    const regimeFederal = texto(empresa.regimeFederal);
+    const regimePisCofins = texto(empresa.regimePisCofins);
+
+    const regimesFederaisPermitidos = [
+      "lucro_presumido",
+      "lucro_real",
+      "lucro_arbitrado",
+      "outro",
+    ];
+
+    const regimesPisCofinsPermitidos = [
+      "cumulativo",
+      "nao_cumulativo",
+      "misto",
+      "outro",
+    ];
+
+    if (!regimeFederal) {
+      adicionarErro(
+        erros,
+        "empresa.regimeFederal",
+        "Regime federal não informado para empresa CRT 3. Informe o enquadramento contábil antes da emissão."
+      );
+    } else if (!regimesFederaisPermitidos.includes(regimeFederal)) {
+      adicionarErro(
+        erros,
+        "empresa.regimeFederal",
+        "Regime federal informado não é reconhecido pelo emissor."
+      );
+    }
+
+    if (!regimePisCofins) {
+      adicionarErro(
+        erros,
+        "empresa.regimePisCofins",
+        "Regime de PIS/COFINS não informado para empresa CRT 3. Confirme a sistemática tributária antes da emissão."
+      );
+    } else if (!regimesPisCofinsPermitidos.includes(regimePisCofins)) {
+      adicionarErro(
+        erros,
+        "empresa.regimePisCofins",
+        "Regime de PIS/COFINS informado não é reconhecido pelo emissor."
+      );
+    }
+  }
+
   validarEndereco(obterEnderecoFiscalEmpresa(empresa), "empresa.enderecoFiscal", erros);
 }
 
@@ -125,35 +172,503 @@ function validarDestinatario(destinatario, erros) {
   validarEndereco(dest.endereco, "destinatario.endereco", erros);
 }
 
-function validarItens(itens, erros) {
-  if (!Array.isArray(itens) || itens.length === 0) {
-    adicionarErro(erros, "itens", "A NF-e precisa possuir pelo menos um item.");
+function validarContribuicaoPercentual({
+  item,
+  prefixo,
+  contexto,
+  erros,
+  tributo,
+  cst,
+  campoBase,
+  campoAliquota,
+  campoValor,
+}) {
+  const naoTributados = ["04", "05", "06", "07", "08", "09"];
+  const tributadosDiretos = ["01", "02"];
+
+  const base = numero(item?.[campoBase]);
+  const aliquota = numero(item?.[campoAliquota]);
+  const valor = numero(item?.[campoValor]);
+
+  if (naoTributados.includes(cst)) {
+    if (
+      (Number.isFinite(base) && Math.abs(base) > 0.000001) ||
+      (Number.isFinite(aliquota) && Math.abs(aliquota) > 0.000001) ||
+      (Number.isFinite(valor) && Math.abs(valor) > 0.000001)
+    ) {
+      adicionarErro(
+        erros,
+        `${prefixo}.${campoValor}`,
+        `${tributo}: CST ${cst} é não tributado na implementação atual, mas existem base, alíquota ou valor diferentes de zero.`,
+        contexto
+      );
+    }
+
     return;
   }
 
+  if (!cst) return;
+
+  if (!Number.isFinite(base) || base < 0) {
+    adicionarErro(
+      erros,
+      `${prefixo}.${campoBase}`,
+      `Base de cálculo do ${tributo} inválida.`,
+      contexto
+    );
+  }
+
+  if (!Number.isFinite(aliquota) || aliquota < 0) {
+    adicionarErro(
+      erros,
+      `${prefixo}.${campoAliquota}`,
+      `Alíquota do ${tributo} inválida.`,
+      contexto
+    );
+  }
+
+  if (!Number.isFinite(valor) || valor < 0) {
+    adicionarErro(
+      erros,
+      `${prefixo}.${campoValor}`,
+      `Valor do ${tributo} inválido.`,
+      contexto
+    );
+  }
+
+  if (
+    tributadosDiretos.includes(cst) &&
+    (
+      !Number.isFinite(base) ||
+      base <= 0 ||
+      !Number.isFinite(aliquota) ||
+      aliquota <= 0
+    )
+  ) {
+    adicionarErro(
+      erros,
+      `${prefixo}.${campoBase}`,
+      `${tributo}: CST ${cst} exige base e alíquota maiores que zero na implementação atual.`,
+      contexto
+    );
+
+    return;
+  }
+
+  if (
+    Number.isFinite(base) &&
+    Number.isFinite(aliquota) &&
+    Number.isFinite(valor) &&
+    base >= 0 &&
+    aliquota >= 0
+  ) {
+    const esperado =
+      Math.round(
+        (base * aliquota / 100) * 100
+      ) / 100;
+
+    if (Math.abs(valor - esperado) > 0.01) {
+      adicionarErro(
+        erros,
+        `${prefixo}.${campoValor}`,
+        `Valor do ${tributo} incoerente. Pela base e alíquota informadas, o valor esperado é R$ ${esperado.toFixed(2)}.`,
+        contexto
+      );
+    }
+  }
+}
+
+function validarItens(itens, erros, empresa = {}) {
+  if (!Array.isArray(itens) || itens.length === 0) {
+    adicionarErro(
+      erros,
+      "itens",
+      "A NF-e precisa possuir pelo menos um item."
+    );
+    return;
+  }
+
+  const crt = Number(
+    empresa.crt ||
+    empresa.regimeTributarioCodigo
+  );
+
+  const usaCsosn = [1, 4].includes(crt);
+  const regimeNormal = crt === 3;
+
   itens.forEach((item, indice) => {
     const numeroItem = indice + 1;
-    const contexto = `Item ${numeroItem}${item?.descricao ? ` - ${item.descricao}` : ""}`;
+
+    const contexto =
+      `Item ${numeroItem}${
+        item?.descricao
+          ? ` - ${item.descricao}`
+          : ""
+      }`;
+
     const prefixo = `itens.${indice}`;
+
     const ncm = somenteNumeros(item?.ncm);
     const cfop = somenteNumeros(item?.cfop);
     const cest = somenteNumeros(item?.cest);
-    const quantidade = numero(item?.quantidadeComercial);
-    const valorUnitario = numero(item?.valorUnitarioComercial);
-    const valorProduto = numero(item?.valorProduto);
 
-    if (!texto(item?.descricao)) adicionarErro(erros, `${prefixo}.descricao`, "Descrição do produto não informada.", contexto);
-    if (ncm.length !== 8) adicionarErro(erros, `${prefixo}.ncm`, "NCM deve possuir exatamente 8 dígitos.", contexto);
-    if (cfop.length !== 4) adicionarErro(erros, `${prefixo}.cfop`, "CFOP deve possuir exatamente 4 dígitos.", contexto);
-    if (cest && cest.length !== 7) adicionarErro(erros, `${prefixo}.cest`, "CEST, quando informado, deve possuir 7 dígitos.", contexto);
-    if (!texto(item?.unidadeComercial)) adicionarErro(erros, `${prefixo}.unidadeComercial`, "Unidade comercial não informada.", contexto);
-    if (!Number.isFinite(quantidade) || quantidade <= 0) adicionarErro(erros, `${prefixo}.quantidadeComercial`, "Quantidade deve ser maior que zero.", contexto);
-    if (!Number.isFinite(valorUnitario) || valorUnitario < 0) adicionarErro(erros, `${prefixo}.valorUnitarioComercial`, "Valor unitário inválido.", contexto);
-    if (!Number.isFinite(valorProduto) || valorProduto < 0) adicionarErro(erros, `${prefixo}.valorProduto`, "Valor total do item inválido.", contexto);
+    const quantidade =
+      numero(item?.quantidadeComercial);
 
-    const csosn = somenteNumeros(item?.csosn);
-    const cstIcms = somenteNumeros(item?.cstIcms);
-    if (!csosn && !cstIcms) adicionarErro(erros, `${prefixo}.tributacaoIcms`, "Informe CSOSN ou CST do ICMS.", contexto);
+    const valorUnitario =
+      numero(item?.valorUnitarioComercial);
+
+    const valorProduto =
+      numero(item?.valorProduto);
+
+    if (!texto(item?.descricao)) {
+      adicionarErro(
+        erros,
+        `${prefixo}.descricao`,
+        "Descrição do produto não informada.",
+        contexto
+      );
+    }
+
+    if (ncm.length !== 8) {
+      adicionarErro(
+        erros,
+        `${prefixo}.ncm`,
+        "NCM deve possuir exatamente 8 dígitos.",
+        contexto
+      );
+    }
+
+    if (cfop.length !== 4) {
+      adicionarErro(
+        erros,
+        `${prefixo}.cfop`,
+        "CFOP deve possuir exatamente 4 dígitos.",
+        contexto
+      );
+    }
+
+    if (cest && cest.length !== 7) {
+      adicionarErro(
+        erros,
+        `${prefixo}.cest`,
+        "CEST, quando informado, deve possuir 7 dígitos.",
+        contexto
+      );
+    }
+
+    if (!texto(item?.unidadeComercial)) {
+      adicionarErro(
+        erros,
+        `${prefixo}.unidadeComercial`,
+        "Unidade comercial não informada.",
+        contexto
+      );
+    }
+
+    if (
+      !Number.isFinite(quantidade) ||
+      quantidade <= 0
+    ) {
+      adicionarErro(
+        erros,
+        `${prefixo}.quantidadeComercial`,
+        "Quantidade deve ser maior que zero.",
+        contexto
+      );
+    }
+
+    if (
+      !Number.isFinite(valorUnitario) ||
+      valorUnitario < 0
+    ) {
+      adicionarErro(
+        erros,
+        `${prefixo}.valorUnitarioComercial`,
+        "Valor unitário inválido.",
+        contexto
+      );
+    }
+
+    if (
+      !Number.isFinite(valorProduto) ||
+      valorProduto < 0
+    ) {
+      adicionarErro(
+        erros,
+        `${prefixo}.valorProduto`,
+        "Valor total do item inválido.",
+        contexto
+      );
+    }
+
+    // ============================
+    // ICMS
+    // ============================
+
+    const csosn =
+      somenteNumeros(item?.csosn);
+
+    const cstIcms =
+      somenteNumeros(item?.cstIcms);
+
+    if (usaCsosn) {
+      if (!csosn) {
+        adicionarErro(
+          erros,
+          `${prefixo}.csosn`,
+          "CSOSN do ICMS é obrigatório para este CRT.",
+          contexto
+        );
+      } else if (csosn !== "102") {
+        adicionarErro(
+          erros,
+          `${prefixo}.csosn`,
+          `CSOSN ${csosn} ainda não possui grupo XML implementado no emissor.`,
+          contexto
+        );
+      }
+    }
+
+    if (regimeNormal) {
+      if (!cstIcms) {
+        adicionarErro(
+          erros,
+          `${prefixo}.cstIcms`,
+          "CST do ICMS é obrigatório para empresa no Regime Normal (CRT 3).",
+          contexto
+        );
+      } else if (cstIcms !== "00") {
+        adicionarErro(
+          erros,
+          `${prefixo}.cstIcms`,
+          `CST ICMS ${cstIcms} ainda não possui grupo XML implementado no emissor.`,
+          contexto
+        );
+      }
+
+      if (cstIcms === "00") {
+        const base =
+          numero(item?.baseCalculoIcms);
+
+        const aliquota =
+          numero(item?.aliquotaIcms);
+
+        const valor =
+          numero(item?.valorIcms);
+
+        if (
+          !Number.isFinite(base) ||
+          base <= 0
+        ) {
+          adicionarErro(
+            erros,
+            `${prefixo}.baseCalculoIcms`,
+            "Base de cálculo do ICMS deve ser maior que zero para CST 00.",
+            contexto
+          );
+        }
+
+        if (
+          !Number.isFinite(aliquota) ||
+          aliquota <= 0
+        ) {
+          adicionarErro(
+            erros,
+            `${prefixo}.aliquotaIcms`,
+            "Alíquota do ICMS deve ser maior que zero para CST 00.",
+            contexto
+          );
+        }
+
+        if (
+          !Number.isFinite(valor) ||
+          valor < 0
+        ) {
+          adicionarErro(
+            erros,
+            `${prefixo}.valorIcms`,
+            "Valor do ICMS inválido.",
+            contexto
+          );
+        }
+
+        if (
+          Number.isFinite(base) &&
+          Number.isFinite(aliquota) &&
+          Number.isFinite(valor) &&
+          base > 0 &&
+          aliquota > 0
+        ) {
+          const esperado =
+            Math.round(
+              (base * aliquota / 100) * 100
+            ) / 100;
+
+          if (
+            Math.abs(valor - esperado) > 0.01
+          ) {
+            adicionarErro(
+              erros,
+              `${prefixo}.valorIcms`,
+              `Valor do ICMS incoerente. Pela base e alíquota informadas, o valor esperado é R$ ${esperado.toFixed(2)}.`,
+              contexto
+            );
+          }
+        }
+      }
+    }
+
+    // ============================
+    // PIS
+    // ============================
+
+    const cstPis =
+      somenteNumeros(item?.cstPis);
+
+    if (!cstPis) {
+      adicionarErro(
+        erros,
+        `${prefixo}.cstPis`,
+        "CST do PIS não informado.",
+        contexto
+      );
+    }
+
+    if (
+      cstPis &&
+      ![
+        "01", "02",
+        "04", "05", "06", "07", "08", "09",
+        "49", "50", "51", "52", "53", "54",
+        "55", "56", "60", "61", "62", "63",
+        "64", "65", "66", "67", "70", "71",
+        "72", "73", "74", "75", "98", "99"
+      ].includes(cstPis)
+    ) {
+      adicionarErro(
+        erros,
+        `${prefixo}.cstPis`,
+        `CST PIS ${cstPis} não é suportado pela implementação atual.`,
+        contexto
+      );
+    }
+
+    validarContribuicaoPercentual({
+      item,
+      prefixo,
+      contexto,
+      erros,
+      tributo: "PIS",
+      cst: cstPis,
+      campoBase: "baseCalculoPis",
+      campoAliquota: "aliquotaPis",
+      campoValor: "valorPis",
+    });
+
+    // ============================
+    // COFINS
+    // ============================
+
+    const cstCofins =
+      somenteNumeros(item?.cstCofins);
+
+    if (!cstCofins) {
+      adicionarErro(
+        erros,
+        `${prefixo}.cstCofins`,
+        "CST da COFINS não informado.",
+        contexto
+      );
+    }
+
+    if (
+      cstCofins &&
+      ![
+        "01", "02",
+        "04", "05", "06", "07", "08", "09",
+        "49", "50", "51", "52", "53", "54",
+        "55", "56", "60", "61", "62", "63",
+        "64", "65", "66", "67", "70", "71",
+        "72", "73", "74", "75", "98", "99"
+      ].includes(cstCofins)
+    ) {
+      adicionarErro(
+        erros,
+        `${prefixo}.cstCofins`,
+        `CST COFINS ${cstCofins} não é suportado pela implementação atual.`,
+        contexto
+      );
+    }
+
+    validarContribuicaoPercentual({
+      item,
+      prefixo,
+      contexto,
+      erros,
+      tributo: "COFINS",
+      cst: cstCofins,
+      campoBase: "baseCalculoCofins",
+      campoAliquota: "aliquotaCofins",
+      campoValor: "valorCofins",
+    });
+
+    // ============================
+    // IBS / CBS
+    // ============================
+
+    // Regra atualmente implementada pelo ERP para 2026:
+    // CRT 1/4 nao exige IBS/CBS neste fluxo.
+    // CRT 3 mantem validacao da estrutura RTC implementada.
+    if (regimeNormal) {
+      const cstIbsCbs =
+        somenteNumeros(item?.cstIbsCbs);
+
+      const cClassTrib =
+        somenteNumeros(item?.cClassTrib);
+
+      if (!cstIbsCbs) {
+        adicionarErro(
+          erros,
+          `${prefixo}.cstIbsCbs`,
+          "CST IBS/CBS não informado.",
+          contexto
+        );
+      }
+
+      if (!cClassTrib) {
+        adicionarErro(
+          erros,
+          `${prefixo}.cClassTrib`,
+          "cClassTrib IBS/CBS não informado.",
+          contexto
+        );
+      }
+
+      if (
+        cstIbsCbs &&
+        cstIbsCbs.length !== 3
+      ) {
+        adicionarErro(
+          erros,
+          `${prefixo}.cstIbsCbs`,
+          "CST IBS/CBS deve possuir 3 dígitos.",
+          contexto
+        );
+      }
+
+      if (
+        cClassTrib &&
+        cClassTrib.length !== 6
+      ) {
+        adicionarErro(
+          erros,
+          `${prefixo}.cClassTrib`,
+          "cClassTrib IBS/CBS deve possuir 6 dígitos.",
+          contexto
+        );
+      }
+    }
   });
 }
 
@@ -205,7 +720,7 @@ function validarAntesDeGerarNfe({ empresa, destinatario, itens, totais, validarA
 
   validarEmpresa(empresa, erros);
   validarDestinatario(destinatario, erros);
-  validarItens(itens, erros);
+  validarItens(itens, erros, empresa);
   validarTotais(totais, erros);
   if (validarA1) validarCertificado(erros);
 
