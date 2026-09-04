@@ -777,6 +777,130 @@ function alterarItemConferencia(
   );
 }
 
+
+async function cadastrarMateriaPrimaDaNfe(index) {
+  const item = itensConferencia[index];
+
+  if (!item) {
+    alert("Item da NF-e não encontrado.");
+    return;
+  }
+
+  const nomeSugerido = String(item.nome || "").trim();
+
+  const nome = window.prompt(
+    "Nome da nova matéria-prima:",
+    nomeSugerido
+  );
+
+  if (nome === null) return;
+
+  if (!nome.trim()) {
+    alert("Informe o nome da matéria-prima.");
+    return;
+  }
+
+  const unidadeInformada = window.prompt(
+    "Unidade de controle do estoque:\n\n" +
+      "Opções: kg, g, litro, ml, unidade, pacote ou caixa",
+    "kg"
+  );
+
+  if (unidadeInformada === null) return;
+
+  const unidade = String(unidadeInformada)
+    .trim()
+    .toLowerCase();
+
+  const unidadesPermitidas = [
+    "kg",
+    "g",
+    "litro",
+    "ml",
+    "unidade",
+    "pacote",
+    "caixa",
+  ];
+
+  if (!unidadesPermitidas.includes(unidade)) {
+    alert(
+      "Unidade inválida. Use: kg, g, litro, ml, unidade, pacote ou caixa."
+    );
+    return;
+  }
+
+  try {
+    const resposta = await api.post("/materias-primas", {
+      nome: nome.trim(),
+      codigo: item.codigo || "",
+      categoria: "Insumos",
+      unidade,
+      estoqueAtual: 0,
+      estoqueMinimo: 0,
+      estoqueMaximo: 0,
+      custoUnitario: 0,
+      tipoItem: "materia_prima",
+      ativo: true,
+      observacoes:
+        "Matéria-prima cadastrada durante a conferência de NF-e de entrada.",
+    });
+
+    const novaMateria = resposta.data?.materia;
+
+    if (!novaMateria?._id) {
+      throw new Error(
+        "A API não retornou a matéria-prima cadastrada."
+      );
+    }
+
+    setMaterias((anteriores) => {
+      const existe = anteriores.some(
+        (materia) =>
+          String(materia._id) === String(novaMateria._id)
+      );
+
+      if (existe) return anteriores;
+
+      return [...anteriores, novaMateria].sort((a, b) =>
+        String(a.nome || "").localeCompare(
+          String(b.nome || ""),
+          "pt-BR"
+        )
+      );
+    });
+
+    setItensConferencia((anteriores) =>
+      anteriores.map((atual, posicao) =>
+        posicao === index
+          ? {
+              ...atual,
+              materiaPrima: novaMateria._id,
+              unidadeEstoque: novaMateria.unidade,
+              fatorConversao: "",
+              quantidadeEstoque: "",
+            }
+          : atual
+      )
+    );
+
+    alert(
+      "Matéria-prima cadastrada e vinculada ao item da NF-e.\n\n" +
+        "Agora confira o fator de conversão antes de salvar a conferência."
+    );
+  } catch (error) {
+    console.error(
+      "Erro ao cadastrar matéria-prima pela NF-e:",
+      error
+    );
+
+    alert(
+      error.response?.data?.message ||
+        error.message ||
+        "Não foi possível cadastrar a matéria-prima."
+    );
+  }
+}
+
 async function salvarConferenciaNota() {
   if (!notaSelecionada?._id) {
     return;
@@ -1899,6 +2023,20 @@ async function processarEstoqueNota(nota) {
                                   )
                                 )}
                               </select>
+
+                              <button
+                                type="button"
+                                className="btn-ver"
+                                style={{
+                                  marginTop: "8px",
+                                  width: "100%",
+                                }}
+                                onClick={() =>
+                                  cadastrarMateriaPrimaDaNfe(index)
+                                }
+                              >
+                                + Cadastrar nova matéria-prima
+                              </button>
                             </label>
 
                             <label>
