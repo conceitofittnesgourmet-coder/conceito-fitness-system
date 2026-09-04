@@ -75,6 +75,14 @@ exports.criarNotaEntrada = async (req, res) => {
       dataEmissao,
       valorFrete,
       valorDesconto,
+      valorSeguro,
+      valorOutrasDespesas,
+      valorICMS,
+      valorICMSST,
+      valorFCP,
+      valorFCPST,
+      valorIPI,
+      valorTotal,
       formaPagamento,
       observacao,
       itens,
@@ -190,8 +198,14 @@ itensCalculados.push(itemCalculado);
      
     }
 
-    const totalNota =
-      toNumber(valorProdutos) + toNumber(valorFrete) - toNumber(valorDesconto);
+    const valorTotalInformado = toNumber(valorTotal);
+
+const totalNota =
+  valorTotalInformado > 0
+    ? valorTotalInformado
+    : toNumber(valorProdutos) +
+      toNumber(valorFrete) -
+      toNumber(valorDesconto);
 
     const nota = await NotaFiscalEntrada.create({
       numero,
@@ -206,6 +220,13 @@ itensCalculados.push(itemCalculado);
       valorProdutos: Number(valorProdutos.toFixed(2)),
       valorFrete: toNumber(valorFrete),
       valorDesconto: toNumber(valorDesconto),
+      valorSeguro: toNumber(valorSeguro),
+      valorOutrasDespesas: toNumber(valorOutrasDespesas),
+      valorICMS: toNumber(valorICMS),
+      valorICMSST: toNumber(valorICMSST),
+      valorFCP: toNumber(valorFCP),
+      valorFCPST: toNumber(valorFCPST),
+      valorIPI: toNumber(valorIPI),
       valorTotal: Number(totalNota.toFixed(2)),
       formaPagamento: formaPagamento || "PIX",
       status: "rascunho",
@@ -1451,6 +1472,13 @@ if (parcelas.length > 0) {
         : "",
       valorFrete: Number(total.vFrete || 0),
       valorDesconto: Number(total.vDesc || 0),
+      valorSeguro: Number(total.vSeg || 0),
+      valorOutrasDespesas: Number(total.vOutro || 0),
+      valorICMS: Number(total.vICMS || 0),
+      valorICMSST: Number(total.vST || 0),
+      valorFCP: Number(total.vFCP || 0),
+      valorFCPST: Number(total.vFCPST || 0),
+      valorIPI: Number(total.vIPI || 0),
       valorProdutos: Number(total.vProd || 0),
       valorTotal: Number(total.vNF || 0),
       formaPagamento:

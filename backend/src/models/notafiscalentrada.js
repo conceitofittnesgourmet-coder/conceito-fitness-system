@@ -138,6 +138,41 @@ const notaFiscalEntradaSchema = new mongoose.Schema(
       default: 0,
     },
 
+    valorSeguro: {
+  type: Number,
+  default: 0,
+},
+
+valorOutrasDespesas: {
+  type: Number,
+  default: 0,
+},
+
+valorICMS: {
+  type: Number,
+  default: 0,
+},
+
+valorICMSST: {
+  type: Number,
+  default: 0,
+},
+
+valorFCP: {
+  type: Number,
+  default: 0,
+},
+
+valorFCPST: {
+  type: Number,
+  default: 0,
+},
+
+valorIPI: {
+  type: Number,
+  default: 0,
+},
+
     valorTotal: {
       type: Number,
       default: 0,

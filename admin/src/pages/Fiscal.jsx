@@ -59,6 +59,14 @@ const [
     dataEmissao: "",
     valorFrete: "",
     valorDesconto: "",
+    valorSeguro: "",
+    valorOutrasDespesas: "",
+    valorICMS: "",
+    valorICMSST: "",
+    valorFCP: "",
+    valorFCPST: "",
+    valorIPI: "",
+    valorTotal: "",
     formaPagamento: "PIX",
     vencimentoPagamento: "",
 parcelas: [],
@@ -269,6 +277,14 @@ parcelas: [],
       dataEmissao: notaXml.dataEmissao || "",
       valorFrete: notaXml.valorFrete || "",
       valorDesconto: notaXml.valorDesconto || "",
+      valorSeguro: notaXml.valorSeguro || "",
+      valorOutrasDespesas: notaXml.valorOutrasDespesas || "",
+      valorICMS: notaXml.valorICMS || "",
+      valorICMSST: notaXml.valorICMSST || "",
+      valorFCP: notaXml.valorFCP || "",
+      valorFCPST: notaXml.valorFCPST || "",
+      valorIPI: notaXml.valorIPI || "",
+      valorTotal: notaXml.valorTotal || "",
       formaPagamento: notaXml.formaPagamento || "BOLETO",
       parcelas:
   Array.isArray(notaXml.parcelas)
@@ -373,6 +389,14 @@ if (
       fornecedor: nota.fornecedor || null,
       valorFrete: Number(nota.valorFrete || 0),
       valorDesconto: Number(nota.valorDesconto || 0),
+      valorSeguro: Number(nota.valorSeguro || 0),
+      valorOutrasDespesas: Number(nota.valorOutrasDespesas || 0),
+      valorICMS: Number(nota.valorICMS || 0),
+      valorICMSST: Number(nota.valorICMSST || 0),
+      valorFCP: Number(nota.valorFCP || 0),
+      valorFCPST: Number(nota.valorFCPST || 0),
+      valorIPI: Number(nota.valorIPI || 0),
+      valorTotal: Number(nota.valorTotal || 0),
       itens: itens.map((item) => ({
         materiaPrima: item.materiaPrima || null,
         nome: item.nome,
@@ -1095,8 +1119,17 @@ async function processarEstoqueNota(nota) {
   }
 }
 
-  const totalNota =
-    valorItens + Number(nota.valorFrete || 0) - Number(nota.valorDesconto || 0);
+  const totalCalculado =
+  valorItens +
+  Number(nota.valorFrete || 0) +
+  Number(nota.valorSeguro || 0) +
+  Number(nota.valorOutrasDespesas || 0) -
+  Number(nota.valorDesconto || 0);
+
+const totalNota =
+  Number(nota.valorTotal || 0) > 0
+    ? Number(nota.valorTotal)
+    : totalCalculado;
 
   return (
     <AdminLayout
