@@ -683,6 +683,13 @@ const resposta = {
       xmlRetorno
     );
 
+  if (documentos.length > 0) {
+    await persistirDocumentosDistribuicao({
+      empresa,
+      documentos,
+    });
+  }
+
   const nfeCompleta =
     documentos.find((doc) =>
       /procNFe|nfeProc/i.test(
