@@ -78,12 +78,36 @@ campo(
 
   const pendencias = verificacoes.filter((item) => !item.ok);
 
+  const configuracaoSegura = config ? {
+    _id: config._id,
+    empresa: config.empresa,
+    ambiente: config.ambiente,
+    modelo: config.modelo,
+    serieNfce: config.serieNfce,
+    proximoNumeroNfce: config.proximoNumeroNfce,
+    certificadoConfigurado: config.certificadoConfigurado,
+    credenciadoNfce: config.credenciadoNfce,
+    credenciadoNfe: config.credenciadoNfe,
+    proximoNumeroNfe: config.proximoNumeroNfe,
+    serieNfe: config.serieNfe,
+    proximoNumeroNfeProducao: config.proximoNumeroNfeProducao,
+    serieNfeProducao: config.serieNfeProducao,
+  } : null;
+
+  const certificadoSeguro = certificado ? {
+    configurado: certificado.configurado,
+    valido: certificado.valido,
+    validoDe: certificado.validoDe,
+    validoAte: certificado.validoAte,
+    message: certificado.message,
+  } : null;
+
   return {
     pronto: pendencias.length === 0,
     ambiente: config?.ambiente || "homologacao",
     empresa: empresa ? { _id: empresa._id, nomeFantasia: empresa.nomeFantasia, razaoSocial: empresa.razaoSocial, cnpj: empresa.cnpj } : null,
-    configuracao: config || null,
-    certificado,
+    configuracao: configuracaoSegura,
+    certificado: certificadoSeguro,
     produtos: { total: totalProdutos, semNcm, semCfop, semTributacao },
     verificacoes,
     pendencias,
