@@ -1164,35 +1164,62 @@ async function manifestarNfeRecebida({
     ];
 
   const eventoAceito =
-    cStat === "135" ||
-    cStat === "136";
+  cStat === "135" ||
+  cStat === "136";
 
-  if (eventoAceito && statusManifestacao) {
-    nfeRecebida.statusManifestacao =
-      statusManifestacao;
+const eventoDuplicado =
+  cStat === "573" ||
+  retorno.eventoDuplicado === true;
 
-    nfeRecebida.protocoloManifestacao =
-      retorno.protocoloEvento || "";
+const eventoReconhecido =
+  eventoAceito ||
+  eventoDuplicado;
 
-    nfeRecebida.dataManifestacao =
-      retorno.dataRegistro
-        ? new Date(retorno.dataRegistro)
-        : new Date();
+if (
+  eventoReconhecido &&
+  statusManifestacao
+) {
+  nfeRecebida.statusManifestacao =
+    statusManifestacao;
 
-    nfeRecebida.ultimaSincronizacao =
-      new Date();
+  /*
+   * Para 135/136, salvamos os dados
+   * devolvidos pela SEFAZ.
+   *
+   * Para 573, sabemos que o evento
+   * já existe, mas não inventamos
+   * protocolo nem data do evento original.
+   */
+  if (eventoAceito) {
+    if (retorno.protocoloEvento) {
+      nfeRecebida.protocoloManifestacao =
+        retorno.protocoloEvento;
+    }
 
-    await nfeRecebida.save();
+    if (retorno.dataRegistro) {
+      nfeRecebida.dataManifestacao =
+        new Date(
+          retorno.dataRegistro
+        );
+    }
   }
 
-  return {
-    success: eventoAceito,
+  nfeRecebida.ultimaSincronizacao =
+    new Date();
 
-    cStat,
-    xMotivo:
-      retorno.xMotivoEvento ||
-      retorno.xMotivo ||
-      "",
+  await nfeRecebida.save();
+}
+
+  return {
+  success: eventoReconhecido,
+  eventoDuplicado,
+
+  cStat,
+
+  xMotivo:
+    retorno.xMotivoEvento ||
+    retorno.xMotivo ||
+    "",
 
     protocolo:
       retorno.protocoloEvento ||
@@ -1209,7 +1236,7 @@ async function manifestarNfeRecebida({
       String(tipoEvento),
 
     statusManifestacao:
-      eventoAceito
+      eventoReconhecido
         ? statusManifestacao
         : nfeRecebida.statusManifestacao,
 

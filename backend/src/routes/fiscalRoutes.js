@@ -22,6 +22,7 @@ const {
   buscarNfePelaChave,
   buscarNfesRecebidas,
   importarNfeRecebida,
+  manifestarNfeRecebidaController,
 } = require("../controllers/fiscalcontroller");
 
 router.get("/resumo", authMiddleware, resumoFiscal);
@@ -61,6 +62,12 @@ router.post(
   "/notas-entrada/recebidas/:id/importar",
   authMiddleware,
   importarNfeRecebida
+);
+
+router.post(
+  "/notas-entrada/recebidas/:id/manifestar",
+  authMiddleware,
+  manifestarNfeRecebidaController
 );
 
 router.get("/notas-entrada/:id", authMiddleware, buscarNotaEntrada);

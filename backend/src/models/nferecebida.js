@@ -16,8 +16,9 @@ const nfeRecebidaSchema = new mongoose.Schema(
     },
 
     nsus: {
-  type: [String],
-},
+      type: [String],
+      default: [],
+    },
 
     chaveAcesso: {
       type: String,

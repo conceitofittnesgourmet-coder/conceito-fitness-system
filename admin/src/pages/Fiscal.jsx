@@ -32,6 +32,11 @@ function Fiscal() {
   const [chaveBuscaNfe, setChaveBuscaNfe] =
   useState("");
 
+  const [nfesRecebidas, setNfesRecebidas] = useState([]);
+  const [carregandoNfesRecebidas, setCarregandoNfesRecebidas] = useState(false);
+  const [manifestandoNfeId, setManifestandoNfeId] = useState("");
+  const [justificativaManifestacao, setJustificativaManifestacao] = useState("");
+
 const [
   buscandoNfeChave,
   setBuscandoNfeChave,
@@ -99,6 +104,96 @@ parcelas: [],
     } catch (error) {
       console.log("Erro fiscal:", error);
       alert(error.response?.data?.message || "Erro ao carregar módulo fiscal.");
+    }
+  }
+
+  async function carregarNfesRecebidas() {
+    try {
+      setCarregandoNfesRecebidas(true);
+
+      const resposta =
+        await api.get(
+          "/fiscal/notas-entrada/recebidas"
+        );
+
+      setNfesRecebidas(
+        resposta.data?.notas || []
+      );
+    } catch (error) {
+      console.error(
+        "Erro ao carregar NF-e recebidas:",
+        error
+      );
+    } finally {
+      setCarregandoNfesRecebidas(false);
+    }
+  }
+
+  async function manifestarNfeRecebida(nfe, tipoEvento) {
+    if (!nfe?._id) return;
+
+    if (tipoEvento === "210240" && justificativaManifestacao.trim().length < 15) {
+      alert("Informe uma justificativa para Operação não Realizada.");
+      return;
+    }
+
+    const confirmacoes = {
+      "210200": "Confirmar a operação desta NF-e? Esta ação será enviada à SEFAZ.",
+      "210210": "Registrar Ciência da Operação desta NF-e na SEFAZ?",
+      "210220": "Registrar Desconhecimento da Operação desta NF-e na SEFAZ?",
+      "210240": "Registrar Operação não Realizada desta NF-e na SEFAZ?",
+    };
+
+    if (!window.confirm(confirmacoes[tipoEvento] || "Enviar manifestação à SEFAZ?")) {
+      return;
+    }
+
+    try {
+      setManifestandoNfeId(nfe._id);
+
+      const resposta = await api.post(
+        `/fiscal/notas-entrada/recebidas/${nfe._id}/manifestar`,
+        {
+          tipoEvento,
+          justificativa:
+            tipoEvento === "210240"
+              ? justificativaManifestacao.trim()
+              : "",
+        }
+      );
+
+      alert(
+        resposta.data?.message ||
+        "Manifestação processada."
+      );
+
+      setNfesRecebidas((atuais) =>
+        atuais.map((item) =>
+          item._id === nfe._id
+            ? {
+                ...item,
+                statusManifestacao:
+                  resposta.data?.statusManifestacao || item.statusManifestacao,
+                protocoloManifestacao:
+                  resposta.data?.protocolo || item.protocoloManifestacao,
+                dataManifestacao:
+                  resposta.data?.dataRegistro || item.dataManifestacao,
+              }
+            : item
+        )
+      );
+
+      if (tipoEvento === "210240") {
+        setJustificativaManifestacao("");
+      }
+    } catch (error) {
+      console.error("Erro ao manifestar NF-e:", error);
+      alert(
+        error.response?.data?.message ||
+        "Erro ao manifestar NF-e."
+      );
+    } finally {
+      setManifestandoNfeId("");
     }
   }
 
@@ -1294,6 +1389,115 @@ const totalNota =
   <button className="btn-fiscal salvar" onClick={salvarConfigFiscal}>
     Salvar Configuração Fiscal
   </button>
+</section>
+
+<section className="fiscal-card grande">
+  <div style={{ display: "flex", justifyContent: "space-between", gap: "12px", alignItems: "center", flexWrap: "wrap" }}>
+    <div>
+      <h2>NF-e Recebidas / Manifestação</h2>
+      <p>Consulte documentos destinados à empresa e acompanhe o status de manifestação.</p>
+    </div>
+
+    <button
+      type="button"
+      className="btn-fiscal salvar"
+      onClick={carregarNfesRecebidas}
+      disabled={carregandoNfesRecebidas}
+    >
+      {carregandoNfesRecebidas
+        ? "Sincronizando..."
+        : "Sincronizar com a SEFAZ"}
+    </button>
+  </div>
+
+  <p>
+    Notas carregadas: <strong>{nfesRecebidas.length}</strong>
+  </p>
+
+  <div style={{ marginBottom: "12px" }}>
+    <label style={{ display: "block", marginBottom: "6px", fontWeight: 600 }}>
+      Justificativa para Operação não Realizada
+    </label>
+    <textarea
+      value={justificativaManifestacao}
+      onChange={(e) => setJustificativaManifestacao(e.target.value)}
+      placeholder="Informe a justificativa antes de usar a ação Operação não Realizada."
+      rows="3"
+      style={{ width: "100%", resize: "vertical" }}
+    />
+  </div>
+
+  <div className="fiscal-table-wrap">
+    <table>
+      <thead>
+        <tr>
+          <th>Data</th>
+          <th>Emitente</th>
+          <th>CNPJ/CPF</th>
+          <th>Valor</th>
+          <th>XML</th>
+          <th>Manifestação</th>
+          <th>Ações</th>
+        </tr>
+      </thead>
+      <tbody>
+        {nfesRecebidas.length === 0 ? (
+          <tr>
+            <td colSpan="7">
+              Nenhuma NF-e recebida carregada.
+            </td>
+          </tr>
+        ) : (
+          nfesRecebidas.map((nfe) => (
+            <tr key={nfe._id}>
+              <td>{dataBR(nfe.dataEmissao)}</td>
+              <td>{nfe.emitenteNome || "-"}</td>
+              <td>{nfe.emitenteDocumento || "-"}</td>
+              <td>{dinheiro(nfe.valorNfe)}</td>
+              <td>{nfe.statusDistribuicao || "-"}</td>
+              <td>{nfe.statusManifestacao || "nao_manifestada"}</td>
+              <td>
+                <div style={{ display: "flex", gap: "6px", flexWrap: "wrap" }}>
+                  <button
+                    type="button"
+                    className="btn-fiscal"
+                    disabled={manifestandoNfeId === nfe._id}
+                    onClick={() => manifestarNfeRecebida(nfe, "210210")}
+                  >
+                    Ciência
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-fiscal salvar"
+                    disabled={manifestandoNfeId === nfe._id}
+                    onClick={() => manifestarNfeRecebida(nfe, "210200")}
+                  >
+                    Confirmar
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-fiscal"
+                    disabled={manifestandoNfeId === nfe._id}
+                    onClick={() => manifestarNfeRecebida(nfe, "210220")}
+                  >
+                    Desconhecer
+                  </button>
+                  <button
+                    type="button"
+                    className="btn-fiscal"
+                    disabled={manifestandoNfeId === nfe._id}
+                    onClick={() => manifestarNfeRecebida(nfe, "210240")}
+                  >
+                    Operação não Realizada
+                  </button>
+                </div>
+              </td>
+            </tr>
+          ))
+        )}
+      </tbody>
+    </table>
+  </div>
 </section>
 
 <NfeOperacional />

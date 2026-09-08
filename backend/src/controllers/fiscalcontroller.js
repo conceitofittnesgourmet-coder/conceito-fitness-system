@@ -11,6 +11,7 @@ const xml2js = require("xml2js");
 const {
   buscarNfePorChave,
   buscarDocumentosPorNsu,
+  manifestarNfeRecebida,
 } = require("../services/nfeDistribuicaoService");
 
 
@@ -388,27 +389,44 @@ exports.buscarNfesRecebidas = async (
   res
 ) => {
   try {
+    const empresaAtiva =
+      await Empresa.findOne({
+        ativa: true,
+      }).select("_id");
+
+    if (!empresaAtiva) {
+      return res.status(500).json({
+        success: false,
+        message:
+          "Nenhuma empresa ativa foi encontrada.",
+      });
+    }
+
     const resultado =
       await buscarDocumentosPorNsu();
 
+    const notasRecebidas =
+      await NfeRecebida.find({
+        empresa: empresaAtiva._id,
+      })
+        .select(
+          "-xmlCompleto -resumoXml"
+        )
+        .sort({
+          dataEmissao: -1,
+          createdAt: -1,
+        })
+        .lean();
+
     return res.json({
       success: true,
-
-      cStat:
-        resultado.cStat,
-
-      xMotivo:
-        resultado.xMotivo,
-
-      ultNSU:
-        resultado.ultNSU,
-
-      maxNSU:
-        resultado.maxNSU,
-
-      documentos:
-        resultado.documentos,
-
+      cStat: resultado.cStat,
+      xMotivo: resultado.xMotivo,
+      ultNSU: resultado.ultNSU,
+      maxNSU: resultado.maxNSU,
+      documentosRecebidos:
+        resultado.documentos?.length || 0,
+      notas: notasRecebidas,
       message:
         resultado.xMotivo ||
         "Consulta realizada com sucesso.",
@@ -428,6 +446,123 @@ exports.buscarNfesRecebidas = async (
   }
 };
 
+exports.manifestarNfeRecebidaController = async (
+  req,
+  res
+) => {
+  try {
+    const id =
+      String(
+        req.params.id || ""
+      ).trim();
+
+    const tipoEvento =
+      String(
+        req.body?.tipoEvento || ""
+      ).trim();
+
+    const justificativa =
+      String(
+        req.body?.justificativa || ""
+      ).trim();
+
+    const tiposPermitidos = [
+      "210200",
+      "210210",
+      "210220",
+      "210240",
+    ];
+
+    if (!mongoose.isValidObjectId(id)) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "ID da NF-e recebida inválido.",
+      });
+    }
+
+    if (
+      !tiposPermitidos.includes(
+        tipoEvento
+      )
+    ) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Tipo de manifestação inválido.",
+      });
+    }
+
+    if (
+      tipoEvento === "210240" &&
+      justificativa.length < 15
+    ) {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Informe uma justificativa para Operação não Realizada.",
+      });
+    }
+
+    const resultado =
+      await manifestarNfeRecebida({
+        nfeRecebidaId: id,
+        tipoEvento,
+        justificativa,
+        ambiente: "producao",
+      });
+
+    return res.json({
+      success:
+        resultado.success,
+
+      eventoDuplicado:
+        resultado.eventoDuplicado ||
+        false,
+
+      cStat:
+        resultado.cStat,
+
+      xMotivo:
+        resultado.xMotivo,
+
+      protocolo:
+        resultado.protocolo,
+
+      dataRegistro:
+        resultado.dataRegistro,
+
+      chaveAcesso:
+        resultado.chaveAcesso,
+
+      tipoEvento:
+        resultado.tipoEvento,
+
+      statusManifestacao:
+        resultado.statusManifestacao,
+
+      message:
+        resultado.eventoDuplicado
+          ? "Esta manifestação já estava registrada na SEFAZ e foi sincronizada com o ERP."
+          : resultado.success
+            ? "Manifestação registrada com sucesso."
+            : resultado.xMotivo ||
+              "A manifestação não foi aceita pela SEFAZ.",
+    });
+  } catch (error) {
+    console.log(
+      "ERRO MANIFESTAR NF-E RECEBIDA:",
+      error
+    );
+
+    return res.status(500).json({
+      success: false,
+      message:
+        error.message ||
+        "Erro ao manifestar NF-e recebida.",
+    });
+  }
+};
 
 exports.importarNfeRecebida = async (req, res) => {
   let session = null;
