@@ -1,6 +1,9 @@
 const express = require("express");
 const router = express.Router();
 const controller = require("../controllers/nfeController");
+const authMiddleware = require("../middlewares/authmiddleware");
+
+router.use(authMiddleware);
 
 router.get("/", controller.listar);
 router.get("/diagnostico/status", controller.diagnostico);
