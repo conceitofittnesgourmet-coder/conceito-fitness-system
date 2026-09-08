@@ -11,7 +11,7 @@ const nfeRecebidaSchema = new mongoose.Schema(
 
     nsu: {
       type: String,
-      required: true,
+      default: "",
       trim: true,
     },
 
@@ -155,6 +155,12 @@ nfeRecebidaSchema.index(
   },
   {
     unique: true,
+    partialFilterExpression: {
+      nsu: {
+        $type: "string",
+        $gt: "",
+      },
+    },
   }
 );
 

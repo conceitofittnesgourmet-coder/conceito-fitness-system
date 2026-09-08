@@ -321,9 +321,6 @@ async function persistirDocumentosDistribuicao({
       documento?.nsu || ""
     ).trim();
 
-    if (!nsu) {
-      continue;
-    }
 
     const interpretado =
       interpretarDocumentoDistribuicao(
@@ -334,6 +331,10 @@ async function persistirDocumentosDistribuicao({
       String(
         interpretado.chaveAcesso || ""
       ).trim();
+
+    if (!nsu && chave.length !== 44) {
+      continue;
+    }
 
     /*
      * Por enquanto os eventos distribuídos não
@@ -352,16 +353,22 @@ async function persistirDocumentosDistribuicao({
             empresa: empresa._id,
             chaveAcesso: chave,
           },
-          {
-            $addToSet: {
-              nsus: nsu,
-            },
+          (() => {
+            const atualizacaoEvento = {
+              $set: {
+                ultimaSincronizacao:
+                  agora,
+              },
+            };
 
-            $set: {
-              ultimaSincronizacao:
-                agora,
-            },
-          }
+            if (nsu) {
+              atualizacaoEvento.$addToSet = {
+                nsus: nsu,
+              };
+            }
+
+            return atualizacaoEvento;
+          })()
         );
       }
 
@@ -386,7 +393,7 @@ async function persistirDocumentosDistribuicao({
         });
     }
 
-    if (!existente) {
+    if (!existente && nsu) {
       existente =
         await NfeRecebida.findOne({
           empresa: empresa._id,
@@ -404,11 +411,13 @@ async function persistirDocumentosDistribuicao({
         ultimaSincronizacao:
           agora,
       },
-
-      $addToSet: {
-        nsus: nsu,
-      },
     };
+
+    if (nsu) {
+      atualizacao.$addToSet = {
+        nsus: nsu,
+      };
+    }
 
     if (chave) {
       atualizacao.$set.chaveAcesso =
@@ -513,13 +522,17 @@ async function persistirDocumentosDistribuicao({
        * da existência do campo nsus[].
        * Incluímos também o NSU original.
        */
-      if (existente.nsu) {
+      if (nsu && existente.nsu) {
         atualizacao.$addToSet.nsus = {
           $each: [
             String(existente.nsu),
             nsu,
           ],
         };
+      }
+
+      if (nsu && !existente.nsu) {
+        atualizacao.$set.nsu = nsu;
       }
 
       await NfeRecebida.updateOne(
@@ -537,7 +550,6 @@ async function persistirDocumentosDistribuicao({
      */
     atualizacao.$setOnInsert = {
       empresa: empresa._id,
-      nsu,
 
       primeiraSincronizacao:
         agora,
@@ -549,11 +561,22 @@ async function persistirDocumentosDistribuicao({
         false,
     };
 
+    if (nsu) {
+      atualizacao.$setOnInsert.nsu = nsu;
+    }
+
+    const filtroUpsert = chave
+      ? {
+          empresa: empresa._id,
+          chaveAcesso: chave,
+        }
+      : {
+          empresa: empresa._id,
+          nsu,
+        };
+
     await NfeRecebida.updateOne(
-      {
-        empresa: empresa._id,
-        nsu,
-      },
+      filtroUpsert,
       atualizacao,
       {
         upsert: true,
