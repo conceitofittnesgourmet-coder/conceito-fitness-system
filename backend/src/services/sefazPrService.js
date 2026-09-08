@@ -23,6 +23,8 @@ const NAMESPACES_WSDL = {
     "http://www.portalfiscal.inf.br/nfe/wsdl/NFeConsultaProtocolo4",
   statusServico:
     "http://www.portalfiscal.inf.br/nfe/wsdl/NFeStatusServico4",
+  consultaCadastro:
+    "http://www.portalfiscal.inf.br/nfe/wsdl/CadConsultaCadastro4",
 };
 
 function normalizarModelo(modelo = MODELO_NFCE) {
@@ -142,6 +144,15 @@ function obterUrlsSefaz(modelo = MODELO_NFCE, ambiente) {
           ambienteNormalizado
         )
       ] || `${host}/NFeStatusServico4`,
+
+    consultaCadastro:
+      process.env[
+        variavelUrl(
+          modeloNormalizado,
+          "CONSULTA_CADASTRO",
+          ambienteNormalizado
+        )
+      ] || `${host}/CadConsultaCadastro4`,
   };
 }
 
@@ -511,6 +522,57 @@ async function consultarStatusDocumentoFiscal({
   };
 }
 
+function montarConsCad({ cnpj, ie, cpf, uf = "PR" } = {}) {
+  const cnpjNum = somenteNumeros(cnpj);
+  const ieNum = somenteNumeros(ie);
+  const cpfNum = somenteNumeros(cpf);
+
+  let documento = "";
+  if (cnpjNum) documento = `<CNPJ>${cnpjNum}</CNPJ>`;
+  else if (ieNum) documento = `<IE>${ieNum}</IE>`;
+  else if (cpfNum) documento = `<CPF>${cpfNum}</CPF>`;
+  else throw new Error("Informe CNPJ, IE ou CPF para consulta cadastral.");
+
+  return (
+    `<?xml version="1.0" encoding="UTF-8"?>` +
+    `<ConsCad xmlns="${NAMESPACE_NFE}" versao="2.00">` +
+    `<infCons><xServ>CONS-CAD</xServ><UF>${String(uf || "PR").toUpperCase()}</UF>` +
+    documento +
+    `</infCons></ConsCad>`
+  );
+}
+
+async function consultarCadastroContribuinte({ cnpj, ie, cpf, uf = "PR", ambiente = "producao" } = {}) {
+  const ambienteNormalizado = normalizarAmbiente(ambiente);
+  const urls = obterUrlsSefaz(MODELO_NFE, ambienteNormalizado);
+
+  const resposta = await enviarMensagemSefaz({
+    url: urls.consultaCadastro,
+    namespaceWsdl: NAMESPACES_WSDL.consultaCadastro,
+    xmlMensagem: montarConsCad({ cnpj, ie, cpf, uf }),
+    nomeServico: "Consulta cadastro de contribuinte NF-e",
+    timeout: 30000,
+  });
+
+  const xml = obterXmlFiscal(resposta);
+  const infCad = extrairBloco(xml, "infCad") || xml;
+
+  return {
+    cStat: extrairTag(xml, "cStat"),
+    xMotivo: extrairTag(xml, "xMotivo"),
+    uf: extrairTag(infCad, "UF"),
+    ie: extrairTag(infCad, "IE"),
+    cnpj: extrairTag(infCad, "CNPJ"),
+    cpf: extrairTag(infCad, "CPF"),
+    razaoSocial: extrairTag(infCad, "xNome"),
+    nomeFantasia: extrairTag(infCad, "xFant"),
+    situacaoIe: extrairTag(infCad, "cSit"),
+    indicadorCredenciamentoNfe: extrairTag(infCad, "indCredNFe"),
+    ambiente: ambienteNormalizado,
+    xmlRetorno: xml,
+  };
+}
+
 function consultarStatusServico(ambiente) {
   return consultarStatusDocumentoFiscal({
     modelo: MODELO_NFCE,
@@ -556,6 +618,9 @@ module.exports = {
   consultarDocumentoPorChave,
   consultarNfcePorChave,
   consultarNfePorChave,
+
+  montarConsCad,
+  consultarCadastroContribuinte,
 
   montarConsStatServ,
   consultarStatusDocumentoFiscal,

@@ -195,6 +195,18 @@ const itemNfeSchema = new mongoose.Schema(
       default: 0,
     },
 
+    pedidoCompra: {
+      type: String,
+      default: "",
+      trim: true,
+    },
+
+    itemPedidoCompra: {
+      type: Number,
+      default: null,
+    },
+
+
     codigoBeneficioFiscal: {
       type: String,
       default: "",

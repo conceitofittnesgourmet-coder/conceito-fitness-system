@@ -41,6 +41,9 @@ function NfeOperacional() {
   const [erros, setErros] = useState([]);
   const [validacao, setValidacao] = useState(null);
   const [statusSefaz, setStatusSefaz] = useState(null);
+  const [pedidoCompra, setPedidoCompra] = useState("");
+  const [requisicaoCompra, setRequisicaoCompra] = useState("");
+  const [informacoesComplementares, setInformacoesComplementares] = useState("");
 
   const pedidoSelecionado = useMemo(
     () => pedidos.find((pedido) => pedido._id === pedidoId),
@@ -97,6 +100,9 @@ function NfeOperacional() {
 
   function selecionarPedido(id) {
   setPedidoId(id);
+  setPedidoCompra("");
+  setRequisicaoCompra("");
+  setInformacoesComplementares("");
   invalidarValidacao();
 
   if (!id) {
@@ -219,7 +225,10 @@ function NfeOperacional() {
         formaPagamento: "17",
         descricaoPagamento: pedidoSelecionado?.pagamento || "PIX",
         consumidorFinal: true,
-        indicadorPresenca: pedidoSelecionado?.tipo === "delivery" ? 2 : 1,
+        indicadorPresenca: pedidoSelecionado?.tipo === "delivery" ? 9 : 1,
+        pedidoCompra,
+        requisicaoCompra,
+        informacoesComplementares,
       });
 
       setValidacao(response.data.validacao || null);
@@ -253,7 +262,10 @@ function NfeOperacional() {
         formaPagamento: "17",
         descricaoPagamento: pedidoSelecionado?.pagamento || "PIX",
         consumidorFinal: true,
-        indicadorPresenca: pedidoSelecionado?.tipo === "delivery" ? 2 : 1,
+        indicadorPresenca: pedidoSelecionado?.tipo === "delivery" ? 9 : 1,
+        pedidoCompra,
+        requisicaoCompra,
+        informacoesComplementares,
       });
 
       setMensagem(response.data.message || "NF-e processada.");
@@ -413,6 +425,18 @@ function NfeOperacional() {
         <label className="nfe-campo">
           <span>UF</span>
           <input maxLength={2} value={destinatario.endereco.uf} onChange={(e) => atualizarEndereco("uf", e.target.value.toUpperCase())} />
+        </label>
+        <label className="nfe-campo">
+          <span>Ordem de Compra (xPed)</span>
+          <input value={pedidoCompra} onChange={(e) => { setPedidoCompra(e.target.value); invalidarValidacao(); }} placeholder="Ex.: 13100" />
+        </label>
+        <label className="nfe-campo">
+          <span>Requisição</span>
+          <input value={requisicaoCompra} onChange={(e) => { setRequisicaoCompra(e.target.value); invalidarValidacao(); }} placeholder="Ex.: 540485" />
+        </label>
+        <label className="nfe-campo nfe-campo-largo">
+          <span>Informações complementares</span>
+          <input value={informacoesComplementares} onChange={(e) => { setInformacoesComplementares(e.target.value); invalidarValidacao(); }} placeholder="Ex.: ORDEM DE COMPRA Nº 13.100 - REQUISIÇÃO Nº 540485" />
         </label>
       </div>
 

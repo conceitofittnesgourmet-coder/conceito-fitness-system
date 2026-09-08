@@ -549,6 +549,16 @@ empresaId = empresa._id;
     dados.valorDesconto ?? pedido.desconto ?? 0,
     dados.valorFrete ?? pedido.taxaEntrega ?? 0
   );
+
+  const pedidoCompra = String(dados.pedidoCompra || "").replace(/\D/g, "");
+  const itensPedidoCompra = Array.isArray(dados.itensPedidoCompra) ? dados.itensPedidoCompra : [];
+
+  if (pedidoCompra) {
+    itens.forEach((item, idx) => {
+      item.pedidoCompra = pedidoCompra;
+      item.itemPedidoCompra = Number(itensPedidoCompra[idx] || (idx + 1));
+    });
+  }
   const resumoTotais = totais(itens, {
     ...dados,
     valorFrete: dados.valorFrete ?? pedido.taxaEntrega ?? 0,
@@ -678,6 +688,16 @@ const itens = itensDoPedido(
     dados.valorFrete ?? pedido.taxaEntrega ?? 0
   );
 
+  const pedidoCompra = String(dados.pedidoCompra || "").replace(/\D/g, "");
+  const itensPedidoCompra = Array.isArray(dados.itensPedidoCompra) ? dados.itensPedidoCompra : [];
+
+  if (pedidoCompra) {
+    itens.forEach((item, idx) => {
+      item.pedidoCompra = pedidoCompra;
+      item.itemPedidoCompra = Number(itensPedidoCompra[idx] || (idx + 1));
+    });
+  }
+
 const t = totais(itens, {
   ...dados,
   valorFrete: dados.valorFrete ?? pedido.taxaEntrega ?? 0,
@@ -695,7 +715,7 @@ const t = totais(itens, {
   });
 
   const nr=await reservar(empresaId,dados.ambiente,dados.serie);
-  const nfe=await Nfe.create({ empresa:empresaId, pedido:pedido._id, cliente:null, numero:nr.numero, serie:nr.serie, modelo:"55", ambiente:nr.ambiente, naturezaOperacao:dados.naturezaOperacao || "Venda de mercadoria", tipoOperacao:1, finalidade:1, consumidorFinal:dados.consumidorFinal ?? true, indicadorPresenca:dados.indicadorPresenca ?? 1, destinoOperacao:estadoEmpresa(empresa) === dest.endereco.uf ? 1 : 2, modalidadeFrete:num(dados.modalidadeFrete,9), destinatario:dest, itens, totais:t, pagamento: (() => {
+  const nfe=await Nfe.create({ empresa:empresaId, pedido:pedido._id, cliente:null, numero:nr.numero, serie:nr.serie, modelo:"55", ambiente:nr.ambiente, naturezaOperacao:dados.naturezaOperacao || "Venda de mercadoria", tipoOperacao:1, finalidade:1, consumidorFinal:dados.consumidorFinal ?? true, indicadorPresenca:dados.indicadorPresenca !== undefined ? Number(dados.indicadorPresenca) : (["delivery","entrega"].includes(String(pedido.tipo || "").trim().toLowerCase()) ? 9 : 1), destinoOperacao:estadoEmpresa(empresa) === dest.endereco.uf ? 1 : 2, modalidadeFrete:num(dados.modalidadeFrete,9), destinatario:dest, itens, totais:t, pagamento: (() => {
     const pagamentosPedido = Array.isArray(pedido.pagamentos)
       ? pedido.pagamentos
       : [];
