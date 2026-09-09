@@ -337,7 +337,7 @@ function NfeOperacional() {
       const xmlFile = new File([xmlResponse.data], `${baseNome}.xml`, { type: "application/xml" });
       const files = [danfeFile, xmlFile];
 
-      if (navigator.share && (!navigator.canShare || navigator.canShare({ files }))) {
+      if (navigator.share && navigator.canShare && navigator.canShare({ files })) {
         await navigator.share({
           title: `NF-e ${nfe.numero}/${nfe.serie}`,
           text: `NF-e ${nfe.numero}/${nfe.serie} - Conceito Fitness Gourmet`,
