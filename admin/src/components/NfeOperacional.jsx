@@ -324,6 +324,46 @@ function NfeOperacional() {
     }
   }
 
+  async function compartilharNfe(nfe) {
+    try {
+      setMensagem("");
+      const [danfeResponse, xmlResponse] = await Promise.all([
+        api.get(`/nfe/${nfe._id}/danfe`, { responseType: "blob" }),
+        api.get(`/nfe/${nfe._id}/download`, { responseType: "blob" }),
+      ]);
+
+      const baseNome = `NFe-${nfe.numero}-${nfe.serie}`;
+      const danfeFile = new File([danfeResponse.data], `${baseNome}-DANFE.pdf`, { type: "application/pdf" });
+      const xmlFile = new File([xmlResponse.data], `${baseNome}.xml`, { type: "application/xml" });
+      const files = [danfeFile, xmlFile];
+
+      if (navigator.share && (!navigator.canShare || navigator.canShare({ files }))) {
+        await navigator.share({
+          title: `NF-e ${nfe.numero}/${nfe.serie}`,
+          text: `NF-e ${nfe.numero}/${nfe.serie} - Conceito Fitness Gourmet`,
+          files,
+        });
+        return;
+      }
+
+      files.forEach((file) => {
+        const url = window.URL.createObjectURL(file);
+        const link = document.createElement("a");
+        link.href = url;
+        link.download = file.name;
+        document.body.appendChild(link);
+        link.click();
+        link.remove();
+        setTimeout(() => window.URL.revokeObjectURL(url), 60000);
+      });
+      setMensagem("Compartilhamento direto indisponivel neste navegador. DANFE e XML foram baixados.");
+    } catch (error) {
+      if (error?.name !== "AbortError") {
+        setMensagem("Nao foi possivel compartilhar a NF-e.");
+      }
+    }
+  }
+
   return (
     <section className="fiscal-card grande nfe-operacional">
       <div className="nfe-cabecalho">
@@ -508,6 +548,7 @@ function NfeOperacional() {
                   {nfe.status === "processando" && <button className="btn-ver" onClick={() => consultar(nfe._id)}>Consultar</button>}
                   <button className="btn-ver" onClick={() => abrir(`/nfe/${nfe._id}/danfe`)}>DANFE</button>
                   <button className="btn-ver" onClick={() => abrir(`/nfe/${nfe._id}/download`)}>XML</button>
+                  <button className="btn-ver" onClick={() => compartilharNfe(nfe)}>Compartilhar</button>
                 </td>
               </tr>
             ))}
