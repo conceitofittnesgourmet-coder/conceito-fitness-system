@@ -306,8 +306,22 @@ function NfeOperacional() {
     }
   }
 
-  function abrir(path) {
-    window.open(`${api.defaults.baseURL}${path}`, "_blank", "noopener,noreferrer");
+  async function abrir(path) {
+    try {
+      setMensagem("");
+      const response = await api.get(path, { responseType: "blob" });
+      const url = window.URL.createObjectURL(response.data);
+      const link = document.createElement("a");
+      link.href = url;
+      link.target = "_blank";
+      link.rel = "noopener noreferrer";
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => window.URL.revokeObjectURL(url), 60000);
+    } catch (error) {
+      setMensagem("Não foi possível abrir o DANFE/XML da NF-e.");
+    }
   }
 
   return (
