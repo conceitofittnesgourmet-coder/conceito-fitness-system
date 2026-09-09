@@ -353,11 +353,14 @@ function NfeOperacional() {
 
       if (compartilhado) return;
 
-      files.forEach((file) => {
-        const url = window.URL.createObjectURL(file);
+      [
+        { blob: danfeResponse.data, nome: `${baseNome}-DANFE.pdf` },
+        { blob: xmlResponse.data, nome: `${baseNome}.xml` },
+      ].forEach(({ blob, nome }) => {
+        const url = window.URL.createObjectURL(blob);
         const link = document.createElement("a");
         link.href = url;
-        link.download = file.name;
+        link.download = nome;
         document.body.appendChild(link);
         link.click();
         link.remove();
