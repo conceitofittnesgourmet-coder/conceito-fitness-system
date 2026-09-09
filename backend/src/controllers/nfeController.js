@@ -11,7 +11,7 @@ const {
   cartaCorrecaoNfe,
 } = require("../services/nfeService");
 const { diagnosticarFiscal } = require("../services/fiscalReadinessService");
-const { gerarDanfeNfeHtml } = require("../services/danfeNfeService");
+const { gerarDanfeNfePdf } = require("../services/danfeNfePdfService");
 
 function obterEmpresaId(req) {
   return (
@@ -558,9 +558,11 @@ exports.visualizarDanfe = async (req, res) => {
   try {
     const nfe = await Nfe.findById(req.params.id).populate("empresa").populate("pedido");
     if (!nfe) return res.status(404).json({ success: false, message: "NF-e não encontrada." });
-    const html = gerarDanfeNfeHtml(nfe);
-    res.setHeader("Content-Type", "text/html; charset=utf-8");
-    return res.send(html);
+    const pdf = await gerarDanfeNfePdf(nfe);
+    res.setHeader("Content-Type", "application/pdf");
+    res.setHeader("Content-Disposition", `inline; filename="NFe-${nfe.numero}-${nfe.serie}-DANFE.pdf"`);
+    res.setHeader("Content-Length", pdf.length);
+    return res.send(pdf);
   } catch (error) {
     return res.status(500).json({ success: false, message: error.message });
   }
