@@ -337,14 +337,21 @@ function NfeOperacional() {
       const xmlFile = new File([xmlResponse.data], `${baseNome}.xml`, { type: "application/xml" });
       const files = [danfeFile, xmlFile];
 
-      if (navigator.share && navigator.canShare && navigator.canShare({ files })) {
-        await navigator.share({
-          title: `NF-e ${nfe.numero}/${nfe.serie}`,
-          text: `NF-e ${nfe.numero}/${nfe.serie} - Conceito Fitness Gourmet`,
-          files,
-        });
-        return;
+      let compartilhado = false;
+      try {
+        if (navigator.share && navigator.canShare && navigator.canShare({ files })) {
+          await navigator.share({
+            title: `NF-e ${nfe.numero}/${nfe.serie}`,
+            text: `NF-e ${nfe.numero}/${nfe.serie} - Conceito Fitness Gourmet`,
+            files,
+          });
+          compartilhado = true;
+        }
+      } catch (shareError) {
+        if (shareError?.name === "AbortError") return;
       }
+
+      if (compartilhado) return;
 
       files.forEach((file) => {
         const url = window.URL.createObjectURL(file);
