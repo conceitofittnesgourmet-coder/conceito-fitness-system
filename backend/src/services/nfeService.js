@@ -704,6 +704,15 @@ const t = totais(itens, {
     valorDesconto: dados.valorDesconto ?? pedido.desconto ?? 0
 });
 
+  const pedidoCompraTexto = String(dados.pedidoCompra || "").trim();
+  const requisicaoCompraTexto = String(dados.requisicaoCompra || "").trim();
+  const informacoesComplementares = String(dados.informacoesComplementares || "").trim() ||
+    [
+      pedidoCompraTexto ? `ORDEM DE COMPRA Nº ${pedidoCompraTexto}` : "",
+      requisicaoCompraTexto ? `REQUISIÇÃO Nº ${requisicaoCompraTexto}` : "",
+    ].filter(Boolean).join(" - ") ||
+    pedido.observacao || "";
+
   // Valida todos os dados antes de reservar numeração, criar a NF-e e gerar o XML.
   // Assim, erros de CPF/CNPJ, endereço, produtos ou certificado não consomem número fiscal.
   validarAntesDeGerarNfe({
@@ -789,7 +798,7 @@ const t = totais(itens, {
         valor: num(p.valor),
       })),
     };
-  })(), informacoesComplementares:dados.informacoesComplementares || pedido.observacao || "", status:"gerada" });
+  })(), informacoesComplementares, status:"gerada" });
   const gerado=gerarXmlNfe({ nfe, empresa }); nfe.xml=gerado.xml; nfe.chaveAcesso=gerado.chaveAcesso; nfe.mensagemSefaz="XML da NF-e gerado. Próxima etapa: assinatura."; registrarHistorico(nfe, "geracao", { status: "gerada", mensagem: nfe.mensagemSefaz }); await nfe.save(); return nfe;
 }
 
