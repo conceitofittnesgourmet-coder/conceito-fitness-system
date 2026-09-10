@@ -329,14 +329,21 @@ function NfeOperacional() {
       const baseNome = `NFe-${nfe.numero}-${nfe.serie}.xml`;
       const xmlFile = new File([response.data], baseNome, { type: "text/xml" });
 
-      if (navigator.share && navigator.canShare && navigator.canShare({ files: [xmlFile] })) {
-        await navigator.share({
-          title: `XML NF-e ${nfe.numero}/${nfe.serie}`,
-          text: `XML da NF-e ${nfe.numero}/${nfe.serie} - Conceito Fitness Gourmet`,
-          files: [xmlFile],
-        });
-        return;
+      let compartilhado = false;
+      try {
+        if (navigator.share && navigator.canShare && navigator.canShare({ files: [xmlFile] })) {
+          await navigator.share({
+            title: `XML NF-e ${nfe.numero}/${nfe.serie}`,
+            text: `XML da NF-e ${nfe.numero}/${nfe.serie} - Conceito Fitness Gourmet`,
+            files: [xmlFile],
+          });
+          compartilhado = true;
+        }
+      } catch (shareError) {
+        if (shareError?.name === "AbortError") return;
       }
+
+      if (compartilhado) return;
 
       const url = window.URL.createObjectURL(response.data);
       const link = document.createElement("a");
