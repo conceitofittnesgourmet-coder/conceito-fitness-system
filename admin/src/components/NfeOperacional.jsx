@@ -674,7 +674,25 @@ function NfeOperacional() {
                 onChange={(e) => setTextoEventoFiscal(e.target.value)}
                 placeholder={eventoFiscal.tipo === "cancelamento" ? "Informe a justificativa fiscal do cancelamento" : "Descreva exatamente a correção necessária"}
               />
+
+
+              <small className="nfe-evento-contador">
+                {textoEventoFiscal.trim().length} / {eventoFiscal.tipo === "cancelamento" ? 255 : 1000} caracteres
+              </small>
             </label>
+
+
+
+            {eventoFiscal.tipo === "carta-correcao" && (
+              <div className="nfe-evento-regras">
+                <strong>Antes de registrar a Carta de Correção</strong>
+                <span>A CC-e não altera o XML original autorizado.</span>
+                <span>Não utilize para corrigir valores, quantidades, base de cálculo, alíquotas ou outros dados que alterem o imposto ou o valor da operação.</span>
+                <span>Não utilize para trocar o emitente ou o destinatário.</span>
+                <span>Não utilize para alterar a data de emissão ou a data de saída.</span>
+                <span>Se já existir uma CC-e anterior, a nova deve conter também todas as correções anteriores que ainda precisam permanecer válidas.</span>
+              </div>
+            )}
 
             <label className="nfe-evento-confirmacao">
               <input
@@ -724,14 +742,118 @@ function NfeOperacional() {
                 <td>{nfe.cStat || "-"} {nfe.mensagemSefaz || ""}</td>
                 <td>{nfe.protocolo || nfe.recibo || "-"}</td>
                 <td className="acoes-nota">
-                  {nfe.status === "processando" && <button className="btn-ver" onClick={() => consultar(nfe._id)}>Consultar</button>}
-                  <button className="btn-ver" onClick={() => abrir(`/nfe/${nfe._id}/danfe`)}>DANFE</button>
-                  <button className="btn-ver" onClick={() => abrir(`/nfe/${nfe._id}/download`)}>XML</button>
-                  <button className="btn-ver" onClick={() => compartilharXml(nfe)}>Compartilhar XML</button>
-                  <button className="btn-ver" onClick={() => compartilharNfe(nfe)}>Compartilhar</button>
-                  {nfe.status === "autorizada" && <button className="btn-ver" onClick={() => abrirEventoFiscal("carta-correcao", nfe)}>Carta de Correção</button>}
-                  {nfe.status === "autorizada" && <button className="btn-ver" onClick={() => abrirEventoFiscal("cancelamento", nfe)}>Cancelar NF-e</button>}
-                </td>
+  <div className="acoes-nota-principais">
+    {nfe.status === "processando" && (
+      <button className="btn-ver" onClick={() => consultar(nfe._id)}>
+        Consultar
+      </button>
+    )}
+
+    <button
+      className="btn-ver"
+      onClick={() => abrir(`/nfe/${nfe._id}/danfe`)}
+    >
+      DANFE
+    </button>
+
+    <button
+      className="btn-ver"
+      onClick={() => abrir(`/nfe/${nfe._id}/download`)}
+    >
+      XML
+    </button>
+
+    <button
+      className="btn-ver"
+      onClick={() => compartilharNfe(nfe)}
+    >
+      Compartilhar
+    </button>
+  </div>
+
+  <details className="acoes-nota-mais">
+    <summary>Mais ações</summary>
+
+    <div className="acoes-nota-menu">
+      <button
+        className="btn-ver"
+        onClick={() => compartilharXml(nfe)}
+      >
+        Compartilhar XML
+      </button>
+
+      {nfe.status === "autorizada" && (
+        <button
+          className="btn-ver"
+          onClick={() => abrirEventoFiscal("carta-correcao", nfe)}
+        >
+          Carta de Correção
+        </button>
+      )}
+
+      {nfe.status === "autorizada" && (
+        <button
+          className="btn-ver"
+          onClick={() => abrirEventoFiscal("cancelamento", nfe)}
+        >
+          Cancelar NF-e
+        </button>
+      )}
+    </div>
+  </details>
+
+  {(nfe.cartaCorrecao?.length > 0 || nfe.cancelamento) && (
+    <div className="nfe-eventos-registrados">
+      <strong>Eventos fiscais registrados</strong>
+
+      {nfe.cartaCorrecao?.map((evento) => (
+        <div
+          className="nfe-evento-registrado"
+          key={`cce-${evento.sequencia}`}
+        >
+          <div>
+            <span>CC-e nº {evento.sequencia}</span>
+            <small>
+              {evento.xMotivo || "Carta de Correção registrada"}
+            </small>
+          </div>
+
+          <button
+            className="btn-ver"
+            onClick={() =>
+              abrir(
+                `/nfe/${nfe._id}/carta-correcao/${evento.sequencia}/xml`
+              )
+            }
+          >
+            XML CC-e
+          </button>
+        </div>
+      ))}
+
+      {nfe.cancelamento && (
+        <div className="nfe-evento-registrado cancelado">
+          <div>
+            <span>Cancelamento</span>
+            <small>
+              {nfe.cancelamento.xMotivo ||
+                "Evento de cancelamento registrado"}
+            </small>
+          </div>
+
+          <button
+            className="btn-ver"
+            onClick={() =>
+              abrir(`/nfe/${nfe._id}/cancelamento/xml`)
+            }
+          >
+            XML Cancelamento
+          </button>
+        </div>
+      )}
+    </div>
+  )}
+</td>
               </tr>
             ))}
             {nfes.length === 0 && <tr><td colSpan="7">Nenhuma NF-e emitida.</td></tr>}
