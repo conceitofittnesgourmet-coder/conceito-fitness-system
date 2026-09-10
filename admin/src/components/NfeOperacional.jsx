@@ -222,7 +222,6 @@ function NfeOperacional() {
     try {
       const response = await api.post(`/nfe/validar/${pedidoId}`, {
         destinatario,
-        formaPagamento: "17",
         descricaoPagamento: pedidoSelecionado?.pagamento || "PIX",
         consumidorFinal: true,
         indicadorPresenca: pedidoSelecionado?.tipo === "delivery" ? 9 : 1,
@@ -259,7 +258,6 @@ function NfeOperacional() {
     try {
       const response = await api.post(`/nfe/processar/${pedidoId}`, {
         destinatario,
-        formaPagamento: "17",
         descricaoPagamento: pedidoSelecionado?.pagamento || "PIX",
         consumidorFinal: true,
         indicadorPresenca: pedidoSelecionado?.tipo === "delivery" ? 9 : 1,
