@@ -802,7 +802,7 @@ function NfeOperacional() {
     </div>
   </details>
 
-  {(nfe.cartaCorrecao?.length > 0 || nfe.cancelamento) && (
+  {(nfe.cartaCorrecao?.length > 0 || nfe.cancelamento?.protocolo) && (
     <div className="nfe-eventos-registrados">
       <strong>Eventos fiscais registrados</strong>
 
@@ -831,7 +831,7 @@ function NfeOperacional() {
         </div>
       ))}
 
-      {nfe.cancelamento && (
+      {nfe.cancelamento?.protocolo && (
         <div className="nfe-evento-registrado cancelado">
           <div>
             <span>Cancelamento</span>
