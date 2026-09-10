@@ -44,6 +44,11 @@ function NfeOperacional() {
   const [pedidoCompra, setPedidoCompra] = useState("");
   const [requisicaoCompra, setRequisicaoCompra] = useState("");
   const [informacoesComplementares, setInformacoesComplementares] = useState("");
+  const [eventoFiscal, setEventoFiscal] = useState(null);
+  const [textoEventoFiscal, setTextoEventoFiscal] = useState("");
+  const [confirmacaoEventoFiscal, setConfirmacaoEventoFiscal] = useState(false);
+  const [confirmacaoDigitadaEventoFiscal, setConfirmacaoDigitadaEventoFiscal] = useState("");
+  const [processandoEventoFiscal, setProcessandoEventoFiscal] = useState(false);
 
   const pedidoSelecionado = useMemo(
     () => pedidos.find((pedido) => pedido._id === pedidoId),
@@ -322,6 +327,64 @@ function NfeOperacional() {
     }
   }
 
+  function abrirEventoFiscal(tipo, nfe) {
+    setEventoFiscal({ tipo, nfe });
+    setTextoEventoFiscal("");
+    setConfirmacaoEventoFiscal(false);
+    setConfirmacaoDigitadaEventoFiscal("");
+    setMensagem("");
+  }
+
+  function fecharEventoFiscal() {
+    if (processandoEventoFiscal) return;
+    setEventoFiscal(null);
+    setTextoEventoFiscal("");
+    setConfirmacaoEventoFiscal(false);
+    setConfirmacaoDigitadaEventoFiscal("");
+  }
+
+  async function processarEventoFiscal() {
+    if (!eventoFiscal?.nfe?._id) return;
+
+    const texto = textoEventoFiscal.trim();
+    const limiteMaximo = eventoFiscal.tipo === "cancelamento" ? 255 : 1000;
+    const ambienteProducao = String(eventoFiscal.nfe.ambiente || "").toLowerCase() === "producao";
+    const palavraConfirmacao = eventoFiscal.tipo === "cancelamento" ? "CANCELAR" : "ENVIAR";
+    const confirmacaoProducaoValida = !ambienteProducao || confirmacaoDigitadaEventoFiscal.trim().toUpperCase() === palavraConfirmacao;
+
+    if (!confirmacaoEventoFiscal || !confirmacaoProducaoValida || texto.length < 15 || texto.length > limiteMaximo) {
+      setMensagem(ambienteProducao && !confirmacaoProducaoValida ? `Para continuar em produção, digite ${palavraConfirmacao} corretamente.` : `O texto deve possuir entre 15 e ${limiteMaximo} caracteres e a confirmação deve estar marcada.`);
+      return;
+    }
+
+    try {
+      setProcessandoEventoFiscal(true);
+      setMensagem("");
+
+      const endpoint = eventoFiscal.tipo === "cancelamento"
+        ? `/nfe/cancelar/${eventoFiscal.nfe._id}`
+        : `/nfe/carta-correcao/${eventoFiscal.nfe._id}`;
+
+      const payload = eventoFiscal.tipo === "cancelamento"
+        ? { justificativa: texto }
+        : { correcao: texto };
+
+      const response = await api.post(endpoint, payload);
+
+      setMensagem(response.data?.message || "Evento fiscal processado pela SEFAZ.");
+      await carregar();
+
+      setEventoFiscal(null);
+      setTextoEventoFiscal("");
+      setConfirmacaoEventoFiscal(false);
+      setConfirmacaoDigitadaEventoFiscal("");
+    } catch (error) {
+      setMensagem(error.response?.data?.message || "Não foi possível processar o evento fiscal.");
+    } finally {
+      setProcessandoEventoFiscal(false);
+    }
+  }
+
   async function compartilharXml(nfe) {
     try {
       setMensagem("");
@@ -577,6 +640,75 @@ function NfeOperacional() {
         </div>
       )}
 
+      {eventoFiscal && (
+        <div className="nfe-evento-overlay">
+          <div className="nfe-evento-modal">
+            <div className="nfe-evento-cabecalho">
+              <div>
+                <strong>{eventoFiscal.tipo === "cancelamento" ? "Cancelar NF-e" : "Carta de Correção"}</strong>
+                <span>NF-e {eventoFiscal.nfe.numero}/{eventoFiscal.nfe.serie} - {eventoFiscal.nfe.destinatario?.nomeRazaoSocial || "Destinatário"}</span>
+              </div>
+              <button type="button" className="btn-ver" onClick={fecharEventoFiscal} disabled={processandoEventoFiscal}>Fechar</button>
+            </div>
+
+            <div className={eventoFiscal.tipo === "cancelamento" ? "nfe-evento-aviso cancelamento" : "nfe-evento-aviso correcao"}>
+              {eventoFiscal.tipo === "cancelamento"
+                ? "ATENÇÃO: o cancelamento é um evento fiscal real e, depois de confirmado pela SEFAZ, a NF-e ficará cancelada."
+                : "A Carta de Correção é um evento fiscal vinculado à NF-e autorizada. Ela não altera o XML original da nota."}
+            </div>
+
+            <div className="nfe-evento-resumo">
+              <div><span>Chave</span><strong>{eventoFiscal.nfe.chaveAcesso || "-"}</strong></div>
+              <div><span>Protocolo</span><strong>{eventoFiscal.nfe.protocolo || "-"}</strong></div>
+              <div><span>Total</span><strong>{dinheiro(eventoFiscal.nfe.totais?.valorTotal)}</strong></div>
+              <div><span>Ambiente</span><strong>{String(eventoFiscal.nfe.ambiente || "").toUpperCase()}</strong></div>
+            </div>
+
+            <label className="nfe-campo nfe-campo-largo">
+              <span>{eventoFiscal.tipo === "cancelamento" ? "Justificativa do cancelamento" : "Texto da Carta de Correção"}</span>
+              <textarea
+                rows="5"
+                minLength={15}
+                maxLength={eventoFiscal.tipo === "cancelamento" ? 255 : 1000}
+                value={textoEventoFiscal}
+                onChange={(e) => setTextoEventoFiscal(e.target.value)}
+                placeholder={eventoFiscal.tipo === "cancelamento" ? "Informe a justificativa fiscal do cancelamento" : "Descreva exatamente a correção necessária"}
+              />
+            </label>
+
+            <label className="nfe-evento-confirmacao">
+              <input
+                type="checkbox"
+                checked={confirmacaoEventoFiscal}
+                onChange={(e) => setConfirmacaoEventoFiscal(e.target.checked)}
+              />
+              <span>{eventoFiscal.tipo === "cancelamento" ? "Confirmo que desejo cancelar esta NF-e." : "Confirmo que revisei o texto desta Carta de Correção."}</span>
+            </label>
+
+            {String(eventoFiscal.nfe.ambiente || "").toLowerCase() === "producao" && (
+              <label className="nfe-campo nfe-campo-largo nfe-evento-confirmacao-digitada">
+                <span>Confirmação de segurança</span>
+                <input
+                  type="text"
+                  value={confirmacaoDigitadaEventoFiscal}
+                  onChange={(e) => setConfirmacaoDigitadaEventoFiscal(e.target.value.toUpperCase())}
+                  placeholder={eventoFiscal.tipo === "cancelamento" ? "Digite CANCELAR" : "Digite ENVIAR"}
+                  autoComplete="off"
+                />
+                <small>Para continuar em produção, digite {eventoFiscal.tipo === "cancelamento" ? "CANCELAR" : "ENVIAR"}.</small>
+              </label>
+            )}
+
+            <div className="nfe-evento-acoes">
+              <button type="button" className="btn-ver" onClick={fecharEventoFiscal} disabled={processandoEventoFiscal}>Voltar</button>
+              <button type="button" className="btn-fiscal salvar" onClick={processarEventoFiscal} disabled={!confirmacaoEventoFiscal || textoEventoFiscal.trim().length < 15 || textoEventoFiscal.trim().length > (eventoFiscal.tipo === "cancelamento" ? 255 : 1000) || (String(eventoFiscal.nfe.ambiente || "").toLowerCase() === "producao" && confirmacaoDigitadaEventoFiscal.trim().toUpperCase() !== (eventoFiscal.tipo === "cancelamento" ? "CANCELAR" : "ENVIAR")) || processandoEventoFiscal}>
+                {eventoFiscal.tipo === "cancelamento" ? "Confirmar cancelamento" : "Registrar Carta de Correção"}
+              </button>
+            </div>
+          </div>
+        </div>
+      )}
+
       <div className="fiscal-table-wrap nfe-historico">
         <table>
           <thead>
@@ -597,6 +729,8 @@ function NfeOperacional() {
                   <button className="btn-ver" onClick={() => abrir(`/nfe/${nfe._id}/download`)}>XML</button>
                   <button className="btn-ver" onClick={() => compartilharXml(nfe)}>Compartilhar XML</button>
                   <button className="btn-ver" onClick={() => compartilharNfe(nfe)}>Compartilhar</button>
+                  {nfe.status === "autorizada" && <button className="btn-ver" onClick={() => abrirEventoFiscal("carta-correcao", nfe)}>Carta de Correção</button>}
+                  {nfe.status === "autorizada" && <button className="btn-ver" onClick={() => abrirEventoFiscal("cancelamento", nfe)}>Cancelar NF-e</button>}
                 </td>
               </tr>
             ))}
