@@ -322,6 +322,38 @@ function NfeOperacional() {
     }
   }
 
+  async function compartilharXml(nfe) {
+    try {
+      setMensagem("");
+      const response = await api.get(`/nfe/${nfe._id}/download`, { responseType: "blob" });
+      const baseNome = `NFe-${nfe.numero}-${nfe.serie}.xml`;
+      const xmlFile = new File([response.data], baseNome, { type: "text/xml" });
+
+      if (navigator.share && navigator.canShare && navigator.canShare({ files: [xmlFile] })) {
+        await navigator.share({
+          title: `XML NF-e ${nfe.numero}/${nfe.serie}`,
+          text: `XML da NF-e ${nfe.numero}/${nfe.serie} - Conceito Fitness Gourmet`,
+          files: [xmlFile],
+        });
+        return;
+      }
+
+      const url = window.URL.createObjectURL(response.data);
+      const link = document.createElement("a");
+      link.href = url;
+      link.download = baseNome;
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+      setTimeout(() => window.URL.revokeObjectURL(url), 60000);
+      setMensagem("Compartilhamento direto indisponivel. O XML foi baixado para envio.");
+    } catch (error) {
+      if (error?.name !== "AbortError") {
+        setMensagem("Nao foi possivel compartilhar o XML da NF-e.");
+      }
+    }
+  }
+
   async function compartilharNfe(nfe) {
     try {
       setMensagem("");
@@ -556,6 +588,7 @@ function NfeOperacional() {
                   {nfe.status === "processando" && <button className="btn-ver" onClick={() => consultar(nfe._id)}>Consultar</button>}
                   <button className="btn-ver" onClick={() => abrir(`/nfe/${nfe._id}/danfe`)}>DANFE</button>
                   <button className="btn-ver" onClick={() => abrir(`/nfe/${nfe._id}/download`)}>XML</button>
+                  <button className="btn-ver" onClick={() => compartilharXml(nfe)}>Compartilhar XML</button>
                   <button className="btn-ver" onClick={() => compartilharNfe(nfe)}>Compartilhar</button>
                 </td>
               </tr>
