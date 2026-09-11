@@ -2248,11 +2248,18 @@ exports.conferirNotaEntrada = async (req, res) => {
       });
     }
 
-    if (nota.estoqueProcessado) {
+        if (nota.estoqueProcessado) {
+      return res.status(400).json({
+        success: false,
+        message: "O estoque desta nota já foi processado.",
+      });
+    }
+
+    if (nota.status !== "conferida") {
       return res.status(400).json({
         success: false,
         message:
-          "O estoque desta nota já foi processado. A conferência não pode mais ser alterada.",
+          "Esta nota precisa ser conferida antes de processar o estoque.",
       });
     }
 
@@ -2583,6 +2590,14 @@ exports.processarNotaNoEstoque = async (req, res) => {
       });
     }
 
+    if (nota.status !== "conferida") {
+      return res.status(400).json({
+        success: false,
+        message:
+          "Esta nota precisa ser conferida antes de processar o estoque.",
+      });
+    }
+
     // ============================
 // PRÉ-VALIDAÇÃO DOS ITENS
 // Nenhuma alteração de estoque
@@ -2800,6 +2815,12 @@ if (notaTransacao.estoqueProcessado) {
   );
 }
 
+if (notaTransacao.status !== "conferida") {
+  throw new Error(
+    "Esta nota precisa ser conferida antes de processar o estoque."
+  );
+}
+
 nota = notaTransacao;
 
 const travaProcessamento =
@@ -2807,12 +2828,7 @@ const travaProcessamento =
     {
   _id: nota._id,
   estoqueProcessado: false,
-  status: {
-  $in: [
-    "rascunho",
-    "conferida",
-  ],
-},
+  status: "conferida",
 },
     {
       $set: {

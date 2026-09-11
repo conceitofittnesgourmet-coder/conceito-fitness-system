@@ -570,7 +570,9 @@ if (
       return;
     }
 
-    alert("Nota fiscal salva com sucesso e entrada registrada.");
+      alert(
+      "Nota fiscal salva como rascunho. Faça a conferência dos itens antes de processar o estoque."
+    );
 
     setNota({
       numero: "",
@@ -1257,9 +1259,9 @@ async function processarEstoqueNota(nota) {
 
     const confirmar = window.confirm(
       `Processar a NF-e ${nota.numero} no estoque?\n\n` +
-      "O sistema criará o fornecedor quando necessário, " +
-      "cadastrará os insumos ainda inexistentes, atualizará " +
-      "o estoque e registrará a compra."
+      "Esta ação movimentará o estoque, atualizará os custos " +
+      "dos insumos e registrará a compra. Confirme somente " +
+      "após conferir todos os itens da nota."
     );
 
     if (!confirmar) return;
@@ -2164,7 +2166,14 @@ const totalNota =
                           <FaEye /> Ver
                         </button>
 
-                        {!nota.estoqueProcessado ? (
+                        {nota.estoqueProcessado ? (
+  <button
+    className="btn-fiscal"
+    disabled
+  >
+    Estoque Processado
+  </button>
+) : nota.status === "conferida" ? (
   <button
     className="btn-fiscal salvar"
     onClick={() => processarEstoqueNota(nota)}
@@ -2176,7 +2185,7 @@ const totalNota =
     className="btn-fiscal"
     disabled
   >
-    Estoque Processado
+    Conferir antes de processar
   </button>
 )}
 
