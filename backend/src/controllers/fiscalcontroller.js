@@ -2248,22 +2248,14 @@ exports.conferirNotaEntrada = async (req, res) => {
       });
     }
 
-        if (nota.estoqueProcessado) {
+    if (nota.estoqueProcessado) {
       return res.status(400).json({
         success: false,
         message: "O estoque desta nota já foi processado.",
       });
     }
 
-    if (nota.status !== "conferida") {
-      return res.status(400).json({
-        success: false,
-        message:
-          "Esta nota precisa ser conferida antes de processar o estoque.",
-      });
-    }
-
-        const itensPorId =
+    const itensPorId =
       new Map(
         nota.itens.map((item) => [
           String(item._id),
