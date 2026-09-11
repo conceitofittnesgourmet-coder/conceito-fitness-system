@@ -79,13 +79,14 @@ parcelas: [],
   });
 
   const [item, setItem] = useState({
-    materiaPrima: "",
-    nome: "",
-    codigo: "",
-    unidade: "unidade",
-    quantidade: "",
-    valorUnitario: "",
-  });
+  materiaPrima: "",
+  nome: "",
+  codigo: "",
+  codigoBarrasOrigem: "",
+  unidade: "unidade",
+  quantidade: "",
+  valorUnitario: "",
+});
 
   const [itens, setItens] = useState([]);
 
@@ -206,9 +207,64 @@ parcelas: [],
     return `R$ ${Number(valor || 0).toFixed(2)}`;
   }
 
-  function dataBR(data) {
+    function dataBR(data) {
     if (!data) return "-";
     return new Date(data).toLocaleDateString("pt-BR");
+  }
+
+  function normalizarUnidadeNotaFrontend(unidade) {
+    const valor = String(unidade || "")
+      .trim()
+      .toUpperCase();
+
+    if (valor.startsWith("KG")) return "kg";
+    if (valor === "G" || valor.startsWith("GR")) return "g";
+
+    if (
+      valor === "L" ||
+      valor.startsWith("LT") ||
+      valor.startsWith("LIT")
+    ) {
+      return "litro";
+    }
+
+    if (valor.startsWith("ML")) return "ml";
+    if (valor.startsWith("PCT")) return "pacote";
+    if (valor.startsWith("CX")) return "caixa";
+
+    return "unidade";
+  }
+
+    function unidadeNotaReconhecidaFrontend(unidade) {
+    const valor = String(unidade || "")
+      .trim()
+      .toUpperCase();
+
+    if (valor.startsWith("KG")) return true;
+    if (valor === "G" || valor.startsWith("GR")) return true;
+
+    if (
+      valor === "L" ||
+      valor.startsWith("LT") ||
+      valor.startsWith("LIT")
+    ) {
+      return true;
+    }
+
+    if (valor.startsWith("ML")) return true;
+    if (valor.startsWith("PCT")) return true;
+    if (valor.startsWith("CX")) return true;
+
+    if (
+      valor === "UN" ||
+      valor === "UND" ||
+      valor === "UNID" ||
+      valor === "UNIDADE"
+    ) {
+      return true;
+    }
+
+    return false;
   }
 
   async function buscarNfePorChave() {
@@ -428,6 +484,8 @@ parcelas: [],
       materiaPrima: item.materiaPrima || null,
       nome: item.nome || materia?.nome || "Item da nota",
       codigo: item.codigo || "",
+      codigoBarrasOrigem:
+        item.codigoBarrasOrigem || "",
       unidade: item.unidade || materia?.unidade || "unidade",
       quantidade: Number(item.quantidade),
       valorUnitario: Number(item.valorUnitario),
@@ -439,6 +497,7 @@ parcelas: [],
       materiaPrima: "",
       nome: "",
       codigo: "",
+      codigoBarrasOrigem: "",
       unidade: "unidade",
       quantidade: "",
       valorUnitario: "",
@@ -496,6 +555,8 @@ if (
         materiaPrima: item.materiaPrima || null,
         nome: item.nome,
         codigo: item.codigo || "",
+        codigoBarrasOrigem:
+          item.codigoBarrasOrigem || "",
         unidade: item.unidade || "unidade",
         quantidade: Number(item.quantidade || 0),
         valorUnitario: Number(item.valorUnitario || 0),
@@ -919,10 +980,13 @@ async function cadastrarMateriaPrimaDaNfe(index) {
     return;
   }
 
+    const unidadeSugerida =
+    normalizarUnidadeNotaFrontend(item.unidade);
+
   const unidadeInformada = window.prompt(
     "Unidade de controle do estoque:\n\n" +
       "Opções: kg, g, litro, ml, unidade, pacote ou caixa",
-    "kg"
+    unidadeSugerida
   );
 
   if (unidadeInformada === null) return;
@@ -949,9 +1013,10 @@ async function cadastrarMateriaPrimaDaNfe(index) {
   }
 
   try {
-    const resposta = await api.post("/materias-primas", {
+        const resposta = await api.post("/materias-primas", {
       nome: nome.trim(),
       codigo: item.codigo || "",
+      codigoBarras: item.codigoBarrasOrigem || "",
       categoria: "Insumos",
       unidade,
       estoqueAtual: 0,
@@ -988,6 +1053,41 @@ async function cadastrarMateriaPrimaDaNfe(index) {
       );
     });
 
+        const unidadeXml =
+  String(item.unidade || "")
+    .trim()
+    .toUpperCase();
+
+const unidadeOrigem =
+  normalizarUnidadeNotaFrontend(unidadeXml);
+
+const unidadeOrigemReconhecida =
+  unidadeXml.startsWith("KG") ||
+  unidadeXml === "G" ||
+  unidadeXml.startsWith("GR") ||
+  unidadeXml === "L" ||
+  unidadeXml.startsWith("LT") ||
+  unidadeXml.startsWith("LIT") ||
+  unidadeXml.startsWith("ML") ||
+  unidadeXml.startsWith("PCT") ||
+  unidadeXml.startsWith("CX") ||
+  [
+    "UN",
+    "UND",
+    "UNID",
+    "UNIDADE",
+  ].includes(unidadeXml);
+
+const conversaoDireta =
+  unidadeOrigemReconhecida &&
+  unidadeOrigem ===
+    String(novaMateria.unidade || "")
+      .trim()
+      .toLowerCase();
+
+    const quantidadeXml =
+      Number(item.quantidade || 0);
+
     setItensConferencia((anteriores) =>
       anteriores.map((atual, posicao) =>
         posicao === index
@@ -995,17 +1095,28 @@ async function cadastrarMateriaPrimaDaNfe(index) {
               ...atual,
               materiaPrima: novaMateria._id,
               unidadeEstoque: novaMateria.unidade,
-              fatorConversao: "",
-              quantidadeEstoque: "",
+              fatorConversao:
+                conversaoDireta ? 1 : "",
+              quantidadeEstoque:
+                conversaoDireta && quantidadeXml > 0
+                  ? quantidadeXml
+                  : "",
             }
           : atual
       )
     );
 
-    alert(
-      "Matéria-prima cadastrada e vinculada ao item da NF-e.\n\n" +
-        "Agora confira o fator de conversão antes de salvar a conferência."
-    );
+    if (conversaoDireta) {
+      alert(
+        "Matéria-prima cadastrada e vinculada ao item da NF-e.\n\n" +
+          "Como a unidade da nota é igual à unidade do estoque, o fator de conversão foi definido automaticamente como 1."
+      );
+    } else {
+      alert(
+        "Matéria-prima cadastrada e vinculada ao item da NF-e.\n\n" +
+          "Confira o fator de conversão antes de salvar a conferência."
+      );
+    }
   } catch (error) {
     console.error(
       "Erro ao cadastrar matéria-prima pela NF-e:",
@@ -1922,11 +2033,21 @@ const totalNota =
               />
 
               <input
-                placeholder="Código"
+                placeholder="Código do item"
                 value={item.codigo}
                 onChange={(e) => setItem({ ...item, codigo: e.target.value })}
               />
 
+              <input
+  placeholder="CÃ³digo de barras / EAN"
+  value={item.codigoBarrasOrigem}
+  onChange={(e) =>
+    setItem({
+      ...item,
+      codigoBarrasOrigem: e.target.value,
+    })
+  }
+/>
               <input
                 placeholder="Unidade"
                 value={item.unidade}

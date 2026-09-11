@@ -19,6 +19,12 @@ const itemNotaSchema = new mongoose.Schema(
       default: "",
     },
 
+    codigoBarrasOrigem: {
+  type: String,
+  default: "",
+  trim: true,
+},
+
     ncmOrigem: {
   type: String,
   default: "",

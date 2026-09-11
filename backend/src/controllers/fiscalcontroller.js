@@ -2,6 +2,7 @@ const mongoose = require("mongoose");
 const NotaFiscalEntrada = require("../models/notafiscalentrada");
 const Fornecedor = require("../models/fornecedor");
 const MateriaPrima = require("../models/materiaprima");
+const FornecedorProdutoVinculo = require("../models/fornecedorProdutoVinculo");
 const Compra = require("../models/compra");
 const ContaPagar = require("../models/contapagar");
 const MovimentacaoFinanceira = require("../models/movimentacaofinanceira");
@@ -41,6 +42,378 @@ function normalizarUnidadeNota(unidade) {
   if (valor.startsWith("CX")) return "caixa";
 
   return "unidade";
+}
+
+function normalizarDocumentoFornecedor(documento) {
+  return String(documento || "")
+    .replace(/\D/g, "")
+    .trim();
+}
+
+function normalizarCodigoFornecedor(codigo) {
+  return String(codigo || "")
+    .trim()
+    .toUpperCase();
+}
+
+function normalizarCodigoBarras(codigo) {
+  const valor = String(codigo || "")
+    .trim()
+    .toUpperCase();
+
+  if (!valor || valor === "SEM GTIN") {
+    return "";
+  }
+
+  const somenteDigitos =
+    valor.replace(/\D/g, "");
+
+  if (
+    ![8, 12, 13, 14].includes(
+      somenteDigitos.length
+    )
+  ) {
+    return "";
+  }
+
+  return somenteDigitos;
+}
+
+async function buscarVinculoAutomaticoProduto({
+  fornecedorDocumento,
+  codigoFornecedor,
+  codigoBarras,
+}) {
+  const documentoNormalizado =
+    normalizarDocumentoFornecedor(
+      fornecedorDocumento
+    );
+
+  const codigoFornecedorNormalizado =
+    normalizarCodigoFornecedor(
+      codigoFornecedor
+    );
+
+  const codigoBarrasNormalizado =
+    normalizarCodigoBarras(
+      codigoBarras
+    );
+
+  if (
+    documentoNormalizado &&
+    codigoFornecedorNormalizado
+  ) {
+    const vinculoPorCodigo =
+      await FornecedorProdutoVinculo.findOne({
+        fornecedorDocumento:
+          documentoNormalizado,
+        codigoFornecedor:
+          codigoFornecedorNormalizado,
+        ativo: true,
+      })
+        .populate("materiaPrima")
+        .lean();
+
+    if (
+      vinculoPorCodigo?.materiaPrima
+    ) {
+      return {
+        materiaPrima:
+          vinculoPorCodigo.materiaPrima,
+        fatorConversao:
+          vinculoPorCodigo.fatorConversao,
+        unidadeEstoque:
+          vinculoPorCodigo.unidadeEstoque,
+        origem:
+          "vinculo_codigo_fornecedor",
+      };
+    }
+  }
+
+  if (
+    documentoNormalizado &&
+    codigoBarrasNormalizado
+  ) {
+    const vinculoPorCodigoBarras =
+      await FornecedorProdutoVinculo.findOne({
+        fornecedorDocumento:
+          documentoNormalizado,
+        codigoBarras:
+          codigoBarrasNormalizado,
+        ativo: true,
+      })
+        .populate("materiaPrima")
+        .lean();
+
+    if (
+      vinculoPorCodigoBarras?.materiaPrima
+    ) {
+      return {
+        materiaPrima:
+          vinculoPorCodigoBarras.materiaPrima,
+        fatorConversao:
+          vinculoPorCodigoBarras.fatorConversao,
+        unidadeEstoque:
+          vinculoPorCodigoBarras.unidadeEstoque,
+        origem:
+          "vinculo_codigo_barras",
+      };
+    }
+  }
+
+  if (codigoBarrasNormalizado) {
+    const materiaPrima =
+      await MateriaPrima.findOne({
+        codigoBarras:
+          codigoBarrasNormalizado,
+        ativo: {
+          $ne: false,
+        },
+      }).lean();
+
+    if (materiaPrima) {
+      return {
+        materiaPrima,
+        fatorConversao: null,
+        unidadeEstoque:
+          materiaPrima.unidade || "",
+        origem:
+          "codigo_barras_materia_prima",
+      };
+    }
+  }
+
+  return null;
+}
+
+async function salvarVinculoProdutoFornecedor({
+  fornecedor,
+  fornecedorDocumento,
+  codigoFornecedor,
+  codigoBarras,
+  descricaoFornecedor,
+  materiaPrima,
+  fatorConversao,
+  unidadeEstoque,
+  session = null,
+}) {
+  const documentoNormalizado =
+    normalizarDocumentoFornecedor(
+      fornecedorDocumento
+    );
+
+  const codigoFornecedorNormalizado =
+    normalizarCodigoFornecedor(
+      codigoFornecedor
+    );
+
+  const codigoBarrasNormalizado =
+    normalizarCodigoBarras(
+      codigoBarras
+    );
+
+  const fator =
+    Number(
+      fatorConversao
+    );
+
+  const unidade =
+    String(
+      unidadeEstoque || ""
+    ).trim();
+
+  if (
+    !documentoNormalizado ||
+    !materiaPrima ||
+    !Number.isFinite(fator) ||
+    fator <= 0 ||
+    !unidade
+  ) {
+    return [];
+  }
+
+  if (
+    !codigoFornecedorNormalizado &&
+    !codigoBarrasNormalizado
+  ) {
+    return [];
+  }
+
+  const dadosComuns = {
+    fornecedor:
+      fornecedor || null,
+
+    fornecedorDocumento:
+      documentoNormalizado,
+
+    descricaoFornecedor:
+      String(
+        descricaoFornecedor || ""
+      ).trim(),
+
+    materiaPrima,
+
+    fatorConversao:
+      fator,
+
+    unidadeEstoque:
+      unidade,
+
+    ativo:
+      true,
+
+    origem:
+      "conferencia",
+  };
+
+  const vinculosSalvos =
+  [];
+
+let existentePorCodigo =
+  null;
+
+let existentePorBarras =
+  null;
+
+if (codigoFornecedorNormalizado) {
+    existentePorCodigo =
+    await FornecedorProdutoVinculo.findOne({
+      fornecedorDocumento:
+        documentoNormalizado,
+
+      codigoFornecedor:
+        codigoFornecedorNormalizado,
+    }).session(session);
+
+  if (
+    existentePorCodigo &&
+    String(
+      existentePorCodigo.materiaPrima
+    ) !==
+      String(
+        materiaPrima
+      )
+  ) {
+    throw new Error(
+      `O código "${codigoFornecedorNormalizado}" deste fornecedor já está vinculado a outra matéria-prima. Revise o vínculo antes de continuar.`
+    );
+  }
+}
+
+if (codigoBarrasNormalizado) {
+    existentePorBarras =
+    await FornecedorProdutoVinculo.findOne({
+      fornecedorDocumento:
+        documentoNormalizado,
+
+      codigoBarras:
+        codigoBarrasNormalizado,
+    }).session(session);
+
+  if (
+    existentePorBarras &&
+    String(
+      existentePorBarras.materiaPrima
+    ) !==
+      String(
+        materiaPrima
+      )
+  ) {
+    throw new Error(
+      `O código de barras "${codigoBarrasNormalizado}" deste fornecedor já está vinculado a outra matéria-prima. Revise o vínculo antes de continuar.`
+    );
+  }
+}
+
+if (codigoFornecedorNormalizado) {
+  const vinculoPorCodigo =
+    await FornecedorProdutoVinculo.findOneAndUpdate(
+      {
+        fornecedorDocumento:
+          documentoNormalizado,
+
+        codigoFornecedor:
+          codigoFornecedorNormalizado,
+      },
+
+      {
+        $set: {
+          ...dadosComuns,
+
+          codigoFornecedor:
+            codigoFornecedorNormalizado,
+        },
+
+        $setOnInsert: {
+          codigoBarras:
+            "",
+        },
+      },
+
+            {
+        new:
+          true,
+
+        upsert:
+          true,
+
+        setDefaultsOnInsert:
+          true,
+
+        session,
+      }
+    );
+
+  vinculosSalvos.push(
+    vinculoPorCodigo
+  );
+}
+
+if (codigoBarrasNormalizado) {
+  const vinculoPorBarras =
+    await FornecedorProdutoVinculo.findOneAndUpdate(
+      {
+        fornecedorDocumento:
+          documentoNormalizado,
+
+        codigoBarras:
+          codigoBarrasNormalizado,
+      },
+
+      {
+        $set: {
+          ...dadosComuns,
+
+          codigoBarras:
+            codigoBarrasNormalizado,
+        },
+
+        $setOnInsert: {
+          codigoFornecedor:
+            "",
+        },
+      },
+
+            {
+        new:
+          true,
+
+        upsert:
+          true,
+
+        setDefaultsOnInsert:
+          true,
+
+        session,
+      }
+    );
+
+  vinculosSalvos.push(
+    vinculoPorBarras
+  );
+}
+
+return vinculosSalvos;
 }
 
 exports.listarNotasEntrada = async (req, res) => {
@@ -137,31 +510,89 @@ if (notaDuplicada) {
 
       let materia = null;
 
+const codigoBarrasOrigem =
+  normalizarCodigoBarras(
+    item.codigoBarrasOrigem ||
+    item.codigoBarras ||
+    ""
+  );
+
+let vinculoAutomatico = null;
+
 if (
   item.materiaPrima &&
   item.materiaPrima !== "null" &&
   item.materiaPrima !== ""
 ) {
-  materia = await MateriaPrima.findById(item.materiaPrima);
+  materia = await MateriaPrima.findById(
+    item.materiaPrima
+  );
 }
 
-      const fatorConversao =
+if (!materia) {
+  vinculoAutomatico =
+    await buscarVinculoAutomaticoProduto({
+      fornecedorDocumento:
+        normalizarDocumentoFornecedor(
+          fornecedorEncontrado?.documento ||
+          fornecedorDocumento ||
+          ""
+        ),
+      codigoFornecedor:
+        item.codigo || "",
+      codigoBarras:
+        codigoBarrasOrigem,
+    });
+
+  if (
+    vinculoAutomatico?.materiaPrima?._id
+  ) {
+    materia =
+      vinculoAutomatico.materiaPrima;
+  }
+}
+
+const temFatorInformado =
   item.fatorConversao !== undefined &&
   item.fatorConversao !== null &&
-  item.fatorConversao !== ""
+  item.fatorConversao !== "";
+
+const fatorVinculo =
+  Number(
+    vinculoAutomatico?.fatorConversao
+  );
+
+const fatorConversao =
+  temFatorInformado
     ? toNumber(item.fatorConversao)
+    : Number.isFinite(fatorVinculo) &&
+      fatorVinculo > 0
+    ? fatorVinculo
     : null;
 
-const quantidadeEstoque =
+const temQuantidadeEstoqueInformada =
   item.quantidadeEstoque !== undefined &&
   item.quantidadeEstoque !== null &&
-  item.quantidadeEstoque !== ""
-    ? toNumber(item.quantidadeEstoque)
+  item.quantidadeEstoque !== "";
+
+const quantidadeEstoque =
+  temQuantidadeEstoqueInformada
+    ? toNumber(
+        item.quantidadeEstoque
+      )
+    : fatorConversao > 0
+    ? Number(
+        (
+          quantidade *
+          fatorConversao
+        ).toFixed(6)
+      )
     : null;
 
 const unidadeEstoque =
   String(
     item.unidadeEstoque ||
+    vinculoAutomatico?.unidadeEstoque ||
     materia?.unidade ||
     ""
   ).trim();
@@ -169,6 +600,7 @@ const unidadeEstoque =
 const itemCalculado = {
   nome: item.nome || materia?.nome || "Item da nota",
   codigo: item.codigo || "",
+  codigoBarrasOrigem,
 
   ncmOrigem: String(
     item.ncmOrigem || ""
@@ -808,64 +1240,115 @@ exports.importarNfeRecebida = async (req, res) => {
       });
     }
 
-    const itens =
-      detArray.map((det) => {
-        const prod =
-          det.prod || {};
+    const fornecedorDocumentoNormalizado =
+  normalizarDocumentoFornecedor(
+    emit.CNPJ || emit.CPF || ""
+  );
 
-        const quantidade =
-          Number(
-            prod.qCom || 0
-          );
+const itens =
+  await Promise.all(
+    detArray.map(async (det) => {
+      const prod =
+        det.prod || {};
 
-        const valorUnitario =
-          Number(
-            prod.vUnCom || 0
-          );
+      const quantidade =
+        Number(
+          prod.qCom || 0
+        );
 
-        const valorTotal =
-          Number(
-            prod.vProd || 0
-          );
+      const valorUnitario =
+        Number(
+          prod.vUnCom || 0
+        );
 
-        return {
-          materiaPrima: null,
+      const valorTotal =
+        Number(
+          prod.vProd || 0
+        );
 
-          nome:
-            prod.xProd ||
-            "Produto da nota",
+      const codigoBarrasOrigem =
+        normalizarCodigoBarras(
+          prod.cEAN
+        ) ||
+        normalizarCodigoBarras(
+          prod.cEANTrib
+        );
 
-          codigo:
+      const vinculoAutomatico =
+        await buscarVinculoAutomaticoProduto({
+          fornecedorDocumento:
+            fornecedorDocumentoNormalizado,
+          codigoFornecedor:
             prod.cProd || "",
+          codigoBarras:
+            codigoBarrasOrigem,
+        });
 
-          ncmOrigem:
-            String(
-              prod.NCM || ""
-            ).trim(),
+      const fatorConversao =
+        Number(
+          vinculoAutomatico?.fatorConversao
+        ) > 0
+          ? Number(
+              vinculoAutomatico.fatorConversao
+            )
+          : null;
 
-          cestOrigem:
-            String(
-              prod.CEST || ""
-            ).trim(),
+      const quantidadeEstoque =
+        fatorConversao
+          ? Number(
+              (
+                quantidade *
+                fatorConversao
+              ).toFixed(6)
+            )
+          : null;
 
-          cfopOrigem:
-            String(
-              prod.CFOP || ""
-            ).trim(),
+      return {
+        materiaPrima:
+          vinculoAutomatico?.materiaPrima?._id ||
+          null,
 
-          unidade:
-            prod.uCom ||
-            "unidade",
+        nome:
+          prod.xProd ||
+          "Produto da nota",
 
-          quantidade,
-          valorUnitario,
-          valorTotal,
+        codigo:
+          prod.cProd || "",
 
-          fatorConversao: null,
-          quantidadeEstoque: null,
-          unidadeEstoque: "",
-        };
-      });
+        codigoBarrasOrigem,
+
+        ncmOrigem:
+          String(
+            prod.NCM || ""
+          ).trim(),
+
+        cestOrigem:
+          String(
+            prod.CEST || ""
+          ).trim(),
+
+        cfopOrigem:
+          String(
+            prod.CFOP || ""
+          ).trim(),
+
+        unidade:
+          prod.uCom ||
+          "unidade",
+
+        quantidade,
+        valorUnitario,
+        valorTotal,
+
+        fatorConversao,
+        quantidadeEstoque,
+
+        unidadeEstoque:
+          vinculoAutomatico?.unidadeEstoque ||
+          "",
+      };
+    })
+  );
 
     const itemInvalido =
       itens.find((item) =>
@@ -1529,32 +2012,117 @@ const parcelas = duplicatas
     const detRaw = nfe.det || [];
     const detArray = Array.isArray(detRaw) ? detRaw : [detRaw];
 
-    const itens = detArray.map((det) => {
-      const prod = det.prod || {};
+    const fornecedorDocumentoNormalizado =
+  normalizarDocumentoFornecedor(
+    emit.CNPJ || emit.CPF || ""
+  );
 
-      const quantidade = Number(prod.qCom || 0);
-      const valorUnitario = Number(prod.vUnCom || 0);
-      const valorTotal = Number(prod.vProd || quantidade * valorUnitario || 0);
+const itens =
+  await Promise.all(
+    detArray.map(async (det) => {
+      const prod =
+        det.prod || {};
+
+      const quantidade =
+        Number(
+          prod.qCom || 0
+        );
+
+      const valorUnitario =
+        Number(
+          prod.vUnCom || 0
+        );
+
+      const valorTotal =
+        Number(
+          prod.vProd ||
+          quantidade * valorUnitario ||
+          0
+        );
+
+      const codigoBarrasOrigem =
+        normalizarCodigoBarras(
+          prod.cEAN
+        ) ||
+        normalizarCodigoBarras(
+          prod.cEANTrib
+        );
+
+      const vinculoAutomatico =
+        await buscarVinculoAutomaticoProduto({
+          fornecedorDocumento:
+            fornecedorDocumentoNormalizado,
+          codigoFornecedor:
+            prod.cProd || "",
+          codigoBarras:
+            codigoBarrasOrigem,
+        });
+
+      const fatorConversao =
+        Number(
+          vinculoAutomatico?.fatorConversao
+        ) > 0
+          ? Number(
+              vinculoAutomatico.fatorConversao
+            )
+          : null;
+
+      const quantidadeEstoque =
+        fatorConversao
+          ? Number(
+              (
+                quantidade *
+                fatorConversao
+              ).toFixed(6)
+            )
+          : null;
 
       return {
-  materiaPrima: null,
-  nome: prod.xProd || "Produto da nota",
-  codigo: prod.cProd || "",
+        materiaPrima:
+          vinculoAutomatico?.materiaPrima?._id ||
+          null,
 
-  ncmOrigem: String(prod.NCM || "").trim(),
-  cestOrigem: String(prod.CEST || "").trim(),
-  cfopOrigem: String(prod.CFOP || "").trim(),
+        nome:
+          prod.xProd ||
+          "Produto da nota",
 
-  unidade: prod.uCom || "unidade",
-  quantidade,
-  valorUnitario,
-  valorTotal,
+        codigo:
+          prod.cProd || "",
 
-  fatorConversao: null,
-  quantidadeEstoque: null,
-  unidadeEstoque: "",
-};
-    });
+        codigoBarrasOrigem,
+
+        ncmOrigem:
+          String(
+            prod.NCM || ""
+          ).trim(),
+
+        cestOrigem:
+          String(
+            prod.CEST || ""
+          ).trim(),
+
+        cfopOrigem:
+          String(
+            prod.CFOP || ""
+          ).trim(),
+
+        unidade:
+          prod.uCom ||
+          "unidade",
+
+        quantidade,
+        valorUnitario,
+        valorTotal,
+
+        fatorConversao,
+        quantidadeEstoque,
+
+        unidadeEstoque:
+          vinculoAutomatico?.unidadeEstoque ||
+          "",
+      };
+    })
+  );
 
     const pagamentosRaw =
   pag.detPag || [];
@@ -1599,7 +2167,10 @@ if (parcelas.length > 0) {
       serie: ide.serie || "",
       chaveAcesso,
       fornecedorNome: emit.xNome || "",
-      fornecedorDocumento: emit.CNPJ || emit.CPF || "",
+      fornecedorDocumento:
+  normalizarDocumentoFornecedor(
+    emit.CNPJ || emit.CPF || ""
+  ),
       dataEmissao: ide.dhEmi
         ? new Date(ide.dhEmi).toISOString().slice(0, 10)
         : ide.dEmi
@@ -1640,6 +2211,8 @@ parcelas,
 
 
 exports.conferirNotaEntrada = async (req, res) => {
+  let session = null;
+
   try {
     const { id } = req.params;
     const { itens } = req.body;
@@ -1683,13 +2256,16 @@ exports.conferirNotaEntrada = async (req, res) => {
       });
     }
 
-    const itensPorId =
+        const itensPorId =
       new Map(
         nota.itens.map((item) => [
           String(item._id),
           item,
         ])
       );
+
+    const atualizacoesItens =
+      new Map();
 
     for (const itemRecebido of itens) {
       const itemId =
@@ -1811,12 +2387,78 @@ exports.conferirNotaEntrada = async (req, res) => {
       itemNota.quantidadeEstoque =
         quantidadeEstoque;
 
-      itemNota.unidadeEstoque =
+            itemNota.unidadeEstoque =
         materia.unidade;
+
+      atualizacoesItens.set(
+        itemId,
+        {
+          materiaPrima:
+            materia._id,
+
+          fatorConversao,
+
+          quantidadeEstoque,
+
+          unidadeEstoque:
+            materia.unidade,
+        }
+      );
+    }
+
+        session =
+      await mongoose.startSession();
+
+    session.startTransaction();
+
+    const notaTransacao =
+      await NotaFiscalEntrada.findById(
+        nota._id
+      ).session(session);
+
+    if (!notaTransacao) {
+      throw new Error(
+        "Nota fiscal de entrada não encontrada durante a conferência."
+      );
+    }
+
+    if (notaTransacao.status === "cancelada") {
+      throw new Error(
+        "Nota fiscal cancelada não pode ser conferida."
+      );
+    }
+
+    if (notaTransacao.estoqueProcessado) {
+      throw new Error(
+        "O estoque desta nota já foi processado. A conferência não pode mais ser alterada."
+      );
+    }
+
+    for (const itemTransacao of notaTransacao.itens) {
+      const atualizacao =
+        atualizacoesItens.get(
+          String(itemTransacao._id)
+        );
+
+      if (!atualizacao) {
+        continue;
+      }
+
+      itemTransacao.materiaPrima =
+        atualizacao.materiaPrima;
+
+      itemTransacao.fatorConversao =
+        atualizacao.fatorConversao;
+
+      itemTransacao.quantidadeEstoque =
+        atualizacao.quantidadeEstoque;
+
+            itemTransacao.unidadeEstoque =
+        atualizacao.unidadeEstoque;
     }
 
     const todosConferidos =
-      nota.itens.every(
+      notaTransacao.itens.every(
         (item) =>
           item.materiaPrima &&
           Number(item.fatorConversao) > 0 &&
@@ -1827,12 +2469,48 @@ exports.conferirNotaEntrada = async (req, res) => {
           ).trim()
       );
 
-    nota.status =
+    notaTransacao.status =
       todosConferidos
         ? "conferida"
         : "rascunho";
 
-    await nota.save();
+if (todosConferidos) {
+  for (const item of notaTransacao.itens) {
+    await salvarVinculoProdutoFornecedor({
+      fornecedor:
+        notaTransacao.fornecedor || null,
+
+      fornecedorDocumento:
+        notaTransacao.fornecedorDocumento,
+
+      codigoFornecedor:
+        item.codigo,
+
+      codigoBarras:
+        item.codigoBarrasOrigem,
+
+      descricaoFornecedor:
+        item.nome,
+
+      materiaPrima:
+        item.materiaPrima,
+
+      fatorConversao:
+        item.fatorConversao,
+
+            unidadeEstoque:
+        item.unidadeEstoque,
+
+      session,
+    });
+  }
+}
+
+    await notaTransacao.save({ session });
+
+    await session.commitTransaction();
+    await session.endSession();
+    session = null;
 
     const notaAtualizada =
       await NotaFiscalEntrada.findById(
@@ -1854,7 +2532,16 @@ exports.conferirNotaEntrada = async (req, res) => {
         : "Conferência parcial salva.",
       nota: notaAtualizada,
     });
-  } catch (error) {
+    } catch (error) {
+    if (session) {
+      if (session.inTransaction()) {
+        await session.abortTransaction();
+      }
+
+      await session.endSession();
+      session = null;
+    }
+
     console.error(
       "Erro ao conferir nota de entrada:",
       error
@@ -2205,22 +2892,58 @@ nota.status = "processando";
     toNumber(item.valorTotal);
 
   const custoUnitario =
-    valorTotalItem / quantidadeEstoque;
+  valorTotalItem / quantidadeEstoque;
 
-      const saldoAnterior =
-        toNumber(materia.estoqueAtual);
-      
-      const saldoPosterior =
-        saldoAnterior + quantidade;
+const saldoAnterior =
+  toNumber(materia.estoqueAtual);
 
-      materia.estoqueAtual =
-        saldoPosterior;
+const saldoPosterior =
+  saldoAnterior + quantidade;
 
-      materia.ultimoCusto =
-        custoUnitario;
+const custoAnterior =
+  toNumber(materia.custoUnitario);
 
-      materia.custoUnitario =
-        custoUnitario;
+const valorAnterior =
+  saldoAnterior * custoAnterior;
+
+const valorEntrada =
+  quantidade * custoUnitario;
+
+const custoMedio =
+  saldoPosterior > 0
+    ? (valorAnterior + valorEntrada) /
+      saldoPosterior
+    : custoUnitario;
+
+materia.estoqueAtual =
+  saldoPosterior;
+
+materia.ultimoCusto =
+  Number(custoUnitario.toFixed(6));
+
+materia.custoUnitario =
+  Number(custoMedio.toFixed(6));
+
+materia.historicoCustos =
+  materia.historicoCustos || [];
+
+if (
+  materia.custoUnitario !==
+  custoAnterior
+) {
+  materia.historicoCustos.push({
+    custoAnterior,
+    custoNovo:
+      materia.custoUnitario,
+    origem: "entrada_estoque",
+    observacao:
+      `Entrada pela NF-e ${nota.numero}`,
+    alteradoPor: "Sistema",
+  });
+
+  materia.historicoCustos =
+    materia.historicoCustos.slice(-100);
+}
 
       materia.fornecedorPrincipal =
         fornecedor._id;
