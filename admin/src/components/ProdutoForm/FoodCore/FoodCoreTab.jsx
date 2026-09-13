@@ -1,5 +1,3 @@
-import React from "react";
-
 import ReceitaEditor from "./ReceitaEditor";
 import IngredientesGrid from "./IngredientesGrid";
 import NutricaoResumo from "./NutricaoResumo";

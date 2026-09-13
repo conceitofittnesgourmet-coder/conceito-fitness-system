@@ -19,12 +19,6 @@ export default function DashboardCards() {
 
     });
 
-    useEffect(() => {
-
-        carregar();
-
-    }, []);
-
     async function carregar() {
 
         try {
@@ -41,6 +35,12 @@ export default function DashboardCards() {
         }
 
     }
+
+    useEffect(() => {
+
+        carregar();
+
+    }, []);
 
     return (
 

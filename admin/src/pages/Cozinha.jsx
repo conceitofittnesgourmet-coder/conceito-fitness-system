@@ -251,7 +251,7 @@ function Cozinha() {
   const [erro, setErro] = useState("");
   const [atualizandoId, setAtualizandoId] = useState("");
   const [modoTv, setModoTv] = useState(false);
-  const [agora, setAgora] = useState(Date.now());
+  const [agora, setAgora] = useState(() => Date.now());
   const [arrastandoId, setArrastandoId] = useState("");
 
   const carregarFila = useCallback(async ({ silencioso = false } = {}) => {

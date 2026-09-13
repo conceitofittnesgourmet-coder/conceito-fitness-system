@@ -65,7 +65,7 @@ function ProdutoModal({
     [produto, grupos]
   );
 
-  useEffect(() => {
+    useEffect(() => {
     setImagemAtiva(imagensUnicas[0] || imagem || "");
     setObservacaoItem(configuracaoInicial?.observacaoItem || "");
     setSelecoes(
@@ -75,13 +75,14 @@ function ProdutoModal({
     );
   }, [produto?._id, configuracaoInicial?.chaveCarrinho]);
 
+  const adicionais = useMemo(() => {
+    return calcularAdicionais(selecoes);
+  }, [selecoes]);
+
   if (!produto) return null;
 
-  const adicionais = useMemo(() => {
-  return calcularAdicionais(selecoes);
-}, [selecoes]);
-
-  const precoFinal = (Number(produto.preco || 0) + adicionais) * quantidade;
+  const precoFinal =
+    (Number(produto.preco || 0) + adicionais) * quantidade;
 
   const listaSelos = [
     ["semGluten", "Sem glúten"],

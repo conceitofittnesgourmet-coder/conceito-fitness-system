@@ -1,4 +1,3 @@
-import { Link } from "react-router-dom";
 import { ShoppingCart } from "lucide-react";
 import { NavLink } from "react-router-dom";
 import { FaLayerGroup } from "react-icons/fa";
@@ -41,8 +40,8 @@ function AdminLayout({
   try {
     admin = adminStorage ? JSON.parse(adminStorage) : null;
   } catch {
-    admin = null;
-  }
+    // Mantém admin como null se o conteúdo salvo for inválido.
+}
 
   function logout() {
     localStorage.removeItem("token");

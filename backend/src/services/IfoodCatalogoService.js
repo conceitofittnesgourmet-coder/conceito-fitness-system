@@ -117,23 +117,98 @@ async function obterCatalogo(configuracao) {
 }
 
 async function categoriasLocais(produtos) {
-  const cadastradas = await Categoria.find({ ativo: true, mostrarDelivery: { $ne: false } }).sort({ ordem: 1, nome: 1 }).lean();
+  const nomesUsados = new Set();
+
+  for (const produto of produtos) {
+    const nome = texto(
+      produto.categoria ||
+        produto.categorias?.[0] ||
+        "Produtos",
+      80
+    ) || "Produtos";
+
+    nomesUsados.add(
+      nome.toLowerCase()
+    );
+  }
+
+  const cadastradas =
+    await Categoria.find({
+      ativo: true,
+      mostrarDelivery: {
+        $ne: false,
+      },
+    })
+      .sort({
+        ordem: 1,
+        nome: 1,
+      })
+      .lean();
+
   const mapa = new Map();
+
   for (const categoria of cadastradas) {
-    mapa.set(categoria.nome.toLowerCase(), {
-      referenciaLocal: String(categoria._id),
-      nome: texto(categoria.nome, 80),
-      ordem: Number(categoria.ordem || 0),
+    const chave =
+      texto(
+        categoria.nome,
+        80
+      ).toLowerCase();
+
+    if (!nomesUsados.has(chave)) {
+      continue;
+    }
+
+    mapa.set(chave, {
+      referenciaLocal:
+        String(categoria._id),
+
+      nome:
+        texto(
+          categoria.nome,
+          80
+        ),
+
+      ordem:
+        Number(
+          categoria.ordem || 0
+        ),
     });
   }
+
   for (const produto of produtos) {
-    const nome = texto(produto.categoria || produto.categorias?.[0] || "Produtos", 80) || "Produtos";
-    const chave = nome.toLowerCase();
+    const nome =
+      texto(
+        produto.categoria ||
+          produto.categorias?.[0] ||
+          "Produtos",
+        80
+      ) || "Produtos";
+
+    const chave =
+      nome.toLowerCase();
+
     if (!mapa.has(chave)) {
-      mapa.set(chave, { referenciaLocal: `texto:${chave}`, nome, ordem: mapa.size + 100 });
+      mapa.set(chave, {
+        referenciaLocal:
+          `texto:${chave}`,
+
+        nome,
+
+        ordem:
+          mapa.size + 100,
+      });
     }
   }
-  return [...mapa.values()].sort((a, b) => a.ordem - b.ordem || a.nome.localeCompare(b.nome));
+
+  return [...mapa.values()]
+    .sort(
+      (a, b) =>
+        a.ordem -
+          b.ordem ||
+        a.nome.localeCompare(
+          b.nome
+        )
+    );
 }
 
 async function sincronizarCategoria(configuracao, catalogo, categoria, modoSimulacao) {

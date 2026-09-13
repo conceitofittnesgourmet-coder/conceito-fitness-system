@@ -6,8 +6,6 @@ export default function GalleryItem({
 
     image,
 
-    index,
-
     onPrincipal,
 
     onRemover,

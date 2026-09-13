@@ -79,9 +79,6 @@ setNfce(nfceDoPedido);
           qtd * preco
       );
 
-      const grupos = configuracoesAgrupadas(item);
-      const observacaoItem = String(item.observacaoItem || "").trim();
-
       return acc + totalItem;
     }, 0);
   }, [produtos]);

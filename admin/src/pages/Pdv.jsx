@@ -735,99 +735,83 @@ if (tipoPedido === "delivery") {
 }
 
     const novoPedido = {
-      cliente,
+  cliente,
 
-telefone,
-cpfNota: documentoLimpo,
-documentoFiscal: "nfce",
-      tipo: tipoPedido,
+  telefone,
+  cpfNota: documentoLimpo,
+  documentoFiscal: "nfce",
+  tipo: tipoPedido,
 
-mesa:
-  tipoPedido === "mesa"
-    ? numeroMesa
-    : "Balcão",
+  mesa:
+    tipoPedido === "mesa"
+      ? numeroMesa
+      : "Balcão",
 
-enderecoEntrega,
+  enderecoEntrega,
 
-referenciaEntrega,
+  referenciaEntrega,
 
-cep: cepEntrega,
+  cep: cepEntrega,
 
-numeroEntrega,
+  numeroEntrega,
 
-bairroEntrega,
+  bairroEntrega,
 
-complementoEntrega,
+  complementoEntrega,
 
-taxaEntrega:
-  Number(taxaEntregaManual || 0),
+  trocoPara: Number(trocoPara || 0),
+  troco: Number(troco || 0),
 
-desconto:
-  Number(descontoManual || 0),
+  observacao,
 
-motivoDesconto,
+  origem: "PDV",
 
-trocoPara: Number(trocoPara || 0),
-troco: Number(troco || 0),
+  status: "pendente",
 
-      observacao,
+  pagamentos: pagamentosFinalizados.map((p) => ({
+    forma: p.forma,
+    valor: Number(p.valor || 0),
+    vencimento:
+      p.forma === "CREDIARIO" && p.vencimento
+        ? p.vencimento
+        : null,
+  })),
 
-      origem: "PDV",
+  produtos: cart.map((item) => ({
+    produtoId: item.produtoId,
+    nome: item.nome,
+    quantidade: Number(item.quantidade || 1),
+    preco: Number(item.precoUnitario || item.preco || 0),
+    precoUnitario: Number(item.precoUnitario || item.preco || 0),
+    unidadeMedida: item.unidadeMedida || "UN",
+    vendaPorPeso: Boolean(item.vendaPorPeso),
+    permiteFracionado: Boolean(item.permiteFracionado),
+    subtotal:
+      item.subtotal !== undefined
+        ? Number(item.subtotal || 0)
+        : Number(item.preco || 0) * Number(item.quantidade || 1),
+    imagem: item.imagem,
+    configuracoes: Array.isArray(item.configuracoes)
+      ? item.configuracoes.map((config) => ({
+          grupoId: String(config.grupoId || ""),
+          grupo: String(config.grupo || ""),
+          opcaoId: String(config.opcaoId || ""),
+          opcao: String(config.opcao || ""),
+          quantidade: Number(config.quantidade || 1),
+          valorUnitario: Number(
+            config.valorUnitario ?? config.valor ?? 0
+          ),
+          valor: Number(config.valor || 0),
+        }))
+      : [],
+  })),
 
-      status: "pendente",
-
-      pagamentos: pagamentosFinalizados.map((p) => ({
-  forma: p.forma,
-  valor: Number(p.valor || 0),
-  vencimento:
-    p.forma === "CREDIARIO" && p.vencimento
-      ? p.vencimento
-      : null,
-})),
-
-      produtos: cart.map((item) => ({
-  produtoId: item.produtoId,
-  nome: item.nome,
-  quantidade: Number(item.quantidade || 1),
-  preco: Number(item.precoUnitario || item.preco || 0),
-  precoUnitario: Number(item.precoUnitario || item.preco || 0),
-  unidadeMedida: item.unidadeMedida || "UN",
-  vendaPorPeso: Boolean(item.vendaPorPeso),
-  permiteFracionado: Boolean(item.permiteFracionado),
-  subtotal:
-    item.subtotal !== undefined
-      ? Number(item.subtotal || 0)
-      : Number(item.preco || 0) * Number(item.quantidade || 1),
-  imagem: item.imagem,
-  configuracoes: Array.isArray(item.configuracoes)
-  ? item.configuracoes.map((config) => ({
-      grupoId: String(config.grupoId || ""),
-      grupo: String(config.grupo || ""),
-      opcaoId: String(config.opcaoId || ""),
-      opcao: String(config.opcao || ""),
-      quantidade: Number(config.quantidade || 1),
-      valorUnitario: Number(
-        config.valorUnitario ?? config.valor ?? 0
-      ),
-      valor: Number(config.valor || 0),
-    }))
-  : [],
-})),
-
-    subtotal: subtotalPedido,
-taxaEntrega: taxaEntregaPedido,
-desconto: descontoPedido,
-motivoDesconto,
-observacao,
-tipo: tipoPedido,
-
-enderecoEntrega,
-
-referenciaEntrega,
-
-total: totalPedido,
+  subtotal: subtotalPedido,
+  taxaEntrega: taxaEntregaPedido,
+  desconto: descontoPedido,
+  motivoDesconto,
+  total: totalPedido,
 };
-
         
     const response = await api.post("/pedidos", novoPedido);
 
