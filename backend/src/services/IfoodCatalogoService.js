@@ -221,7 +221,11 @@ async function sincronizarCategoria(configuracao, catalogo, categoria, modoSimul
   if (modoSimulacao) return { ...categoria, ifoodId: map?.ifoodId || "", acao: map ? "atualizar" : "criar", payload };
 
   if (!map) {
-    const resposta = await IfoodApiService.criarCategoria(configuracao, payload);
+    const resposta = await IfoodApiService.criarCategoria(
+      configuracao,
+      catalogo.catalogId,
+      payload
+    );
     map = await IfoodCatalogoMapeamento.create({
       tipo: "categoria",
       referenciaLocal: categoria.referenciaLocal,
