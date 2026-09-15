@@ -100,30 +100,43 @@ async function obterToken(configuracao, forcar = false) {
 
 async function requisicao(configuracao, opcoes) {
   let token = await obterToken(configuracao);
-  try {
-    return await axios({
+
+  const executar = (accessToken) =>
+    axios({
       timeout: 20000,
       ...opcoes,
       headers: {
         ...(opcoes.headers || {}),
-        Authorization: `Bearer ${token}`,
+        Authorization: `Bearer ${accessToken}`,
         accept: "application/json",
       },
     });
+
+  try {
+    return await executar(token);
   } catch (error) {
     if (error.response?.status === 401) {
-      token = await obterToken(configuracao, true);
-      return axios({
-        timeout: 20000,
-        ...opcoes,
-        headers: {
-          ...(opcoes.headers || {}),
-          Authorization: `Bearer ${token}`,
-          accept: "application/json",
-        },
-      });
+      try {
+        token = await obterToken(configuracao, true);
+        return await executar(token);
+      } catch (retryError) {
+        const status = retryError.response?.status;
+        const metodo = String(opcoes.method || "GET").toUpperCase();
+        const detalhe = mensagemErro(retryError);
+
+        throw new Error(
+          `iFood ${metodo} ${opcoes.url} | HTTP ${status || "sem resposta"} | ${detalhe}`
+        );
+      }
     }
-    throw new Error(mensagemErro(error));
+
+    const status = error.response?.status;
+    const metodo = String(opcoes.method || "GET").toUpperCase();
+    const detalhe = mensagemErro(error);
+
+    throw new Error(
+      `iFood ${metodo} ${opcoes.url} | HTTP ${status || "sem resposta"} | ${detalhe}`
+    );
   }
 }
 
