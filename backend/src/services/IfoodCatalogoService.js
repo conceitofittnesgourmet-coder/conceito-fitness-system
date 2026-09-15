@@ -325,6 +325,7 @@ async function payloadProduto(configuracao, produto, categoriaIfoodId) {
       id: itemId,
       type: "DEFAULT",
       categoryId: categoriaIfoodId,
+      productId: produtoPrincipalId,
       status: disponivel(produto) ? "AVAILABLE" : "UNAVAILABLE",
       price: { value: precoVenda(produto) },
       externalCode: texto(produto.sku || produto.cadastroMestre?.marketplaces?.ifoodCodigo || produto._id, 80),
