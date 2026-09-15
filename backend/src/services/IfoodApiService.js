@@ -262,7 +262,7 @@ async function listarCatalogos(configuracao) {
 async function listarCategoriasCatalogo(configuracao) {
   const response = await requisicao(configuracao, {
     method: "GET",
-    url: `${CATALOG_URL}/merchants/${configuracao.merchantId}/categories`,
+    url: `${CATALOG_URL}/merchants/${configuracao.merchantId}/catalogs/${configuracao.catalogId}/categories`,
     params: { include_items: true },
   });
   return Array.isArray(response.data) ? response.data : response.data?.categories || [];
