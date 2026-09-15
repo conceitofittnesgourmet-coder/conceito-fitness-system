@@ -167,6 +167,31 @@ exports.diagnosticoCatalogo = async (req, res) => {
   }
 };
 
+exports.diagnosticoCatalogoRemoto = async (req, res) => {
+  try {
+    const configuracao = await IfoodApiService.obterConfiguracaoCompleta();
+
+    if (!configuracao.merchantId) {
+      throw new Error("Merchant ID do iFood não configurado.");
+    }
+
+    const categorias = await IfoodApiService.listarCategoriasCatalogo(configuracao);
+
+    return res.json({
+      success: true,
+      merchantId: configuracao.merchantId,
+      catalogId: configuracao.catalogId || "",
+      totalCategorias: categorias.length,
+      categorias,
+    });
+  } catch (error) {
+    return res.status(400).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
 exports.simularCatalogo = async (req, res) => {
   try {
     const resultado = await IfoodCatalogoService.sincronizar({ modoSimulacao: true, produtoId: req.body?.produtoId || "" });

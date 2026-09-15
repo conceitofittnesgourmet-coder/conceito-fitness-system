@@ -23,6 +23,7 @@ router.get("/pedidos/:orderId/motivos-cancelamento", controller.motivosCancelame
 router.post("/pedidos/:orderId/cancelar", controller.solicitarCancelamento);
 
 router.get("/catalogo/diagnostico", controller.diagnosticoCatalogo);
+router.get("/catalogo/diagnostico-remoto", controller.diagnosticoCatalogoRemoto);
 router.post("/catalogo/simular", controller.simularCatalogo);
 router.post("/catalogo/sincronizar", controller.sincronizarCatalogo);
 router.patch(
