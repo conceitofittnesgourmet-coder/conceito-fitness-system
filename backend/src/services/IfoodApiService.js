@@ -268,6 +268,15 @@ async function listarCategoriasCatalogo(configuracao) {
   return Array.isArray(response.data) ? response.data : response.data?.categories || [];
 }
 
+async function listarItensCategoria(configuracao, categoryId) {
+  const response = await requisicao(configuracao, {
+    method: "GET",
+    url: `${CATALOG_URL}/merchants/${configuracao.merchantId}/categories/${categoryId}/items`,
+  });
+
+  return response.data;
+}
+
 async function criarCategoria(configuracao, catalogId, payload) {
   if (!catalogId) {
     throw new Error("Catalog ID é obrigatório para criar categoria no iFood.");
@@ -347,6 +356,7 @@ module.exports = {
   solicitarCancelamento,
   listarCatalogos,
   listarCategoriasCatalogo,
+  listarItensCategoria,
   criarCategoria,
   salvarItemCatalogo,
   atualizarStatusItem,

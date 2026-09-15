@@ -175,14 +175,41 @@ exports.diagnosticoCatalogoRemoto = async (req, res) => {
       throw new Error("Merchant ID do iFood não configurado.");
     }
 
-    const categorias = await IfoodApiService.listarCategoriasCatalogo(configuracao);
+        const categorias = await IfoodApiService.listarCategoriasCatalogo(configuracao);
+
+    const categoriasComItens = [];
+
+    for (const categoria of categorias) {
+      try {
+        const itens = await IfoodApiService.listarItensCategoria(
+          configuracao,
+          categoria.id
+        );
+
+        categoriasComItens.push({
+          ...categoria,
+          consultaItens: {
+            sucesso: true,
+            resposta: itens,
+          },
+        });
+      } catch (error) {
+        categoriasComItens.push({
+          ...categoria,
+          consultaItens: {
+            sucesso: false,
+            erro: error.message,
+          },
+        });
+      }
+    }
 
     return res.json({
       success: true,
       merchantId: configuracao.merchantId,
       catalogId: configuracao.catalogId || "",
       totalCategorias: categorias.length,
-      categorias,
+      categorias: categoriasComItens,
     });
   } catch (error) {
     return res.status(400).json({
