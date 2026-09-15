@@ -1,7 +1,13 @@
 const express = require("express");
 const controller = require("../controllers/ifoodcontroller");
+const authMiddleware = require("../middlewares/authmiddleware");
 
 const router = express.Router();
+
+// Todas as rotas /api/ifood são administrativas.
+// O polling automático é executado internamente pelo backend
+// através do IfoodPollingService e não depende destas rotas HTTP.
+router.use(authMiddleware);
 
 router.get("/configuracao", controller.obterConfiguracao);
 router.put("/configuracao", controller.salvarConfiguracao);
@@ -19,8 +25,14 @@ router.post("/pedidos/:orderId/cancelar", controller.solicitarCancelamento);
 router.get("/catalogo/diagnostico", controller.diagnosticoCatalogo);
 router.post("/catalogo/simular", controller.simularCatalogo);
 router.post("/catalogo/sincronizar", controller.sincronizarCatalogo);
-router.patch("/catalogo/produtos/:produtoId/disponibilidade", controller.atualizarDisponibilidadeCatalogo);
-router.patch("/catalogo/produtos/:produtoId/preco", controller.atualizarPrecoCatalogo);
+router.patch(
+  "/catalogo/produtos/:produtoId/disponibilidade",
+  controller.atualizarDisponibilidadeCatalogo
+);
+router.patch(
+  "/catalogo/produtos/:produtoId/preco",
+  controller.atualizarPrecoCatalogo
+);
 
 router.get("/auditoria/ultima", controller.ultimaAuditoria);
 router.get("/auditoria/historico", controller.historicoAuditorias);
