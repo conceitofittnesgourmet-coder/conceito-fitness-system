@@ -272,6 +272,7 @@ async function listarProdutosCatalogo(configuracao) {
   const response = await requisicao(configuracao, {
     method: "GET",
     url: `${CATALOG_URL}/merchants/${configuracao.merchantId}/products`,
+    params: { page: 1, size: 100 },
   });
 
   return response.data;
