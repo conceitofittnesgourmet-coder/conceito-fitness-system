@@ -175,6 +175,8 @@ exports.diagnosticoCatalogoRemoto = async (req, res) => {
       throw new Error("Merchant ID do iFood não configurado.");
     }
 
+        const catalogos = await IfoodApiService.listarCatalogos(configuracao);
+
         const categorias = await IfoodApiService.listarCategoriasCatalogo(configuracao);
 
         const diagnosticoItens = await IfoodApiService.diagnosticarItensCatalogo(
@@ -213,6 +215,7 @@ exports.diagnosticoCatalogoRemoto = async (req, res) => {
       success: true,
       merchantId: configuracao.merchantId,
       catalogId: configuracao.catalogId || "",
+      catalogos,
       totalCategorias: categorias.length,
       categorias: categoriasComItens,
       diagnosticoItens,
