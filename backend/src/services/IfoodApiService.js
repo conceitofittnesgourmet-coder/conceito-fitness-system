@@ -268,16 +268,6 @@ async function obterVersaoCatalogo(configuracao) {
   return response.data;
 }
 
-async function listarProdutosCatalogo(configuracao) {
-  const response = await requisicao(configuracao, {
-    method: "GET",
-    url: `${CATALOG_URL}/merchants/${configuracao.merchantId}/products`,
-    params: { page: 1, pageSize: 50 },
-  });
-
-  return response.data;
-}
-
 async function listarCategoriasCatalogo(configuracao) {
   const response = await requisicao(configuracao, {
     method: "GET",
@@ -408,7 +398,6 @@ module.exports = {
   solicitarCancelamento,
   listarCatalogos,
   obterVersaoCatalogo,
-  listarProdutosCatalogo,
   listarCategoriasCatalogo,
   listarItensCategoria,
   criarCategoria,
