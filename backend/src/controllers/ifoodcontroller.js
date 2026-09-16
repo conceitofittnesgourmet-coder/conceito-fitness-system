@@ -179,8 +179,6 @@ exports.diagnosticoCatalogoRemoto = async (req, res) => {
 
         const versaoCatalogo = await IfoodApiService.obterVersaoCatalogo(configuracao);
 
-        const changelogCatalogo = await IfoodApiService.obterChangelogCatalogo(configuracao);
-
         const categorias = await IfoodApiService.listarCategoriasCatalogo(configuracao);
 
         const diagnosticoItens = await IfoodApiService.diagnosticarItensCatalogo(
@@ -221,7 +219,6 @@ exports.diagnosticoCatalogoRemoto = async (req, res) => {
       catalogId: configuracao.catalogId || "",
       catalogos,
       versaoCatalogo,
-      changelogCatalogo,
       totalCategorias: categorias.length,
       categorias: categoriasComItens,
       diagnosticoItens,
