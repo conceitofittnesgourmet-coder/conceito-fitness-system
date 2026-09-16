@@ -155,8 +155,11 @@ async function executar({ origem = "manual", consultarRemoto = true } = {}) {
     let remotoErro = "";
     if (consultarRemoto && config.merchantId && config.catalogId) {
       try {
+        const catalogos = await IfoodApiService.listarCatalogos(config);
+        const catalogoAtual = catalogos.find((item) => item.catalogId === config.catalogId);
+
         const [vendaveis, naoVendaveis] = await Promise.all([
-          IfoodApiService.listarItensVendaveis(config, config.catalogId),
+          IfoodApiService.listarItensVendaveis(config, catalogoAtual?.groupId),
           IfoodApiService.listarItensNaoVendaveis(config, config.catalogId),
         ]);
         remotos = [...itensRemotos(vendaveis, true), ...itensRemotos(naoVendaveis, false)];
