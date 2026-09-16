@@ -347,6 +347,11 @@ async function diagnosticarItensCatalogo(configuracao, catalogId) {
     url: `${CATALOG_URL}/merchants/${configuracao.merchantId}/catalogs/${catalogId}/sellableItems`,
   });
 
+  const vendaveisPorGroupId = await requisicao(configuracao, {
+  method: "GET",
+  url: `${CATALOG_URL}/merchants/${configuracao.merchantId}/catalogs/ffca0022-eb43-4205-9a1b-73a72f8e3f95/sellableItems`,
+});
+
   const naoVendaveis = await requisicao(configuracao, {
     method: "GET",
     url: `${CATALOG_URL}/merchants/${configuracao.merchantId}/catalogs/${catalogId}/unsellableItems`,
@@ -354,6 +359,7 @@ async function diagnosticarItensCatalogo(configuracao, catalogId) {
 
   return {
     sellableItems: vendaveis.data,
+    sellableItemsPorGroupId: vendaveisPorGroupId.data,
     unsellableItems: naoVendaveis.data,
   };
 }
