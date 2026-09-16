@@ -341,6 +341,23 @@ async function listarItensNaoVendaveis(configuracao, catalogId) {
   return Array.isArray(response.data) ? response.data : response.data?.categories || [];
 }
 
+async function diagnosticarItensCatalogo(configuracao, catalogId) {
+  const vendaveis = await requisicao(configuracao, {
+    method: "GET",
+    url: `${CATALOG_URL}/merchants/${configuracao.merchantId}/catalogs/${catalogId}/sellableItems`,
+  });
+
+  const naoVendaveis = await requisicao(configuracao, {
+    method: "GET",
+    url: `${CATALOG_URL}/merchants/${configuracao.merchantId}/catalogs/${catalogId}/unsellableItems`,
+  });
+
+  return {
+    sellableItems: vendaveis.data,
+    unsellableItems: naoVendaveis.data,
+  };
+}
+
 module.exports = {
   obterConfiguracaoCompleta,
   obterToken,
@@ -363,4 +380,5 @@ module.exports = {
   atualizarPrecoItem,
   listarItensVendaveis,
   listarItensNaoVendaveis,
+  diagnosticarItensCatalogo,
 };

@@ -177,6 +177,11 @@ exports.diagnosticoCatalogoRemoto = async (req, res) => {
 
         const categorias = await IfoodApiService.listarCategoriasCatalogo(configuracao);
 
+        const diagnosticoItens = await IfoodApiService.diagnosticarItensCatalogo(
+  configuracao,
+  configuracao.catalogId
+);
+
     const categoriasComItens = [];
 
     for (const categoria of categorias) {
@@ -210,6 +215,7 @@ exports.diagnosticoCatalogoRemoto = async (req, res) => {
       catalogId: configuracao.catalogId || "",
       totalCategorias: categorias.length,
       categorias: categoriasComItens,
+      diagnosticoItens,
     });
   } catch (error) {
     return res.status(400).json({
