@@ -24,6 +24,7 @@ router.post("/pedidos/:orderId/cancelar", controller.solicitarCancelamento);
 
 router.get("/catalogo/diagnostico", controller.diagnosticoCatalogo);
 router.get("/catalogo/diagnostico-remoto", controller.diagnosticoCatalogoRemoto);
+router.get("/catalogo/item/:itemId/flat", controller.diagnosticoItemFlat);
 router.post("/catalogo/simular", controller.simularCatalogo);
 router.post("/catalogo/sincronizar", controller.sincronizarCatalogo);
 router.patch(

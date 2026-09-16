@@ -228,6 +228,37 @@ exports.diagnosticoCatalogoRemoto = async (req, res) => {
   }
 };
 
+exports.diagnosticoItemFlat = async (req, res) => {
+  try {
+    const configuracao = await IfoodApiService.obterConfiguracaoCompleta();
+
+    if (!configuracao.merchantId) {
+      throw new Error("Merchant ID do iFood não configurado.");
+    }
+
+    const itemId = String(req.params.itemId || "").trim();
+
+    if (!itemId) {
+      throw new Error("Item ID do iFood é obrigatório.");
+    }
+
+    const resultado = await IfoodApiService.obterItemFlat(configuracao, itemId);
+
+    return res.json({
+      success: true,
+      merchantId: configuracao.merchantId,
+      catalogId: configuracao.catalogId || "",
+      itemId,
+      resultado,
+    });
+  } catch (error) {
+    return res.status(400).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
 exports.simularCatalogo = async (req, res) => {
   try {
     const resultado = await IfoodCatalogoService.sincronizar({ modoSimulacao: true, produtoId: req.body?.produtoId || "" });
