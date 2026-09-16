@@ -303,6 +303,15 @@ async function salvarItemCatalogo(configuracao, payload) {
   return response.data || { accepted: true };
 }
 
+async function obterItemFlat(configuracao, itemId) {
+  const response = await requisicao(configuracao, {
+    method: "GET",
+    url: `${CATALOG_URL}/merchants/${configuracao.merchantId}/items/${itemId}/flat`,
+  });
+
+  return response.data;
+}
+
 async function atualizarStatusItem(configuracao, itemId, status) {
   const response = await requisicao(configuracao, {
     method: "PATCH",
@@ -382,6 +391,7 @@ module.exports = {
   listarItensCategoria,
   criarCategoria,
   salvarItemCatalogo,
+  obterItemFlat,
   atualizarStatusItem,
   atualizarPrecoItem,
   listarItensVendaveis,
