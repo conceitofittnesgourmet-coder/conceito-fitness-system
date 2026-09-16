@@ -268,17 +268,6 @@ async function listarCategoriasCatalogo(configuracao) {
   return Array.isArray(response.data) ? response.data : response.data?.categories || [];
 }
 
-async function listarCategoriasMerchant(configuracao) {
-  const response = await requisicao(configuracao, {
-    method: "GET",
-    url: `${CATALOG_URL}/merchants/${configuracao.merchantId}/categories`,
-    params: { include_items: true },
-  });
-
-  return Array.isArray(response.data)
-    ? response.data
-    : response.data?.categories || [];
-}
 
 async function listarItensCategoria(configuracao, categoryId) {
   const response = await requisicao(configuracao, {
@@ -400,7 +389,6 @@ module.exports = {
   solicitarCancelamento,
   listarCatalogos,
   listarCategoriasCatalogo,
-  listarCategoriasMerchant,
   listarItensCategoria,
   criarCategoria,
   salvarItemCatalogo,
