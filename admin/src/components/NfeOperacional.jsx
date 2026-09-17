@@ -109,6 +109,7 @@ function NfeOperacional() {
   setPedidoCompra("");
   setRequisicaoCompra("");
   setInformacoesComplementares("");
+  setSemVencimento(false);
   invalidarValidacao();
 
   if (!id) {

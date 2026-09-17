@@ -538,8 +538,11 @@ ${(() => {
   <detPag>
     <indPag>${Number(nfe.pagamento?.indicador ?? 0)}</indPag>
     <tPag>${esc(nfe.pagamento?.forma || "17")}</tPag>
+    ${String(nfe.pagamento?.forma || "") === "99" && nfe.pagamento?.descricao
+      ? `<xPag>${esc(nfe.pagamento.descricao)}</xPag>`
+      : ""}
     <vPag>${n2(nfe.pagamento?.valor || t.valorTotal)}</vPag>
-  </detPag>
+</detPag>
 </pag>
 
 ${nfe.informacoesComplementares

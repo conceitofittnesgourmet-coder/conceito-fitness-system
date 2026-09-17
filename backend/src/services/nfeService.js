@@ -705,13 +705,19 @@ const t = totais(itens, {
 });
 
   const pedidoCompraTexto = String(dados.pedidoCompra || "").trim();
-  const requisicaoCompraTexto = String(dados.requisicaoCompra || "").trim();
-  const informacoesComplementares = String(dados.informacoesComplementares || "").trim() ||
-    [
-      pedidoCompraTexto ? `ORDEM DE COMPRA Nº ${pedidoCompraTexto}` : "",
-      requisicaoCompraTexto ? `REQUISIÇÃO Nº ${requisicaoCompraTexto}` : "",
-    ].filter(Boolean).join(" - ") ||
-    pedido.observacao || "";
+const requisicaoCompraTexto = String(dados.requisicaoCompra || "").trim();
+const informacaoManualTexto = String(dados.informacoesComplementares || "").trim();
+const observacaoPedidoTexto = String(pedido.observacao || "").trim();
+
+const informacoesComplementares = [
+  pedidoCompraTexto ? `ORDEM DE COMPRA Nº ${pedidoCompraTexto}` : "",
+  requisicaoCompraTexto ? `REQUISIÇÃO Nº ${requisicaoCompraTexto}` : "",
+  informacaoManualTexto,
+  observacaoPedidoTexto &&
+  observacaoPedidoTexto !== informacaoManualTexto
+    ? observacaoPedidoTexto
+    : "",
+].filter(Boolean).join(" - ");
 
   // Valida todos os dados antes de reservar numeração, criar a NF-e e gerar o XML.
   // Assim, erros de CPF/CNPJ, endereço, produtos ou certificado não consomem número fiscal.
@@ -735,14 +741,20 @@ const t = totais(itens, {
     );
 
     const ehCrediario =
-      String(pedido.pagamento || "").trim().toUpperCase() === "CREDIARIO" ||
-      Boolean(pagamentoCrediario);
+  String(pedido.pagamento || "").trim().toUpperCase() === "CREDIARIO" ||
+  Boolean(pagamentoCrediario);
 
-    return {
-      forma: String(
-        dados.formaPagamento ||
-        (ehCrediario ? "14" : "17")
-      ),
+const semVencimento =
+  dados.semVencimento === true ||
+  String(dados.semVencimento || "").toLowerCase() === "true";
+
+return {
+  forma: String(
+    dados.formaPagamento ||
+    (ehCrediario
+      ? (semVencimento ? "99" : "14")
+      : "17")
+  ),
       indicador:
         dados.indicadorPagamento !== undefined
           ? Number(dados.indicadorPagamento)
@@ -750,9 +762,10 @@ const t = totais(itens, {
             ? 1
             : 0,
       descricao:
-        dados.descricaoPagamento ||
-        pedido.pagamento ||
-        "PIX",
+  dados.descricaoPagamento ||
+  (ehCrediario && semVencimento
+    ? "CREDIARIO SEM VENCIMENTO NA NF-E"
+    : pedido.pagamento || "PIX"),
       valor: t.valorTotal,
     };
   })(),
