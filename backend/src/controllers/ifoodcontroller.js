@@ -262,6 +262,40 @@ exports.diagnosticoItemFlat = async (req, res) => {
   }
 };
 
+exports.diagnosticoProdutoExternalCode = async (req, res) => {
+  try {
+    const configuracao = await IfoodApiService.obterConfiguracaoCompleta();
+
+    if (!configuracao.merchantId) {
+      throw new Error("Merchant ID do iFood não configurado.");
+    }
+
+    const externalCode = String(req.params.externalCode || "").trim();
+
+    if (!externalCode) {
+      throw new Error("External Code do produto é obrigatório.");
+    }
+
+    const resultado = await IfoodApiService.obterProdutoPorExternalCode(
+      configuracao,
+      externalCode
+    );
+
+    return res.json({
+      success: true,
+      merchantId: configuracao.merchantId,
+      catalogId: configuracao.catalogId || "",
+      externalCode,
+      resultado,
+    });
+  } catch (error) {
+    return res.status(400).json({
+      success: false,
+      message: error.message,
+    });
+  }
+};
+
 exports.simularCatalogo = async (req, res) => {
   try {
     const resultado = await IfoodCatalogoService.sincronizar({ modoSimulacao: true, produtoId: req.body?.produtoId || "" });

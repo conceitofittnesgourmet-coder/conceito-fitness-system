@@ -322,6 +322,15 @@ async function obterItemFlat(configuracao, itemId) {
   return response.data;
 }
 
+async function obterProdutoPorExternalCode(configuracao, externalCode) {
+  const response = await requisicao(configuracao, {
+    method: "GET",
+    url: `${CATALOG_URL}/merchants/${configuracao.merchantId}/products/externalCode/${encodeURIComponent(externalCode)}`,
+  });
+
+  return response.data;
+}
+
 async function atualizarStatusItem(configuracao, itemId, status) {
   const response = await requisicao(configuracao, {
     method: "PATCH",
@@ -403,6 +412,7 @@ module.exports = {
   criarCategoria,
   salvarItemCatalogo,
   obterItemFlat,
+  obterProdutoPorExternalCode,
   atualizarStatusItem,
   atualizarPrecoItem,
   listarItensVendaveis,
