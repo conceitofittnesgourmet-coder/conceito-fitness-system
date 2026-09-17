@@ -768,7 +768,11 @@ const t = totais(itens, {
         Number(p?.valor || 0) > 0
     );
 
-    if (!parcelasCrediario.length) {
+    const semVencimento =
+  dados.semVencimento === true ||
+  String(dados.semVencimento || "").toLowerCase() === "true";
+
+    if (semVencimento || !parcelasCrediario.length) {
       return {
         fatura: {
           numero: "",

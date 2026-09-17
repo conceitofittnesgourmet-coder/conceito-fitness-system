@@ -44,6 +44,7 @@ function NfeOperacional() {
   const [pedidoCompra, setPedidoCompra] = useState("");
   const [requisicaoCompra, setRequisicaoCompra] = useState("");
   const [informacoesComplementares, setInformacoesComplementares] = useState("");
+  const [semVencimento, setSemVencimento] = useState(false);
   const [eventoFiscal, setEventoFiscal] = useState(null);
   const [textoEventoFiscal, setTextoEventoFiscal] = useState("");
   const [confirmacaoEventoFiscal, setConfirmacaoEventoFiscal] = useState(false);
@@ -233,6 +234,7 @@ function NfeOperacional() {
         pedidoCompra,
         requisicaoCompra,
         informacoesComplementares,
+        semVencimento,
       });
 
       setValidacao(response.data.validacao || null);
@@ -269,6 +271,7 @@ function NfeOperacional() {
         pedidoCompra,
         requisicaoCompra,
         informacoesComplementares,
+        semVencimento,
       });
 
       setMensagem(response.data.message || "NF-e processada.");
@@ -602,6 +605,20 @@ function NfeOperacional() {
           <span>Informações complementares</span>
           <input value={informacoesComplementares} onChange={(e) => { setInformacoesComplementares(e.target.value); invalidarValidacao(); }} placeholder="Ex.: ORDEM DE COMPRA Nº 13.100 - REQUISIÇÃO Nº 540485" />
         </label>
+        <label className="nfe-campo nfe-campo-largo">
+  <span>Vencimento da NF-e</span>
+  <label style={{ display: "flex", alignItems: "center", gap: "10px", cursor: "pointer" }}>
+    <input
+      type="checkbox"
+      checked={semVencimento}
+      onChange={(e) => {
+        setSemVencimento(e.target.checked);
+        invalidarValidacao();
+      }}
+    />
+    Emitir NF-e sem data de vencimento
+  </label>
+</label>
       </div>
 
       <div className="nfe-acoes-emissao">
