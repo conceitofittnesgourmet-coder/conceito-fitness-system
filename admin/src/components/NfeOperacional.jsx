@@ -428,6 +428,65 @@ function NfeOperacional() {
     }
   }
 
+  async function compartilharXmlCce(nfe, evento) {
+    try {
+      setMensagem("");
+
+      const response = await api.get(
+        `/nfe/${nfe._id}/carta-correcao/${evento.sequencia}/xml`,
+        { responseType: "blob" }
+      );
+
+      const baseNome = `NFe-${nfe.numero}-${nfe.serie}-CCe-${evento.sequencia}.xml`;
+      const xmlFile = new File(
+        [response.data],
+        baseNome,
+        { type: "application/xml" }
+      );
+
+      let compartilhado = false;
+
+      try {
+        if (
+          navigator.share &&
+          navigator.canShare &&
+          navigator.canShare({ files: [xmlFile] })
+        ) {
+          await navigator.share({
+            title: `CC-e NF-e ${nfe.numero}/${nfe.serie}`,
+            text: `Carta de Correcao da NF-e ${nfe.numero}/${nfe.serie} - Conceito Fitness Gourmet`,
+            files: [xmlFile],
+          });
+
+          compartilhado = true;
+        }
+      } catch (shareError) {
+        if (shareError?.name === "AbortError") return;
+      }
+
+      if (compartilhado) return;
+
+      const url = window.URL.createObjectURL(response.data);
+      const link = document.createElement("a");
+
+      link.href = url;
+      link.download = baseNome;
+
+      document.body.appendChild(link);
+      link.click();
+      link.remove();
+
+      setTimeout(() => window.URL.revokeObjectURL(url), 60000);
+
+      setMensagem(
+        "Compartilhamento direto indisponivel. O XML da CC-e foi baixado para envio."
+      );
+    } catch (error) {
+      if (error?.name !== "AbortError") {
+        setMensagem("Nao foi possivel compartilhar o XML da CC-e.");
+      }
+    }
+  }
   async function compartilharNfe(nfe) {
     try {
       setMensagem("");
@@ -845,6 +904,13 @@ function NfeOperacional() {
             }
           >
             XML CC-e
+          </button>
+
+          <button
+            className="btn-ver"
+            onClick={() => compartilharXmlCce(nfe, evento)}
+          >
+            Compartilhar CC-e
           </button>
         </div>
       ))}
