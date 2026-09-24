@@ -1,4 +1,4 @@
-﻿import { useEffect, useRef, useState } from "react";
+import { useEffect, useRef, useState } from "react";
 import {
   Search,
   Plus,
@@ -132,8 +132,8 @@ function filtrarCategoria(cat) {
     setGruposComponentes(gruposRes.data.grupos || []);
     setOpcoesComponentes(opcoesRes.data.opcoes || []);
   } catch (error) {
-    console.log("Erro ao carregar cardÃ¡pio online:", error);
-    setErroCarregamento("NÃ£o foi possÃ­vel carregar o cardÃ¡pio agora. Tente novamente em instantes.");
+    console.log("Erro ao carregar cardápio online:", error);
+    setErroCarregamento("Não foi possível carregar o cardápio agora. Tente novamente em instantes.");
   } finally {
     setCarregando(false);
   }
@@ -185,7 +185,7 @@ function filtrarCategoria(cat) {
     );
 
     if (!produto) {
-      alert("Este produto nÃ£o estÃ¡ mais disponÃ­vel no cardÃ¡pio.");
+      alert("Este produto não está mais disponível no cardápio.");
       return;
     }
 
@@ -293,7 +293,7 @@ function filtrarCategoria(cat) {
     const chaveCarrinho = `${id}-${assinaturaConfiguracao}-${observacaoItem}`;
     const resumoConfig = resumoConfiguracoes
       .map((item) => `${item.grupo}: ${item.texto}`)
-      .join(" Â· ");
+      .join(" · ");
 
     const novoItem = {
       id,
@@ -370,9 +370,9 @@ function filtrarCategoria(cat) {
 
   const filtrosDietarios = [
     "Todos",
-    "Sem glÃºten",
+    "Sem glúten",
     "Zero lactose",
-    "Zero aÃ§Ãºcar",
+    "Zero açúcar",
     "Low carb",
     "Vegano",
     "Proteico",
@@ -401,18 +401,34 @@ function filtrarCategoria(cat) {
       categoria === "Todos" || categoriasProduto.includes(categoria.toLowerCase());
 
     const mapaFiltro = {
-      "Sem glÃºten": ["sem glÃºten", "sem gluten", "sg"],
+      "Sem glúten": ["sem glúten", "sem gluten", "sg"],
       "Zero lactose": ["zero lactose", "sem lactose", "sl"],
-      "Zero aÃ§Ãºcar": ["zero aÃ§Ãºcar", "zero acucar", "sem aÃ§Ãºcar", "sem acucar", "sa"],
+      "Zero açúcar": ["zero açúcar", "zero acucar", "sem açúcar", "sem acucar", "sa"],
       "Low carb": ["low carb", "lowcarb", "lc"],
       Vegano: ["vegano", "vegan"],
-      Proteico: ["proteico", "proteÃ­na", "proteina", "whey"],
+      Proteico: ["proteico", "proteína", "proteina", "whey"],
     };
     const termosFiltro = mapaFiltro[filtroDietario] || [];
     const matchDietario = filtroDietario === "Todos" || termosFiltro.some((item) => texto.includes(item));
 
     return matchBusca && matchCategoria && matchDietario && produto.ativo !== false;
   });
+
+  const prioridadeCategorias = new Map([
+    ["sobremesas", 0],
+    ["sobremesas grandes", 1],
+    ["doces", 2],
+    ["doces gourmet", 3],
+    ["bolos", 4],
+    ["bolos festa", 5],
+    ["biscoitos e bolachas", 6],
+    ["pães", 7],
+    ["salgados", 8],
+    ["salgados festa", 9],
+    ["tortas salgadas", 10],
+    ["bebidas", 11],
+    ["bebidas quentes", 12],
+  ]);
 
   const ordemCategorias = new Map(
     categoriasOrdenadas.map((cat, index) => [String(cat.nome || "").trim().toLowerCase(), index])
@@ -421,8 +437,8 @@ function filtrarCategoria(cat) {
   const produtosOrdenados = [...produtosFiltrados].sort((a, b) => {
     const categoriaA = String(a.categoria || a.categorias?.[0] || "").trim().toLowerCase();
     const categoriaB = String(b.categoria || b.categorias?.[0] || "").trim().toLowerCase();
-    const posicaoA = ordemCategorias.has(categoriaA) ? ordemCategorias.get(categoriaA) : Number.MAX_SAFE_INTEGER;
-    const posicaoB = ordemCategorias.has(categoriaB) ? ordemCategorias.get(categoriaB) : Number.MAX_SAFE_INTEGER;
+    const posicaoA = prioridadeCategorias.has(categoriaA) ? prioridadeCategorias.get(categoriaA) : 1000 + (ordemCategorias.get(categoriaA) ?? 999);
+    const posicaoB = prioridadeCategorias.has(categoriaB) ? prioridadeCategorias.get(categoriaB) : 1000 + (ordemCategorias.get(categoriaB) ?? 999);
     if (posicaoA !== posicaoB) return posicaoA - posicaoB;
     if (posicaoA === Number.MAX_SAFE_INTEGER && posicaoB === Number.MAX_SAFE_INTEGER && categoriaA !== categoriaB) return categoriaA.localeCompare(categoriaB, "pt-BR");
     const ordemA = Number(a.publicacao?.ordem ?? 0);
@@ -462,7 +478,7 @@ const total = subtotal + Number(frete || 0);
 async function calcularFreteEntrega() {
   try {
     if (!cliente.endereco) {
-      alert("Digite o endereÃ§o de entrega antes de calcular o frete.");
+      alert("Digite o endereço de entrega antes de calcular o frete.");
       return;
     }
 
@@ -478,7 +494,7 @@ async function calcularFreteEntrega() {
     console.log(error);
     alert(
       error.response?.data?.message ||
-        "NÃ£o foi possÃ­vel calcular o frete. Confira o endereÃ§o."
+        "Não foi possível calcular o frete. Confira o endereço."
     );
   } finally {
     setCalculandoFrete(false);
@@ -500,7 +516,7 @@ async function calcularFreteEntrega() {
   cliente.entrega === "Delivery" &&
   !cliente.endereco
 ) {
-  alert("Informe o endereÃ§o de entrega.");
+  alert("Informe o endereço de entrega.");
   return;
 }
 
@@ -525,39 +541,39 @@ ${item.resumoConfiguracoes
                 .join("\n")}`
             : item.configuracao
               ? `
-   OpÃ§Ãµes: ${item.configuracao}`
+   Opções: ${item.configuracao}`
               : "";
 
-        return `â€¢ ${item.nome} x${item.quantidade} - R$ ${(
+        return `• ${item.nome} x${item.quantidade} - R$ ${(
           item.preco * item.quantidade
         ).toFixed(2)}${detalhes}${
           item.observacaoItem
             ? `
-   ObservaÃ§Ã£o: ${item.observacaoItem}`
+   Observação: ${item.observacaoItem}`
             : ""
         }`;
       })
       .join("\n");
 
     const mensagem = `
-OlÃ¡! Quero fazer um pedido pelo cardÃ¡pio online da Conceito Fitness Gourmet.
+Olá! Quero fazer um pedido pelo cardápio online da Conceito Fitness Gourmet.
 
-ðŸ›’ *Pedido:*
+🛒 *Pedido:*
 ${itens}
 
-ðŸ’° *Subtotal:* R$ ${subtotal.toFixed(2)}
-ðŸšš *Frete:* R$ ${Number(frete || 0).toFixed(2)}
-ðŸ’µ *Total:* R$ ${total.toFixed(2)}
+💰 *Subtotal:* R$ ${subtotal.toFixed(2)}
+🚚 *Frete:* R$ ${Number(frete || 0).toFixed(2)}
+💵 *Total:* R$ ${total.toFixed(2)}
 
-ðŸ‘¤ *Cliente:* ${cliente.nome}
-ðŸ“± *WhatsApp:* ${cliente.telefone}
-ðŸ“ *Entrega/Retirada:* ${cliente.entrega || "NÃ£o informado"}
-ðŸª‘ *Mesa:* ${cliente.mesa || "-"}
-ðŸ  *EndereÃ§o:* ${cliente.endereco || "-"}
-ðŸ“Œ *ReferÃªncia:* ${cliente.referencia || "-"}
-ðŸ“ *ObservaÃ§Ã£o:* ${cliente.observacao || "Nenhuma"}
+👤 *Cliente:* ${cliente.nome}
+📱 *WhatsApp:* ${cliente.telefone}
+📍 *Entrega/Retirada:* ${cliente.entrega || "Não informado"}
+🪑 *Mesa:* ${cliente.mesa || "-"}
+🏠 *Endereço:* ${cliente.endereco || "-"}
+📌 *Referência:* ${cliente.referencia || "-"}
+📝 *Observação:* ${cliente.observacao || "Nenhuma"}
 
-Aguardo confirmaÃ§Ã£o.
+Aguardo confirmação.
 `;
     window.open(
       `https://wa.me/${WHATSAPP_LOJA}?text=${encodeURIComponent(mensagem)}`,
@@ -588,7 +604,7 @@ Aguardo confirmaÃ§Ã£o.
       try {
         await api.put("/clientes/cardapio/favoritos", { telefone: sessaoCliente.telefone, favoritos: novos });
       } catch (error) {
-        console.log("NÃ£o foi possÃ­vel sincronizar favoritos:", error);
+        console.log("Não foi possível sincronizar favoritos:", error);
       }
     }
   }
@@ -712,16 +728,16 @@ produto.motivoIndisponibilidade && (
         </button>
 
         <nav className={`co-nav ${menuAberto ? "is-open" : ""}`}>
-          <button onClick={() => { irPara(destaquesRef); setMenuAberto(false); }} className="active">CardÃ¡pio</button>
+          <button onClick={() => { irPara(destaquesRef); setMenuAberto(false); }} className="active">Cardápio</button>
           <button onClick={() => { irPara(combosRef); setMenuAberto(false); }}>Combos</button>
           <button onClick={() => { irPara(novidadesRef); setMenuAberto(false); }}>Novidades</button>
           <button onClick={() => { filtrarCategoria("Bebidas"); setMenuAberto(false); }}>Bebidas</button>
           <button onClick={() => { filtrarCategoria("DOCES"); setMenuAberto(false); }}>Doces</button>
-          <button onClick={() => { irPara(duvidasRef); setMenuAberto(false); }}>DÃºvidas</button>
+          <button onClick={() => { irPara(duvidasRef); setMenuAberto(false); }}>Dúvidas</button>
         </nav>
 
         <div className="co-header-actions">
-          <button className="co-account-button" type="button" onClick={() => setContaAberta(true)} aria-label="Ãrea do cliente">
+          <button className="co-account-button" type="button" onClick={() => setContaAberta(true)} aria-label="Área do cliente">
             <UserRound size={20} />
             <span>{sessaoCliente?.nome ? sessaoCliente.nome.split(" ")[0] : "Minha conta"}</span>
           </button>
@@ -741,15 +757,15 @@ produto.motivoIndisponibilidade && (
         <div className="co-hero-text">
           <span className="co-eyebrow"><Sparkles size={16} /> Cafeteria inclusiva premium</span>
           <h1>
-            AlimentaÃ§Ã£o que <span>transforma.</span>
+            Alimentação que <span>transforma.</span>
           </h1>
 
           <p>
-            Sabor de verdade, cuidado em cada detalhe e opÃ§Ãµes para diferentes escolhas alimentares.
+            Sabor de verdade, cuidado em cada detalhe e opções para diferentes escolhas alimentares.
           </p>
 
           <div className="co-hero-actions">
-            <button type="button" onClick={() => irPara(destaquesRef)}>Explorar cardÃ¡pio</button>
+            <button type="button" onClick={() => irPara(destaquesRef)}>Explorar cardápio</button>
             <a href={`https://wa.me/${WHATSAPP_LOJA}`} target="_blank" rel="noreferrer">
               <MessageCircle size={18} /> Falar com a loja
             </a>
@@ -759,7 +775,7 @@ produto.motivoIndisponibilidade && (
             <div>
               <Leaf />
               <span>Ingredientes</span>
-              <strong>SeleÃ§Ã£o Premium</strong>
+              <strong>Seleção Premium</strong>
             </div>
 
             <div>
@@ -771,7 +787,7 @@ produto.motivoIndisponibilidade && (
             <div>
               <Flame />
               <span>Preparo</span>
-              <strong>RÃ¡pido</strong>
+              <strong>Rápido</strong>
             </div>
           </div>
         </div>
@@ -780,7 +796,7 @@ produto.motivoIndisponibilidade && (
           <div className="co-love-seal">
             FEITO COM
             <strong>AMOR</strong>
-            E PROPÃ“SITO
+            E PROPÓSITO
           </div>
         </div>
       </section>
@@ -847,7 +863,7 @@ produto.motivoIndisponibilidade && (
 
           {!carregando && erroCarregamento && (
             <div className="co-state-card">
-              <strong>NÃ£o conseguimos abrir o cardÃ¡pio.</strong>
+              <strong>Não conseguimos abrir o cardápio.</strong>
               <span>{erroCarregamento}</span>
               <button type="button" onClick={carregarProdutos}>Tentar novamente</button>
             </div>
@@ -858,7 +874,7 @@ produto.motivoIndisponibilidade && (
               <Search size={28} />
               <strong>Nenhum produto encontrado.</strong>
               <span>Tente outra busca ou remova algum filtro.</span>
-              <button type="button" onClick={() => { setBusca(""); setCategoria("Todos"); setFiltroDietario("Todos"); }}>Ver todo o cardÃ¡pio</button>
+              <button type="button" onClick={() => { setBusca(""); setCategoria("Todos"); setFiltroDietario("Todos"); }}>Ver todo o cardápio</button>
             </div>
           )}
 
@@ -923,7 +939,7 @@ produto.motivoIndisponibilidade && (
             <div className="co-section-title">
               <div>
                 <h2>
-                  <Star /> Novidades do CardÃ¡pio
+                  <Star /> Novidades do Cardápio
                 </h2>
                 <p>Experimente o que acabou de chegar</p>
               </div>
@@ -966,8 +982,8 @@ produto.motivoIndisponibilidade && (
             <section className="co-section co-all-products">
               <div className="co-section-title">
                 <div>
-                  <h2><Heart /> {categoria === "Todos" ? "Todo o cardÃ¡pio" : categoria}</h2>
-                  <p>Escolha com calma. Cada produto foi preparado para uma experiÃªncia especial.</p>
+                  <h2><Heart /> {categoria === "Todos" ? "Todo o cardápio" : categoria}</h2>
+                  <p>Escolha com calma. Cada produto foi preparado para uma experiência especial.</p>
                 </div>
               </div>
               <div className="co-products-grid">
@@ -994,7 +1010,7 @@ produto.motivoIndisponibilidade && (
               <ShoppingBag />
               <strong>Nenhum produto adicionado ainda.</strong>
               <span>
-Seu carrinho estÃ¡ esperando por algo delicioso â˜•
+Seu carrinho está esperando por algo delicioso ☕
 </span>
             </div>
           ) : (
@@ -1039,7 +1055,7 @@ Seu carrinho estÃ¡ esperando por algo delicioso â˜•
                     </div>
                     <textarea
                       className="co-item-note"
-                      placeholder="ObservaÃ§Ã£o deste item..."
+                      placeholder="Observação deste item..."
                       value={item.observacaoItem || ""}
                       onChange={(e) => alterarObservacaoItem(item.chaveCarrinho, e.target.value)}
                     />
@@ -1086,11 +1102,11 @@ Seu carrinho estÃ¡ esperando por algo delicioso â˜•
               }
             />
 
-            <label>Como vocÃª deseja receber?</label>
+            <label>Como você deseja receber?</label>
             <div className="co-service-options">
               {[
                 { value: "Consumo no local", label: "Consumir no local", icon: UtensilsCrossed },
-                { value: "Retirada no balcÃ£o", label: "Retirar na loja", icon: Store },
+                { value: "Retirada no balcão", label: "Retirar na loja", icon: Store },
                 { value: "Delivery", label: "Delivery", icon: MapPin },
               ].map(({ value, label, icon: Icon }) => (
                 <button
@@ -1122,10 +1138,10 @@ Seu carrinho estÃ¡ esperando por algo delicioso â˜•
 
 {cliente.entrega === "Delivery" && (
   <>
-    <label>EndereÃ§o de entrega</label>
+    <label>Endereço de entrega</label>
 
     <input
-      placeholder="Rua, nÃºmero e bairro"
+      placeholder="Rua, número e bairro"
       value={cliente.endereco}
       onChange={(e) =>
         setCliente({
@@ -1135,10 +1151,10 @@ Seu carrinho estÃ¡ esperando por algo delicioso â˜•
       }
     />
 
-    <label>Ponto de referÃªncia</label>
+    <label>Ponto de referência</label>
 
     <input
-      placeholder="Ex.: prÃ³ximo ao mercado..."
+      placeholder="Ex.: próximo ao mercado..."
       value={cliente.referencia}
       onChange={(e) =>
   setCliente({
@@ -1162,7 +1178,7 @@ Seu carrinho estÃ¡ esperando por algo delicioso â˜•
 
     {distanciaKm !== null && (
       <div className="co-frete-info">
-        <span>DistÃ¢ncia: {distanciaKm.toFixed(2)} km</span>
+        <span>Distância: {distanciaKm.toFixed(2)} km</span>
         <strong>
           Frete: R$ {Number(frete || 0).toFixed(2)}
         </strong>
@@ -1172,9 +1188,9 @@ Seu carrinho estÃ¡ esperando por algo delicioso â˜•
 )}
 
 
-            <label>ObservaÃ§Ã£o (opcional)</label>
+            <label>Observação (opcional)</label>
             <textarea
-  placeholder="Alguma observaÃ§Ã£o?"
+  placeholder="Alguma observação?"
   value={cliente.observacao}
   onChange={(e) =>
     setCliente({
@@ -1220,22 +1236,22 @@ Seu carrinho estÃ¡ esperando por algo delicioso â˜•
       </main>
 
 <section className="co-duvidas" ref={duvidasRef}>
-  <h2>DÃºvidas Frequentes</h2>
+  <h2>Dúvidas Frequentes</h2>
 
   <div className="co-duvidas-grid">
     <div>
-      <strong>Como faÃ§o meu pedido?</strong>
+      <strong>Como faço meu pedido?</strong>
       <p>Escolha os produtos, preencha seus dados e finalize pelo WhatsApp.</p>
     </div>
 
     <div>
-      <strong>O pagamento Ã© online?</strong>
-      <p>NÃ£o. A confirmaÃ§Ã£o e o pagamento sÃ£o combinados diretamente pelo WhatsApp.</p>
+      <strong>O pagamento é online?</strong>
+      <p>Não. A confirmação e o pagamento são combinados diretamente pelo WhatsApp.</p>
     </div>
 
     <div>
-      <strong>Tem retirada no balcÃ£o?</strong>
-      <p>Sim. VocÃª pode escolher retirada ou delivery no campo do pedido.</p>
+      <strong>Tem retirada no balcão?</strong>
+      <p>Sim. Você pode escolher retirada ou delivery no campo do pedido.</p>
     </div>
   </div>
 </section>
@@ -1251,7 +1267,7 @@ Seu carrinho estÃ¡ esperando por algo delicioso â˜•
         })
     }
   >
-    ðŸ›’ {carrinho.length} item(s)
+    🛒 {carrinho.length} item(s)
   </button>
 )}
 
@@ -1270,14 +1286,14 @@ Seu carrinho estÃ¡ esperando por algo delicioso â˜•
 
         <div>
           <Truck />
-          <strong>Entrega RÃ¡pida</strong>
+          <strong>Entrega Rápida</strong>
           <span>Seu pedido com agilidade</span>
         </div>
 
         <div>
           <ShieldCheck />
-          <strong>SatisfaÃ§Ã£o Garantida</strong>
-          <span>Atendimento com excelÃªncia</span>
+          <strong>Satisfação Garantida</strong>
+          <span>Atendimento com excelência</span>
         </div>
       </footer>
 
