@@ -1,4 +1,4 @@
-import { useEffect, useRef, useState } from "react";
+﻿import { useEffect, useRef, useState } from "react";
 import {
   Search,
   Plus,
@@ -40,6 +40,7 @@ function CardapioOnline() {
 
   const [produtos, setProdutos] = useState([]);
   const [categorias, setCategorias] = useState(["Todos"]);
+  const [categoriasOrdenadas, setCategoriasOrdenadas] = useState([]);
   const [carrinho, setCarrinho] = useState(() => {
     try {
       return JSON.parse(localStorage.getItem("conceito-cardapio-carrinho") || "[]");
@@ -110,10 +111,11 @@ function filtrarCategoria(cat) {
   try {
     setCarregando(true);
     setErroCarregamento("");
-    const [produtosRes, gruposRes, opcoesRes] = await Promise.all([
+    const [produtosRes, gruposRes, opcoesRes, categoriasRes] = await Promise.all([
       api.get("/produtos/cardapio"),
       api.get("/grupos-componentes"),
       api.get("/opcoes-componentes"),
+      api.get("/categorias", { params: { ativo: true, mostrarCardapio: true } }),
     ]);
 
     const lista = produtosRes.data.produtos || [];
@@ -122,6 +124,7 @@ function filtrarCategoria(cat) {
     console.log("PRODUTO COMPLETO:", JSON.stringify(lista[0], null, 2));
 
     setProdutos(lista);
+    setCategoriasOrdenadas(categoriasRes.data.categorias || []);
     setCategorias([
     "Todos",
     ...(produtosRes.data.categorias || [])
@@ -129,8 +132,8 @@ function filtrarCategoria(cat) {
     setGruposComponentes(gruposRes.data.grupos || []);
     setOpcoesComponentes(opcoesRes.data.opcoes || []);
   } catch (error) {
-    console.log("Erro ao carregar cardápio online:", error);
-    setErroCarregamento("Não foi possível carregar o cardápio agora. Tente novamente em instantes.");
+    console.log("Erro ao carregar cardÃ¡pio online:", error);
+    setErroCarregamento("NÃ£o foi possÃ­vel carregar o cardÃ¡pio agora. Tente novamente em instantes.");
   } finally {
     setCarregando(false);
   }
@@ -182,7 +185,7 @@ function filtrarCategoria(cat) {
     );
 
     if (!produto) {
-      alert("Este produto não está mais disponível no cardápio.");
+      alert("Este produto nÃ£o estÃ¡ mais disponÃ­vel no cardÃ¡pio.");
       return;
     }
 
@@ -290,7 +293,7 @@ function filtrarCategoria(cat) {
     const chaveCarrinho = `${id}-${assinaturaConfiguracao}-${observacaoItem}`;
     const resumoConfig = resumoConfiguracoes
       .map((item) => `${item.grupo}: ${item.texto}`)
-      .join(" · ");
+      .join(" Â· ");
 
     const novoItem = {
       id,
@@ -367,9 +370,9 @@ function filtrarCategoria(cat) {
 
   const filtrosDietarios = [
     "Todos",
-    "Sem glúten",
+    "Sem glÃºten",
     "Zero lactose",
-    "Zero açúcar",
+    "Zero aÃ§Ãºcar",
     "Low carb",
     "Vegano",
     "Proteico",
@@ -398,17 +401,34 @@ function filtrarCategoria(cat) {
       categoria === "Todos" || categoriasProduto.includes(categoria.toLowerCase());
 
     const mapaFiltro = {
-      "Sem glúten": ["sem glúten", "sem gluten", "sg"],
+      "Sem glÃºten": ["sem glÃºten", "sem gluten", "sg"],
       "Zero lactose": ["zero lactose", "sem lactose", "sl"],
-      "Zero açúcar": ["zero açúcar", "zero acucar", "sem açúcar", "sem acucar", "sa"],
+      "Zero aÃ§Ãºcar": ["zero aÃ§Ãºcar", "zero acucar", "sem aÃ§Ãºcar", "sem acucar", "sa"],
       "Low carb": ["low carb", "lowcarb", "lc"],
       Vegano: ["vegano", "vegan"],
-      Proteico: ["proteico", "proteína", "proteina", "whey"],
+      Proteico: ["proteico", "proteÃ­na", "proteina", "whey"],
     };
     const termosFiltro = mapaFiltro[filtroDietario] || [];
     const matchDietario = filtroDietario === "Todos" || termosFiltro.some((item) => texto.includes(item));
 
     return matchBusca && matchCategoria && matchDietario && produto.ativo !== false;
+  });
+
+  const ordemCategorias = new Map(
+    categoriasOrdenadas.map((cat, index) => [String(cat.nome || "").trim().toLowerCase(), index])
+  );
+
+  const produtosOrdenados = [...produtosFiltrados].sort((a, b) => {
+    const categoriaA = String(a.categoria || a.categorias?.[0] || "").trim().toLowerCase();
+    const categoriaB = String(b.categoria || b.categorias?.[0] || "").trim().toLowerCase();
+    const posicaoA = ordemCategorias.has(categoriaA) ? ordemCategorias.get(categoriaA) : Number.MAX_SAFE_INTEGER;
+    const posicaoB = ordemCategorias.has(categoriaB) ? ordemCategorias.get(categoriaB) : Number.MAX_SAFE_INTEGER;
+    if (posicaoA !== posicaoB) return posicaoA - posicaoB;
+    if (posicaoA === Number.MAX_SAFE_INTEGER && posicaoB === Number.MAX_SAFE_INTEGER && categoriaA !== categoriaB) return categoriaA.localeCompare(categoriaB, "pt-BR");
+    const ordemA = Number(a.publicacao?.ordem ?? 0);
+    const ordemB = Number(b.publicacao?.ordem ?? 0);
+    if (ordemA !== ordemB) return ordemA - ordemB;
+    return String(a.nome || "").localeCompare(String(b.nome || ""), "pt-BR");
   });
 
   const destaques = produtosFiltrados.filter(
@@ -442,7 +462,7 @@ const total = subtotal + Number(frete || 0);
 async function calcularFreteEntrega() {
   try {
     if (!cliente.endereco) {
-      alert("Digite o endereço de entrega antes de calcular o frete.");
+      alert("Digite o endereÃ§o de entrega antes de calcular o frete.");
       return;
     }
 
@@ -458,7 +478,7 @@ async function calcularFreteEntrega() {
     console.log(error);
     alert(
       error.response?.data?.message ||
-        "Não foi possível calcular o frete. Confira o endereço."
+        "NÃ£o foi possÃ­vel calcular o frete. Confira o endereÃ§o."
     );
   } finally {
     setCalculandoFrete(false);
@@ -480,7 +500,7 @@ async function calcularFreteEntrega() {
   cliente.entrega === "Delivery" &&
   !cliente.endereco
 ) {
-  alert("Informe o endereço de entrega.");
+  alert("Informe o endereÃ§o de entrega.");
   return;
 }
 
@@ -505,39 +525,39 @@ ${item.resumoConfiguracoes
                 .join("\n")}`
             : item.configuracao
               ? `
-   Opções: ${item.configuracao}`
+   OpÃ§Ãµes: ${item.configuracao}`
               : "";
 
-        return `• ${item.nome} x${item.quantidade} - R$ ${(
+        return `â€¢ ${item.nome} x${item.quantidade} - R$ ${(
           item.preco * item.quantidade
         ).toFixed(2)}${detalhes}${
           item.observacaoItem
             ? `
-   Observação: ${item.observacaoItem}`
+   ObservaÃ§Ã£o: ${item.observacaoItem}`
             : ""
         }`;
       })
       .join("\n");
 
     const mensagem = `
-Olá! Quero fazer um pedido pelo cardápio online da Conceito Fitness Gourmet.
+OlÃ¡! Quero fazer um pedido pelo cardÃ¡pio online da Conceito Fitness Gourmet.
 
-🛒 *Pedido:*
+ðŸ›’ *Pedido:*
 ${itens}
 
-💰 *Subtotal:* R$ ${subtotal.toFixed(2)}
-🚚 *Frete:* R$ ${Number(frete || 0).toFixed(2)}
-💵 *Total:* R$ ${total.toFixed(2)}
+ðŸ’° *Subtotal:* R$ ${subtotal.toFixed(2)}
+ðŸšš *Frete:* R$ ${Number(frete || 0).toFixed(2)}
+ðŸ’µ *Total:* R$ ${total.toFixed(2)}
 
-👤 *Cliente:* ${cliente.nome}
-📱 *WhatsApp:* ${cliente.telefone}
-📍 *Entrega/Retirada:* ${cliente.entrega || "Não informado"}
-🪑 *Mesa:* ${cliente.mesa || "-"}
-🏠 *Endereço:* ${cliente.endereco || "-"}
-📌 *Referência:* ${cliente.referencia || "-"}
-📝 *Observação:* ${cliente.observacao || "Nenhuma"}
+ðŸ‘¤ *Cliente:* ${cliente.nome}
+ðŸ“± *WhatsApp:* ${cliente.telefone}
+ðŸ“ *Entrega/Retirada:* ${cliente.entrega || "NÃ£o informado"}
+ðŸª‘ *Mesa:* ${cliente.mesa || "-"}
+ðŸ  *EndereÃ§o:* ${cliente.endereco || "-"}
+ðŸ“Œ *ReferÃªncia:* ${cliente.referencia || "-"}
+ðŸ“ *ObservaÃ§Ã£o:* ${cliente.observacao || "Nenhuma"}
 
-Aguardo confirmação.
+Aguardo confirmaÃ§Ã£o.
 `;
     window.open(
       `https://wa.me/${WHATSAPP_LOJA}?text=${encodeURIComponent(mensagem)}`,
@@ -568,7 +588,7 @@ Aguardo confirmação.
       try {
         await api.put("/clientes/cardapio/favoritos", { telefone: sessaoCliente.telefone, favoritos: novos });
       } catch (error) {
-        console.log("Não foi possível sincronizar favoritos:", error);
+        console.log("NÃ£o foi possÃ­vel sincronizar favoritos:", error);
       }
     }
   }
@@ -692,16 +712,16 @@ produto.motivoIndisponibilidade && (
         </button>
 
         <nav className={`co-nav ${menuAberto ? "is-open" : ""}`}>
-          <button onClick={() => { irPara(destaquesRef); setMenuAberto(false); }} className="active">Cardápio</button>
+          <button onClick={() => { irPara(destaquesRef); setMenuAberto(false); }} className="active">CardÃ¡pio</button>
           <button onClick={() => { irPara(combosRef); setMenuAberto(false); }}>Combos</button>
           <button onClick={() => { irPara(novidadesRef); setMenuAberto(false); }}>Novidades</button>
           <button onClick={() => { filtrarCategoria("Bebidas"); setMenuAberto(false); }}>Bebidas</button>
           <button onClick={() => { filtrarCategoria("DOCES"); setMenuAberto(false); }}>Doces</button>
-          <button onClick={() => { irPara(duvidasRef); setMenuAberto(false); }}>Dúvidas</button>
+          <button onClick={() => { irPara(duvidasRef); setMenuAberto(false); }}>DÃºvidas</button>
         </nav>
 
         <div className="co-header-actions">
-          <button className="co-account-button" type="button" onClick={() => setContaAberta(true)} aria-label="Área do cliente">
+          <button className="co-account-button" type="button" onClick={() => setContaAberta(true)} aria-label="Ãrea do cliente">
             <UserRound size={20} />
             <span>{sessaoCliente?.nome ? sessaoCliente.nome.split(" ")[0] : "Minha conta"}</span>
           </button>
@@ -721,15 +741,15 @@ produto.motivoIndisponibilidade && (
         <div className="co-hero-text">
           <span className="co-eyebrow"><Sparkles size={16} /> Cafeteria inclusiva premium</span>
           <h1>
-            Alimentação que <span>transforma.</span>
+            AlimentaÃ§Ã£o que <span>transforma.</span>
           </h1>
 
           <p>
-            Sabor de verdade, cuidado em cada detalhe e opções para diferentes escolhas alimentares.
+            Sabor de verdade, cuidado em cada detalhe e opÃ§Ãµes para diferentes escolhas alimentares.
           </p>
 
           <div className="co-hero-actions">
-            <button type="button" onClick={() => irPara(destaquesRef)}>Explorar cardápio</button>
+            <button type="button" onClick={() => irPara(destaquesRef)}>Explorar cardÃ¡pio</button>
             <a href={`https://wa.me/${WHATSAPP_LOJA}`} target="_blank" rel="noreferrer">
               <MessageCircle size={18} /> Falar com a loja
             </a>
@@ -739,7 +759,7 @@ produto.motivoIndisponibilidade && (
             <div>
               <Leaf />
               <span>Ingredientes</span>
-              <strong>Seleção Premium</strong>
+              <strong>SeleÃ§Ã£o Premium</strong>
             </div>
 
             <div>
@@ -751,7 +771,7 @@ produto.motivoIndisponibilidade && (
             <div>
               <Flame />
               <span>Preparo</span>
-              <strong>Rápido</strong>
+              <strong>RÃ¡pido</strong>
             </div>
           </div>
         </div>
@@ -760,7 +780,7 @@ produto.motivoIndisponibilidade && (
           <div className="co-love-seal">
             FEITO COM
             <strong>AMOR</strong>
-            E PROPÓSITO
+            E PROPÃ“SITO
           </div>
         </div>
       </section>
@@ -827,7 +847,7 @@ produto.motivoIndisponibilidade && (
 
           {!carregando && erroCarregamento && (
             <div className="co-state-card">
-              <strong>Não conseguimos abrir o cardápio.</strong>
+              <strong>NÃ£o conseguimos abrir o cardÃ¡pio.</strong>
               <span>{erroCarregamento}</span>
               <button type="button" onClick={carregarProdutos}>Tentar novamente</button>
             </div>
@@ -838,7 +858,7 @@ produto.motivoIndisponibilidade && (
               <Search size={28} />
               <strong>Nenhum produto encontrado.</strong>
               <span>Tente outra busca ou remova algum filtro.</span>
-              <button type="button" onClick={() => { setBusca(""); setCategoria("Todos"); setFiltroDietario("Todos"); }}>Ver todo o cardápio</button>
+              <button type="button" onClick={() => { setBusca(""); setCategoria("Todos"); setFiltroDietario("Todos"); }}>Ver todo o cardÃ¡pio</button>
             </div>
           )}
 
@@ -903,7 +923,7 @@ produto.motivoIndisponibilidade && (
             <div className="co-section-title">
               <div>
                 <h2>
-                  <Star /> Novidades do Cardápio
+                  <Star /> Novidades do CardÃ¡pio
                 </h2>
                 <p>Experimente o que acabou de chegar</p>
               </div>
@@ -946,12 +966,12 @@ produto.motivoIndisponibilidade && (
             <section className="co-section co-all-products">
               <div className="co-section-title">
                 <div>
-                  <h2><Heart /> {categoria === "Todos" ? "Todo o cardápio" : categoria}</h2>
-                  <p>Escolha com calma. Cada produto foi preparado para uma experiência especial.</p>
+                  <h2><Heart /> {categoria === "Todos" ? "Todo o cardÃ¡pio" : categoria}</h2>
+                  <p>Escolha com calma. Cada produto foi preparado para uma experiÃªncia especial.</p>
                 </div>
               </div>
               <div className="co-products-grid">
-                {produtosFiltrados.map((produto) => (
+                {produtosOrdenados.map((produto) => (
                   <ProdutoCard key={`todos-${produto._id || produto.id}`} produto={produto} />
                 ))}
               </div>
@@ -974,7 +994,7 @@ produto.motivoIndisponibilidade && (
               <ShoppingBag />
               <strong>Nenhum produto adicionado ainda.</strong>
               <span>
-Seu carrinho está esperando por algo delicioso ☕
+Seu carrinho estÃ¡ esperando por algo delicioso â˜•
 </span>
             </div>
           ) : (
@@ -1019,7 +1039,7 @@ Seu carrinho está esperando por algo delicioso ☕
                     </div>
                     <textarea
                       className="co-item-note"
-                      placeholder="Observação deste item..."
+                      placeholder="ObservaÃ§Ã£o deste item..."
                       value={item.observacaoItem || ""}
                       onChange={(e) => alterarObservacaoItem(item.chaveCarrinho, e.target.value)}
                     />
@@ -1066,11 +1086,11 @@ Seu carrinho está esperando por algo delicioso ☕
               }
             />
 
-            <label>Como você deseja receber?</label>
+            <label>Como vocÃª deseja receber?</label>
             <div className="co-service-options">
               {[
                 { value: "Consumo no local", label: "Consumir no local", icon: UtensilsCrossed },
-                { value: "Retirada no balcão", label: "Retirar na loja", icon: Store },
+                { value: "Retirada no balcÃ£o", label: "Retirar na loja", icon: Store },
                 { value: "Delivery", label: "Delivery", icon: MapPin },
               ].map(({ value, label, icon: Icon }) => (
                 <button
@@ -1102,10 +1122,10 @@ Seu carrinho está esperando por algo delicioso ☕
 
 {cliente.entrega === "Delivery" && (
   <>
-    <label>Endereço de entrega</label>
+    <label>EndereÃ§o de entrega</label>
 
     <input
-      placeholder="Rua, número e bairro"
+      placeholder="Rua, nÃºmero e bairro"
       value={cliente.endereco}
       onChange={(e) =>
         setCliente({
@@ -1115,10 +1135,10 @@ Seu carrinho está esperando por algo delicioso ☕
       }
     />
 
-    <label>Ponto de referência</label>
+    <label>Ponto de referÃªncia</label>
 
     <input
-      placeholder="Ex.: próximo ao mercado..."
+      placeholder="Ex.: prÃ³ximo ao mercado..."
       value={cliente.referencia}
       onChange={(e) =>
   setCliente({
@@ -1142,7 +1162,7 @@ Seu carrinho está esperando por algo delicioso ☕
 
     {distanciaKm !== null && (
       <div className="co-frete-info">
-        <span>Distância: {distanciaKm.toFixed(2)} km</span>
+        <span>DistÃ¢ncia: {distanciaKm.toFixed(2)} km</span>
         <strong>
           Frete: R$ {Number(frete || 0).toFixed(2)}
         </strong>
@@ -1152,9 +1172,9 @@ Seu carrinho está esperando por algo delicioso ☕
 )}
 
 
-            <label>Observação (opcional)</label>
+            <label>ObservaÃ§Ã£o (opcional)</label>
             <textarea
-  placeholder="Alguma observação?"
+  placeholder="Alguma observaÃ§Ã£o?"
   value={cliente.observacao}
   onChange={(e) =>
     setCliente({
@@ -1200,22 +1220,22 @@ Seu carrinho está esperando por algo delicioso ☕
       </main>
 
 <section className="co-duvidas" ref={duvidasRef}>
-  <h2>Dúvidas Frequentes</h2>
+  <h2>DÃºvidas Frequentes</h2>
 
   <div className="co-duvidas-grid">
     <div>
-      <strong>Como faço meu pedido?</strong>
+      <strong>Como faÃ§o meu pedido?</strong>
       <p>Escolha os produtos, preencha seus dados e finalize pelo WhatsApp.</p>
     </div>
 
     <div>
-      <strong>O pagamento é online?</strong>
-      <p>Não. A confirmação e o pagamento são combinados diretamente pelo WhatsApp.</p>
+      <strong>O pagamento Ã© online?</strong>
+      <p>NÃ£o. A confirmaÃ§Ã£o e o pagamento sÃ£o combinados diretamente pelo WhatsApp.</p>
     </div>
 
     <div>
-      <strong>Tem retirada no balcão?</strong>
-      <p>Sim. Você pode escolher retirada ou delivery no campo do pedido.</p>
+      <strong>Tem retirada no balcÃ£o?</strong>
+      <p>Sim. VocÃª pode escolher retirada ou delivery no campo do pedido.</p>
     </div>
   </div>
 </section>
@@ -1231,7 +1251,7 @@ Seu carrinho está esperando por algo delicioso ☕
         })
     }
   >
-    🛒 {carrinho.length} item(s)
+    ðŸ›’ {carrinho.length} item(s)
   </button>
 )}
 
@@ -1250,14 +1270,14 @@ Seu carrinho está esperando por algo delicioso ☕
 
         <div>
           <Truck />
-          <strong>Entrega Rápida</strong>
+          <strong>Entrega RÃ¡pida</strong>
           <span>Seu pedido com agilidade</span>
         </div>
 
         <div>
           <ShieldCheck />
-          <strong>Satisfação Garantida</strong>
-          <span>Atendimento com excelência</span>
+          <strong>SatisfaÃ§Ã£o Garantida</strong>
+          <span>Atendimento com excelÃªncia</span>
         </div>
       </footer>
 
@@ -1311,3 +1331,10 @@ Seu carrinho está esperando por algo delicioso ☕
   );
 }
 export default CardapioOnline;
+
+
+
+
+
+
+
