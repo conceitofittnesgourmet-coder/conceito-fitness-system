@@ -619,6 +619,7 @@ Aguardo confirmação.
       <article className="co-product-card">
         <div className="co-product-image">
           {badge && <span className="co-badge">{badge}</span>}
+          {!produto.disponivel && <span className="co-soldout-badge">ESGOTADO</span>}
           <button
             type="button"
             className={`co-favorite-button ${favoritos.includes(String(produto._id || produto.id)) ? "active" : ""}`}
