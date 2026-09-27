@@ -195,7 +195,7 @@ async function buscarPedidoDetalhado({ pedidoId, empresa } = {}) {
 function acaoIfoodPorStatus(statusDestino) {
   switch (statusDestino) {
     case "producao":
-      return "confirmar";
+      return "iniciar_preparo";
 
     case "pronto":
       return "pronto";

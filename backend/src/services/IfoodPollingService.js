@@ -3,6 +3,7 @@ const IfoodEvento = require("../models/ifoodevento");
 const IfoodPedido = require("../models/ifoodpedido");
 const Pedido = require("../models/pedido");
 const IfoodApiService = require("./IfoodApiService");
+const IfoodOrderStatusService = require("./IfoodOrderStatusService");
 
 let timer = null;
 let executando = false;
@@ -184,6 +185,12 @@ async function importarPedido(order, evento) {
     },
     { upsert: true, new: true, setDefaultsOnInsert: true }
   );
+
+  const statusParaConfirmacao = String(statusIfood || "").toUpperCase();
+
+  if (novo && ["PLC", "PLACED"].includes(statusParaConfirmacao)) {
+    await IfoodOrderStatusService.executar(orderId, "confirmar");
+  }
 
   if (novo && global.io) {
     global.io.emit("novo-pedido", pedido);
