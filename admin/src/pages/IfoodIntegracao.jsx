@@ -233,7 +233,7 @@ async function abrirCancelamento(item) {
     const response = await api.get(`/ifood/pedidos/${item.orderId}/motivos-cancelamento`);
     const motivos = response.data?.motivos || [];
     setMotivosCancelamento(motivos);
-    setMotivoSelecionado(motivos[0]?.code || motivos[0]?.id || "");
+    setMotivoSelecionado(motivos[0]?.cancelCodeId || motivos[0]?.code || motivos[0]?.id || "");
     setCancelamento(item);
   } catch (error) {
     setMensagem({ tipo: "erro", texto: error.response?.data?.message || "Não foi possível carregar os motivos." });
@@ -414,7 +414,7 @@ async function confirmarCancelamento() {
           <div className="ifood-modal" onMouseDown={(e) => e.stopPropagation()}>
             <div className="ifood-modal-header"><div><span>Cancelamento iFood</span><h3>Pedido #{cancelamento.displayId || cancelamento.orderId?.slice(-6)}</h3></div><button onClick={() => setCancelamento(null)}><FaTimes /></button></div>
             <p>O cancelamento é assíncrono. O pedido só será marcado como cancelado após o evento de confirmação do iFood.</p>
-            <label>Motivo aceito para este pedido<select value={motivoSelecionado} onChange={(e) => setMotivoSelecionado(e.target.value)}>{motivosCancelamento.map((motivo) => <option key={motivo.code || motivo.id} value={motivo.code || motivo.id}>{motivo.code || motivo.id} — {motivo.description || motivo.reason || motivo.name}</option>)}</select></label>
+            <label>Motivo aceito para este pedido<select value={motivoSelecionado} onChange={(e) => setMotivoSelecionado(e.target.value)}>{motivosCancelamento.map((motivo) => <option key={motivo.cancelCodeId || motivo.code || motivo.id} value={motivo.cancelCodeId || motivo.code || motivo.id}>{motivo.code || motivo.id} — {motivo.description || motivo.reason || motivo.name}</option>)}</select></label>
             <div className="ifood-modal-actions"><button className="secondary" onClick={() => setCancelamento(null)}>Voltar</button><button className="danger" onClick={confirmarCancelamento} disabled={!motivoSelecionado || Boolean(acaoEmAndamento)}>Solicitar cancelamento</button></div>
           </div>
         </div>}
