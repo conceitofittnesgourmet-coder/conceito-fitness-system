@@ -247,7 +247,7 @@ async function motivosCancelamento(configuracao, orderId) {
 }
 
 async function solicitarCancelamento(configuracao, orderId, reason) {
-  return acaoPedido(configuracao, orderId, "requestCancellation", { reason: String(reason) });
+  return acaoPedido(configuracao, orderId, "requestCancellation", { cancellationCode: String(reason) });
 }
 
 
