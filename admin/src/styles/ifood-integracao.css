@@ -11,6 +11,7 @@
 .ifood-table th,.ifood-table td { padding:11px 9px; text-align:left; border-bottom:1px solid #eee4dd; font-size:.84rem; vertical-align:top; }
 .ifood-table th { color:#76645b; font-size:.75rem; text-transform:uppercase; letter-spacing:.04em; }
 .ifood-table td strong,.ifood-table td small { display:block; }
+.ifood-orders-table td strong { color:#44372f; }
 .ifood-table td small { color:#8d7f77; margin-top:3px; max-width:180px; overflow:hidden; text-overflow:ellipsis; }
 .ifood-event-status { display:inline-flex; padding:4px 8px; border-radius:999px; background:#eee; font-size:.72rem; text-transform:capitalize; }
 .ifood-event-status.processado { background:#dff3e5; color:#28613d; }
