@@ -598,7 +598,7 @@ function acaoIfoodPorStatusPedido(status) {
       .toLowerCase()
   ) {
     case "producao":
-      return "confirmar";
+      return "iniciar_preparo";
 
     case "pronto":
       return "pronto";
