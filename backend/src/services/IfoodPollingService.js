@@ -15,6 +15,8 @@ const STATUS_ERP = {
   CONFIRMED: "producao",
   SPS: "producao",
   SEPARATION_STARTED: "producao",
+  PRS: "producao",
+  PREPARATION_STARTED: "producao",
   RTP: "pronto",
   READY_TO_PICKUP: "pronto",
   DSP: "entregue",
@@ -240,7 +242,9 @@ async function atualizarStatusPedido(evento) {
       statusErp;
 
     atualizacao.statusProducao =
-      statusErp === "producao"
+      ["CFM", "CONFIRMED"].includes(codigo)
+        ? "aguardando"
+        : statusErp === "producao"
         ? "producao"
         : statusErp === "pronto"
         ? "pronto"
