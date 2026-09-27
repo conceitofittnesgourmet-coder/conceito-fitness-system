@@ -389,8 +389,8 @@ async function confirmarCancelamento() {
     <div className="ifood-table-wrap">
       <table className="ifood-table ifood-orders-table"><thead><tr><th>iFood</th><th>ERP</th><th>Status</th><th>Último comando</th><th>Ações</th></tr></thead>
         <tbody>{pedidosImportados.length ? pedidosImportados.map((item) => <tr key={item._id}>
-          <td><strong>#{item.displayId || item.orderId?.slice(-6)}</strong><small>{item.orderType} · {item.orderTiming || "IMMEDIATE"}</small></td>
-          <td>{item.pedidoErp?.numeroPedido ? `#${item.pedidoErp.numeroPedido}` : "—"}<small>{item.pedidoErp?.cliente || ""}</small></td>
+          <td><strong>Pedido iFood #{item.displayId || item.orderId?.slice(-6)}</strong><small>{item.orderType} · {item.orderTiming || "IMMEDIATE"}</small></td>
+          <td>{item.pedidoErp?.numeroPedido ? <strong>{`Pedido ERP #${item.pedidoErp.numeroPedido}`}</strong> : "—"}<small>{item.pedidoErp?.cliente || ""}</small></td>
           <td><span className={`ifood-order-status status-${statusNormalizado(item).toLowerCase()}`}>{item.status}</span>{item.statusSolicitado && <small>Aguardando: {item.statusSolicitado}</small>}</td>
           <td>{item.ultimoComando || "—"}<small>{dataHora(item.ultimoComandoEm)}</small>{item.ultimoComandoErro && <small className="ifood-command-error">{item.ultimoComandoErro}</small>}</td>
           <td><div className="ifood-order-actions">
