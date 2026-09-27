@@ -189,8 +189,10 @@ async function importarPedido(order, evento) {
   );
 
   const statusParaConfirmacao = String(statusIfood || "").toUpperCase();
+  const registroIfood = await IfoodPedido.findOne({ orderId }).select("ultimoComando ultimoComandoOk").lean();
+  const confirmacaoConcluida = registroIfood?.ultimoComando === "confirmar" && registroIfood?.ultimoComandoOk === true;
 
-  if (novo && ["PLC", "PLACED"].includes(statusParaConfirmacao)) {
+  if (["PLC", "PLACED"].includes(statusParaConfirmacao) && !confirmacaoConcluida) {
     await IfoodOrderStatusService.executar(orderId, "confirmar");
   }
 
