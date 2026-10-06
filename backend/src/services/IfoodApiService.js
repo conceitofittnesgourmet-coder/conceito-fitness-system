@@ -154,7 +154,7 @@ async function obterStatus(configuracao, merchantId) {
     method: "GET",
     url: `${MERCHANT_URL}/merchants/${merchantId}/status`,
   });
-  return response.data;
+  return Array.isArray(response.data) ? (response.data[0] || {}) : (response.data || {});
 }
 
 async function testarConexao() {
