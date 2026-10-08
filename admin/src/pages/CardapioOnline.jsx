@@ -1309,6 +1309,7 @@ Seu carrinho está esperando por algo delicioso ☕
 
       {produtoSelecionado && (
         <ProdutoModal
+          key={`${produtoSelecionado?._id || produtoSelecionado?.id || "produto"}-${itemEmEdicao?.chaveCarrinho || "novo"}`}
           produto={produtoSelecionado}
           imagem={getImagemProduto(produtoSelecionado)}
           quantidade={quantidadeModal}

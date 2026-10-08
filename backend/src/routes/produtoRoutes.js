@@ -79,7 +79,7 @@ router.get(
 router.post(
   "/",
   authMiddleware,
-  upload.array("imagens", 10),
+  upload.fields([{ name: "imagens", maxCount: 10 }, { name: "imagensVariacoes", maxCount: 30 }]),
   criarProduto
 );
 
@@ -123,7 +123,7 @@ router.get(
 router.put(
   "/:id",
   authMiddleware,
-  upload.array("imagens", 10),
+  upload.fields([{ name: "imagens", maxCount: 10 }, { name: "imagensVariacoes", maxCount: 30 }]),
   atualizarProduto
 );
 

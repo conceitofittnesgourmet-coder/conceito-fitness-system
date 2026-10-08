@@ -1,4 +1,4 @@
-import { useEffect, useMemo, useState } from "react";
+import { useMemo, useState } from "react";
 import {
   X,
   Plus,
@@ -40,23 +40,6 @@ function ProdutoModal({
   onAdicionar,
   configuracaoInicial = null,
 }) {
-  const [selecoes, setSelecoes] = useState({});
-  const [observacaoItem, setObservacaoItem] = useState("");
-  const [imagemAtiva, setImagemAtiva] = useState("");
-
-  const imagensProduto = [
-    imagem,
-    ...(produto.imagens || [])
-      .map((img) => img?.url || img?.secure_url || img?.path || img)
-      .filter(Boolean),
-  ].filter(Boolean);
-
-  const imagensUnicas = [...new Set(imagensProduto)];
-
-  const selos = produto?.selos || {};
-  const alergenos = produto?.alergenos || {};
-  const nutri = produto?.informacoesNutricionais || {};
-
   const gruposDoProduto = useMemo(
     () =>
       obterGruposDoProduto(produto, grupos).filter(
@@ -65,16 +48,53 @@ function ProdutoModal({
     [produto, grupos]
   );
 
-    useEffect(() => {
-    setImagemAtiva(imagensUnicas[0] || imagem || "");
-    setObservacaoItem(configuracaoInicial?.observacaoItem || "");
-    setSelecoes(
-      configuracaoInicial?.selecoes
-        ? clonarSelecoes(configuracaoInicial.selecoes)
-        : montarSelecoesPadrao(gruposDoProduto, opcoes)
-    );
-  }, [produto?._id, configuracaoInicial?.chaveCarrinho]);
+  const [selecoes, setSelecoes] = useState(() =>
+    configuracaoInicial?.selecoes
+      ? clonarSelecoes(configuracaoInicial.selecoes)
+      : montarSelecoesPadrao(gruposDoProduto, opcoes)
+  );
+  const [observacaoItem, setObservacaoItem] = useState(
+    () => configuracaoInicial?.observacaoItem || ""
+  );
+  const [imagemEscolhida, setImagemEscolhida] = useState(null);
 
+  const imagensPrincipais = [
+    imagem,
+    ...(produto?.imagens || [])
+      .map((img) => img?.url || img?.secure_url || img?.path || img)
+      .filter(Boolean),
+  ].filter(Boolean);
+
+  const galeriaCorrespondente = (produto?.galeriasVariacoes || [])
+    .filter((galeria) =>
+      galeria.ativo !== false &&
+      Array.isArray(galeria.selecoes) &&
+      galeria.selecoes.length > 0 &&
+      Array.isArray(galeria.imagens) &&
+      galeria.imagens.length > 0
+    )
+    .filter((galeria) =>
+      galeria.selecoes.every(({ grupoId, opcaoId }) =>
+        (selecoes[String(grupoId?._id || grupoId)] || []).some(
+          (opcao) => String(opcao?._id || opcao?.id) === String(opcaoId?._id || opcaoId)
+        )
+      )
+    )
+    .sort((a, b) => b.selecoes.length - a.selecoes.length || (a.ordem ?? 0) - (b.ordem ?? 0))[0];
+
+  const imagensVariacao = (galeriaCorrespondente?.imagens || [])
+    .map((img) => img?.url || img?.secure_url || img?.path)
+    .filter(Boolean);
+
+  const imagensUnicas = [
+    ...new Set(imagensVariacao.length ? imagensVariacao : imagensPrincipais),
+  ];
+  const primeiraImagemGaleria = imagensUnicas[0] || imagem || "";
+
+  const imagemAtiva = imagemEscolhida?.galeria === primeiraImagemGaleria && imagensUnicas.includes(imagemEscolhida.url) ? imagemEscolhida.url : primeiraImagemGaleria;
+  const selos = produto?.selos || {};
+  const alergenos = produto?.alergenos || {};
+  const nutri = produto?.informacoesNutricionais || {};
   const adicionais = useMemo(() => {
     return calcularAdicionais(selecoes);
   }, [selecoes]);
@@ -148,7 +168,7 @@ function ProdutoModal({
                 <button
                   key={index}
                   className={imagemAtiva === img ? "active" : ""}
-                  onClick={() => setImagemAtiva(img)}
+                  onClick={() => setImagemEscolhida({ galeria: primeiraImagemGaleria, url: img })}
                 >
                   <img src={img} alt={`${produto.nome} ${index + 1}`} />
                 </button>

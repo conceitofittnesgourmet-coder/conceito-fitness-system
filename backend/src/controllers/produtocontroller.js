@@ -5,18 +5,20 @@ const ProdutoService = require("../services/ProdutoService");
 const ConfiguracaoProdutoService = require("../services/ConfiguracaoProdutoService");
 const AuditoriaPersonalizacoesService = require("../services/AuditoriaPersonalizacoesService");
 
-async function uploadImagens(files = []) {
+async function uploadImagens(files = [], registro = null) {
   const imagens = [];
   for (const file of files) {
     try {
       const resultado = await cloudinary.uploader.upload(file.path, {
         folder: "conceito-fitness/produtos",
       });
-      imagens.push({
-        url: resultado.secure_url,
-        public_id: resultado.public_id,
-        filename: file.filename,
-      });
+      const imagemEnviada = {
+          url: resultado.secure_url,
+          public_id: resultado.public_id,
+          filename: file.filename,
+        };
+        imagens.push(imagemEnviada);
+        if (registro) registro.push(imagemEnviada);
     } finally {
       if (file.path) await fs.remove(file.path).catch(() => {});
     }
@@ -35,6 +37,45 @@ async function removerImagensCloudinary(imagens = []) {
   }
 }
 
+function validarGaleriasVariacoes(valor, quantidadeArquivos = 0) {
+  const galerias = typeof valor === "string" ? JSON.parse(valor) : valor;
+  if (!Array.isArray(galerias)) throw new Error("Galerias de variações inválidas");
+  const indices = galerias.flatMap(g => (g.imagens || []).filter(i => i.indiceArquivo !== undefined && i.indiceArquivo !== null).map(i => Number(i.indiceArquivo)));
+  if (indices.length !== quantidadeArquivos || new Set(indices).size !== quantidadeArquivos || indices.some(i => !Number.isInteger(i) || i < 0 || i >= quantidadeArquivos)) {
+    throw new Error("Arquivos de variação sem associação válida");
+  }
+  return galerias;
+}
+
+function prepararGaleriasVariacoes(valor, imagensEnviadas = []) {
+  const galerias = typeof valor === "string" ? JSON.parse(valor) : valor;
+  if (!Array.isArray(galerias)) throw new Error("Galerias de variações inválidas");
+
+  const indices = galerias.flatMap(g => (g.imagens || []).filter(i => i.indiceArquivo !== undefined && i.indiceArquivo !== null).map(i => Number(i.indiceArquivo))); if (indices.length !== imagensEnviadas.length || new Set(indices).size !== imagensEnviadas.length || indices.some(i => !Number.isInteger(i) || i < 0 || i >= imagensEnviadas.length)) throw new Error("Arquivos de variação sem associação válida");
+
+  return galerias.map((galeria) => ({
+    ...galeria,
+    imagens: (galeria.imagens || []).map((imagem) => {
+      if (imagem.indiceArquivo === undefined || imagem.indiceArquivo === null) {
+        return imagem;
+      }
+
+      const indice = Number(imagem.indiceArquivo);
+      if (!Number.isInteger(indice) || indice < 0 || indice >= imagensEnviadas.length) {
+        throw new Error("Índice de fotografia de variação inválido");
+      }
+
+      const enviada = imagensEnviadas[indice];
+      if (!enviada.url || !enviada.public_id) throw new Error("Fotografia de variação ainda não enviada ao Cloudinary");
+      return {
+        url: enviada.url,
+        publicId: enviada.public_id,
+        descricao: imagem.descricao || "",
+        ordem: Number(imagem.ordem || 0),
+      };
+    }),
+  }));
+}
 function responderErro(res, error, contexto) {
   console.error(contexto, error);
   const status = error?.name === "ValidationError" ? 400 : 500;
@@ -45,7 +86,8 @@ function responderErro(res, error, contexto) {
 }
 
 const criarProduto = async (req, res) => {
-  try {
+    const imagensEnviadasCloudinary = [];
+    try {
     const { nome, preco, estoque } = req.body || {};
     if (!nome || preco === undefined || preco === null || preco === "" || estoque === undefined || estoque === null || estoque === "") {
       return res.status(400).json({
@@ -54,8 +96,22 @@ const criarProduto = async (req, res) => {
       });
     }
 
-    const imagens = await uploadImagens(req.files || []);
-    const produto = await ProdutoService.criarProduto(req.body, imagens);
+    const arquivosVariacoes = req.files?.imagensVariacoes || [];
+      const dadosProduto = { ...req.body };
+
+      if (dadosProduto.galeriasVariacoes !== undefined || arquivosVariacoes.length) {
+        validarGaleriasVariacoes(dadosProduto.galeriasVariacoes || "[]", arquivosVariacoes.length);
+
+        const imagensVariacoes = await uploadImagens(arquivosVariacoes, imagensEnviadasCloudinary);
+
+        dadosProduto.galeriasVariacoes = JSON.stringify(
+          prepararGaleriasVariacoes(dadosProduto.galeriasVariacoes || "[]", imagensVariacoes)
+        );
+      }
+
+      const imagens = await uploadImagens(req.files?.imagens || [], imagensEnviadasCloudinary);
+      const produto = await ProdutoService.criarProduto(dadosProduto, imagens);
+        imagensEnviadasCloudinary.length = 0;
 
     if (global.io) global.io.emit("produto-criado", produto);
     return res.status(201).json({
@@ -64,7 +120,8 @@ const criarProduto = async (req, res) => {
       produto,
     });
   } catch (error) {
-    return responderErro(res, error, "ERRO CRIAR PRODUTO:");
+    await removerImagensCloudinary(imagensEnviadasCloudinary);
+      return responderErro(res, error, "ERRO CRIAR PRODUTO:");
   }
 };
 
@@ -205,56 +262,308 @@ const buscarProduto = async (req, res) => {
 };
 
 const atualizarProduto = async (req, res) => {
+  const imagensEnviadasAtualizacao = [];
+  let imagensParaRemoverAposSalvar = [];
+  let imagensRemovidasVariacoes = [];
+
   try {
     const produto = await Produto.findById(req.params.id);
-    if (!produto) return res.status(404).json({ success: false, message: "Produto não encontrado" });
 
-    let novasImagens = [];
+    if (!produto) {
+      return res.status(404).json({
+        success: false,
+        message: "Produto não encontrado",
+      });
+    }
 
-const imagensAntigas = produto.imagens || [];
+    const arquivosVariacoes = req.files?.imagensVariacoes || [];
+    const dadosAtualizacao = { ...(req.body || {}) };
 
-if (req.files?.length) {
+    /*
+     * ============================================================
+     * GALERIAS DAS VARIAÇÕES
+     * ============================================================
+     */
+    if (
+      dadosAtualizacao.galeriasVariacoes !== undefined ||
+      arquivosVariacoes.length
+    ) {
+      if (dadosAtualizacao.galeriasVariacoes === undefined) {
+        throw new Error(
+          "As galerias das variações precisam acompanhar as novas fotografias"
+        );
+      }
 
-    novasImagens = await uploadImagens(
+      validarGaleriasVariacoes(
+        dadosAtualizacao.galeriasVariacoes,
+        arquivosVariacoes.length
+      );
 
-        req.files
+      const idsOriginaisVariacoes = new Set((produto.galeriasVariacoes || []).flatMap(g => g.imagens || []).map(i => i.publicId || i.public_id).filter(Boolean).map(String));
+      const idsRecebidosVariacoes = validarGaleriasVariacoes(dadosAtualizacao.galeriasVariacoes, arquivosVariacoes.length).flatMap(g => (g.imagens || []).map(i => i.publicId || i.public_id).filter(Boolean).map(String));
+      if (idsRecebidosVariacoes.some(id => !idsOriginaisVariacoes.has(id))) throw new Error("Fotografia de variacao desconhecida para este produto");
+      const idsMantidosVariacoes = new Set(validarGaleriasVariacoes(dadosAtualizacao.galeriasVariacoes, arquivosVariacoes.length).flatMap(g => (g.imagens || []).map(i => i.publicId || i.public_id).filter(Boolean).map(String)));
+      imagensRemovidasVariacoes = (produto.galeriasVariacoes || []).flatMap(g => g.imagens || []).filter(i => (i.publicId || i.public_id) && !idsMantidosVariacoes.has(String(i.publicId || i.public_id))).map(i => ({ public_id: i.publicId || i.public_id }));
+      const imagensVariacoes = await uploadImagens(
+        arquivosVariacoes,
+        imagensEnviadasAtualizacao
+      );
 
-    );
+      dadosAtualizacao.galeriasVariacoes = JSON.stringify(
+        prepararGaleriasVariacoes(
+          dadosAtualizacao.galeriasVariacoes,
+          imagensVariacoes
+        )
+      );
+    }
 
-}
+    /*
+     * ============================================================
+     * GALERIA PRINCIPAL DO PRODUTO
+     *
+     * O frontend envia "galeria" contendo somente as imagens
+     * que continuam no cadastro.
+     *
+     * Imagens novas continuam sendo enviadas por "imagens".
+     * ============================================================
+     */
+    if (req.files?.imagens?.length && dadosAtualizacao.galeria === undefined) {
+      throw new Error(
+        "A lista da galeria é obrigatória ao enviar novas fotografias."
+      );
+    }
 
-    const galeriaCompleta = [
+    if (req.files?.imagens?.length || dadosAtualizacao.galeria !== undefined) {
+      const imagensAntigas = produto.imagens || [];
 
-    ...imagensAntigas,
+      let galeriaFrontend = [];
 
-    ...novasImagens
+      try {
+        galeriaFrontend = JSON.parse(
+          dadosAtualizacao.galeria || "[]"
+        );
 
-];
+        if (!Array.isArray(galeriaFrontend)) {
+          throw new Error("A galeria enviada deve ser uma lista de imagens.");
+        }
+      } catch (error) {
+        throw new Error(
+          "Não foi possível interpretar a galeria de imagens: " + error.message
+        );
+      }
 
-const produtoAtualizado =
-    await ProdutoService.atualizarProduto(
+      if (imagensAntigas.some((img) => !img?.public_id && !img?.publicId)) {
+        throw new Error("Galeria bloqueada: existem fotografias antigas sem identificador.");
+      }
+      const imagensAntigasPorId = new Map();
 
+      imagensAntigas.forEach((imagem) => {
+        const id = imagem?.public_id || imagem?.publicId;
+
+        if (id) {
+          imagensAntigasPorId.set(String(id), imagem);
+        }
+      });
+
+      /*
+       * Reconstrói a galeria respeitando exatamente a ordem
+       * enviada pelo frontend.
+       */
+      const idsRecebidos = new Set();
+
+      for (const meta of galeriaFrontend) {
+        if (!meta || typeof meta !== "object" || Array.isArray(meta)) {
+          throw new Error("A galeria contém uma imagem inválida.");
+        }
+
+        const id = meta.public_id || meta.publicId;
+
+        if (id) {
+          const identificador = String(id);
+
+          if (!imagensAntigasPorId.has(identificador)) {
+            throw new Error("A galeria contém uma fotografia não reconhecida.");
+          }
+
+          if (idsRecebidos.has(identificador)) {
+            throw new Error("A galeria contém uma fotografia duplicada.");
+          }
+
+          idsRecebidos.add(identificador);
+        }
+      }
+
+      const imagensNovas = req.files?.imagens?.length
+        ? await uploadImagens(
+            req.files.imagens,
+            imagensEnviadasAtualizacao
+          )
+        : [];
+
+      /*
+       * Índice das imagens antigas pelo public_id.
+       * Aceitamos public_id e publicId para compatibilidade.
+       */
+      const galeriaReconstruida = [];
+
+      galeriaFrontend.forEach((meta, index) => {
+        const publicId = meta?.public_id || meta?.publicId || "";
+
+        /*
+         * Imagem antiga que continua no cadastro.
+         */
+        if (publicId && imagensAntigasPorId.has(String(publicId))) {
+          const imagemAntiga = imagensAntigasPorId.get(String(publicId));
+
+          galeriaReconstruida.push({
+            ...(typeof imagemAntiga.toObject === "function"
+              ? imagemAntiga.toObject()
+              : imagemAntiga),
+            public_id:
+              imagemAntiga.public_id ||
+              imagemAntiga.publicId ||
+              publicId,
+            principal: Boolean(meta.principal),
+            ordem: Number(meta.ordem ?? index),
+            legenda: meta.legenda || "",
+            alt: meta.alt || "",
+            nome:
+              meta.nome ||
+              imagemAntiga.nome ||
+              imagemAntiga.filename ||
+              "",
+          });
+
+          imagensAntigasPorId.delete(String(publicId));
+        }
+      });
+
+      /*
+       * Acrescenta as imagens novas na posição enviada pelo upload.
+       */
+      const metadadosImagensNovas = galeriaFrontend.filter(
+        (meta) => !meta?.public_id && !meta?.publicId
+      );
+
+      imagensNovas.forEach((imagem, index) => {
+        const metaSemPublicId = metadadosImagensNovas[index];
+
+        galeriaReconstruida.push({
+          ...imagem,
+          principal: Boolean(metaSemPublicId?.principal),
+          ordem: Number(
+            metaSemPublicId?.ordem ??
+              galeriaReconstruida.length
+          ),
+          legenda: metaSemPublicId?.legenda || "",
+          alt: metaSemPublicId?.alt || "",
+          nome:
+            metaSemPublicId?.nome ||
+            imagem.filename ||
+            "",
+        });
+      });
+
+      /*
+       * Organiza fotografias antigas e novas pela ordem definida
+       * no painel administrativo.
+       */
+      galeriaReconstruida.sort(
+        (a, b) => Number(a.ordem ?? 0) - Number(b.ordem ?? 0)
+      );
+
+      galeriaReconstruida.forEach((imagem, index) => {
+        imagem.ordem = index;
+      });
+
+      /*
+       * Se nenhuma imagem antiga foi mantida e existem imagens novas,
+       * a primeira nova imagem vira principal.
+       */
+      /*
+       * Garante exatamente uma imagem principal.
+       * Se nenhuma estiver marcada, utiliza a primeira.
+       */
+      if (galeriaReconstruida.length > 0) {
+        const indicePrincipal = galeriaReconstruida.findIndex(
+          (imagem) => imagem.principal
+        );
+
+        galeriaReconstruida.forEach((imagem, index) => {
+          imagem.principal = index === Math.max(0, indicePrincipal);
+        });
+      }
+
+      /*
+       * Imagens antigas que sobraram no mapa foram removidas
+       * pelo usuário.
+       *
+       * Elas serão removidas do Cloudinary.
+       */
+      const imagensRemovidas = Array.from(
+        imagensAntigasPorId.values()
+      );
+
+      const publicIdsParaRemover = imagensRemovidas
+        .map((imagem) => imagem?.public_id || imagem?.publicId)
+        .filter(Boolean);
+
+      // A exclusão no Cloudinary será feita somente após salvar no banco.
+      imagensParaRemoverAposSalvar.push(...imagensRemovidas);
+
+      dadosAtualizacao.imagens = galeriaReconstruida;
+    }
+
+    /*
+     * Atualiza o produto.
+     */
+    const produtoAtualizado =
+      await ProdutoService.atualizarProduto(
         produto,
+        dadosAtualizacao,
+        dadosAtualizacao.imagens
+      );
 
-        req.body || {},
+    imagensParaRemoverAposSalvar.push(...(imagensRemovidasVariacoes || []));
+    imagensEnviadasAtualizacao.length = 0;
+    const idsEmUso = new Set([
+      ...(produtoAtualizado.imagens || []).map(i => i.public_id || i.publicId),
+      ...(produtoAtualizado.galeriasVariacoes || []).flatMap(g =>
+        (g.imagens || []).map(i => i.publicId || i.public_id)
+      )
+    ].filter(Boolean).map(String));
 
-        galeriaCompleta
-
+    const imagensSegurasParaRemover = imagensParaRemoverAposSalvar.filter(
+      i => i.public_id && !idsEmUso.has(String(i.public_id))
     );
 
-    
-    if (global.io) global.io.emit("produto-atualizado", produtoAtualizado);
+    await removerImagensCloudinary(imagensSegurasParaRemover);
+
+    if (global.io) {
+      global.io.emit(
+        "produto-atualizado",
+        produtoAtualizado
+      );
+    }
 
     return res.status(200).json({
       success: true,
       message: "Produto atualizado com sucesso",
       produto: produtoAtualizado,
     });
+
   } catch (error) {
-    return responderErro(res, error, "ERRO ATUALIZAR PRODUTO:");
+    await removerImagensCloudinary(
+      imagensEnviadasAtualizacao
+    );
+
+    return responderErro(
+      res,
+      error,
+      "ERRO ATUALIZAR PRODUTO:"
+    );
   }
 };
-
 const atualizarPublicacaoProduto = async (req, res) => {
   try {
     const produto = await Produto.findById(req.params.id);
@@ -927,9 +1236,10 @@ const deletarProduto = async (req, res) => {
   try {
     const produto = await Produto.findById(req.params.id);
     if (!produto) return res.status(404).json({ success: false, message: "Produto não encontrado" });
+    await produto.deleteOne();
 
     await removerImagensCloudinary(produto.imagens || []);
-    await produto.deleteOne();
+    await removerImagensCloudinary((produto.galeriasVariacoes || []).flatMap(g => (g.imagens || []).map(i => ({ public_id: i.publicId }))));
     if (global.io) global.io.emit("produto-deletado", req.params.id);
 
     return res.status(200).json({ success: true, message: "Produto deletado com sucesso" });

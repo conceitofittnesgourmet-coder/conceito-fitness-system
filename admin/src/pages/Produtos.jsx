@@ -33,6 +33,7 @@ import ProdutoCardapio from "../components/ProdutoForm/ProdutoCardapio";
 import ProdutoNutricional from "../components/ProdutoForm/ProdutoNutricional";
 import ProdutoFiscal from "../components/ProdutoForm/ProdutoFiscal";
 import ProdutoImagem from "../components/ProdutoForm/ProdutoImagem";
+import GaleriasVariacoes from "../components/ProdutoForm/GaleriasVariacoes";
 import ProdutoConfigEngine from "../components/ProdutoConfig/ProdutoConfigEngine";
 import PublicacaoOnlineProduto from "../components/ProdutoForm/PublicacaoOnlineProduto";
 import FoodCoreTab from "../components/ProdutoForm/FoodCore/FoodCoreTab";
@@ -168,6 +169,8 @@ function Produtos() {
   const [codigoBarras, setCodigoBarras] = useState("");
   const [sku, setSku] = useState("");
   const [gruposComponentes, setGruposComponentes] = useState([]);
+  const [opcoesComponentes, setOpcoesComponentes] = useState([]);
+  const [galeriasVariacoes, setGaleriasVariacoes] = useState([]);
   const [gruposSelecionados, setGruposSelecionados] = useState([]);
   const [configuracaoGrupos, setConfiguracaoGrupos] = useState([]);
   const [informacoesNutricionais, setInformacoesNutricionais] = useState({
@@ -298,6 +301,7 @@ const [marketing, setMarketing] =
   const [editCodigoBarras, setEditCodigoBarras] = useState("");
   const [editSku, setEditSku] = useState("");
   const [editGruposSelecionados, setEditGruposSelecionados] = useState([]);
+  const [editGaleriasVariacoes, setEditGaleriasVariacoes] = useState([]);
   const [editConfiguracaoGrupos, setEditConfiguracaoGrupos] = useState([]);
   const [editInformacoesNutricionais, setEditInformacoesNutricionais] = useState({
   calorias: "",
@@ -377,7 +381,8 @@ const [
 
   async function carregarGruposComponentes() {
   try {
-    const response = await api.get("/grupos-componentes");
+    const [response, opcoesResponse] = await Promise.all([api.get("/grupos-componentes"), api.get("/opcoes-componentes")]);
+    setOpcoesComponentes(opcoesResponse.data.opcoes || []);
     setGruposComponentes(response.data.grupos || []);
   } catch (error) {
     console.log(error);
@@ -481,6 +486,44 @@ formData.append(
 
 );
 
+      const prepararGaleriasVariacoes = (lista) => {
+        let indiceArquivo = 0;
+        const dados = lista.map((galeria) => {
+          if (!galeria.selecoes?.length) {
+            throw new Error(`A galeria "${galeria.nome}" precisa ter pelo menos uma opção selecionada.`);
+          }
+          return {
+            nome: galeria.nome,
+            ativo: galeria.ativo !== false,
+            ordem: galeria.ordem ?? 0,
+            selecoes: galeria.selecoes,
+            imagens: (galeria.imagens || []).map((imagem) => {
+              if (imagem.file) {
+                formData.append("imagensVariacoes", imagem.file);
+                return {
+                  indiceArquivo: indiceArquivo++,
+                  descricao: imagem.descricao || "",
+                  ordem: imagem.ordem ?? 0,
+                };
+              }
+              return {
+                url: imagem.url,
+                publicId: imagem.publicId || imagem.public_id || "",
+                descricao: imagem.descricao || "",
+                ordem: imagem.ordem ?? 0,
+              };
+            }),
+          };
+        });
+        if (indiceArquivo > 30) {
+          throw new Error("O limite é de 30 novas fotografias por envio.");
+        }
+        return dados;
+      };
+      formData.append(
+        "galeriasVariacoes",
+        JSON.stringify(prepararGaleriasVariacoes(galeriasVariacoes))
+      );
       await api.post("/produtos", formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
@@ -490,7 +533,7 @@ formData.append(
       carregarProdutos();
     } catch (error) {
       console.log(error);
-      toast.error(error.response?.data?.message || "Erro ao cadastrar");
+      toast.error(error.response?.data?.message || error.message || "Erro ao cadastrar");
     } finally {
       setLoading(false);
     }
@@ -510,6 +553,18 @@ formData.append(
       console.log(error);
       toast.error("Erro ao deletar");
     }
+  }
+
+  function fecharModalEdicao() {
+    editGaleriasVariacoes.forEach((galeria) => {
+      (galeria.imagens || []).forEach((imagem) => {
+        if (imagem.file && imagem.preview?.startsWith("blob:")) {
+          URL.revokeObjectURL(imagem.preview);
+        }
+      });
+    });
+    setEditGaleriasVariacoes([]);
+    setModalOpen(false);
   }
 
   function abrirModal(produto) {
@@ -601,6 +656,22 @@ setEditDadosFiscais({
     setEditImagens(
   Array.isArray(produto.imagens)
     ? produto.imagens
+    : []
+);
+
+setEditGaleriasVariacoes(
+  Array.isArray(produto.galeriasVariacoes)
+    ? produto.galeriasVariacoes.map((galeria) => ({
+        ...galeria,
+        selecoes: (galeria.selecoes || []).map((selecao) => ({
+          grupoId: String(selecao.grupoId?._id || selecao.grupoId),
+          opcaoId: String(selecao.opcaoId?._id || selecao.opcaoId),
+        })),
+        imagens: (galeria.imagens || []).map((imagem) => ({
+          ...imagem,
+          publicId: imagem.publicId || imagem.public_id || "",
+        })),
+      }))
     : []
 );
 
@@ -706,6 +777,7 @@ formData.append(
   "galeria",
   JSON.stringify(
     editImagens.map((img) => ({
+      public_id: img.public_id || "",
       principal: Boolean(img.principal),
       ordem: Number(img.ordem || 0),
       legenda: img.legenda || "",
@@ -715,16 +787,54 @@ formData.append(
   )
 );
 
+      const prepararGaleriasVariacoes = (lista) => {
+        let indiceArquivo = 0;
+        const dados = lista.map((galeria) => {
+          if (!galeria.selecoes?.length) {
+            throw new Error(`A galeria "${galeria.nome}" precisa ter pelo menos uma opção selecionada.`);
+          }
+          return {
+            nome: galeria.nome,
+            ativo: galeria.ativo !== false,
+            ordem: galeria.ordem ?? 0,
+            selecoes: galeria.selecoes,
+            imagens: (galeria.imagens || []).map((imagem) => {
+              if (imagem.file) {
+                formData.append("imagensVariacoes", imagem.file);
+                return {
+                  indiceArquivo: indiceArquivo++,
+                  descricao: imagem.descricao || "",
+                  ordem: imagem.ordem ?? 0,
+                };
+              }
+              return {
+                url: imagem.url,
+                publicId: imagem.publicId || imagem.public_id || "",
+                descricao: imagem.descricao || "",
+                ordem: imagem.ordem ?? 0,
+              };
+            }),
+          };
+        });
+        if (indiceArquivo > 30) {
+          throw new Error("O limite é de 30 novas fotografias por envio.");
+        }
+        return dados;
+      };
+      formData.append(
+        "galeriasVariacoes",
+        JSON.stringify(prepararGaleriasVariacoes(editGaleriasVariacoes))
+      );
       await api.put(`/produtos/${produtoEditando._id}`, formData, {
         headers: { "Content-Type": "multipart/form-data" },
       });
 
       toast.success("Produto atualizado!");
-      setModalOpen(false);
+      fecharModalEdicao();
       carregarProdutos();
     } catch (error) {
       console.log(error);
-      toast.error("Erro ao atualizar");
+      toast.error(error.response?.data?.message || error.message || "Erro ao atualizar");
     } finally {
       setLoadingEditar(false);
     }
@@ -734,6 +844,15 @@ formData.append(
     imagens.forEach((img) => {
       if (img.preview) URL.revokeObjectURL(img.preview);
     });
+
+    galeriasVariacoes.forEach((galeria) => {
+      (galeria.imagens || []).forEach((imagem) => {
+        if (imagem.file && imagem.preview?.startsWith("blob:")) {
+          URL.revokeObjectURL(imagem.preview);
+        }
+      });
+    });
+    setGaleriasVariacoes([]);
 
     setNome("");
     setCategoria("");
@@ -1063,6 +1182,15 @@ const progressoCadastro =
     setImagens={setImagens}
 />
 )}
+{abaCadastro === "midia" && (
+  <GaleriasVariacoes
+    gruposComponentes={gruposComponentes}
+    opcoesComponentes={opcoesComponentes}
+    gruposSelecionados={gruposSelecionados}
+    galerias={galeriasVariacoes}
+    setGalerias={setGaleriasVariacoes}
+  />
+)}
           
           <div className="form-actions-premium">
             <button className="clear-btn-premium" onClick={limparFormulario}>
@@ -1256,7 +1384,7 @@ const progressoCadastro =
         <button
           type="button"
           className="produto-edit-close"
-          onClick={() => setModalOpen(false)}
+          onClick={fecharModalEdicao}
           aria-label="Fechar"
         >
           ×
@@ -1483,6 +1611,15 @@ const progressoCadastro =
 })}
   />
 )}
+{abaEdicao === "midia" && (
+  <GaleriasVariacoes
+    gruposComponentes={gruposComponentes}
+    opcoesComponentes={opcoesComponentes}
+    gruposSelecionados={editGruposSelecionados}
+    galerias={editGaleriasVariacoes}
+    setGalerias={setEditGaleriasVariacoes}
+  />
+)}
 
 <div className="produto-diagnostico">
 
@@ -1526,7 +1663,7 @@ const progressoCadastro =
         <button
           type="button"
           className="btn-cancel"
-          onClick={() => setModalOpen(false)}
+          onClick={fecharModalEdicao}
         >
           Cancelar
         </button>

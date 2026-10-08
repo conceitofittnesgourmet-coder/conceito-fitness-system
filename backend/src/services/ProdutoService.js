@@ -296,7 +296,8 @@ function montarGaleria(imagensCloudinary = [], galeriaFrontend = []) {
 
     return imagensCloudinary.map((imagem, index) => {
 
-        const meta = galeriaFrontend[index] || {};
+        const metaCorrespondente = galeriaFrontend.find(item => item.public_id && item.public_id === imagem.public_id);
+        const meta = { ...imagem, ...(metaCorrespondente || galeriaFrontend.filter(item => !item.public_id)[imagensCloudinary.slice(0, index + 1).filter(item => !galeriaFrontend.some(meta => meta.public_id && meta.public_id === item.public_id)).length - 1] || {}) };
 
         return {
 
@@ -379,6 +380,7 @@ copiarJson("alergenos", {});
 copiarJson("selos", {});
 copiarJson("gruposComponentes", []);
 copiarJson("configuracaoGrupos", []);
+copiarJson("galeriasVariacoes", []);
 
 /* ======================================================
    FOOD CORE
@@ -559,13 +561,12 @@ async function atualizarProduto(produto, body, imagens) {
 
         );
 
-        dados.imagens = montarGaleria(
-
-            imagens,
-
-            galeriaFrontend
-
-        );
+        dados.imagens = Array.isArray(body.imagens)
+            ? body.imagens
+            : montarGaleria(
+                imagens,
+                galeriaFrontend
+            );
 
     }
 

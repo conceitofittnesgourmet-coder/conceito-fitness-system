@@ -485,6 +485,35 @@ configuracaoGrupos: [
   },
 ],
 
+galeriasVariacoes: [
+  {
+    nome: { type: String, default: "" },
+    ativo: { type: Boolean, default: true },
+    ordem: { type: Number, default: 0 },
+
+    selecoes: [
+      {
+        grupoId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "GrupoComponente",
+        },
+        opcaoId: {
+          type: mongoose.Schema.Types.ObjectId,
+          ref: "OpcaoComponente",
+        },
+      },
+    ],
+
+    imagens: [
+      {
+        url: { type: String, default: "" },
+        publicId: { type: String, default: "" },
+        descricao: { type: String, default: "" },
+        ordem: { type: Number, default: 0 },
+      },
+    ],
+  },
+],
 configuravel: {
   type: Boolean,
   default: false,
@@ -940,6 +969,11 @@ descricaoTipo: {
         public_id: String,
         filename: String,
         path: String,
+        principal: { type: Boolean, default: false },
+        ordem: { type: Number, default: 0 },
+        legenda: { type: String, default: "" },
+        alt: { type: String, default: "" },
+        nome: { type: String, default: "" },
       },
     ],
   },
