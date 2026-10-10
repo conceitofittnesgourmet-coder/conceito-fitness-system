@@ -2017,4 +2017,7 @@ input[type="checkbox"] {
   .produto-fiscal-fields {
     grid-template-columns: 1fr;
   }
-}
+}.galerias-variacoes > button:first-child { display:flex; width:100%; align-items:center; justify-content:space-between; gap:16px; padding:12px; border:0; background:transparent; color:#47ff6d; font-size:16px; cursor:pointer; }
+.galerias-variacoes button:not(:first-child) { padding:10px 16px; border:1px solid rgba(71,255,109,.35); border-radius:10px; background:#174b35; color:#fff; font-weight:700; cursor:pointer; }
+.galerias-variacoes p { margin:12px 0; color:#d5e0e8; font-size:13px; line-height:1.6; } .galerias-variacoes > button:first-child span { flex-shrink:0; color:#d5e6dc; font-size:12px; } .galerias-variacoes label { color:#e4edf3; line-height:1.7; }
+.galerias-variacoes input:not([type=checkbox]), .galerias-variacoes select { display:block; box-sizing:border-box; width:100%; min-height:42px; margin-top:6px; padding:9px 12px; border:1px solid rgba(255,255,255,.15); border-radius:9px; background:#091b2b; color:#fff; } .galerias-variacoes input[type=checkbox] { margin-right:8px; accent-color:#47ff6d; } .galerias-variacoes .premium-box { padding:16px; border:1px solid rgba(255,255,255,.12); border-radius:12px; }
