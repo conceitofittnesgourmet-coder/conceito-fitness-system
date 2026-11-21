@@ -57,6 +57,7 @@ app.use(
 const allowedOrigins = [
   "https://conceito-fitness-system-7c2o.vercel.app",
   "http://localhost:5173",
+  "http://127.0.0.1:5173",
   "https://conceitofitgourmet.com.br",
   "https://www.conceitofitgourmet.com.br",
 ];
